@@ -1,9 +1,10 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import { useLang } from '@/context/LanguageContext';
+import { supabase } from '@/lib/supabase';
 
 const SERVICES = ['Not sure/Need guidance','Musculoskeletal Physiotherapy','Post-Surgery Rehabilitation','Sports Injury Recovery','Elderly Care and Mobility Support','Back Pain','Neck and Shoulder Pain','Joint Pain','Sports Injury','Balance Issues','Reduced Mobility','Neurological Physiotherapy'];
 const SERVICES_EL = ['Δεν είμαι σίγουρος/η - Χρειάζομαι καθοδήγηση','Μυοσκελετική Φυσιοθεραπεία','Μετεγχειρητική Αποκατάσταση','Αποκατάσταση Αθλητικών Τραυματισμών','Φροντίδα Ηλικιωμένων & Κινητικότητα','Πόνος στη Μέση','Πόνος στον Αυχένα & Ώμους','Πόνος στις Αρθρώσεις','Αθλητικός Τραυματισμός','Προβλήματα Ισορροπίας','Μειωμένη Κινητικότητα','Νευρολογική Φυσιοθεραπεία'];
@@ -97,6 +98,7 @@ export default function RequestPage() {
 
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [form, setForm] = useState({
     name: '', email: '', phone: '',
@@ -126,18 +128,38 @@ export default function RequestPage() {
 
   const handleNext = () => { if (validateStep()) setStep(s => s + 1); };
   const handleBack = () => { setError(''); setStep(s => s - 1); };
-  const handleSubmit = () => {
+
+  const handleSubmit = async () => {
     if (!validateStep()) return;
-    const existing = JSON.parse(localStorage.getItem('sessionRequests') || '[]');
-    localStorage.setItem('sessionRequests', JSON.stringify([...existing, {
-      ...form,
-      id: Date.now(),
-      submittedAt: new Date().toISOString().split('T')[0],
-      status: 'pending',
-      preferredTherapist: preferredTherapist || null,
-    }]));
-    // Clear preference after submit
+    setLoading(true);
+
+    const { error: insertError } = await supabase
+      .from('requests')
+      .insert([{
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        country: form.country,
+        zip: form.zip,
+        city: form.city,
+        street: form.street,
+        service: form.service,
+        description: form.description,
+        how_heard: form.howHeard,
+        referred: form.referred === 'yes',
+        doctor_name: form.doctorName || null,
+        preferred_therapist: preferredTherapist || null,
+        status: 'pending',
+      }]);
+
+    if (insertError) {
+      setError('Σφάλμα υποβολής: ' + insertError.message);
+      setLoading(false);
+      return;
+    }
+
     localStorage.removeItem('preferredTherapist');
+    setLoading(false);
     setSubmitted(true);
   };
 
@@ -171,8 +193,6 @@ export default function RequestPage() {
           {tx.pageTitle} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{tx.pageTitleEm}</em>
         </h1>
         <p style={{ fontSize: 16, color: '#6b7a8d', maxWidth: 600, margin: '0 auto' }}>{tx.pageDesc}</p>
-
-        {/* Therapist preference notice */}
         {preferredTherapist && (
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, background: '#FEF3C7', border: '1px solid #FCD34D', borderRadius: 12, padding: '10px 20px', marginTop: 20, fontSize: 14, color: '#92400E', fontWeight: 600 }}>
             ⭐ {tx.preferenceNotice} <strong>{preferredTherapist}</strong>
@@ -187,7 +207,6 @@ export default function RequestPage() {
 
             {/* Desktop Sidebar */}
             <div className="req-sidebar" style={{ background: '#eef4fb', padding: '40px 28px', display: 'flex', flexDirection: 'column' }}>
-              {/* Therapist preference in sidebar */}
               {preferredTherapist && (
                 <div style={{ background: '#FEF3C7', border: '1px solid #FCD34D', borderRadius: 10, padding: '12px 14px', marginBottom: 24 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: '#92400E', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 4 }}>Προτίμηση</div>
@@ -236,7 +255,6 @@ export default function RequestPage() {
 
             {/* Form Content */}
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {/* Mobile banner */}
               <div className="req-mobile-banner" style={{ background: '#eef4fb', padding: '16px 24px', borderBottom: '1px solid #e2e8f0' }}>
                 <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>Step {step} of {tx.steps.length}</div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: '#2a6fdb' }}>{tx.steps[step - 1]}</div>
@@ -246,7 +264,6 @@ export default function RequestPage() {
               </div>
 
               <div style={{ padding: '40px 40px 32px', flex: 1 }}>
-
                 {step === 1 && (
                   <div>
                     <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 24, color: '#1a2e44', marginBottom: 8, textAlign: 'center' }}>{tx.step1Title}</h2>
@@ -357,8 +374,8 @@ export default function RequestPage() {
                       {tx.next}
                     </button>
                   ) : (
-                    <button onClick={handleSubmit} style={{ background: '#1a2e44', color: '#fff', padding: '12px 36px', borderRadius: 30, fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
-                      {tx.submit}
+                    <button onClick={handleSubmit} disabled={loading} style={{ background: loading ? '#94a3b8' : '#1a2e44', color: '#fff', padding: '12px 36px', borderRadius: 30, fontSize: 14, fontWeight: 600, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
+                      {loading ? '...' : tx.submit}
                     </button>
                   )}
                 </div>
