@@ -1,29 +1,47 @@
 'use client';
+import { useState, useEffect } from 'react';
 import { useLang } from '@/context/LanguageContext';
+import { supabase } from '@/lib/supabase';
+
+const DEFAULT = {
+  el: {
+    title: 'Γιατί οι Ασθενείς μας', titleEm: 'Μας Επιλέγουν',
+    desc: 'Εστιαζόμαστε σε ό,τι πραγματικά μετράει: σταθερή ανάρρωση, εξατομικευμένη προσοχή.',
+    cards: [
+      { icon: '✓', title: 'Πιστοποιημένοι Φυσιοθεραπευτές', desc: 'Έμπειροι ειδικοί που παρέχουν αξιόπιστη φροντίδα στην άνεση του σπιτιού σας.' },
+      { icon: '🛡', title: 'Αξιόπιστη & Ασθενοκεντρική Υπηρεσία', desc: 'Επαγγελματική προσέγγιση σχεδιασμένη για άνετη, συνεπή θεραπεία.' },
+      { icon: '♥', title: 'Εξατομικευμένη Φροντίδα για Κάθε Ασθενή', desc: 'Τα πλάνα θεραπείας προσαρμόζονται στην κατάσταση κάθε ασθενή.' },
+    ],
+  },
+  en: {
+    title: 'Why Patients', titleEm: 'Choose Us',
+    desc: 'We focus on what truly matters: steady recovery, personalized attention.',
+    cards: [
+      { icon: '✓', title: 'Certified Physiotherapists', desc: 'Experienced specialists delivering trusted care in the comfort of your home.' },
+      { icon: '🛡', title: 'Reliable & Patient-Focused Service', desc: 'A professional approach designed to make treatment comfortable and stress-free.' },
+      { icon: '♥', title: 'Personalized Care for Every Patient', desc: 'Treatment plans are adapted to each patient condition and recovery goals.' },
+    ],
+  },
+};
 
 export default function WhyUs() {
   const { lang } = useLang();
-  const t = {
-    el: {
-      title: 'Γιατί οι Ασθενείς μας', titleEm: 'Μας Επιλέγουν',
-      desc: 'Εστιαζόμαστε σε ό,τι πραγματικά μετράει: σταθερή ανάρρωση, εξατομικευμένη προσοχή και μια άνετη, συνεπής εμπειρία από την πρώτη σας συνεδρία.',
-      cards: [
-        { icon: '✓', title: 'Πιστοποιημένοι Φυσιοθεραπευτές', desc: 'Έμπειροι ειδικοί που παρέχουν αξιόπιστη φροντίδα στην άνεση του σπιτιού σας.' },
-        { icon: '🛡', title: 'Αξιόπιστη & Ασθενοκεντρική Υπηρεσία', desc: 'Επαγγελματική προσέγγιση σχεδιασμένη για άνετη, συνεπή και αναίμακτη θεραπεία.' },
-        { icon: '♥', title: 'Εξατομικευμένη Φροντίδα για Κάθε Ασθενή', desc: 'Τα πλάνα θεραπείας προσαρμόζονται στην κατάσταση και τους στόχους κάθε ασθενή.' },
-      ],
-    },
-    en: {
-      title: 'Why Patients', titleEm: 'Choose Us',
-      desc: 'We focus on what truly matters: steady recovery, personalized attention, and a comfortable, consistent experience from your very first session.',
-      cards: [
-        { icon: '✓', title: 'Certified Physiotherapists', desc: 'Experienced specialists delivering trusted care in the comfort of your home.' },
-        { icon: '🛡', title: 'Reliable & Patient-Focused Service', desc: 'A professional approach designed to make treatment comfortable, consistent, and stress-free.' },
-        { icon: '♥', title: 'Personalized Care for Every Patient', desc: 'Treatment plans and sessions are adapted to each patient\'s condition and recovery goals.' },
-      ],
-    },
-  };
-  const text = t[lang];
+  const [data, setData] = useState(DEFAULT);
+
+  useEffect(() => {
+    async function fetch() {
+      const { data: row } = await supabase
+        .from('site_content')
+        .select('content_el, content_en')
+        .eq('page', 'homepage')
+        .eq('section', 'whyus')
+        .single();
+      if (row) setData({ el: row.content_el, en: row.content_en });
+    }
+    fetch();
+  }, []);
+
+  const text = data[lang] || DEFAULT[lang];
 
   return (
     <>
@@ -41,8 +59,8 @@ export default function WhyUs() {
             <p style={{ fontSize: 16, color: '#6b7a8d', maxWidth: 560 }}>{text.desc}</p>
           </div>
           <div className="why-grid">
-            {text.cards.map((card) => (
-              <div key={card.title} style={{ background: '#f8fafb', border: '1px solid #dce6f0', borderRadius: 16, padding: 32, transition: 'all .3s' }}
+            {(text.cards || []).map((card, i) => (
+              <div key={i} style={{ background: '#f8fafb', border: '1px solid #dce6f0', borderRadius: 16, padding: 32, transition: 'all .3s' }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = '#2a6fdb'; e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 4px 24px rgba(26,46,68,0.08)'; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = '#dce6f0'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
               >

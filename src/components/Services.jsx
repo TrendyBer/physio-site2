@@ -1,31 +1,49 @@
 'use client';
+import { useState, useEffect } from 'react';
 import { useLang } from '@/context/LanguageContext';
+import { supabase } from '@/lib/supabase';
+
+const DEFAULT = {
+  el: {
+    title: 'Υπηρεσίες', titleEm: 'Φυσιοθεραπείας',
+    desc: 'Εξατομικευμένη φροντίδα για ένα εύρος παθήσεων.',
+    viewAll: 'Όλες οι Υπηρεσίες', cta: 'Κλείστε Ραντεβού →',
+    services: [
+      { title: 'Μυοσκελετική Φυσιοθεραπεία', desc: 'Θεραπεία για πόνο στη μέση, αυχένα, αρθρώσεις.', price: '€30', image_url: '' },
+      { title: 'Μετεγχειρητική Αποκατάσταση', desc: 'Εξατομικευμένη υποστήριξη μετά το χειρουργείο.', price: '€40', image_url: '' },
+      { title: 'Αποκατάσταση Αθλητικών Τραυματισμών', desc: 'Εστιασμένη αποκατάσταση για αθλητικούς τραυματισμούς.', price: '€20', image_url: '' },
+    ],
+  },
+  en: {
+    title: 'Physiotherapy', titleEm: 'Services We Offer',
+    desc: 'Personalized care for a range of conditions.',
+    viewAll: 'View All Services', cta: 'Request a Session →',
+    services: [
+      { title: 'Musculoskeletal Physiotherapy', desc: 'Treatment for back pain, neck pain, joint issues.', price: '€30', image_url: '' },
+      { title: 'Post-Surgery Rehabilitation', desc: 'Personalized support to restore strength after surgery.', price: '€40', image_url: '' },
+      { title: 'Sports Injury Recovery', desc: 'Focused rehabilitation for sports injuries.', price: '€20', image_url: '' },
+    ],
+  },
+};
 
 export default function Services() {
   const { lang } = useLang();
-  const t = {
-    el: {
-      title: 'Υπηρεσίες', titleEm: 'Φυσιοθεραπείας',
-      desc: 'Εξατομικευμένη φροντίδα για ένα εύρος παθήσεων, παρεχόμενη στην άνεση του σπιτιού σας.',
-      viewAll: 'Όλες οι Υπηρεσίες', cta: 'Κλείστε Ραντεβού →',
-      services: [
-        { title: 'Μυοσκελετική Φυσιοθεραπεία', desc: 'Θεραπεία για πόνο στη μέση, αυχένα, αρθρώσεις και καθημερινές μυοσκελετικές κακώσεις.', price: '€30' },
-        { title: 'Μετεγχειρητική Αποκατάσταση', desc: 'Εξατομικευμένη υποστήριξη για αποκατάσταση δύναμης, κινητικότητας και λειτουργίας μετά το χειρουργείο.', price: '€40' },
-        { title: 'Αποκατάσταση Αθλητικών Τραυματισμών', desc: 'Εστιασμένη αποκατάσταση για υποστήριξη της επούλωσης, πρόληψη επανατραυματισμού και ασφαλή επιστροφή στη δραστηριότητα.', price: '€20' },
-      ],
-    },
-    en: {
-      title: 'Physiotherapy', titleEm: 'Services We Offer',
-      desc: 'Personalized care for a range of conditions, delivered in the comfort of your home.',
-      viewAll: 'View All Services', cta: 'Request a Session →',
-      services: [
-        { title: 'Musculoskeletal Physiotherapy', desc: 'Treatment for back pain, neck pain, joint issues, and everyday musculoskeletal injuries.', price: '€30' },
-        { title: 'Post-Surgery Rehabilitation', desc: 'Personalized support to restore strength, mobility, and function after surgery.', price: '€40' },
-        { title: 'Sports Injury Recovery', desc: 'Focused rehabilitation to support healing, prevent re-injury, and help you return to activity safely.', price: '€20' },
-      ],
-    },
-  };
-  const text = t[lang];
+  const [data, setData] = useState(DEFAULT);
+
+  useEffect(() => {
+    async function fetch() {
+      const { data: row } = await supabase
+        .from('site_content')
+        .select('content_el, content_en')
+        .eq('page', 'homepage')
+        .eq('section', 'services')
+        .single();
+      if (row) setData({ el: row.content_el, en: row.content_en });
+    }
+    fetch();
+  }, []);
+
+  const text = data[lang] || DEFAULT[lang];
 
   return (
     <>
@@ -48,9 +66,13 @@ export default function Services() {
             <a href="/services" style={{ background: 'transparent', color: '#1a2e44', padding: '10px 22px', borderRadius: 30, fontSize: 14, fontWeight: 500, textDecoration: 'none', border: '1.5px solid #1a2e44' }}>{text.viewAll}</a>
           </div>
           <div className="services-grid">
-            {text.services.map((s) => (
-              <div key={s.title} className="service-card">
-                <div style={{ aspectRatio: '16/10', background: 'linear-gradient(135deg, #d4e8ff, #b8d4f8)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2a6fdb', fontSize: 13 }}>📷</div>
+            {(text.services || []).map((s, i) => (
+              <div key={i} className="service-card">
+                {s.image_url ? (
+                  <img src={s.image_url} alt={s.title} style={{ width: '100%', aspectRatio: '16/10', objectFit: 'cover' }} />
+                ) : (
+                  <div style={{ aspectRatio: '16/10', background: 'linear-gradient(135deg, #d4e8ff, #b8d4f8)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2a6fdb', fontSize: 13 }}>📷</div>
+                )}
                 <div style={{ padding: 20 }}>
                   <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1a2e44', marginBottom: 8 }}>{s.title}</h3>
                   <p style={{ fontSize: 13, color: '#6b7a8d', marginBottom: 16, lineHeight: 1.6 }}>{s.desc}</p>

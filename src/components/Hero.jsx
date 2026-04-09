@@ -1,29 +1,47 @@
 'use client';
+import { useState, useEffect } from 'react';
 import { useLang } from '@/context/LanguageContext';
+import { supabase } from '@/lib/supabase';
+
+const DEFAULT = {
+  el: {
+    badge: '★ Αξιόπιστη Φυσιοθεραπεία στην Αθήνα',
+    title1: 'Εξειδικευμένη Φυσιοθεραπεία στην',
+    title2: 'Άνεση του Σπιτιού σας',
+    desc: 'Λάβετε επαγγελματική, εξατομικευμένη φυσιοθεραπεία εκεί που νιώθετε πιο άνετα.',
+    cta: 'Κλείστε Ραντεβού →', how: 'Πώς Λειτουργεί',
+    pills: ['✓ Πιστοποιημένοι Επαγγελματίες', '⏱ Ευέλικτο Ωράριο', '♥ Εξατομικευμένη Φροντίδα', '📅 Εύκολη Κράτηση'],
+    image_url: '',
+  },
+  en: {
+    badge: '★ Trusted Physiotherapy in Athens',
+    title1: 'Expert Physiotherapy in the',
+    title2: 'Comfort of Your Home',
+    desc: 'Receive professional, personalized physiotherapy treatment where you\'re most comfortable.',
+    cta: 'Request a Session →', how: 'How It Works',
+    pills: ['✓ Licensed Professionals', '⏱ Flexible Scheduling', '♥ Personalized Care', '📅 Easy Booking'],
+    image_url: '',
+  },
+};
 
 export default function Hero() {
   const { lang } = useLang();
-  const t = {
-    el: {
-      badge: '★ Αξιόπιστη Φυσιοθεραπεία στην Αθήνα',
-      title1: 'Εξειδικευμένη Φυσιοθεραπεία στην',
-      title2: 'Άνεση του Σπιτιού σας',
-      desc: 'Λάβετε επαγγελματική, εξατομικευμένη φυσιοθεραπεία εκεί που νιώθετε πιο άνετα. Οι αδειοδοτημένοι θεραπευτές μας φέρνουν την εξειδικευμένη φροντίδα κατευθείαν σε εσάς.',
-      cta: 'Κλείστε Ραντεβού →', how: 'Πώς Λειτουργεί',
-      pills: ['✓ Πιστοποιημένοι Επαγγελματίες', '⏱ Ευέλικτο Ωράριο', '♥ Εξατομικευμένη Φροντίδα', '📅 Εύκολη Κράτηση'],
-      photo: 'Φωτογραφία Θεραπείας',
-    },
-    en: {
-      badge: '★ Trusted Physiotherapy in Athens',
-      title1: 'Expert Physiotherapy in the',
-      title2: 'Comfort of Your Home',
-      desc: 'Receive professional, personalized physiotherapy treatment where you\'re most comfortable. Our licensed therapists bring expert care directly to you.',
-      cta: 'Request a Session →', how: 'How It Works',
-      pills: ['✓ Licensed Professionals', '⏱ Flexible Scheduling', '♥ Personalized Care', '📅 Easy Booking'],
-      photo: 'Therapy Photo',
-    },
-  };
-  const text = t[lang];
+  const [data, setData] = useState(DEFAULT);
+
+  useEffect(() => {
+    async function fetch() {
+      const { data: row } = await supabase
+        .from('site_content')
+        .select('content_el, content_en')
+        .eq('page', 'homepage')
+        .eq('section', 'hero')
+        .single();
+      if (row) setData({ el: row.content_el, en: row.content_en });
+    }
+    fetch();
+  }, []);
+
+  const text = data[lang] || DEFAULT[lang];
 
   return (
     <>
@@ -47,15 +65,19 @@ export default function Hero() {
             <a href="/how-it-works" style={{ background: 'transparent', color: '#1a2e44', padding: '12px 28px', borderRadius: 30, fontSize: 15, fontWeight: 500, textDecoration: 'none', border: '1.5px solid #1a2e44' }}>{text.how}</a>
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 36 }}>
-            {text.pills.map((pill) => (
+            {(text.pills || []).map((pill) => (
               <span key={pill} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px solid #dce6f0', padding: '7px 14px', borderRadius: 20, fontSize: 13, color: '#6b7a8d', boxShadow: '0 4px 24px rgba(26,46,68,0.08)' }}>{pill}</span>
             ))}
           </div>
         </div>
         <div className="hero-visual">
-          <div style={{ borderRadius: 24, boxShadow: '0 12px 48px rgba(26,46,68,0.14)', aspectRatio: '4/5', background: 'linear-gradient(135deg, #d4e8ff 0%, #b8d4f8 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2a6fdb', fontSize: 14 }}>
-            📷 {text.photo}
-          </div>
+          {text.image_url ? (
+            <img src={text.image_url} alt="Hero" style={{ width: '100%', borderRadius: 24, boxShadow: '0 12px 48px rgba(26,46,68,0.14)', objectFit: 'cover', aspectRatio: '4/5' }} />
+          ) : (
+            <div style={{ borderRadius: 24, boxShadow: '0 12px 48px rgba(26,46,68,0.14)', aspectRatio: '4/5', background: 'linear-gradient(135deg, #d4e8ff 0%, #b8d4f8 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2a6fdb', fontSize: 14 }}>
+              📷 Photo
+            </div>
+          )}
         </div>
       </section>
     </>
