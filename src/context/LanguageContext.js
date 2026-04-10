@@ -3,12 +3,17 @@ import { createContext, useContext, useState, useEffect } from 'react';
 
 const LanguageContext = createContext();
 
+function getInitialLang() {
+  if (typeof window === 'undefined') return 'el';
+  return localStorage.getItem('lang') || 'el';
+}
+
 export function LanguageProvider({ children }) {
-  const [lang, setLang] = useState('el');
+  const [lang, setLang] = useState(getInitialLang);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem('lang');
-    if (saved) setLang(saved);
+    setMounted(true);
   }, []);
 
   const toggleLang = () => {
@@ -16,6 +21,9 @@ export function LanguageProvider({ children }) {
     setLang(newLang);
     localStorage.setItem('lang', newLang);
   };
+
+  // Μην κάνεις render τίποτα μέχρι να διαβαστεί το localStorage
+  if (!mounted) return null;
 
   return (
     <LanguageContext.Provider value={{ lang, toggleLang }}>

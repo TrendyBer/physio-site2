@@ -24,21 +24,42 @@ const DEFAULT = {
   },
 };
 
+const CACHE_KEY = 'cms_homepage_whyus';
+const CACHE_TTL = 5 * 60 * 1000;
+
 export default function WhyUs() {
   const { lang } = useLang();
   const [data, setData] = useState(DEFAULT);
 
   useEffect(() => {
-    async function fetch() {
+    async function fetchData() {
+      try {
+        const cached = sessionStorage.getItem(CACHE_KEY);
+        if (cached) {
+          const { value, timestamp } = JSON.parse(cached);
+          if (Date.now() - timestamp < CACHE_TTL) {
+            setData(value);
+            return;
+          }
+        }
+      } catch (_) {}
+
       const { data: row } = await supabase
         .from('site_content')
         .select('content_el, content_en')
         .eq('page', 'homepage')
         .eq('section', 'whyus')
         .single();
-      if (row) setData({ el: row.content_el, en: row.content_en });
+
+      if (row) {
+        const value = { el: row.content_el, en: row.content_en };
+        setData(value);
+        try {
+          sessionStorage.setItem(CACHE_KEY, JSON.stringify({ value, timestamp: Date.now() }));
+        } catch (_) {}
+      }
     }
-    fetch();
+    fetchData();
   }, []);
 
   const text = data[lang] || DEFAULT[lang];
