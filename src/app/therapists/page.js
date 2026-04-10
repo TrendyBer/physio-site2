@@ -5,35 +5,73 @@ import Footer from '../../components/Footer';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
 
-function StarRating({ rating }) {
-  return (
-    <div style={{ display: 'flex', gap: 2 }}>
-      {[1,2,3,4,5].map(i => (
-        <span key={i} style={{ color: i <= rating ? '#f59e0b' : '#e2e8f0', fontSize: 14 }}>★</span>
-      ))}
-    </div>
-  );
-}
+const DEFAULT = {
+  hero: {
+    el: { badge: 'Για Φυσιοθεραπευτές', hero: 'Γίνετε μέλος του δικτύου μας', heroEm: 'Φυσιοθεραπευτών', heroDesc: 'Εφαρμόστε για να παρέχετε υπηρεσίες φυσιοθεραπείας στο σπίτι.', heroBtn: 'Γίνετε Θεραπευτής' },
+    en: { badge: 'For Physiotherapists', hero: 'Join Our Network of', heroEm: 'Physiotherapists', heroDesc: 'Apply to provide home physiotherapy services and connect with patients in your area.', heroBtn: 'Become a Therapist' },
+  },
+  whywork: {
+    el: { title: 'Γιατί οι Θεραπευτές επιλέγουν να', titleEm: 'Συνεργαστούν μαζί μας', desc: 'Γίνετε μέλος ενός αναπτυσσόμενου δικτύου.', benefits: [{ title: 'Ευέλικτο Ωράριο', desc: 'Επιλέξτε πότε εργάζεστε.' }, { title: 'Επαγγελματική Ανάπτυξη', desc: 'Ποικιλία περιστατικών.' }, { title: 'Εστίαση στη Φροντίδα', desc: 'Περισσότερος χρόνος στη θεραπεία.' }, { title: 'Εργασία στην Περιοχή σας', desc: 'Ασθενείς βάσει τοποθεσίας.' }] },
+    en: { title: 'Why Therapists Choose to', titleEm: 'Work With Us', desc: 'Join a growing network.', benefits: [{ title: 'Flexible schedule', desc: 'Choose when you work.' }, { title: 'Professional growth', desc: 'Variety of cases.' }, { title: 'Focus on care', desc: 'More time treating patients.' }, { title: 'Work locally', desc: 'Matched with nearby patients.' }] },
+  },
+  workflow: {
+    el: { title: 'Μια Απλή,', titleEm: 'Ευέλικτη Διαδικασία', desc: 'Πλήρης έλεγχος.', btn: 'Γίνετε Θεραπευτής', steps: [{ num: 'Βήμα 1', title: 'Λαμβάνετε αιτήματα', desc: 'Βάσει ειδικότητας.' }, { num: 'Βήμα 2', title: 'Επιλέγετε συνεδρίες', desc: 'Βάσει προγράμματος.' }, { num: 'Βήμα 3', title: 'Παρέχετε φροντίδα', desc: 'Στο σπίτι του ασθενή.' }, { num: 'Βήμα 4', title: 'Εμείς αναλαμβάνουμε τα υπόλοιπα', desc: 'Συντονισμός.' }] },
+    en: { title: 'A Simple,', titleEm: 'Flexible Workflow', desc: 'Full control.', btn: 'Become a Therapist', steps: [{ num: 'Step 1', title: 'Receive requests', desc: 'Based on specialization.' }, { num: 'Step 2', title: 'Choose sessions', desc: 'Fit your schedule.' }, { num: 'Step 3', title: 'Provide care', desc: 'At patient home.' }, { num: 'Step 4', title: 'We handle the rest', desc: 'Coordination.' }] },
+  },
+  platform: {
+    el: { title: 'Μια Πλατφόρμα που', titleEm: 'Μπορείτε να Εμπιστευτείτε', desc: 'Σχεδιασμένο για εσάς.', points: [{ title: 'Ασθενείς έτοιμοι να συμμετάσχουν', desc: 'Αφοσιωμένοι στην ανάρρωση.' }, { title: 'Χωρίς γραφειοκρατία', desc: 'Εστίαση στη θεραπεία.' }, { title: 'Σύγχρονη πρακτική', desc: 'Πέρα από παραδοσιακές κλινικές.' }] },
+    en: { title: 'A Platform', titleEm: 'You Can Trust', desc: 'Built to support how you work.', points: [{ title: 'Patients ready to engage', desc: 'Committed to recovery.' }, { title: 'No unnecessary admin', desc: 'Focus on treatment.' }, { title: 'Built for modern practice', desc: 'Beyond traditional clinics.' }] },
+  },
+};
+
+const FORM_TX = {
+  el: {
+    ourTherapists: 'Οι', ourTherapistsEm: 'Θεραπευτές μας',
+    ourTherapistsDesc: 'Γνωρίστε έμπειρους, αδειοδοτημένους επαγγελματίες.',
+    viewProfile: 'Δείτε Προφίλ →', noTherapists: 'Δεν υπάρχουν ενεργοί θεραπευτές ακόμα.',
+    formTitle: 'Αίτηση Συνεργασίας', formDesc: 'Συμπληρώστε τα στοιχεία σας.',
+    fullName: 'Ονοματεπώνυμο', email: 'Email', phone: 'Τηλέφωνο',
+    specialty: 'Ειδικότητα', specialtyPh: 'π.χ. Ορθοπαιδική',
+    experience: 'Χρόνια Εμπειρίας', area: 'Πόλη', areaPh: 'π.χ. Αθήνα',
+    bio: 'Περιγράψτε τον εαυτό σας', bioPh: 'Σύντομη περιγραφή...',
+    upload: 'Ανεβάστε CV, Πιστοποιητικά & Άδεια', uploadDesc: 'JPEG, PNG, PDF · max 100 MB', uploadBtn: 'Επιλογή Αρχείων',
+    terms: 'Αποδέχομαι τους ', termsLink: 'Όρους & Πολιτική Απορρήτου',
+    submit: 'Υποβολή Αίτησης', expOptions: ['1-2 χρόνια', '3-5 χρόνια', '5-10 χρόνια', '10+ χρόνια'],
+    successTitle: 'Ευχαριστούμε!', successDesc: 'Λάβαμε την αίτησή σας.',
+    successBtn: 'Εντάξει', required: 'Παρακαλώ συμπληρώστε όλα τα υποχρεωτικά πεδία.',
+  },
+  en: {
+    ourTherapists: 'Our', ourTherapistsEm: 'Therapists',
+    ourTherapistsDesc: 'Meet experienced, licensed professionals.',
+    viewProfile: 'View Profile →', noTherapists: 'No active therapists yet.',
+    formTitle: 'Apply to Join', formDesc: 'Fill in your details.',
+    fullName: 'Full Name', email: 'Email', phone: 'Phone',
+    specialty: 'Specialization', specialtyPh: 'e.g. Sports Rehabilitation',
+    experience: 'Years of Experience', area: 'City', areaPh: 'e.g. Athens',
+    bio: 'Tell Us About Yourself', bioPh: 'Briefly describe your background...',
+    upload: 'Upload CV, Certificates and License', uploadDesc: 'JPEG, PNG, PDF · max 100 MB', uploadBtn: 'Browse',
+    terms: 'I accept the ', termsLink: 'Terms and Privacy Policy',
+    submit: 'Submit Application', expOptions: ['1-2 years', '3-5 years', '5-10 years', '10+ years'],
+    successTitle: 'Thank you!', successDesc: 'We received your application.',
+    successBtn: 'Got it', required: 'Please fill in all required fields.',
+  },
+};
 
 function TherapistModal({ therapist, lang, onClose }) {
-  const bookLabel   = lang === 'el' ? 'Κλείστε Ραντεβού' : 'Book a Session';
-  const closeLabel  = lang === 'el' ? 'Κλείσιμο' : 'Close';
-  const bioLabel    = lang === 'el' ? 'Βιογραφικό' : 'About';
-  const areaLabel   = lang === 'el' ? 'Περιοχή' : 'Area';
-  const expLabel    = lang === 'el' ? 'Εμπειρία' : 'Experience';
-  const specLabel   = lang === 'el' ? 'Ειδικότητα' : 'Specialty';
-
+  const bookLabel  = lang === 'el' ? 'Κλείστε Ραντεβού' : 'Book a Session';
+  const closeLabel = lang === 'el' ? 'Κλείσιμο' : 'Close';
+  const bioLabel   = lang === 'el' ? 'Βιογραφικό' : 'About';
+  const areaLabel  = lang === 'el' ? 'Περιοχή' : 'Area';
+  const expLabel   = lang === 'el' ? 'Εμπειρία' : 'Experience';
+  const specLabel  = lang === 'el' ? 'Ειδικότητα' : 'Specialty';
   const handleBook = () => {
     localStorage.setItem('preferredTherapist', JSON.stringify({ id: therapist.id, name: therapist.name }));
     window.location.href = `/request?therapist=${encodeURIComponent(therapist.name)}`;
   };
-
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 620, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
-
-        {/* Header */}
         <div style={{ padding: '28px 28px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'flex-start', gap: 16 }}>
           {therapist.photo_url ? (
             <img src={therapist.photo_url} alt={therapist.name} style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
@@ -44,55 +82,28 @@ function TherapistModal({ therapist, lang, onClose }) {
           )}
           <div style={{ flex: 1 }}>
             <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1a2e44', marginBottom: 4 }}>{therapist.name}</h2>
-            <div style={{ fontSize: 14, color: '#6b7a8d', marginBottom: 8 }}>{therapist.specialty}</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <StarRating rating={5} />
-              <span style={{ color: '#6b7a8d', fontSize: 13 }}>{therapist.experience} {lang === 'el' ? 'χρόνια εμπειρίας' : 'years experience'}</span>
-            </div>
+            <div style={{ fontSize: 14, color: '#6b7a8d' }}>{therapist.specialty}</div>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#94a3b8', padding: 4 }}>✕</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#94a3b8' }}>✕</button>
         </div>
-
-        <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 24 }}>
-          {/* Info Grid */}
+        <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 20 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-            {[
-              { label: areaLabel, value: therapist.area || '—' },
-              { label: expLabel, value: therapist.experience ? `${therapist.experience} ${lang === 'el' ? 'χρόνια' : 'years'}` : '—' },
-              { label: specLabel, value: therapist.specialty || '—' },
-            ].map(({ label, value }) => (
+            {[{ label: areaLabel, value: therapist.area || '—' }, { label: expLabel, value: therapist.experience ? `${therapist.experience} ${lang === 'el' ? 'χρόνια' : 'years'}` : '—' }, { label: specLabel, value: therapist.specialty || '—' }].map(({ label, value }) => (
               <div key={label} style={{ background: '#f8fafb', borderRadius: 10, padding: '12px 14px' }}>
                 <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 4 }}>{label}</div>
                 <div style={{ fontSize: 13, color: '#1a2e44', fontWeight: 600 }}>{value}</div>
               </div>
             ))}
           </div>
-
-          {/* Bio */}
           {therapist.bio && (
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2e44', marginBottom: 10 }}>{bioLabel}</div>
               <p style={{ fontSize: 14, color: '#475569', lineHeight: 1.7, background: '#f8fafc', padding: '14px 16px', borderRadius: 10, borderLeft: '3px solid #dce6f0', margin: 0 }}>{therapist.bio}</p>
             </div>
           )}
-
-          {/* Specialties */}
-          {therapist.specialties && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {therapist.specialties.split(',').map(s => (
-                <span key={s} style={{ padding: '5px 12px', borderRadius: 20, fontSize: 12, background: '#e8f1fd', color: '#2a6fdb', border: '1px solid #c8dff9', fontWeight: 500 }}>{s.trim()}</span>
-              ))}
-            </div>
-          )}
-
-          {/* CTA */}
           <div style={{ display: 'flex', gap: 12, paddingTop: 8, borderTop: '1px solid #f1f5f9' }}>
-            <button onClick={handleBook} style={{ flex: 1, background: '#1a2e44', color: '#fff', padding: '13px', borderRadius: 30, fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
-              {bookLabel} →
-            </button>
-            <button onClick={onClose} style={{ flex: 1, background: 'transparent', color: '#1a2e44', padding: '13px', borderRadius: 30, fontSize: 14, fontWeight: 600, border: '1.5px solid #dce6f0', cursor: 'pointer', fontFamily: 'inherit' }}>
-              {closeLabel}
-            </button>
+            <button onClick={handleBook} style={{ flex: 1, background: '#1a2e44', color: '#fff', padding: '13px', borderRadius: 30, fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>{bookLabel} →</button>
+            <button onClick={onClose} style={{ flex: 1, background: 'transparent', color: '#1a2e44', padding: '13px', borderRadius: 30, fontSize: 14, fontWeight: 600, border: '1.5px solid #dce6f0', cursor: 'pointer', fontFamily: 'inherit' }}>{closeLabel}</button>
           </div>
         </div>
       </div>
@@ -100,104 +111,14 @@ function TherapistModal({ therapist, lang, onClose }) {
   );
 }
 
-const tx_page = {
-  el: {
-    badge: 'Για Φυσιοθεραπευτές', hero: 'Γίνετε μέλος του δικτύου μας', heroEm: 'Φυσιοθεραπευτών',
-    heroDesc: 'Εφαρμόστε για να παρέχετε υπηρεσίες φυσιοθεραπείας στο σπίτι και συνδεθείτε με ασθενείς στην περιοχή σας.',
-    heroBtn: 'Γίνετε Θεραπευτής',
-    ourTherapists: 'Οι', ourTherapistsEm: 'Θεραπευτές μας',
-    ourTherapistsDesc: 'Γνωρίστε έμπειρους, αδειοδοτημένους επαγγελματίες που παρέχουν εξατομικευμένη φροντίδα.',
-    viewProfile: 'Δείτε Προφίλ →',
-    noTherapists: 'Δεν υπάρχουν ενεργοί θεραπευτές ακόμα.',
-    whyTitle: 'Γιατί οι Θεραπευτές επιλέγουν να', whyTitleEm: 'Συνεργαστούν μαζί μας',
-    whyDesc: 'Γίνετε μέλος ενός αναπτυσσόμενου δικτύου φυσιοθεραπευτών.',
-    benefits: [
-      { title: 'Ευέλικτο Ωράριο', desc: 'Επιλέξτε πότε και πόσο συχνά εργάζεστε.' },
-      { title: 'Επαγγελματική Ανάπτυξη', desc: 'Εργαστείτε με ποικιλία περιστατικών.' },
-      { title: 'Εστίαση στη Φροντίδα', desc: 'Αφιερώστε περισσότερο χρόνο στη θεραπεία.' },
-      { title: 'Εργασία στην Περιοχή σας', desc: 'Σας ταιριάζουμε με ασθενείς βάσει τοποθεσίας.' },
-    ],
-    workflowTitle: 'Μια Απλή,', workflowTitleEm: 'Ευέλικτη Διαδικασία',
-    workflowDesc: 'Μια αναλυτική διαδικασία που σας δίνει πλήρη έλεγχο.',
-    workflowBtn: 'Γίνετε Θεραπευτής',
-    steps: [
-      { num: 'Βήμα 1', title: 'Λαμβάνετε αιτήματα', desc: 'Αντιστοιχιζόμαστε με ασθενείς βάσει ειδικότητας.' },
-      { num: 'Βήμα 2', title: 'Επιλέγετε συνεδρίες', desc: 'Αποδέχεστε μόνο αυτά που ταιριάζουν στο πρόγραμμά σας.' },
-      { num: 'Βήμα 3', title: 'Παρέχετε φροντίδα στο σπίτι', desc: 'Εξατομικευμένες συνεδρίες στο σπίτι του ασθενή.' },
-      { num: 'Βήμα 4', title: 'Εμείς αναλαμβάνουμε τα υπόλοιπα', desc: 'Αναλαμβάνουμε τον συντονισμό και την επικοινωνία.' },
-    ],
-    platformTitle: 'Μια Πλατφόρμα που', platformTitleEm: 'Μπορείτε να Εμπιστευτείτε',
-    platformDesc: 'Όλα είναι σχεδιασμένα για να υποστηρίζουν τον τρόπο εργασίας σας.',
-    platformPoints: [
-      { title: 'Ασθενείς έτοιμοι να συμμετάσχουν', desc: 'Εργαστείτε με ασθενείς αφοσιωμένους στην ανάρρωσή τους.' },
-      { title: 'Χωρίς περιττή γραφειοκρατία', desc: 'Εστιάστε στη θεραπεία ενώ εμείς αναλαμβάνουμε τα υπόλοιπα.' },
-      { title: 'Σχεδιασμένο για σύγχρονη πρακτική', desc: 'Ευέλικτος τρόπος εργασίας πέρα από παραδοσιακές κλινικές.' },
-    ],
-    formTitle: 'Αίτηση Συνεργασίας', formDesc: 'Συμπληρώστε τα στοιχεία σας και θα επικοινωνήσουμε μαζί σας.',
-    fullName: 'Ονοματεπώνυμο', email: 'Email', phone: 'Τηλέφωνο',
-    specialty: 'Ειδικότητα', specialtyPh: 'π.χ. Ορθοπαιδική, Νευρολογική',
-    experience: 'Χρόνια Εμπειρίας', area: 'Πόλη', areaPh: 'π.χ. Αθήνα',
-    postalCode: 'Ταχυδρομικός Κώδικας',
-    bio: 'Περιγράψτε τον εαυτό σας', bioPh: 'Περιγράψτε σύντομα την εμπειρία σας...',
-    upload: 'Ανεβάστε CV, Πιστοποιητικά & Άδεια', uploadDesc: 'JPEG, PNG, PDF, DOC · max 100 MB', uploadBtn: 'Επιλογή Αρχείων',
-    terms: 'Αποδέχομαι τους ', termsLink: 'Όρους & Πολιτική Απορρήτου',
-    submit: 'Υποβολή Αίτησης', expOptions: ['1-2 χρόνια', '3-5 χρόνια', '5-10 χρόνια', '10+ χρόνια'],
-    successTitle: 'Ευχαριστούμε!', successDesc: 'Λάβαμε την αίτησή σας και θα επικοινωνήσουμε σύντομα στο',
-    successBtn: 'Εντάξει', required: 'Παρακαλώ συμπληρώστε όλα τα υποχρεωτικά πεδία.',
-  },
-  en: {
-    badge: 'For Physiotherapists', hero: 'Join Our Network of', heroEm: 'Physiotherapists',
-    heroDesc: 'Apply to provide home physiotherapy services and connect with patients in your area.',
-    heroBtn: 'Become a Therapist',
-    ourTherapists: 'Our', ourTherapistsEm: 'Therapists',
-    ourTherapistsDesc: 'Meet experienced, licensed professionals providing personalized care at home.',
-    viewProfile: 'View Profile →',
-    noTherapists: 'No active therapists yet.',
-    whyTitle: 'Why Therapists Choose to', whyTitleEm: 'Work With Us',
-    whyDesc: 'Join a growing network of physiotherapists delivering high-quality care.',
-    benefits: [
-      { title: 'Flexible schedule', desc: 'Choose when and how often you work.' },
-      { title: 'Professional growth', desc: 'Work with a variety of cases.' },
-      { title: 'Focus on patient care', desc: 'Spend more time treating patients.' },
-      { title: 'Work in your local area', desc: 'We match you with nearby patients.' },
-    ],
-    workflowTitle: 'A Simple,', workflowTitleEm: 'Flexible Workflow',
-    workflowDesc: 'A streamlined process that gives you full control over your schedule.',
-    workflowBtn: 'Become a Therapist',
-    steps: [
-      { num: 'Step 1', title: 'Receive requests', desc: 'Get matched with patients based on your specialization.' },
-      { num: 'Step 2', title: 'Choose sessions', desc: 'Accept only sessions that fit your schedule.' },
-      { num: 'Step 3', title: 'Provide care at home', desc: 'Deliver personalized sessions at the patient\'s home.' },
-      { num: 'Step 4', title: 'We handle the rest', desc: 'We take care of coordination and communication.' },
-    ],
-    platformTitle: 'A Platform', platformTitleEm: 'You Can Trust',
-    platformDesc: 'Everything is built to support how you work.',
-    platformPoints: [
-      { title: 'Patients ready to engage', desc: 'Work with motivated patients committed to recovery.' },
-      { title: 'No unnecessary admin', desc: 'We handle scheduling and communication.' },
-      { title: 'Built for modern practice', desc: 'A flexible way of working beyond traditional clinics.' },
-    ],
-    formTitle: 'Apply to Join', formDesc: 'Fill in your details and we\'ll get in touch.',
-    fullName: 'Full Name', email: 'Email', phone: 'Phone',
-    specialty: 'Specialization', specialtyPh: 'e.g. Sports Rehabilitation',
-    experience: 'Years of Experience', area: 'City', areaPh: 'e.g. Athens',
-    postalCode: 'Zip Code',
-    bio: 'Tell Us About Yourself', bioPh: 'Briefly describe your background...',
-    upload: 'Upload Your CV, Certificates and License', uploadDesc: 'JPEG, PNG, PDF, DOC · max 100 MB', uploadBtn: 'Browse',
-    terms: 'I accept the ', termsLink: 'Terms and Privacy Policy',
-    submit: 'Submit Application', expOptions: ['1-2 years', '3-5 years', '5-10 years', '10+ years'],
-    successTitle: 'Thank you!', successDesc: 'We\'ll contact you at',
-    successBtn: 'Got it', required: 'Please fill in all required fields and accept the terms.',
-  },
-};
-
 export default function TherapistsPage() {
   const { lang } = useLang();
-  const tx = tx_page[lang];
+  const tx = FORM_TX[lang];
+  const [cms, setCms] = useState(DEFAULT);
   const [therapists, setTherapists] = useState([]);
   const [loadingTherapists, setLoadingTherapists] = useState(true);
   const [selectedTherapist, setSelectedTherapist] = useState(null);
-  const [form, setForm] = useState({ name: '', email: '', phone: '', specialty: '', experience: '', area: '', postalCode: '', bio: '' });
+  const [form, setForm] = useState({ name: '', email: '', phone: '', specialty: '', experience: '', area: '', bio: '' });
   const [files, setFiles] = useState([]);
   const [accepted, setAccepted] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -205,50 +126,44 @@ export default function TherapistsPage() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    async function fetchTherapists() {
-      const { data } = await supabase
-        .from('therapists')
-        .select('*')
-        .eq('status', 'active')
-        .order('created_at', { ascending: false });
-      if (data) setTherapists(data);
-      setLoadingTherapists(false);
-    }
+    fetchCMS();
     fetchTherapists();
   }, []);
+
+  async function fetchCMS() {
+    const { data } = await supabase.from('site_content').select('section, content_el, content_en').eq('page', 'therapists');
+    if (data) {
+      const merged = { ...DEFAULT };
+      data.forEach(row => { merged[row.section] = { el: row.content_el, en: row.content_en }; });
+      setCms(merged);
+    }
+  }
+
+  async function fetchTherapists() {
+    const { data } = await supabase.from('therapists').select('*').eq('status', 'active').order('created_at', { ascending: false });
+    if (data) setTherapists(data);
+    setLoadingTherapists(false);
+  }
 
   const handleChange = (e) => setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
   const handleFiles = (e) => setFiles(Array.from(e.target.files));
 
   const handleSubmit = async () => {
     if (!form.name || !form.email || !form.specialty || !accepted) { setError(true); return; }
-    setError(false);
-    setLoading(true);
-
-    const expNum = form.experience ? parseInt(form.experience) : null;
-
-    const { error: insertError } = await supabase
-      .from('therapists')
-      .insert([{
-        name: form.name,
-        email: form.email,
-        phone: form.phone,
-        specialty: form.specialty,
-        experience: expNum,
-        area: form.area,
-        bio: form.bio,
-        status: 'pending',
-      }]);
-
-    if (insertError) {
-      alert('Σφάλμα υποβολής: ' + insertError.message);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(false);
-    setSubmitted(true);
+    setError(false); setLoading(true);
+    const { error: insertError } = await supabase.from('therapists').insert([{
+      name: form.name, email: form.email, phone: form.phone,
+      specialty: form.specialty, experience: form.experience ? parseInt(form.experience) : null,
+      area: form.area, bio: form.bio, status: 'pending',
+    }]);
+    if (insertError) { alert('Σφάλμα: ' + insertError.message); setLoading(false); return; }
+    setLoading(false); setSubmitted(true);
   };
+
+  const hero     = cms.hero?.[lang]     || DEFAULT.hero[lang];
+  const whywork  = cms.whywork?.[lang]  || DEFAULT.whywork[lang];
+  const workflow = cms.workflow?.[lang] || DEFAULT.workflow[lang];
+  const platform = cms.platform?.[lang] || DEFAULT.platform[lang];
 
   return (
     <>
@@ -261,7 +176,7 @@ export default function TherapistsPage() {
         @media (max-width: 640px) { .th-grid { grid-template-columns: 1fr; } }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
         @media (max-width: 640px) { .form-row { grid-template-columns: 1fr; } }
-        .form-input { width: 100%; padding: 12px 14px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 14px; font-family: inherit; color: #1a2e44; outline: none; transition: border-color .2s; background: #fff; }
+        .form-input { width: 100%; padding: 12px 14px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 14px; font-family: inherit; color: #1a2e44; outline: none; background: #fff; }
         .form-input:focus { border-color: #2a6fdb; }
         .form-label { font-size: 13px; font-weight: 600; color: #1a2e44; margin-bottom: 6px; display: block; }
         .th-card { background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; padding: 24px; transition: all .3s; cursor: pointer; }
@@ -281,12 +196,12 @@ export default function TherapistsPage() {
       {/* HERO */}
       <section style={{ background: 'linear-gradient(135deg, #e8f3ff 0%, #f0f7ff 100%)', padding: '80px 24px 60px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: '#2a6fdb', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 16 }}>{tx.badge}</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#2a6fdb', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 16 }}>{hero.badge}</div>
           <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(32px, 4vw, 54px)', color: '#1a2e44', lineHeight: 1.15, marginBottom: 20 }}>
-            {tx.hero} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{tx.heroEm}</em>
+            {hero.hero} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{hero.heroEm}</em>
           </h1>
-          <p style={{ fontSize: 17, color: '#6b7a8d', maxWidth: 580, margin: '0 auto 32px' }}>{tx.heroDesc}</p>
-          <a href="#apply" style={{ display: 'inline-block', background: '#1a2e44', color: '#fff', padding: '14px 36px', borderRadius: 30, fontSize: 15, fontWeight: 600, textDecoration: 'none' }}>{tx.heroBtn}</a>
+          <p style={{ fontSize: 17, color: '#6b7a8d', maxWidth: 580, margin: '0 auto 32px' }}>{hero.heroDesc}</p>
+          <a href="#apply" style={{ display: 'inline-block', background: '#1a2e44', color: '#fff', padding: '14px 36px', borderRadius: 30, fontSize: 15, fontWeight: 600, textDecoration: 'none' }}>{hero.heroBtn}</a>
         </div>
       </section>
 
@@ -299,7 +214,6 @@ export default function TherapistsPage() {
             </h2>
             <p style={{ fontSize: 16, color: '#6b7a8d', maxWidth: 500 }}>{tx.ourTherapistsDesc}</p>
           </div>
-
           {loadingTherapists ? (
             <div style={{ textAlign: 'center', color: '#6b7a8d', padding: '40px 0' }}>Φόρτωση...</div>
           ) : therapists.length === 0 ? (
@@ -318,7 +232,7 @@ export default function TherapistsPage() {
                   <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2e44', marginBottom: 4 }}>{th.name}</div>
                   <div style={{ fontSize: 13, color: '#6b7a8d', marginBottom: 10 }}>{th.specialty}</div>
                   {th.area && <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 10 }}>📍 {th.area}</div>}
-                  {th.experience && <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 14 }}>⏱ {th.experience} {lang === 'el' ? 'χρόνια εμπειρίας' : 'years experience'}</div>}
+                  {th.experience && <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 14 }}>⏱ {th.experience} {lang === 'el' ? 'χρόνια' : 'years'}</div>}
                   <div style={{ fontSize: 13, color: '#2a6fdb', fontWeight: 600 }}>{tx.viewProfile}</div>
                 </div>
               ))}
@@ -332,22 +246,28 @@ export default function TherapistsPage() {
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
             <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(26px, 3vw, 40px)', color: '#1a2e44', marginBottom: 12 }}>
-              {tx.whyTitle} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{tx.whyTitleEm}</em>
+              {whywork.title} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{whywork.titleEm}</em>
             </h2>
-            <p style={{ fontSize: 16, color: '#6b7a8d', maxWidth: 520, margin: '0 auto' }}>{tx.whyDesc}</p>
+            <p style={{ fontSize: 16, color: '#6b7a8d', maxWidth: 520, margin: '0 auto' }}>{whywork.desc}</p>
           </div>
           <div className="why-grid-layout">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              {tx.benefits.slice(0, 2).map((b, i) => (
+              {(whywork.benefits || []).slice(0, 2).map((b, i) => (
                 <div key={i} className="benefit-card">
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2e44', marginBottom: 6 }}>{b.title}</div>
                   <div style={{ fontSize: 13, color: '#6b7a8d', lineHeight: 1.6 }}>{b.desc}</div>
                 </div>
               ))}
             </div>
-            <div className="why-center-img" style={{ width: 300, height: 380, borderRadius: 20, background: 'linear-gradient(135deg, #c8dff9, #a0c4f4)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2a6fdb', fontSize: 14 }}>📷 Photo</div>
+            <div className="why-center-img" style={{ width: 300, height: 380, borderRadius: 20, overflow: 'hidden', flexShrink: 0 }}>
+  {whywork.image_url ? (
+    <img src={whywork.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+  ) : (
+    <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #c8dff9, #a0c4f4)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2a6fdb', fontSize: 14 }}>📷 Photo</div>
+  )}
+</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              {tx.benefits.slice(2, 4).map((b, i) => (
+              {(whywork.benefits || []).slice(2, 4).map((b, i) => (
                 <div key={i} className="benefit-card">
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2e44', marginBottom: 6 }}>{b.title}</div>
                   <div style={{ fontSize: 13, color: '#6b7a8d', lineHeight: 1.6 }}>{b.desc}</div>
@@ -364,18 +284,18 @@ export default function TherapistsPage() {
           <div className="workflow-layout">
             <div>
               <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(26px, 3vw, 40px)', color: '#1a2e44', lineHeight: 1.2, marginBottom: 16 }}>
-                {tx.workflowTitle} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{tx.workflowTitleEm}</em>
+                {workflow.title} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{workflow.titleEm}</em>
               </h2>
-              <p style={{ fontSize: 15, color: '#6b7a8d', lineHeight: 1.7, marginBottom: 32 }}>{tx.workflowDesc}</p>
-              <a href="#apply" style={{ display: 'inline-block', background: '#1a2e44', color: '#fff', padding: '13px 32px', borderRadius: 30, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>{tx.workflowBtn}</a>
+              <p style={{ fontSize: 15, color: '#6b7a8d', lineHeight: 1.7, marginBottom: 32 }}>{workflow.desc}</p>
+              <a href="#apply" style={{ display: 'inline-block', background: '#1a2e44', color: '#fff', padding: '13px 32px', borderRadius: 30, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>{workflow.btn}</a>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
-              {tx.steps.map((step, i) => (
+              {(workflow.steps || []).map((step, i) => (
                 <div key={i}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: '#2a6fdb', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 4 }}>{step.num}</div>
                   <div style={{ fontSize: 18, fontWeight: 700, color: '#1a2e44', marginBottom: 6 }}>{step.title}</div>
                   <div style={{ fontSize: 14, color: '#6b7a8d', lineHeight: 1.6 }}>{step.desc}</div>
-                  {i < tx.steps.length - 1 && <div style={{ height: 1, background: '#e2e8f0', marginTop: 20 }} />}
+                  {i < (workflow.steps.length - 1) && <div style={{ height: 1, background: '#e2e8f0', marginTop: 20 }} />}
                 </div>
               ))}
             </div>
@@ -389,11 +309,11 @@ export default function TherapistsPage() {
           <div className="platform-layout">
             <div>
               <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(26px, 3vw, 40px)', color: '#1a2e44', lineHeight: 1.2, marginBottom: 16 }}>
-                {tx.platformTitle} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{tx.platformTitleEm}</em>
+                {platform.title} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{platform.titleEm}</em>
               </h2>
-              <p style={{ fontSize: 15, color: '#6b7a8d', lineHeight: 1.7, marginBottom: 32 }}>{tx.platformDesc}</p>
+              <p style={{ fontSize: 15, color: '#6b7a8d', lineHeight: 1.7, marginBottom: 32 }}>{platform.desc}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {tx.platformPoints.map((p, i) => (
+                {(platform.points || []).map((p, i) => (
                   <div key={i} className="platform-point">
                     <div style={{ width: 36, height: 36, borderRadius: 10, background: '#e8f1fd', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <div style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid #2a6fdb' }} />
@@ -453,7 +373,7 @@ export default function TherapistsPage() {
                       <div style={{ fontSize: 12, color: '#94a3b8' }}>{tx.uploadDesc}</div>
                     </div>
                   </div>
-                  <label style={{ background: '#fff', border: '1.5px solid #e2e8f0', borderRadius: 20, padding: '8px 20px', fontSize: 13, fontWeight: 600, color: '#1a2e44', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                  <label style={{ background: '#fff', border: '1.5px solid #e2e8f0', borderRadius: 20, padding: '8px 20px', fontSize: 13, fontWeight: 600, color: '#1a2e44', cursor: 'pointer' }}>
                     {tx.uploadBtn}
                     <input type="file" multiple accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" onChange={handleFiles} style={{ display: 'none' }} />
                   </label>
@@ -474,7 +394,6 @@ export default function TherapistsPage() {
         </div>
       </section>
 
-      {/* Success Modal */}
       {submitted && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}>
           <div style={{ background: '#fff', borderRadius: 20, padding: '48px 40px', maxWidth: 480, width: '100%', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
@@ -486,9 +405,7 @@ export default function TherapistsPage() {
         </div>
       )}
 
-      {selectedTherapist && (
-        <TherapistModal therapist={selectedTherapist} lang={lang} onClose={() => setSelectedTherapist(null)} />
-      )}
+      {selectedTherapist && <TherapistModal therapist={selectedTherapist} lang={lang} onClose={() => setSelectedTherapist(null)} />}
 
       <Footer />
     </>
