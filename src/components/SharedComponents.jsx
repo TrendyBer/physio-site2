@@ -1,6 +1,7 @@
 'use client';
 import { useLang } from '@/context/LanguageContext';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 
 const BLOG_SLUGS = {
   el: [
@@ -13,6 +14,50 @@ const BLOG_SLUGS = {
   ],
 };
 
+// ─── Shared settings hook ─────────────────────────────────────────────────────
+const CACHE_KEY = 'cms_platform_settings';
+const CACHE_TTL = 5 * 60 * 1000;
+
+const SETTING_DEFAULTS = {
+  platform_name: 'PhysioHome',
+  email: 'info@physiohome.gr',
+  phone: '+30 210 123 4567',
+  address: 'Αθήνα & Αττική, Ελλάδα',
+};
+
+function usePlatformSettings() {
+  const [settings, setSettings] = useState(SETTING_DEFAULTS);
+
+  useEffect(() => {
+    async function fetchSettings() {
+      try {
+        const cached = sessionStorage.getItem(CACHE_KEY);
+        if (cached) {
+          const { value, timestamp } = JSON.parse(cached);
+          if (Date.now() - timestamp < CACHE_TTL) {
+            setSettings(prev => ({ ...prev, ...value }));
+            return;
+          }
+        }
+      } catch (_) {}
+
+      const { data } = await supabase.from('platform_settings').select('key, value');
+      if (data) {
+        const s = {};
+        data.forEach(row => { s[row.key] = row.value; });
+        setSettings(prev => ({ ...prev, ...s }));
+        try {
+          sessionStorage.setItem(CACHE_KEY, JSON.stringify({ value: s, timestamp: Date.now() }));
+        } catch (_) {}
+      }
+    }
+    fetchSettings();
+  }, []);
+
+  return settings;
+}
+
+// ─── Partners ─────────────────────────────────────────────────────────────────
 export function Partners() {
   const { lang } = useLang();
   return (
@@ -29,6 +74,7 @@ export function Partners() {
   );
 }
 
+// ─── CtaBanner ────────────────────────────────────────────────────────────────
 export function CtaBanner() {
   const { lang } = useLang();
   const t = {
@@ -49,6 +95,7 @@ export function CtaBanner() {
   );
 }
 
+// ─── Blog ─────────────────────────────────────────────────────────────────────
 export function Blog() {
   const { lang } = useLang();
   const posts = BLOG_SLUGS[lang];
@@ -57,7 +104,6 @@ export function Blog() {
     en: { title: 'Physiotherapy', titleEm: 'Tips & Resources', desc: 'Explore expert advice, recovery tips, and practical guidance to support your recovery at home.', viewAll: 'View All Articles', readMore: 'Read More →' },
   };
   const text = t[lang];
-
   return (
     <>
       <style>{`.blog-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; } @media (max-width: 640px) { .blog-grid { grid-template-columns: 1fr; } } .blog-card-home { background: #fff; border-radius: 16px; border: 1px solid #dce6f0; overflow: hidden; transition: all .3s; text-decoration: none; color: inherit; display: block; } .blog-card-home:hover { box-shadow: 0 4px 24px rgba(26,46,68,0.08); transform: translateY(-4px); }`}</style>
@@ -91,6 +137,7 @@ export function Blog() {
   );
 }
 
+// ─── Faq ──────────────────────────────────────────────────────────────────────
 export function Faq() {
   const { lang } = useLang();
   const [open, setOpen] = useState(null);
@@ -148,13 +195,16 @@ export function Faq() {
   );
 }
 
+// ─── Contact ──────────────────────────────────────────────────────────────────
 export function Contact() {
   const { lang } = useLang();
+  const settings = usePlatformSettings();
+
   const t = {
     el: {
       title: 'Επικοινωνήστε', titleEm: 'μαζί μας',
       desc: 'Συμπληρώστε τη φόρμα και θα επικοινωνήσουμε μαζί σας εντός 24 ωρών.',
-      phone: 'Τηλέφωνο', area: 'Περιοχή Εξυπηρέτησης', areaVal: 'Αθήνα & Αττική',
+      phone: 'Τηλέφωνο', area: 'Περιοχή Εξυπηρέτησης',
       firstName: 'Όνομα', lastName: 'Επώνυμο', message: 'Μήνυμα',
       service: 'Υπηρεσία', selectService: 'Επιλέξτε Υπηρεσία',
       services: ['Μυοσκελετική Φυσιοθεραπεία', 'Μετεγχειρητική Αποκατάσταση', 'Αποκατάσταση Αθλητικών Τραυματισμών'],
@@ -163,7 +213,7 @@ export function Contact() {
     en: {
       title: 'Contact', titleEm: 'Us',
       desc: 'Fill out the form and we will get back to you within 24 hours.',
-      phone: 'Phone', area: 'Service Area', areaVal: 'Athens & Attica',
+      phone: 'Phone', area: 'Service Area',
       firstName: 'First Name', lastName: 'Last Name', message: 'Message',
       service: 'Service', selectService: 'Select Service',
       services: ['Musculoskeletal Physiotherapy', 'Post-Surgery Rehabilitation', 'Sports Injury Recovery'],
@@ -171,6 +221,7 @@ export function Contact() {
     },
   };
   const text = t[lang];
+
   return (
     <>
       <style>{`.contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: start; } .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; } @media (max-width: 768px) { .contact-grid { grid-template-columns: 1fr; gap: 32px; } .form-row { grid-template-columns: 1fr; } }`}</style>
@@ -183,17 +234,33 @@ export function Contact() {
               </h2>
               <p style={{ fontSize: 16, color: '#6b7a8d', marginBottom: 32 }}>{text.desc}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                {[{ icon: '✉', label: 'Email', value: 'info@physiohome.gr', href: 'mailto:info@physiohome.gr' }, { icon: '📞', label: text.phone, value: '+30 210 123 4567', href: 'tel:+302101234567' }, { icon: '📍', label: text.area, value: text.areaVal }].map((item) => (
-                  <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 12, background: '#e8f1fd', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>{item.icon}</div>
-                    <div>
-                      <div style={{ fontSize: 12, color: '#6b7a8d', marginBottom: 2 }}>{item.label}</div>
-                      {item.href ? <a href={item.href} style={{ fontWeight: 500, color: '#1a2e44', textDecoration: 'none' }}>{item.value}</a> : <span style={{ fontWeight: 500, color: '#1a2e44' }}>{item.value}</span>}
-                    </div>
+                {/* Email από settings */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: '#e8f1fd', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>✉</div>
+                  <div>
+                    <div style={{ fontSize: 12, color: '#6b7a8d', marginBottom: 2 }}>Email</div>
+                    <a href={`mailto:${settings.email}`} style={{ fontWeight: 500, color: '#1a2e44', textDecoration: 'none' }}>{settings.email}</a>
                   </div>
-                ))}
+                </div>
+                {/* Τηλέφωνο από settings */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: '#e8f1fd', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>📞</div>
+                  <div>
+                    <div style={{ fontSize: 12, color: '#6b7a8d', marginBottom: 2 }}>{text.phone}</div>
+                    <a href={`tel:${settings.phone}`} style={{ fontWeight: 500, color: '#1a2e44', textDecoration: 'none' }}>{settings.phone}</a>
+                  </div>
+                </div>
+                {/* Διεύθυνση από settings */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: '#e8f1fd', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>📍</div>
+                  <div>
+                    <div style={{ fontSize: 12, color: '#6b7a8d', marginBottom: 2 }}>{text.area}</div>
+                    <span style={{ fontWeight: 500, color: '#1a2e44' }}>{settings.address}</span>
+                  </div>
+                </div>
               </div>
             </div>
+
             <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #dce6f0', padding: 32 }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div className="form-row">
@@ -221,7 +288,8 @@ export function Contact() {
                   <label style={{ fontSize: 13, fontWeight: 500, color: '#1a2e44', display: 'block', marginBottom: 6 }}>{text.message}</label>
                   <textarea rows={4} style={{ width: '100%', padding: '12px 14px', border: '1px solid #dce6f0', borderRadius: 8, fontFamily: 'inherit', fontSize: 14, color: '#1a2e44', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
                 </div>
-                <button style={{ width: '100%', background: '#1a2e44', color: '#fff', padding: 14, borderRadius: 30, fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }} onClick={() => alert(text.successMsg)}>
+                <button style={{ width: '100%', background: '#1a2e44', color: '#fff', padding: 14, borderRadius: 30, fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+                  onClick={() => alert(text.successMsg)}>
                   {text.send}
                 </button>
               </div>
@@ -233,13 +301,17 @@ export function Contact() {
   );
 }
 
+// ─── Footer ───────────────────────────────────────────────────────────────────
 export function Footer() {
   const { lang } = useLang();
+  const settings = usePlatformSettings();
+
   const t = {
-    el: { desc: 'Επαγγελματική, εξατομικευμένη φυσιοθεραπεία στην άνεση του σπιτιού σας στην Αθήνα & Αττική.', menu: 'Μενού', legal: 'Νομικά', contact: 'Επικοινωνία', links: [['/how-it-works', 'Πώς Λειτουργεί'], ['/services', 'Υπηρεσίες'], ['/therapists', 'Θεραπευτές'], ['/blog', 'Blog'], ['/contact', 'Επικοινωνία']], legalLinks: [['#', 'Πολιτική Απορρήτου'], ['#', 'Όροι Χρήσης'], ['#', 'Πολιτική Cookies']], copyright: '© 2026 PhysioHome. Με επιφύλαξη παντός δικαιώματος.', area: 'Αθήνα & Αττική, Ελλάδα', privLinks: [['#', 'Απόρρητο'], ['#', 'Όροι'], ['#', 'Cookies']] },
-    en: { desc: 'Professional, personalized physiotherapy in the comfort of your home in Athens & Attica.', menu: 'Menu', legal: 'Legal', contact: 'Contact', links: [['/how-it-works', 'How It Works'], ['/services', 'Services'], ['/therapists', 'Therapists'], ['/blog', 'Blog'], ['/contact', 'Contact']], legalLinks: [['#', 'Privacy Policy'], ['#', 'Terms of Use'], ['#', 'Cookie Policy']], copyright: '© 2026 PhysioHome. All rights reserved.', area: 'Athens & Attica, Greece', privLinks: [['#', 'Privacy'], ['#', 'Terms'], ['#', 'Cookies']] },
+    el: { desc: 'Επαγγελματική, εξατομικευμένη φυσιοθεραπεία στην άνεση του σπιτιού σας.', menu: 'Μενού', legal: 'Νομικά', contact: 'Επικοινωνία', links: [['/how-it-works', 'Πώς Λειτουργεί'], ['/services', 'Υπηρεσίες'], ['/therapists', 'Θεραπευτές'], ['/blog', 'Blog'], ['/contact', 'Επικοινωνία']], legalLinks: [['#', 'Πολιτική Απορρήτου'], ['#', 'Όροι Χρήσης'], ['#', 'Πολιτική Cookies']], privLinks: [['#', 'Απόρρητο'], ['#', 'Όροι'], ['#', 'Cookies']] },
+    en: { desc: 'Professional, personalized physiotherapy in the comfort of your home.', menu: 'Menu', legal: 'Legal', contact: 'Contact', links: [['/how-it-works', 'How It Works'], ['/services', 'Services'], ['/therapists', 'Therapists'], ['/blog', 'Blog'], ['/contact', 'Contact']], legalLinks: [['#', 'Privacy Policy'], ['#', 'Terms of Use'], ['#', 'Cookie Policy']], privLinks: [['#', 'Privacy'], ['#', 'Terms'], ['#', 'Cookies']] },
   };
   const text = t[lang];
+
   return (
     <>
       <style>{`.footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 48px; } .footer-bottom { display: flex; align-items: center; justify-content: space-between; } @media (max-width: 1024px) { .footer-grid { grid-template-columns: 1fr 1fr; } } @media (max-width: 640px) { .footer-grid { grid-template-columns: 1fr; gap: 32px; } .footer-bottom { flex-direction: column; gap: 16px; text-align: center; } }`}</style>
@@ -248,7 +320,8 @@ export function Footer() {
           <div className="footer-grid">
             <div>
               <div style={{ fontFamily: 'Georgia, serif', fontSize: 22, fontWeight: 700, color: '#fff', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#2a6fdb', display: 'inline-block' }} />PhysioHome
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#2a6fdb', display: 'inline-block' }} />
+                {settings.platform_name}
               </div>
               <p style={{ fontSize: 14, lineHeight: 1.6 }}>{text.desc}</p>
             </div>
@@ -267,18 +340,24 @@ export function Footer() {
             <div>
               <h4 style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: '.08em', color: '#fff', marginBottom: 16, fontWeight: 600 }}>{text.contact}</h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {[{ icon: '✉', value: 'info@physiohome.gr', href: 'mailto:info@physiohome.gr' }, { icon: '📞', value: '+30 210 123 4567', href: 'tel:+302101234567' }, { icon: '📍', value: text.area }].map((item, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 14 }}>
-                    <span>{item.icon}</span>
-                    {item.href ? <a href={item.href} style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>{item.value}</a> : <span>{item.value}</span>}
-                  </div>
-                ))}
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 14 }}>
+                  <span>✉</span>
+                  <a href={`mailto:${settings.email}`} style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>{settings.email}</a>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 14 }}>
+                  <span>📞</span>
+                  <a href={`tel:${settings.phone}`} style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>{settings.phone}</a>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 14 }}>
+                  <span>📍</span>
+                  <span>{settings.address}</span>
+                </div>
               </div>
             </div>
           </div>
           <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 24 }}>
             <div className="footer-bottom">
-              <span style={{ fontSize: 13 }}>{text.copyright}</span>
+              <span style={{ fontSize: 13 }}>© {new Date().getFullYear()} {settings.platform_name}. {lang === 'el' ? 'Με επιφύλαξη παντός δικαιώματος.' : 'All rights reserved.'}</span>
               <div style={{ display: 'flex', gap: 24 }}>
                 {text.privLinks.map(([href, label]) => (<a key={label} href={href} style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>{label}</a>))}
               </div>
