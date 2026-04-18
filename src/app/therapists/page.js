@@ -5,6 +5,10 @@ import Footer from '../../components/Footer';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
 
+const CACHE_KEY_CMS = 'cms_therapists';
+const CACHE_KEY_TH = 'cms_therapists_list';
+const CACHE_TTL = 5 * 60 * 1000;
+
 const DEFAULT = {
   hero: {
     el: { badge: 'Για Φυσιοθεραπευτές', hero: 'Γίνετε μέλος του δικτύου μας', heroEm: 'Φυσιοθεραπευτών', heroDesc: 'Εφαρμόστε για να παρέχετε υπηρεσίες φυσιοθεραπείας στο σπίτι.', heroBtn: 'Γίνετε Θεραπευτής' },
@@ -37,8 +41,8 @@ const FORM_TX = {
     upload: 'Ανεβάστε CV, Πιστοποιητικά & Άδεια', uploadDesc: 'JPEG, PNG, PDF · max 100 MB', uploadBtn: 'Επιλογή Αρχείων',
     terms: 'Αποδέχομαι τους ', termsLink: 'Όρους & Πολιτική Απορρήτου',
     submit: 'Υποβολή Αίτησης', expOptions: ['1-2 χρόνια', '3-5 χρόνια', '5-10 χρόνια', '10+ χρόνια'],
-    successTitle: 'Ευχαριστούμε!', successDesc: 'Λάβαμε την αίτησή σας.',
-    successBtn: 'Εντάξει', required: 'Παρακαλώ συμπληρώστε όλα τα υποχρεωτικά πεδία.',
+    successTitle: 'Ευχαριστούμε!', successDesc: 'Λάβαμε την αίτησή σας.', successBtn: 'Εντάξει',
+    required: 'Παρακαλώ συμπληρώστε όλα τα υποχρεωτικά πεδία.',
   },
   en: {
     ourTherapists: 'Our', ourTherapistsEm: 'Therapists',
@@ -52,10 +56,22 @@ const FORM_TX = {
     upload: 'Upload CV, Certificates and License', uploadDesc: 'JPEG, PNG, PDF · max 100 MB', uploadBtn: 'Browse',
     terms: 'I accept the ', termsLink: 'Terms and Privacy Policy',
     submit: 'Submit Application', expOptions: ['1-2 years', '3-5 years', '5-10 years', '10+ years'],
-    successTitle: 'Thank you!', successDesc: 'We received your application.',
-    successBtn: 'Got it', required: 'Please fill in all required fields.',
+    successTitle: 'Thank you!', successDesc: 'We received your application.', successBtn: 'Got it',
+    required: 'Please fill in all required fields.',
   },
 };
+
+function ImgWithSkeleton({ src, alt, style, containerStyle }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <div style={{ position: 'relative', ...containerStyle }}>
+      {!loaded && (
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, #e8f1fd 25%, #d4e4f7 50%, #e8f1fd 75%)', backgroundSize: '600px 100%', animation: 'shimmer 1.5s infinite', borderRadius: 'inherit' }} />
+      )}
+      <img src={src} alt={alt || ''} onLoad={() => setLoaded(true)} style={{ ...style, display: loaded ? 'block' : 'none' }} />
+    </div>
+  );
+}
 
 function TherapistModal({ therapist, lang, onClose }) {
   const bookLabel  = lang === 'el' ? 'Κλείστε Ραντεβού' : 'Book a Session';
@@ -74,7 +90,9 @@ function TherapistModal({ therapist, lang, onClose }) {
       <div style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 620, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
         <div style={{ padding: '28px 28px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'flex-start', gap: 16 }}>
           {therapist.photo_url ? (
-            <img src={therapist.photo_url} alt={therapist.name} style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+            <ImgWithSkeleton src={therapist.photo_url} alt={therapist.name}
+              containerStyle={{ width: 72, height: 72, borderRadius: '50%', flexShrink: 0 }}
+              style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover' }} />
           ) : (
             <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'linear-gradient(135deg, #c8dff9, #a0c4f4)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, color: '#2a6fdb' }}>
               {therapist.name?.charAt(0)}
@@ -125,23 +143,40 @@ export default function TherapistsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
 
-  useEffect(() => {
-    fetchCMS();
-    fetchTherapists();
-  }, []);
+  useEffect(() => { fetchCMS(); fetchTherapists(); }, []);
 
   async function fetchCMS() {
+    try {
+      const cached = sessionStorage.getItem(CACHE_KEY_CMS);
+      if (cached) {
+        const { value, timestamp } = JSON.parse(cached);
+        if (Date.now() - timestamp < CACHE_TTL) { setCms(value); return; }
+      }
+    } catch (_) {}
+
     const { data } = await supabase.from('site_content').select('section, content_el, content_en').eq('page', 'therapists');
     if (data) {
       const merged = { ...DEFAULT };
       data.forEach(row => { merged[row.section] = { el: row.content_el, en: row.content_en }; });
       setCms(merged);
+      try { sessionStorage.setItem(CACHE_KEY_CMS, JSON.stringify({ value: merged, timestamp: Date.now() })); } catch (_) {}
     }
   }
 
   async function fetchTherapists() {
+    try {
+      const cached = sessionStorage.getItem(CACHE_KEY_TH);
+      if (cached) {
+        const { value, timestamp } = JSON.parse(cached);
+        if (Date.now() - timestamp < CACHE_TTL) { setTherapists(value); setLoadingTherapists(false); return; }
+      }
+    } catch (_) {}
+
     const { data } = await supabase.from('therapists').select('*').eq('status', 'active').order('created_at', { ascending: false });
-    if (data) setTherapists(data);
+    if (data) {
+      setTherapists(data);
+      try { sessionStorage.setItem(CACHE_KEY_TH, JSON.stringify({ value: data, timestamp: Date.now() })); } catch (_) {}
+    }
     setLoadingTherapists(false);
   }
 
@@ -189,6 +224,8 @@ export default function TherapistsPage() {
         @media (max-width: 768px) { .workflow-layout { grid-template-columns: 1fr; gap: 40px; } }
         .platform-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
         @media (max-width: 768px) { .platform-layout { grid-template-columns: 1fr; gap: 40px; } }
+        @keyframes shimmer { 0% { background-position: -600px 0; } 100% { background-position: 600px 0; } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
       `}</style>
 
       <Navbar />
@@ -215,7 +252,16 @@ export default function TherapistsPage() {
             <p style={{ fontSize: 16, color: '#6b7a8d', maxWidth: 500 }}>{tx.ourTherapistsDesc}</p>
           </div>
           {loadingTherapists ? (
-            <div style={{ textAlign: 'center', color: '#6b7a8d', padding: '40px 0' }}>Φόρτωση...</div>
+            /* Skeleton για therapist cards */
+            <div className="th-grid">
+              {[1,2,3,4].map(i => (
+                <div key={i} style={{ background: '#fff', borderRadius: 16, border: '1px solid #e2e8f0', padding: 24 }}>
+                  <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'linear-gradient(90deg, #e8f1fd 25%, #d4e4f7 50%, #e8f1fd 75%)', backgroundSize: '600px 100%', animation: 'shimmer 1.5s infinite', marginBottom: 16 }} />
+                  <div style={{ height: 16, borderRadius: 8, background: 'linear-gradient(90deg, #e8f1fd 25%, #d4e4f7 50%, #e8f1fd 75%)', backgroundSize: '600px 100%', animation: 'shimmer 1.5s infinite', marginBottom: 8 }} />
+                  <div style={{ height: 12, borderRadius: 8, background: 'linear-gradient(90deg, #e8f1fd 25%, #d4e4f7 50%, #e8f1fd 75%)', backgroundSize: '600px 100%', animation: 'shimmer 1.5s infinite', width: '60%' }} />
+                </div>
+              ))}
+            </div>
           ) : therapists.length === 0 ? (
             <div style={{ textAlign: 'center', color: '#6b7a8d', padding: '40px 0' }}>{tx.noTherapists}</div>
           ) : (
@@ -223,7 +269,9 @@ export default function TherapistsPage() {
               {therapists.map((th) => (
                 <div key={th.id} className="th-card" onClick={() => setSelectedTherapist(th)}>
                   {th.photo_url ? (
-                    <img src={th.photo_url} alt={th.name} style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover', marginBottom: 16 }} />
+                    <ImgWithSkeleton src={th.photo_url} alt={th.name}
+                      containerStyle={{ width: 72, height: 72, borderRadius: '50%', marginBottom: 16 }}
+                      style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover' }} />
                   ) : (
                     <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'linear-gradient(135deg, #c8dff9, #a0c4f4)', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, color: '#2a6fdb' }}>
                       {th.name?.charAt(0)}
@@ -260,12 +308,14 @@ export default function TherapistsPage() {
               ))}
             </div>
             <div className="why-center-img" style={{ width: 300, height: 380, borderRadius: 20, overflow: 'hidden', flexShrink: 0 }}>
-  {whywork.image_url ? (
-    <img src={whywork.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-  ) : (
-    <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #c8dff9, #a0c4f4)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2a6fdb', fontSize: 14 }}>📷 Photo</div>
-  )}
-</div>
+              {whywork.image_url ? (
+                <ImgWithSkeleton src={whywork.image_url}
+                  containerStyle={{ width: '100%', height: '100%', borderRadius: 20 }}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #c8dff9, #a0c4f4)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2a6fdb', fontSize: 14 }}>📷 Photo</div>
+              )}
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               {(whywork.benefits || []).slice(2, 4).map((b, i) => (
                 <div key={i} className="benefit-card">
@@ -406,7 +456,6 @@ export default function TherapistsPage() {
       )}
 
       {selectedTherapist && <TherapistModal therapist={selectedTherapist} lang={lang} onClose={() => setSelectedTherapist(null)} />}
-
       <Footer />
     </>
   );

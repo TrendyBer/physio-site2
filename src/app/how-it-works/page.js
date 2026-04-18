@@ -5,6 +5,9 @@ import Footer from '../../components/Footer';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
 
+const CACHE_KEY = 'cms_howitworks';
+const CACHE_TTL = 5 * 60 * 1000;
+
 const DEFAULT = {
   hero: {
     el: {
@@ -26,9 +29,8 @@ const DEFAULT = {
   },
   steps: {
     el: {
-      stepsTitle: 'Απλά Βήματα για να',
-      stepsTitleEm: 'Ξεκινήσετε',
-      stepsDesc: 'Μια απλή, καθοδηγούμενη διαδικασία σχεδιασμένη να σας συνδέσει με τη σωστή φροντίδα — χωρίς άγχος ή πολυπλοκότητα.',
+      stepsTitle: 'Απλά Βήματα για να', stepsTitleEm: 'Ξεκινήσετε',
+      stepsDesc: 'Μια απλή, καθοδηγούμενη διαδικασία σχεδιασμένη να σας συνδέσει με τη σωστή φροντίδα.',
       stepsBtn: 'Κλείστε Ραντεβού',
       steps: [
         { num: 'Step 1', title: 'Υποβάλετε αίτημα', desc: 'Συμπληρώστε μια σύντομη φόρμα με τα στοιχεία και την κατάστασή σας.' },
@@ -37,8 +39,7 @@ const DEFAULT = {
       ],
     },
     en: {
-      stepsTitle: 'Simple Steps to',
-      stepsTitleEm: 'Get Started',
+      stepsTitle: 'Simple Steps to', stepsTitleEm: 'Get Started',
       stepsDesc: 'A simple, guided process designed to connect you with the right care — without stress or complexity.',
       stepsBtn: 'Request a Session',
       steps: [
@@ -50,9 +51,8 @@ const DEFAULT = {
   },
   whypatients: {
     el: {
-      whyTitle: 'Γιατί οι Ασθενείς',
-      whyTitleEm: 'μας Επιλέγουν',
-      whyDesc: 'Εστιάζουμε σε ό,τι πραγματικά έχει σημασία: σταθερή ανάρρωση, εξατομικευμένη προσοχή και μια άνετη, συνεπής εμπειρία.',
+      whyTitle: 'Γιατί οι Ασθενείς', whyTitleEm: 'μας Επιλέγουν',
+      whyDesc: 'Εστιάζουμε σε ό,τι πραγματικά έχει σημασία: σταθερή ανάρρωση, εξατομικευμένη προσοχή.',
       whyPoints: [
         { icon: '🎓', title: 'Πιστοποιημένοι επαγγελματίες φυσιοθεραπείας', desc: 'Έμπειροι ειδικοί που παρέχουν αξιόπιστη φροντίδα στην άνεση του σπιτιού σας.' },
         { icon: '❤️', title: 'Εξατομικευμένη φροντίδα για κάθε ασθενή', desc: 'Τα πλάνα θεραπείας προσαρμόζονται στην κατάσταση και τους στόχους κάθε ασθενή.' },
@@ -60,9 +60,8 @@ const DEFAULT = {
       ],
     },
     en: {
-      whyTitle: 'Why Patients',
-      whyTitleEm: 'Choose Us',
-      whyDesc: 'We focus on what truly matters: steady recovery, personalized attention, and a comfortable, consistent experience.',
+      whyTitle: 'Why Patients', whyTitleEm: 'Choose Us',
+      whyDesc: 'We focus on what truly matters: steady recovery, personalized attention, and a comfortable experience.',
       whyPoints: [
         { icon: '🎓', title: 'Certified physiotherapy professionals', desc: 'Experienced specialists delivering trusted care in the comfort of your home.' },
         { icon: '❤️', title: 'Personalized care for every patient', desc: 'Treatment plans are adapted to each patient\'s condition and recovery goals.' },
@@ -72,9 +71,8 @@ const DEFAULT = {
   },
   whyhome: {
     el: {
-      homeTitle: 'Γιατί η Θεραπεία στο Σπίτι',
-      homeTitleEm: 'Είναι πιο Πρακτική',
-      homeDesc: 'Η υπηρεσία μας είναι σχεδιασμένη ώστε η φυσιοθεραπεία στο σπίτι να αισθάνεται απλή, υποστηρικτική και επαγγελματική.',
+      homeTitle: 'Γιατί η Θεραπεία στο Σπίτι', homeTitleEm: 'Είναι πιο Πρακτική',
+      homeDesc: 'Η υπηρεσία μας είναι σχεδιασμένη ώστε η φυσιοθεραπεία στο σπίτι να αισθάνεται απλή και επαγγελματική.',
       homePoints: [
         { title: 'Το δικό σας περιβάλλον', desc: 'Ασκήσεις και συμβουλές προσαρμοσμένες στον χώρο διαβίωσής σας.' },
         { title: 'Καθημερινό πλαίσιο κίνησης', desc: 'Η θεραπεία αντικατοπτρίζει τον τρόπο που κινείστε στην καθημερινή ζωή.' },
@@ -83,8 +81,7 @@ const DEFAULT = {
       ],
     },
     en: {
-      homeTitle: 'Why Home-Based Treatment',
-      homeTitleEm: 'Feels More Practical',
+      homeTitle: 'Why Home-Based Treatment', homeTitleEm: 'Feels More Practical',
       homeDesc: 'Our service is designed to make physiotherapy at home feel simple, supportive, and professional.',
       homePoints: [
         { title: 'Your real environment', desc: 'Exercises and advice adapted to your actual living space.' },
@@ -96,12 +93,9 @@ const DEFAULT = {
   },
   comparison: {
     el: {
-      compTitle: 'Κλινική ή',
-      compTitleEm: 'Φροντίδα στο Σπίτι;',
-      compDesc: 'Και οι δύο επιλογές μπορούν να υποστηρίξουν την ανάρρωση, αλλά η φυσιοθεραπεία στο σπίτι προσφέρει επιπλέον άνεση.',
-      compBtn: 'Κλείστε Ραντεβού',
-      compHome: 'Φυσιοθεραπεία στο σπίτι',
-      compClinic: 'Κλινική',
+      compTitle: 'Κλινική ή', compTitleEm: 'Φροντίδα στο Σπίτι;',
+      compDesc: 'Η φυσιοθεραπεία στο σπίτι προσφέρει επιπλέον άνεση και εξατομικευμένη προσοχή.',
+      compBtn: 'Κλείστε Ραντεβού', compHome: 'Φυσιοθεραπεία στο σπίτι', compClinic: 'Κλινική',
       compRows: [
         { label: 'Ευκολία', home: 'Φροντίδα στο σπίτι σας', clinic: 'Απαιτείται μετακίνηση' },
         { label: 'Ευελιξία', home: 'Ραντεβού που ταιριάζουν στο πρόγραμμά σας', clinic: 'Πιο σταθερές επιλογές' },
@@ -111,12 +105,9 @@ const DEFAULT = {
       ],
     },
     en: {
-      compTitle: 'Clinic Visit or',
-      compTitleEm: 'Care at Home?',
-      compDesc: 'Both options can support recovery, but home physiotherapy offers added comfort and one-to-one attention.',
-      compBtn: 'Request a Session',
-      compHome: 'At-home physiotherapy',
-      compClinic: 'Clinic-based care',
+      compTitle: 'Clinic Visit or', compTitleEm: 'Care at Home?',
+      compDesc: 'Home physiotherapy offers added comfort and one-to-one attention.',
+      compBtn: 'Request a Session', compHome: 'At-home physiotherapy', compClinic: 'Clinic-based care',
       compRows: [
         { label: 'Convenience', home: 'Care delivered to your home', clinic: 'Travel to a clinic required' },
         { label: 'Flexibility', home: 'Appointments that suit your routine', clinic: 'More fixed scheduling options' },
@@ -127,13 +118,12 @@ const DEFAULT = {
     },
   },
   cta: {
-    el: { ctaTitle: 'Ξεκινήστε με μια Δωρεάν Αξιολόγηση', ctaDesc: 'Δεν είστε σίγουροι ποια υπηρεσία σας ταιριάζει; Θα αξιολογήσουμε τις ανάγκες σας και θα δημιουργήσουμε ένα εξατομικευμένο πλάνο θεραπείας.', ctaBtn: 'Δωρεάν Αξιολόγηση' },
+    el: { ctaTitle: 'Ξεκινήστε με μια Δωρεάν Αξιολόγηση', ctaDesc: 'Δεν είστε σίγουροι ποια υπηρεσία σας ταιριάζει; Θα αξιολογήσουμε τις ανάγκες σας.', ctaBtn: 'Δωρεάν Αξιολόγηση' },
     en: { ctaTitle: 'Start With a Free Assessment', ctaDesc: 'Not sure which service is right for you? We\'ll evaluate your needs and create a personalized treatment plan.', ctaBtn: 'Book Free Assessment' },
   },
   faq: {
     el: {
-      faqTitle: 'Συχνές Ερωτήσεις',
-      faqTitleEm: '',
+      faqTitle: 'Συχνές Ερωτήσεις', faqTitleEm: '',
       faqDesc: 'Δεν βρίσκετε αυτό που ψάχνετε; Είμαστε εδώ να βοηθήσουμε.',
       faqBtn: 'Επικοινωνήστε μαζί μας',
       faqs: [
@@ -145,8 +135,7 @@ const DEFAULT = {
       ],
     },
     en: {
-      faqTitle: 'Frequently Asked',
-      faqTitleEm: 'Questions',
+      faqTitle: 'Frequently Asked', faqTitleEm: 'Questions',
       faqDesc: 'Can\'t find what you\'re looking for? We\'re happy to help.',
       faqBtn: 'Contact Us',
       faqs: [
@@ -160,6 +149,19 @@ const DEFAULT = {
   },
 };
 
+function ImgWithSkeleton({ src, alt, style }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      {!loaded && (
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, #e8f1fd 25%, #d4e4f7 50%, #e8f1fd 75%)', backgroundSize: '600px 100%', animation: 'shimmer 1.5s infinite', borderRadius: 'inherit' }} />
+      )}
+      <img src={src} alt={alt || ''} onLoad={() => setLoaded(true)}
+        style={{ ...style, display: loaded ? 'block' : 'none' }} />
+    </div>
+  );
+}
+
 export default function HowItWorksPage() {
   const { lang } = useLang();
   const [cms, setCms] = useState(DEFAULT);
@@ -168,10 +170,15 @@ export default function HowItWorksPage() {
   useEffect(() => { fetchCMS(); }, []);
 
   async function fetchCMS() {
-    const { data } = await supabase
-      .from('site_content')
-      .select('section, content_el, content_en')
-      .eq('page', 'howitworks');
+    try {
+      const cached = sessionStorage.getItem(CACHE_KEY);
+      if (cached) {
+        const { value, timestamp } = JSON.parse(cached);
+        if (Date.now() - timestamp < CACHE_TTL) { setCms(value); return; }
+      }
+    } catch (_) {}
+
+    const { data } = await supabase.from('site_content').select('section, content_el, content_en').eq('page', 'howitworks');
     if (data) {
       const merged = { ...DEFAULT };
       data.forEach(row => {
@@ -180,17 +187,17 @@ export default function HowItWorksPage() {
         }
       });
       setCms(merged);
+      try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ value: merged, timestamp: Date.now() })); } catch (_) {}
     }
   }
 
-  // Helpers to get content with fallback
-  const hero       = cms.hero?.[lang]       || DEFAULT.hero[lang];
-  const steps      = cms.steps?.[lang]      || DEFAULT.steps[lang];
-  const whypatients= cms.whypatients?.[lang]|| DEFAULT.whypatients[lang];
-  const whyhome    = cms.whyhome?.[lang]    || DEFAULT.whyhome[lang];
-  const comparison = cms.comparison?.[lang] || DEFAULT.comparison[lang];
-  const cta        = cms.cta?.[lang]        || DEFAULT.cta[lang];
-  const faq        = cms.faq?.[lang]        || DEFAULT.faq[lang];
+  const hero        = cms.hero?.[lang]        || DEFAULT.hero[lang];
+  const steps       = cms.steps?.[lang]       || DEFAULT.steps[lang];
+  const whypatients = cms.whypatients?.[lang] || DEFAULT.whypatients[lang];
+  const whyhome     = cms.whyhome?.[lang]     || DEFAULT.whyhome[lang];
+  const comparison  = cms.comparison?.[lang]  || DEFAULT.comparison[lang];
+  const cta         = cms.cta?.[lang]         || DEFAULT.cta[lang];
+  const faq         = cms.faq?.[lang]         || DEFAULT.faq[lang];
 
   return (
     <>
@@ -203,11 +210,12 @@ export default function HowItWorksPage() {
         .faq-item { border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; cursor: pointer; }
         .faq-item + .faq-item { margin-top: 12px; }
         .comp-row:hover { background: #f8fafb; }
+        @keyframes shimmer { 0% { background-position: -600px 0; } 100% { background-position: 600px 0; } }
       `}</style>
 
       <Navbar />
 
-      {/* ── HERO ── */}
+      {/* HERO */}
       <section style={{ background: 'linear-gradient(135deg, #e8f3ff 0%, #f0f7ff 100%)', padding: '80px 24px 60px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: '#2a6fdb', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 16 }}>{hero.badge}</div>
@@ -224,7 +232,7 @@ export default function HowItWorksPage() {
         </div>
       </section>
 
-      {/* ── STEPS ── */}
+      {/* STEPS */}
       <section style={{ background: 'linear-gradient(135deg, #f0f7ff 0%, #e8f3ff 100%)', padding: '72px 24px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80, alignItems: 'center' }}>
           <div>
@@ -247,7 +255,7 @@ export default function HowItWorksPage() {
         </div>
       </section>
 
-      {/* ── WHY PATIENTS CHOOSE US ── */}
+      {/* WHY PATIENTS CHOOSE US */}
       <section style={{ background: '#f8fafb', padding: '72px 24px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 60, alignItems: 'start', marginBottom: 56 }}>
@@ -257,22 +265,20 @@ export default function HowItWorksPage() {
             <p style={{ fontSize: 15, color: '#6b7a8d', lineHeight: 1.7, paddingTop: 8 }}>{whypatients.whyDesc}</p>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 28, alignItems: 'start' }}>
-            {/* Left point */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: 24 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2e44', marginBottom: 8 }}>{(whypatients.whyPoints || [])[0]?.title}</div>
                 <div style={{ fontSize: 13, color: '#6b7a8d', lineHeight: 1.6 }}>{(whypatients.whyPoints || [])[0]?.desc}</div>
               </div>
             </div>
-            {/* Center image */}
+            {/* Center image με skeleton */}
             <div style={{ borderRadius: 20, overflow: 'hidden', aspectRatio: '3/4' }}>
               {whypatients.image_url ? (
-                <img src={whypatients.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <ImgWithSkeleton src={whypatients.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
                 <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #c8dff9, #a0c4f4)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2a6fdb', fontSize: 14 }}>📷 Photo</div>
               )}
             </div>
-            {/* Right points */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               {(whypatients.whyPoints || []).slice(1).map((p, i) => (
                 <div key={i} style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: 24 }}>
@@ -285,7 +291,7 @@ export default function HowItWorksPage() {
         </div>
       </section>
 
-      {/* ── WHY HOME BASED ── */}
+      {/* WHY HOME BASED */}
       <section style={{ background: '#fff', padding: '72px 24px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80, alignItems: 'center' }}>
           <div>
@@ -302,9 +308,10 @@ export default function HowItWorksPage() {
               ))}
             </div>
           </div>
+          {/* Right image με skeleton */}
           <div style={{ borderRadius: 20, overflow: 'hidden', aspectRatio: '4/3' }}>
             {whyhome.image_url ? (
-              <img src={whyhome.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <ImgWithSkeleton src={whyhome.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
               <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #c8dff9, #a0c4f4)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2a6fdb', fontSize: 14 }}>📷 Photo</div>
             )}
@@ -312,7 +319,7 @@ export default function HowItWorksPage() {
         </div>
       </section>
 
-      {/* ── COMPARISON TABLE ── */}
+      {/* COMPARISON TABLE */}
       <section style={{ background: '#f8fafb', padding: '72px 24px' }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
@@ -341,7 +348,7 @@ export default function HowItWorksPage() {
         </div>
       </section>
 
-      {/* ── CTA BANNER ── */}
+      {/* CTA BANNER */}
       <section style={{ padding: '40px 24px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ background: '#1a2e44', borderRadius: 20, padding: '48px 56px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, alignItems: 'center' }}>
@@ -354,7 +361,7 @@ export default function HowItWorksPage() {
         </div>
       </section>
 
-      {/* ── FAQ ── */}
+      {/* FAQ */}
       <section style={{ background: 'linear-gradient(135deg, #f0f7ff 0%, #e8f3ff 100%)', padding: '72px 24px 80px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 80, alignItems: 'start' }}>
           <div>
@@ -371,9 +378,7 @@ export default function HowItWorksPage() {
                   <span style={{ fontSize: 15, fontWeight: openFaq === i ? 700 : 500, color: '#1a2e44' }}>{f.q}</span>
                   <span style={{ fontSize: 20, color: '#2a6fdb', flexShrink: 0, transition: 'transform .2s', transform: openFaq === i ? 'rotate(45deg)' : 'none' }}>+</span>
                 </div>
-                {openFaq === i && (
-                  <div style={{ padding: '0 24px 18px', fontSize: 14, color: '#6b7a8d', lineHeight: 1.7 }}>{f.a}</div>
-                )}
+                {openFaq === i && <div style={{ padding: '0 24px 18px', fontSize: 14, color: '#6b7a8d', lineHeight: 1.7 }}>{f.a}</div>}
               </div>
             ))}
           </div>
