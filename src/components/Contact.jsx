@@ -1,6 +1,40 @@
 'use client';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+
+const CACHE_KEY = 'cms_platform_settings';
+const CACHE_TTL = 5 * 60 * 1000;
+
+const DEFAULTS = {
+  email: 'info@physiohome.gr',
+  phone: '+30 210 123 4567',
+  address: 'Αθήνα & Αττική',
+};
 
 export default function Contact() {
+  const [settings, setSettings] = useState(DEFAULTS);
+
+  useEffect(() => {
+    async function fetchSettings() {
+      try {
+        const cached = sessionStorage.getItem(CACHE_KEY);
+        if (cached) {
+          const { value, timestamp } = JSON.parse(cached);
+          if (Date.now() - timestamp < CACHE_TTL) { setSettings(prev => ({ ...prev, ...value })); return; }
+        }
+      } catch (_) {}
+
+      const { data } = await supabase.from('platform_settings').select('key, value');
+      if (data) {
+        const s = {};
+        data.forEach(row => { s[row.key] = row.value; });
+        setSettings(prev => ({ ...prev, ...s }));
+        try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ value: s, timestamp: Date.now() })); } catch (_) {}
+      }
+    }
+    fetchSettings();
+  }, []);
+
   return (
     <>
       <style>{`
@@ -24,22 +58,27 @@ export default function Contact() {
                 Συμπληρώστε τη φόρμα και θα επικοινωνήσουμε μαζί σας εντός 24 ωρών για να κλείσουμε τη συνεδρία σας.
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                {[
-                  { icon: '✉', label: 'Email', value: 'info@physiohome.gr', href: 'mailto:info@physiohome.gr' },
-                  { icon: '📞', label: 'Τηλέφωνο', value: '+30 210 123 4567', href: 'tel:+302101234567' },
-                  { icon: '📍', label: 'Περιοχή Εξυπηρέτησης', value: 'Αθήνα & Αττική' },
-                ].map((item) => (
-                  <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 12, background: '#e8f1fd', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>{item.icon}</div>
-                    <div>
-                      <div style={{ fontSize: 12, color: '#6b7a8d', marginBottom: 2 }}>{item.label}</div>
-                      {item.href
-                        ? <a href={item.href} style={{ fontWeight: 500, color: '#1a2e44', textDecoration: 'none' }}>{item.value}</a>
-                        : <span style={{ fontWeight: 500, color: '#1a2e44' }}>{item.value}</span>
-                      }
-                    </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: '#e8f1fd', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>✉</div>
+                  <div>
+                    <div style={{ fontSize: 12, color: '#6b7a8d', marginBottom: 2 }}>Email</div>
+                    <a href={`mailto:${settings.email}`} style={{ fontWeight: 500, color: '#1a2e44', textDecoration: 'none' }}>{settings.email}</a>
                   </div>
-                ))}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: '#e8f1fd', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>📞</div>
+                  <div>
+                    <div style={{ fontSize: 12, color: '#6b7a8d', marginBottom: 2 }}>Τηλέφωνο</div>
+                    <a href={`tel:${settings.phone}`} style={{ fontWeight: 500, color: '#1a2e44', textDecoration: 'none' }}>{settings.phone}</a>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: '#e8f1fd', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>📍</div>
+                  <div>
+                    <div style={{ fontSize: 12, color: '#6b7a8d', marginBottom: 2 }}>Περιοχή Εξυπηρέτησης</div>
+                    <span style={{ fontWeight: 500, color: '#1a2e44' }}>{settings.address}</span>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -54,10 +93,7 @@ export default function Contact() {
                     </div>
                   ))}
                 </div>
-                {[
-                  { label: 'Email', type: 'email' },
-                  { label: 'Τηλέφωνο', type: 'tel' },
-                ].map((field) => (
+                {[{ label: 'Email', type: 'email' }, { label: 'Τηλέφωνο', type: 'tel' }].map((field) => (
                   <div key={field.label}>
                     <label style={{ fontSize: 13, fontWeight: 500, color: '#1a2e44', display: 'block', marginBottom: 6 }}>{field.label}</label>
                     <input type={field.type} style={{ width: '100%', padding: '12px 14px', border: '1px solid #dce6f0', borderRadius: 8, fontFamily: 'inherit', fontSize: 14, color: '#1a2e44', outline: 'none', boxSizing: 'border-box' }} />
