@@ -2,18 +2,6 @@
 import { useLang } from '@/context/LanguageContext';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import BookingButton from './BookingButton';
-
-const BLOG_SLUGS = {
-  el: [
-    { slug: 'how-home-physiotherapy-can-help-with-back-and-neck-pain', cat: 'Συμβουλές Ανάρρωσης', time: '5 λεπτά ανάγνωση', title: 'Πώς να υποστηρίξετε την ανάρρωση από τραυματισμό στο σπίτι', desc: 'Απλές συνήθειες και πρακτικά βήματα που μπορούν να κάνουν τη διαδικασία ανάρρωσής σας πιο ομαλή.' },
-    { slug: 'simple-ways-to-improve-mobility-and-balance-at-home', cat: 'Γιατί να μας επιλέξετε', time: '4 λεπτά ανάγνωση', title: 'Γιατί η φυσιοθεραπεία στο σπίτι είναι πιο αποτελεσματική', desc: 'Μάθετε γιατί η αποκατάσταση στο οικείο σας περιβάλλον δίνει καλύτερα αποτελέσματα.' },
-  ],
-  en: [
-    { slug: 'how-home-physiotherapy-can-help-with-back-and-neck-pain', cat: 'Recovery Tips', time: '5 min read', title: 'How to support recovery after an injury at home', desc: 'Simple habits and practical steps that can help make your recovery process safer, smoother, and more effective.' },
-    { slug: 'simple-ways-to-improve-mobility-and-balance-at-home', cat: 'Why Choose Us', time: '4 min read', title: 'Why home physiotherapy is more effective than clinic visits', desc: 'Learn why recovering in your familiar environment with a dedicated physiotherapist gives better results.' },
-  ],
-};
 
 // ─── Shared settings hook ─────────────────────────────────────────────────────
 const CACHE_KEY = 'cms_platform_settings';
@@ -90,9 +78,7 @@ export function CtaBanner() {
           {text.title} <em style={{ fontStyle: 'italic', color: '#4a8ff5' }}>{text.titleEm}</em>?
         </h2>
         <p style={{ color: 'rgba(255,255,255,0.7)', marginBottom: 32, fontSize: 16 }}>{text.desc}</p>
-        <BookingButton style={{ background: '#fff', color: '#1a2e44', padding: '14px 32px', borderRadius: 30, fontWeight: 600, fontSize: 15, display: 'inline-block', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
-          {text.cta}
-        </BookingButton>
+        <a href="/request" style={{ background: '#fff', color: '#1a2e44', padding: '14px 32px', borderRadius: 30, fontWeight: 600, fontSize: 15, textDecoration: 'none', display: 'inline-block' }}>{text.cta}</a>
       </div>
     </section>
   );
@@ -101,12 +87,34 @@ export function CtaBanner() {
 // ─── Blog ─────────────────────────────────────────────────────────────────────
 export function Blog() {
   const { lang } = useLang();
-  const posts = BLOG_SLUGS[lang];
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchPosts() {
+      const { data, error } = await supabase
+        .from('articles')
+        .select('id, slug, title_el, title_en, excerpt_el, excerpt_en, category, image_url, reads, created_at')
+        .eq('status', 'published')
+        .order('created_at', { ascending: false })
+        .limit(4);
+
+      if (!error && data) setPosts(data);
+      setLoading(false);
+    }
+    fetchPosts();
+  }, []);
+
   const t = {
     el: { title: 'Συμβουλές &', titleEm: 'Πόροι Φυσιοθεραπείας', desc: 'Εξερευνήστε εξειδικευμένες συμβουλές και πρακτική καθοδήγηση για να υποστηρίξετε την ανάρρωσή σας στο σπίτι.', viewAll: 'Όλα τα Άρθρα', readMore: 'Διαβάστε περισσότερα →' },
     en: { title: 'Physiotherapy', titleEm: 'Tips & Resources', desc: 'Explore expert advice, recovery tips, and practical guidance to support your recovery at home.', viewAll: 'View All Articles', readMore: 'Read More →' },
   };
   const text = t[lang];
+
+  // Αν φορτώνει ή δεν υπάρχουν άρθρα → κρύβουμε όλο το section
+  if (loading) return null;
+  if (posts.length === 0) return null;
+
   return (
     <>
       <style>{`.blog-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; } @media (max-width: 640px) { .blog-grid { grid-template-columns: 1fr; } } .blog-card-home { background: #fff; border-radius: 16px; border: 1px solid #dce6f0; overflow: hidden; transition: all .3s; text-decoration: none; color: inherit; display: block; } .blog-card-home:hover { box-shadow: 0 4px 24px rgba(26,46,68,0.08); transform: translateY(-4px); }`}</style>
@@ -122,17 +130,29 @@ export function Blog() {
             <a href="/blog" style={{ background: 'transparent', color: '#1a2e44', padding: '10px 22px', borderRadius: 30, fontSize: 14, fontWeight: 500, textDecoration: 'none', border: '1.5px solid #1a2e44' }}>{text.viewAll}</a>
           </div>
           <div className="blog-grid">
-            {posts.map((post) => (
-              <a key={post.slug} href={`/blog/${post.slug}`} className="blog-card-home">
-                <div style={{ aspectRatio: '16/9', background: 'linear-gradient(135deg, #d4e8ff, #b8d4f8)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2a6fdb', fontSize: 13 }}>📷</div>
-                <div style={{ padding: 20 }}>
-                  <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em', color: '#2a6fdb', marginBottom: 8 }}>{post.cat} · {post.time}</div>
-                  <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1a2e44', marginBottom: 8, lineHeight: 1.4 }}>{post.title}</h3>
-                  <p style={{ fontSize: 13, color: '#6b7a8d', marginBottom: 16 }}>{post.desc}</p>
-                  <span style={{ fontSize: 13, color: '#2a6fdb', fontWeight: 500 }}>{text.readMore}</span>
-                </div>
-              </a>
-            ))}
+            {posts.map((post) => {
+              const title   = lang === 'el' ? post.title_el   : post.title_en;
+              const excerpt = lang === 'el' ? post.excerpt_el : post.excerpt_en;
+              return (
+                <a key={post.id} href={`/blog/${post.slug}`} className="blog-card-home">
+                  {post.image_url ? (
+                    <img src={post.image_url} alt={title || ''} style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', display: 'block' }} />
+                  ) : (
+                    <div style={{ aspectRatio: '16/9', background: 'linear-gradient(135deg, #d4e8ff, #b8d4f8)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2a6fdb', fontSize: 13 }}>📷</div>
+                  )}
+                  <div style={{ padding: 20 }}>
+                    {post.category && (
+                      <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em', color: '#2a6fdb', marginBottom: 8 }}>
+                        {post.category}
+                      </div>
+                    )}
+                    <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1a2e44', marginBottom: 8, lineHeight: 1.4 }}>{title}</h3>
+                    {excerpt && <p style={{ fontSize: 13, color: '#6b7a8d', marginBottom: 16 }}>{excerpt}</p>}
+                    <span style={{ fontSize: 13, color: '#2a6fdb', fontWeight: 500 }}>{text.readMore}</span>
+                  </div>
+                </a>
+              );
+            })}
           </div>
         </div>
       </section>
