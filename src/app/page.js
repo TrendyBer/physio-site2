@@ -6,7 +6,7 @@ import Benefits from '@/components/Benefits';
 import Therapists from '@/components/Therapists';
 import Services from '@/components/Services';
 import BookingCta from '@/components/BookingCta';
-import { Partners, CtaBanner, Blog, Faq, Contact, Footer } from '@/components/SharedComponents';
+import { Partners, Blog, Faq, Contact, Footer } from '@/components/SharedComponents';
 
 export default function Home() {
   return (
@@ -20,7 +20,6 @@ export default function Home() {
       <Therapists />
       <Services />
        <BookingCta />
-      <CtaBanner />
       <Blog />
       <Faq />
       <Contact />
