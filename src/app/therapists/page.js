@@ -32,7 +32,7 @@ const FORM_TX = {
   el: {
     ourTherapists: 'Οι', ourTherapistsEm: 'Θεραπευτές μας',
     ourTherapistsDesc: 'Γνωρίστε έμπειρους, αδειοδοτημένους επαγγελματίες.',
-    viewProfile: 'Δείτε Προφίλ →', noTherapists: 'Δεν υπάρχουν ενεργοί θεραπευτές ακόμα.',
+    viewProfile: 'Δείτε Προφίλ →', bookSession: 'Κλείστε Ραντεβού', noTherapists: 'Δεν υπάρχουν ενεργοί θεραπευτές ακόμα.',
     formTitle: 'Αίτηση Συνεργασίας', formDesc: 'Συμπληρώστε τα στοιχεία σας.',
     fullName: 'Ονοματεπώνυμο', email: 'Email', phone: 'Τηλέφωνο',
     specialty: 'Ειδικότητα', specialtyPh: 'π.χ. Ορθοπαιδική',
@@ -43,11 +43,12 @@ const FORM_TX = {
     submit: 'Υποβολή Αίτησης', expOptions: ['1-2 χρόνια', '3-5 χρόνια', '5-10 χρόνια', '10+ χρόνια'],
     successTitle: 'Ευχαριστούμε!', successDesc: 'Λάβαμε την αίτησή σας.', successBtn: 'Εντάξει',
     required: 'Παρακαλώ συμπληρώστε όλα τα υποχρεωτικά πεδία.',
+    close: 'Κλείσιμο',
   },
   en: {
     ourTherapists: 'Our', ourTherapistsEm: 'Therapists',
     ourTherapistsDesc: 'Meet experienced, licensed professionals.',
-    viewProfile: 'View Profile →', noTherapists: 'No active therapists yet.',
+    viewProfile: 'View Profile →', bookSession: 'Book a Session', noTherapists: 'No active therapists yet.',
     formTitle: 'Apply to Join', formDesc: 'Fill in your details.',
     fullName: 'Full Name', email: 'Email', phone: 'Phone',
     specialty: 'Specialization', specialtyPh: 'e.g. Sports Rehabilitation',
@@ -58,6 +59,7 @@ const FORM_TX = {
     submit: 'Submit Application', expOptions: ['1-2 years', '3-5 years', '5-10 years', '10+ years'],
     successTitle: 'Thank you!', successDesc: 'We received your application.', successBtn: 'Got it',
     required: 'Please fill in all required fields.',
+    close: 'Close',
   },
 };
 
@@ -65,25 +67,15 @@ function ImgWithSkeleton({ src, alt, style, containerStyle }) {
   const [loaded, setLoaded] = useState(false);
   return (
     <div style={{ position: 'relative', ...containerStyle }}>
-      {!loaded && (
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, #e8f1fd 25%, #d4e4f7 50%, #e8f1fd 75%)', backgroundSize: '600px 100%', animation: 'shimmer 1.5s infinite', borderRadius: 'inherit' }} />
-      )}
+      {!loaded && <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, #e8f1fd 25%, #d4e4f7 50%, #e8f1fd 75%)', backgroundSize: '600px 100%', animation: 'shimmer 1.5s infinite', borderRadius: 'inherit' }} />}
       <img src={src} alt={alt || ''} onLoad={() => setLoaded(true)} style={{ ...style, display: loaded ? 'block' : 'none' }} />
     </div>
   );
 }
 
-function TherapistModal({ therapist, lang, onClose }) {
-  const bookLabel  = lang === 'el' ? 'Κλείστε Ραντεβού' : 'Book a Session';
-  const closeLabel = lang === 'el' ? 'Κλείσιμο' : 'Close';
-  const bioLabel   = lang === 'el' ? 'Βιογραφικό' : 'About';
-  const areaLabel  = lang === 'el' ? 'Περιοχή' : 'Area';
-  const expLabel   = lang === 'el' ? 'Εμπειρία' : 'Experience';
-  const specLabel  = lang === 'el' ? 'Ειδικότητα' : 'Specialty';
-  const handleBook = () => {
-    localStorage.setItem('preferredTherapist', JSON.stringify({ id: therapist.id, name: therapist.name }));
-    window.location.href = `/dashboard/patient/new-request?therapist=${encodeURIComponent(therapist.name)}`;
-  };
+function TherapistModal({ therapist, lang, tx, onClose }) {
+  if (!therapist) return null;
+  const bookHref = `/dashboard/patient/new-request?therapist=${encodeURIComponent(therapist.name)}`;
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
@@ -105,8 +97,11 @@ function TherapistModal({ therapist, lang, onClose }) {
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#94a3b8' }}>✕</button>
         </div>
         <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-            {[{ label: areaLabel, value: therapist.area || '—' }, { label: expLabel, value: therapist.experience ? `${therapist.experience} ${lang === 'el' ? 'χρόνια' : 'years'}` : '—' }, { label: specLabel, value: therapist.specialty || '—' }].map(({ label, value }) => (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            {[
+              { label: lang === 'el' ? 'Περιοχή' : 'Area', value: therapist.area || '—' },
+              { label: lang === 'el' ? 'Ειδικότητα' : 'Specialty', value: therapist.specialty || '—' },
+            ].map(({ label, value }) => (
               <div key={label} style={{ background: '#f8fafb', borderRadius: 10, padding: '12px 14px' }}>
                 <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 4 }}>{label}</div>
                 <div style={{ fontSize: 13, color: '#1a2e44', fontWeight: 600 }}>{value}</div>
@@ -115,13 +110,18 @@ function TherapistModal({ therapist, lang, onClose }) {
           </div>
           {therapist.bio && (
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2e44', marginBottom: 10 }}>{bioLabel}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2e44', marginBottom: 10 }}>{lang === 'el' ? 'Βιογραφικό' : 'About'}</div>
               <p style={{ fontSize: 14, color: '#475569', lineHeight: 1.7, background: '#f8fafc', padding: '14px 16px', borderRadius: 10, borderLeft: '3px solid #dce6f0', margin: 0 }}>{therapist.bio}</p>
             </div>
           )}
+          {therapist.price_per_session && (
+            <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '12px 16px', fontSize: 14, color: '#1D4ED8', fontWeight: 600 }}>
+              💰 {therapist.price_per_session}€ / {lang === 'el' ? 'συνεδρία' : 'session'}
+            </div>
+          )}
           <div style={{ display: 'flex', gap: 12, paddingTop: 8, borderTop: '1px solid #f1f5f9' }}>
-            <button onClick={handleBook} style={{ flex: 1, background: '#1a2e44', color: '#fff', padding: '13px', borderRadius: 30, fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>{bookLabel} →</button>
-            <button onClick={onClose} style={{ flex: 1, background: 'transparent', color: '#1a2e44', padding: '13px', borderRadius: 30, fontSize: 14, fontWeight: 600, border: '1.5px solid #dce6f0', cursor: 'pointer', fontFamily: 'inherit' }}>{closeLabel}</button>
+            <a href={bookHref} style={{ flex: 1, background: '#1a2e44', color: '#fff', padding: '13px', borderRadius: 30, fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'none', textAlign: 'center' }}>{tx.bookSession} →</a>
+            <button onClick={onClose} style={{ flex: 1, background: 'transparent', color: '#1a2e44', padding: '13px', borderRadius: 30, fontSize: 14, fontWeight: 600, border: '1.5px solid #dce6f0', cursor: 'pointer', fontFamily: 'inherit' }}>{tx.close}</button>
           </div>
         </div>
       </div>
@@ -153,7 +153,6 @@ export default function TherapistsPage() {
         if (Date.now() - timestamp < CACHE_TTL) { setCms(value); return; }
       }
     } catch (_) {}
-
     const { data } = await supabase.from('site_content').select('section, content_el, content_en').eq('page', 'therapists');
     if (data) {
       const merged = { ...DEFAULT };
@@ -171,8 +170,7 @@ export default function TherapistsPage() {
         if (Date.now() - timestamp < CACHE_TTL) { setTherapists(value); setLoadingTherapists(false); return; }
       }
     } catch (_) {}
-
-    const { data } = await supabase.from('therapists').select('*').eq('status', 'active').order('created_at', { ascending: false });
+    const { data } = await supabase.from('therapist_profiles').select('*').eq('is_approved', true).order('created_at', { ascending: false });
     if (data) {
       setTherapists(data);
       try { sessionStorage.setItem(CACHE_KEY_TH, JSON.stringify({ value: data, timestamp: Date.now() })); } catch (_) {}
@@ -186,9 +184,9 @@ export default function TherapistsPage() {
   const handleSubmit = async () => {
     if (!form.name || !form.email || !form.specialty || !accepted) { setError(true); return; }
     setError(false); setLoading(true);
-    const { error: insertError } = await supabase.from('therapists').insert([{
+    const { error: insertError } = await supabase.from('therapist_applications').insert([{
       name: form.name, email: form.email, phone: form.phone,
-      specialty: form.specialty, experience: form.experience ? parseInt(form.experience) : null,
+      specialty: form.specialty, experience: form.experience,
       area: form.area, bio: form.bio, status: 'pending',
     }]);
     if (insertError) { alert('Σφάλμα: ' + insertError.message); setLoading(false); return; }
@@ -225,7 +223,6 @@ export default function TherapistsPage() {
         .platform-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
         @media (max-width: 768px) { .platform-layout { grid-template-columns: 1fr; gap: 40px; } }
         @keyframes shimmer { 0% { background-position: -600px 0; } 100% { background-position: 600px 0; } }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
       `}</style>
 
       <Navbar />
@@ -252,7 +249,6 @@ export default function TherapistsPage() {
             <p style={{ fontSize: 16, color: '#6b7a8d', maxWidth: 500 }}>{tx.ourTherapistsDesc}</p>
           </div>
           {loadingTherapists ? (
-            /* Skeleton για therapist cards */
             <div className="th-grid">
               {[1,2,3,4].map(i => (
                 <div key={i} style={{ background: '#fff', borderRadius: 16, border: '1px solid #e2e8f0', padding: 24 }}>
@@ -266,7 +262,7 @@ export default function TherapistsPage() {
             <div style={{ textAlign: 'center', color: '#6b7a8d', padding: '40px 0' }}>{tx.noTherapists}</div>
           ) : (
             <div className="th-grid">
-              {therapists.map((th) => (
+              {therapists.map(th => (
                 <div key={th.id} className="th-card" onClick={() => setSelectedTherapist(th)}>
                   {th.photo_url ? (
                     <ImgWithSkeleton src={th.photo_url} alt={th.name}
@@ -280,7 +276,7 @@ export default function TherapistsPage() {
                   <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2e44', marginBottom: 4 }}>{th.name}</div>
                   <div style={{ fontSize: 13, color: '#6b7a8d', marginBottom: 10 }}>{th.specialty}</div>
                   {th.area && <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 10 }}>📍 {th.area}</div>}
-                  {th.experience && <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 14 }}>⏱ {th.experience} {lang === 'el' ? 'χρόνια' : 'years'}</div>}
+                  {th.price_per_session && <div style={{ fontSize: 13, color: '#2a6fdb', fontWeight: 600, marginBottom: 10 }}>💰 {th.price_per_session}€/συνεδρία</div>}
                   <div style={{ fontSize: 13, color: '#2a6fdb', fontWeight: 600 }}>{tx.viewProfile}</div>
                 </div>
               ))}
@@ -307,15 +303,7 @@ export default function TherapistsPage() {
                 </div>
               ))}
             </div>
-            <div className="why-center-img" style={{ width: 300, height: 380, borderRadius: 20, overflow: 'hidden', flexShrink: 0 }}>
-              {whywork.image_url ? (
-                <ImgWithSkeleton src={whywork.image_url}
-                  containerStyle={{ width: '100%', height: '100%', borderRadius: 20 }}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              ) : (
-                <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #c8dff9, #a0c4f4)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2a6fdb', fontSize: 14 }}>📷 Photo</div>
-              )}
-            </div>
+            <div className="why-center-img" style={{ width: 300, height: 380, borderRadius: 20, overflow: 'hidden', flexShrink: 0, background: 'linear-gradient(135deg, #c8dff9, #a0c4f4)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2a6fdb', fontSize: 14 }}>📷</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               {(whywork.benefits || []).slice(2, 4).map((b, i) => (
                 <div key={i} className="benefit-card">
@@ -376,7 +364,7 @@ export default function TherapistsPage() {
                 ))}
               </div>
             </div>
-            <div style={{ borderRadius: 20, overflow: 'hidden', aspectRatio: '4/3', background: 'linear-gradient(135deg, #c8dff9, #a0c4f4)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2a6fdb', fontSize: 14 }}>📷 Photo</div>
+            <div style={{ borderRadius: 20, overflow: 'hidden', aspectRatio: '4/3', background: 'linear-gradient(135deg, #c8dff9, #a0c4f4)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2a6fdb', fontSize: 14 }}>📷</div>
           </div>
         </div>
       </section>
@@ -455,7 +443,7 @@ export default function TherapistsPage() {
         </div>
       )}
 
-      {selectedTherapist && <TherapistModal therapist={selectedTherapist} lang={lang} onClose={() => setSelectedTherapist(null)} />}
+      {selectedTherapist && <TherapistModal therapist={selectedTherapist} lang={lang} tx={tx} onClose={() => setSelectedTherapist(null)} />}
       <Footer />
     </>
   );

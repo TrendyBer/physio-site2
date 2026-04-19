@@ -32,33 +32,26 @@ const CACHE_TTL = 5 * 60 * 1000;
 export default function HowItWorks() {
   const { lang } = useLang();
   const [data, setData] = useState(DEFAULT);
+  const [ctaHref, setCtaHref] = useState('/dashboard/patient/new-request');
 
   useEffect(() => {
+    const role = typeof window !== 'undefined' ? localStorage.getItem('userRole') : null;
+    if (role === 'therapist') setCtaHref('/dashboard/therapist');
+    else setCtaHref('/dashboard/patient/new-request');
+
     async function fetchData() {
       try {
         const cached = sessionStorage.getItem(CACHE_KEY);
         if (cached) {
           const { value, timestamp } = JSON.parse(cached);
-          if (Date.now() - timestamp < CACHE_TTL) {
-            setData(value);
-            return;
-          }
+          if (Date.now() - timestamp < CACHE_TTL) { setData(value); return; }
         }
       } catch (_) {}
-
-      const { data: row } = await supabase
-        .from('site_content')
-        .select('content_el, content_en')
-        .eq('page', 'homepage')
-        .eq('section', 'howitworks')
-        .single();
-
+      const { data: row } = await supabase.from('site_content').select('content_el, content_en').eq('page', 'homepage').eq('section', 'howitworks').single();
       if (row) {
         const value = { el: row.content_el, en: row.content_en };
         setData(value);
-        try {
-          sessionStorage.setItem(CACHE_KEY, JSON.stringify({ value, timestamp: Date.now() }));
-        } catch (_) {}
+        try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ value, timestamp: Date.now() })); } catch (_) {}
       }
     }
     fetchData();
@@ -87,7 +80,7 @@ export default function HowItWorks() {
             </div>
           ))}
           <div style={{ marginTop: 32 }}>
-            <a href="/request" style={{ background: '#1a2e44', color: '#fff', padding: '12px 28px', borderRadius: 30, fontSize: 15, fontWeight: 500, textDecoration: 'none' }}>{text.cta}</a>
+            <a href={ctaHref} style={{ background: '#1a2e44', color: '#fff', padding: '12px 28px', borderRadius: 30, fontSize: 15, fontWeight: 500, textDecoration: 'none' }}>{text.cta}</a>
           </div>
         </div>
       </div>
