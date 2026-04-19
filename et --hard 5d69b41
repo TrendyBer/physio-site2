@@ -1,0 +1,15 @@
+[33mae75e33[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m Restore original page.js
+[33m00d2df7[m Replace hardcoded booking links with BookingButton
+[33m77390dc[m Load real therapists from Supabase, hide section if empty
+[33m1daf95c[m Remove duplicate CtaBanner from homepage
+[33m7fcf5b3[m Use Supabase session instead of localStorage for auth check
+[33m1d2548c[m Fix Navbar and Footer import paths
+[33m575bd0d[m Fix import paths in HowItWorks
+[33mccc07ba[m Add BookingButton with auth gate to How It Works + Services
+[33m33e611a[m Move address box below description, remove old buttons
+[33m5d69b41[m Add booking box on top of Hero
+[33m7c09d79[m fix: packages page import paths
+[33m8db0dcb[m fix: Navbar σωστό με Πακέτα + pending redirect
+[33mf8a13dc[m fix: όλα τα CTA → new-request, therapists page ενημερωμένο
+[33m20fc191[m fix: Hero.jsx syntax error
+[33ma4a23fc[m feat: CTA links → new-request, Navbar εμφανίζει όνομα
