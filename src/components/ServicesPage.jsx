@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
 import BookingButton from './BookingButton';
+import FreeAssessmentButton from './FreeAssessmentButton';
 
 const DEFAULT_SERVICES = [
   { id: 1, icon: '🦴', titleEl: 'Μυοσκελετική Φυσιοθεραπεία', titleEn: 'Musculoskeletal Physiotherapy', descEl: 'Θεραπεία για πόνο στη μέση, αυχένα, αρθρώσεις και καθημερινές μυοσκελετικές κακώσεις.', descEn: 'Treatment for back pain, neck pain, joint issues, and everyday musculoskeletal injuries.' },
@@ -73,7 +74,7 @@ const t = {
     condDesc: 'Εξερευνήστε μερικές από τις πιο συνηθισμένες παθήσεις που αντιμετωπίζουμε.',
     ctaBannerTitle: 'Ξεκινήστε με μια', ctaBannerTitleEm: 'Δωρεάν Αξιολόγηση',
     ctaBannerDesc: 'Δεν είστε σίγουροι ποια υπηρεσία είναι κατάλληλη για εσάς; Θα αξιολογήσουμε τις ανάγκες σας.',
-    ctaBannerBtn: 'Κλείστε Ραντεβού',
+    ctaBannerBtn: 'Κλείσε Αξιολόγηση',
     faqTitle: 'Συχνές', faqTitleEm: 'Ερωτήσεις',
   },
   en: {
@@ -92,7 +93,7 @@ const t = {
     condDesc: 'Explore some of the most common conditions we support through personalized physiotherapy.',
     ctaBannerTitle: 'Start With a', ctaBannerTitleEm: 'Free Assessment',
     ctaBannerDesc: 'Not sure which service is right for you? We\'ll evaluate your needs and create a personalized plan.',
-    ctaBannerBtn: 'Request a Session',
+    ctaBannerBtn: 'Book Assessment',
     faqTitle: 'Frequently Asked', faqTitleEm: 'Questions',
   },
 };
@@ -232,7 +233,7 @@ export default function ServicesPage() {
         </div>
       </section>
 
-      {/* CTA BANNER */}
+      {/* CTA BANNER - ΝΕΟ ΚΟΥΜΠΙ FREE ASSESSMENT */}
       <section style={{ padding: '60px 24px', background: '#1a2e44' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div className="cta-banner-grid">
@@ -243,9 +244,9 @@ export default function ServicesPage() {
               <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 16, lineHeight: 1.7 }}>{text.ctaBannerDesc}</p>
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <BookingButton style={{ background: '#fff', color: '#1a2e44', padding: '14px 32px', borderRadius: 30, fontWeight: 600, fontSize: 15, display: 'inline-block', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+              <FreeAssessmentButton style={{ background: '#fff', color: '#1a2e44', padding: '14px 32px', borderRadius: 30, fontWeight: 600, fontSize: 15, display: 'inline-block', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
                 {text.ctaBannerBtn}
-              </BookingButton>
+              </FreeAssessmentButton>
             </div>
           </div>
         </div>
