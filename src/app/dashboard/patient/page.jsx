@@ -40,6 +40,7 @@ export default function PatientDashboard() {
   const [profile, setProfile] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [sessionRequests, setSessionRequests] = useState([]);
+  const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('appointments');
   const [reviewModal, setReviewModal] = useState(null);
@@ -53,15 +54,17 @@ export default function PatientDashboard() {
     if (!user) { router.push('/auth/login'); return; }
     setUser(user);
 
-    const [{ data: prof }, { data: appts }, { data: reqs }] = await Promise.all([
+    const [{ data: prof }, { data: appts }, { data: reqs }, { data: svcs }] = await Promise.all([
       supabase.from('patient_profiles').select('*').eq('id', user.id).single(),
       supabase.from('appointments').select('*, reviews(id, rating, comment)').eq('patient_id', user.id).order('created_at', { ascending: false }),
       supabase.from('session_requests').select('*, therapist_profiles(name, photo_url)').eq('patient_id', user.id).order('created_at', { ascending: false }),
+      supabase.from('services').select('*').eq('is_active', true).order('display_order', { ascending: true }),
     ]);
 
     setProfile(prof || {});
     setAppointments(appts || []);
     setSessionRequests(reqs || []);
+    setServices(svcs || []);
     setLoading(false);
   }
 
@@ -100,7 +103,8 @@ export default function PatientDashboard() {
 
   const TABS = [
     { id: 'appointments', label: '📋 Τα Αιτήματά μου' },
-    { id: 'profile', label: '👤 Προφίλ' },
+    { id: 'services',     label: '🏥 Υπηρεσίες' },
+    { id: 'profile',      label: '👤 Προφίλ' },
   ];
 
   const statusMap = {
@@ -162,7 +166,7 @@ export default function PatientDashboard() {
         </div>
 
         {/* Tabs */}
-        <div style={{ display: 'flex', gap: 4, background: '#e2e8f0', padding: 4, borderRadius: 12, width: 'fit-content', marginBottom: 20 }}>
+        <div style={{ display: 'flex', gap: 4, background: '#e2e8f0', padding: 4, borderRadius: 12, width: 'fit-content', marginBottom: 20, flexWrap: 'wrap' }}>
           {TABS.map(t => (
             <button key={t.id} onClick={() => setActiveTab(t.id)}
               style={{ padding: '8px 18px', borderRadius: 8, border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: activeTab === t.id ? '#fff' : 'transparent', color: activeTab === t.id ? '#0F172A' : '#64748B', boxShadow: activeTab === t.id ? '0 1px 4px rgba(0,0,0,0.1)' : 'none' }}>
@@ -206,6 +210,41 @@ export default function PatientDashboard() {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* SERVICES */}
+        {activeTab === 'services' && (
+          <div>
+            <div style={{ marginBottom: 20 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: '#0F172A', marginBottom: 4 }}>Υπηρεσίες Φυσιοθεραπείας</h2>
+              <p style={{ fontSize: 13, color: '#64748B' }}>Εξατομικευμένη φροντίδα για ένα εύρος παθήσεων.</p>
+            </div>
+
+            {services.length === 0 ? (
+              <div style={{ padding: 40, textAlign: 'center', color: '#94A3B8', background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', fontSize: 14 }}>
+                Δεν υπάρχουν διαθέσιμες υπηρεσίες αυτή τη στιγμή.
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14 }}>
+                {services.map(s => (
+                  <div key={s.id} style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: 20, display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                      <div style={{ width: 48, height: 48, borderRadius: 12, background: 'linear-gradient(135deg, #d4e8ff, #b8d4f8)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0 }}>
+                        {s.icon || '🏥'}
+                      </div>
+                      <h3 style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', lineHeight: 1.3 }}>{s.title_el}</h3>
+                    </div>
+                    {s.desc_el && (
+                      <p style={{ fontSize: 13, color: '#64748B', lineHeight: 1.6, marginBottom: 16, flex: 1 }}>{s.desc_el}</p>
+                    )}
+                    <a href="/dashboard/patient/new-request" style={{ display: 'inline-block', textAlign: 'center', background: '#1a2e44', color: '#fff', padding: '9px 16px', borderRadius: 20, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
+                      Κλείσε Ραντεβού →
+                    </a>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
