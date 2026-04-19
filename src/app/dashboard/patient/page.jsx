@@ -39,6 +39,7 @@ export default function PatientDashboard() {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [appointments, setAppointments] = useState([]);
+  const [sessionRequests, setSessionRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('appointments');
   const [reviewModal, setReviewModal] = useState(null);
@@ -52,13 +53,15 @@ export default function PatientDashboard() {
     if (!user) { router.push('/auth/login'); return; }
     setUser(user);
 
-    const [{ data: prof }, { data: appts }] = await Promise.all([
+    const [{ data: prof }, { data: appts }, { data: reqs }] = await Promise.all([
       supabase.from('patient_profiles').select('*').eq('id', user.id).single(),
       supabase.from('appointments').select('*, reviews(id, rating, comment)').eq('patient_id', user.id).order('created_at', { ascending: false }),
+      supabase.from('session_requests').select('*, therapist_profiles(name, photo_url)').eq('patient_id', user.id).order('created_at', { ascending: false }),
     ]);
 
     setProfile(prof || {});
     setAppointments(appts || []);
+    setSessionRequests(reqs || []);
     setLoading(false);
   }
 
@@ -80,13 +83,14 @@ export default function PatientDashboard() {
   }
 
   async function signOut() {
+    localStorage.removeItem('userRole');
     await supabase.auth.signOut();
-    router.push('/');
+    window.location.href = '/';
   }
 
-  const pending   = appointments.filter(a => a.status === 'pending').length;
-  const accepted  = appointments.filter(a => a.status === 'accepted').length;
-  const completed = appointments.filter(a => a.status === 'completed').length;
+  const pending   = sessionRequests.filter(a => a.status === 'pending').length;
+  const accepted  = sessionRequests.filter(a => a.status === 'accepted').length;
+  const completed = sessionRequests.filter(a => a.status === 'completed').length;
 
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc' }}>
@@ -99,17 +103,25 @@ export default function PatientDashboard() {
     { id: 'profile', label: '👤 Προφίλ' },
   ];
 
+  const statusMap = {
+    pending:   { label: 'Εκκρεμές',      bg: '#FEF3C7', color: '#92400E' },
+    accepted:  { label: 'Αποδεκτό',      bg: '#D1FAE5', color: '#065F46' },
+    declined:  { label: 'Απορρίφθηκε',   bg: '#FFE4E6', color: '#9F1239' },
+    completed: { label: 'Ολοκληρώθηκε',  bg: '#EDE9FE', color: '#5B21B6' },
+    cancelled: { label: 'Ακυρώθηκε',     bg: '#F1F5F9', color: '#64748B' },
+  };
+
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: "'DM Sans', sans-serif" }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap'); * { box-sizing: border-box; margin: 0; padding: 0; }`}</style>
 
       {/* Navbar */}
       <nav style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', padding: '0 24px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'Georgia, serif', fontSize: 18, fontWeight: 700, color: '#1a2e44' }}>
+        <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'Georgia, serif', fontSize: 18, fontWeight: 700, color: '#1a2e44', textDecoration: 'none' }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#2a6fdb', display: 'inline-block' }} />
           PhysioHome
           <span style={{ fontSize: 12, fontWeight: 500, color: '#64748b', marginLeft: 8, background: '#f1f5f9', padding: '2px 10px', borderRadius: 999 }}>Ασθενής</span>
-        </div>
+        </a>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Avatar name={profile?.name || user?.email} size={36} />
           <button onClick={signOut} style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: 'transparent', color: '#64748b', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Αποσύνδεση</button>
@@ -144,7 +156,7 @@ export default function PatientDashboard() {
             <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 4 }}>Θέλετε νέο ραντεβού;</div>
             <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>Κλείστε ραντεβού με έναν από τους θεραπευτές μας</div>
           </div>
-          <a href="/request" style={{ background: '#fff', color: '#1a2e44', padding: '10px 20px', borderRadius: 30, fontSize: 14, fontWeight: 600, textDecoration: 'none', flexShrink: 0 }}>
+          <a href="/dashboard/patient/new-request" style={{ background: '#fff', color: '#1a2e44', padding: '10px 20px', borderRadius: 30, fontSize: 14, fontWeight: 600, textDecoration: 'none', flexShrink: 0 }}>
             Νέο Αίτημα →
           </a>
         </div>
@@ -162,42 +174,33 @@ export default function PatientDashboard() {
         {/* APPOINTMENTS */}
         {activeTab === 'appointments' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {appointments.length === 0 ? (
+            {sessionRequests.length === 0 ? (
               <div style={{ padding: 40, textAlign: 'center', color: '#94A3B8', background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', fontSize: 14 }}>
                 Δεν έχετε κάνει αίτημα ακόμα.<br />
-                <a href="/request" style={{ color: '#2a6fdb', fontWeight: 600, textDecoration: 'none' }}>Κλείστε το πρώτο σας ραντεβού →</a>
+                <a href="/dashboard/patient/new-request" style={{ color: '#2a6fdb', fontWeight: 600, textDecoration: 'none' }}>Κλείστε το πρώτο σας ραντεβού →</a>
               </div>
-            ) : appointments.map(a => {
-              const st = STATUS[a.status] || STATUS.pending;
-              const hasReview = a.reviews && a.reviews.length > 0;
+            ) : sessionRequests.map(a => {
+              const st = statusMap[a.status] || statusMap.pending;
               return (
                 <div key={a.id} style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: '18px 20px' }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
-                        <span style={{ fontWeight: 700, fontSize: 15, color: '#0F172A' }}>{a.service || 'Φυσιοθεραπεία'}</span>
+                        <span style={{ fontWeight: 700, fontSize: 15, color: '#0F172A' }}>{a.problem_type || 'Φυσιοθεραπεία'}</span>
                         <Badge label={st.label} bg={st.bg} color={st.color} />
+                        {a.session_type === 'package' && (
+                          <span style={{ background: '#EDE9FE', color: '#5B21B6', padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700 }}>
+                            Πακέτο {a.package_size} συνεδριών
+                          </span>
+                        )}
                         <span style={{ fontSize: 11, color: '#94A3B8', marginLeft: 'auto' }}>{new Date(a.created_at).toLocaleDateString('el-GR')}</span>
                       </div>
-                      {a.patient_address && <div style={{ fontSize: 13, color: '#2a6fdb', marginBottom: 4 }}>📍 {a.patient_address}, {a.patient_city}</div>}
-                      {a.notes && <div style={{ fontSize: 13, color: '#475569', background: '#f8fafc', padding: '8px 12px', borderRadius: 8, borderLeft: '3px solid #cbd5e1', marginTop: 6 }}>{a.notes}</div>}
-
-                      {/* Review section */}
-                      {a.status === 'completed' && (
-                        <div style={{ marginTop: 12 }}>
-                          {hasReview ? (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                              <Stars rating={a.reviews[0].rating} />
-                              <span style={{ fontSize: 13, color: '#64748B' }}>Η αξιολόγησή σας</span>
-                            </div>
-                          ) : (
-                            <button onClick={() => setReviewModal(a)}
-                              style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: '#FEF3C7', color: '#92400E', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                              ⭐ Αξιολόγηση θεραπευτή
-                            </button>
-                          )}
-                        </div>
+                      {a.therapist_profiles?.name && (
+                        <div style={{ fontSize: 13, color: '#2a6fdb', marginBottom: 4 }}>👨‍⚕️ {a.therapist_profiles.name}</div>
                       )}
+                      {a.address && <div style={{ fontSize: 13, color: '#64748B', marginBottom: 4 }}>📍 {a.address}, {a.area}</div>}
+                      {a.total_cost && <div style={{ fontSize: 13, color: '#15803D', fontWeight: 600 }}>💰 Σύνολο: {a.total_cost}€</div>}
+                      {a.notes && <div style={{ fontSize: 13, color: '#475569', background: '#f8fafc', padding: '8px 12px', borderRadius: 8, borderLeft: '3px solid #cbd5e1', marginTop: 6 }}>{a.notes}</div>}
                     </div>
                   </div>
                 </div>
@@ -236,7 +239,6 @@ export default function PatientDashboard() {
           onClick={e => { if (e.target === e.currentTarget) setReviewModal(null); }}>
           <div style={{ background: '#fff', borderRadius: 20, padding: 32, maxWidth: 440, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
             <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>Αξιολόγηση Συνεδρίας</h2>
-            <p style={{ fontSize: 14, color: '#64748B', marginBottom: 20 }}>{reviewModal.service}</p>
             <div style={{ marginBottom: 16 }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: '#0F172A', marginBottom: 8 }}>Βαθμολογία *</div>
               <Stars rating={reviewForm.rating} onChange={r => setReviewForm(p => ({ ...p, rating: r }))} />
