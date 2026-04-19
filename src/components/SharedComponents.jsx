@@ -2,6 +2,7 @@
 import { useLang } from '@/context/LanguageContext';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import BookingButton from './BookingButton';
 
 const BLOG_SLUGS = {
   el: [
@@ -89,7 +90,9 @@ export function CtaBanner() {
           {text.title} <em style={{ fontStyle: 'italic', color: '#4a8ff5' }}>{text.titleEm}</em>?
         </h2>
         <p style={{ color: 'rgba(255,255,255,0.7)', marginBottom: 32, fontSize: 16 }}>{text.desc}</p>
-        <a href="/request" style={{ background: '#fff', color: '#1a2e44', padding: '14px 32px', borderRadius: 30, fontWeight: 600, fontSize: 15, textDecoration: 'none', display: 'inline-block' }}>{text.cta}</a>
+        <BookingButton style={{ background: '#fff', color: '#1a2e44', padding: '14px 32px', borderRadius: 30, fontWeight: 600, fontSize: 15, display: 'inline-block', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+          {text.cta}
+        </BookingButton>
       </div>
     </section>
   );
@@ -234,7 +237,6 @@ export function Contact() {
               </h2>
               <p style={{ fontSize: 16, color: '#6b7a8d', marginBottom: 32 }}>{text.desc}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                {/* Email από settings */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{ width: 44, height: 44, borderRadius: 12, background: '#e8f1fd', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>✉</div>
                   <div>
@@ -242,7 +244,6 @@ export function Contact() {
                     <a href={`mailto:${settings.email}`} style={{ fontWeight: 500, color: '#1a2e44', textDecoration: 'none' }}>{settings.email}</a>
                   </div>
                 </div>
-                {/* Τηλέφωνο από settings */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{ width: 44, height: 44, borderRadius: 12, background: '#e8f1fd', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>📞</div>
                   <div>
@@ -250,7 +251,6 @@ export function Contact() {
                     <a href={`tel:${settings.phone}`} style={{ fontWeight: 500, color: '#1a2e44', textDecoration: 'none' }}>{settings.phone}</a>
                   </div>
                 </div>
-                {/* Διεύθυνση από settings */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{ width: 44, height: 44, borderRadius: 12, background: '#e8f1fd', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>📍</div>
                   <div>

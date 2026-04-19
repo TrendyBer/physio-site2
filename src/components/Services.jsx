@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
+import BookingButton from './BookingButton';
 
 const DEFAULT = {
   el: {
@@ -29,13 +30,8 @@ const DEFAULT = {
 export default function Services() {
   const { lang } = useLang();
   const [data, setData] = useState(DEFAULT);
-  const [ctaHref, setCtaHref] = useState('/dashboard/patient/new-request');
 
   useEffect(() => {
-    const role = typeof window !== 'undefined' ? localStorage.getItem('userRole') : null;
-    if (role === 'therapist') setCtaHref('/dashboard/therapist');
-    else setCtaHref('/dashboard/patient/new-request');
-
     async function fetchData() {
       const { data: row } = await supabase
         .from('site_content')
@@ -82,7 +78,9 @@ export default function Services() {
                   <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1a2e44', marginBottom: 8 }}>{s.title}</h3>
                   <p style={{ fontSize: 13, color: '#6b7a8d', marginBottom: 16, lineHeight: 1.6 }}>{s.desc}</p>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-                    <a href={ctaHref} style={{ fontSize: 13, padding: '7px 14px', borderRadius: 20, background: '#1a2e44', color: '#fff', textDecoration: 'none', fontWeight: 500 }}>{text.cta}</a>
+                    <BookingButton style={{ fontSize: 13, padding: '7px 14px', borderRadius: 20, background: '#1a2e44', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500 }}>
+                      {text.cta}
+                    </BookingButton>
                   </div>
                 </div>
               </div>
