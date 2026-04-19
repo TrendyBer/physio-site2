@@ -82,7 +82,7 @@ function TherapistModal({ therapist, lang, onClose }) {
   const specLabel  = lang === 'el' ? 'Ειδικότητα' : 'Specialty';
   const handleBook = () => {
     localStorage.setItem('preferredTherapist', JSON.stringify({ id: therapist.id, name: therapist.name }));
-    window.location.href = `/request?therapist=${encodeURIComponent(therapist.name)}`;
+    window.location.href = `/dashboard/patient/new-request?therapist=${encodeURIComponent(therapist.name)}`;
   };
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}

@@ -25,28 +25,30 @@ const DEFAULT = {
 };
 
 const CACHE_KEY = 'cms_homepage_hero';
-const CACHE_TTL = 5 * 60 * 1000; // 5 λεπτά
+const CACHE_TTL = 5 * 60 * 1000;
 
 export default function Hero() {
   const { lang } = useLang();
   const [data, setData] = useState(DEFAULT);
   const [imgLoaded, setImgLoaded] = useState(false);
+  const [ctaHref, setCtaHref] = useState('/dashboard/patient/new-request');
 
   useEffect(() => {
+    // Set CTA href based on login state
+    const role = localStorage.getItem('userRole');
+    if (role === 'patient') setCtaHref('/dashboard/patient/new-request');
+    else if (role === 'therapist') setCtaHref('/dashboard/therapist');
+    else setCtaHref('/dashboard/patient/new-request');
+
     async function fetchData() {
-      // Έλεγξε cache πρώτα
       try {
         const cached = sessionStorage.getItem(CACHE_KEY);
         if (cached) {
           const { value, timestamp } = JSON.parse(cached);
-          if (Date.now() - timestamp < CACHE_TTL) {
-            setData(value);
-            return;
-          }
+          if (Date.now() - timestamp < CACHE_TTL) { setData(value); return; }
         }
       } catch (_) {}
 
-      // Αν δεν υπάρχει cache, κάνε fetch
       const { data: row } = await supabase
         .from('site_content')
         .select('content_el, content_en')
@@ -57,9 +59,7 @@ export default function Hero() {
       if (row) {
         const value = { el: row.content_el, en: row.content_en };
         setData(value);
-        try {
-          sessionStorage.setItem(CACHE_KEY, JSON.stringify({ value, timestamp: Date.now() }));
-        } catch (_) {}
+        try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ value, timestamp: Date.now() })); } catch (_) {}
       }
     }
     fetchData();
@@ -69,17 +69,14 @@ export default function Hero() {
 
   return (
     <>
-      <style>{`
+      <style>{\`
         .hero-section { max-width: 1200px; margin: 0 auto; padding: 80px 24px 60px; display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
         .hero-visual { position: relative; }
         @media (max-width: 768px) {
           .hero-section { grid-template-columns: 1fr; padding: 40px 16px; gap: 32px; }
           .hero-visual { order: -1; }
         }
-        @keyframes shimmer {
-          0% { background-position: -600px 0; }
-          100% { background-position: 600px 0; }
-        }
+        @keyframes shimmer { 0% { background-position: -600px 0; } 100% { background-position: 600px 0; } }
         .img-skeleton {
           background: linear-gradient(90deg, #e8f1fd 25%, #d4e4f7 50%, #e8f1fd 75%);
           background-size: 600px 100%;
@@ -88,7 +85,7 @@ export default function Hero() {
           aspect-ratio: 4/5;
           width: 100%;
         }
-      `}</style>
+      \`}</style>
 
       <section className="hero-section">
         <div>
@@ -100,7 +97,7 @@ export default function Hero() {
           </h1>
           <p style={{ fontSize: 17, color: '#6b7a8d', lineHeight: 1.7, marginBottom: 36, maxWidth: 460 }}>{text.desc}</p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-            <a href="/request" style={{ background: '#1a2e44', color: '#fff', padding: '12px 28px', borderRadius: 30, fontSize: 15, fontWeight: 500, textDecoration: 'none' }}>{text.cta}</a>
+            <a href={ctaHref} style={{ background: '#1a2e44', color: '#fff', padding: '12px 28px', borderRadius: 30, fontSize: 15, fontWeight: 500, textDecoration: 'none' }}>{text.cta}</a>
             <a href="/how-it-works" style={{ background: 'transparent', color: '#1a2e44', padding: '12px 28px', borderRadius: 30, fontSize: 15, fontWeight: 500, textDecoration: 'none', border: '1.5px solid #1a2e44' }}>{text.how}</a>
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 36 }}>
@@ -116,19 +113,8 @@ export default function Hero() {
           {text.image_url ? (
             <>
               {!imgLoaded && <div className="img-skeleton" />}
-              <img
-                src={text.image_url}
-                alt="Hero"
-                onLoad={() => setImgLoaded(true)}
-                style={{
-                  width: '100%',
-                  borderRadius: 24,
-                  boxShadow: '0 12px 48px rgba(26,46,68,0.14)',
-                  objectFit: 'cover',
-                  aspectRatio: '4/5',
-                  display: imgLoaded ? 'block' : 'none',
-                }}
-              />
+              <img src={text.image_url} alt="Hero" onLoad={() => setImgLoaded(true)}
+                style={{ width: '100%', borderRadius: 24, boxShadow: '0 12px 48px rgba(26,46,68,0.14)', objectFit: 'cover', aspectRatio: '4/5', display: imgLoaded ? 'block' : 'none' }} />
             </>
           ) : (
             <div style={{ borderRadius: 24, boxShadow: '0 12px 48px rgba(26,46,68,0.14)', aspectRatio: '4/5', background: 'linear-gradient(135deg, #d4e8ff 0%, #b8d4f8 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2a6fdb', fontSize: 14 }}>

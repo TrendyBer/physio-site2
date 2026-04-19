@@ -10,6 +10,7 @@ export default function Navbar() {
   const [loginModal, setLoginModal] = useState(false);
   const [user, setUser] = useState(null);
   const [userRole, setUserRole] = useState(null);
+  const [userName, setUserName] = useState('');
   const [mounted, setMounted] = useState(false);
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [loginLoading, setLoginLoading] = useState(false);
@@ -18,7 +19,9 @@ export default function Navbar() {
   useEffect(() => {
     setMounted(true);
     const cached = localStorage.getItem('userRole');
+    const cachedName = localStorage.getItem('userName');
     if (cached) setUserRole(cached);
+    if (cachedName) setUserName(cachedName);
 
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
@@ -28,7 +31,7 @@ export default function Navbar() {
         const { data } = await supabase.from('user_profiles').select('role').eq('id', session.user.id).single();
         if (data?.role) { setUserRole(data.role); localStorage.setItem('userRole', data.role); }
       } else {
-        setUser(null); setUserRole(null); localStorage.removeItem('userRole');
+        setUser(null); setUserRole(null); setUserName(''); localStorage.removeItem('userRole'); localStorage.removeItem('userName');
       }
     });
 
@@ -40,7 +43,7 @@ export default function Navbar() {
         const { data } = await supabase.from('user_profiles').select('role').eq('id', session.user.id).single();
         if (data?.role) { setUserRole(data.role); localStorage.setItem('userRole', data.role); }
       } else {
-        setUser(null); setUserRole(null); localStorage.removeItem('userRole');
+        setUser(null); setUserRole(null); setUserName(''); localStorage.removeItem('userRole'); localStorage.removeItem('userName');
       }
     });
     return () => subscription.unsubscribe();
@@ -54,6 +57,12 @@ export default function Navbar() {
     const { data: profile } = await supabase.from('user_profiles').select('role').eq('id', data.user.id).single();
     const role = profile?.role;
     if (role) localStorage.setItem('userRole', role);
+    // Fetch name
+    if (role) {
+      const table = role === 'therapist' ? 'therapist_profiles' : 'patient_profiles';
+      const { data: nameData } = await supabase.from(table).select('name').eq('id', data.user.id).single();
+      if (nameData?.name) { const fn = nameData.name.split(' ')[0]; localStorage.setItem('userName', fn); }
+    }
     setLoginModal(false);
     if (role === 'therapist') window.location.href = '/dashboard/therapist';
     else if (role === 'patient') window.location.href = '/dashboard/patient';
@@ -63,6 +72,7 @@ export default function Navbar() {
 
   async function handleSignOut() {
     localStorage.removeItem('userRole');
+    localStorage.removeItem('userName');
     await supabase.auth.signOut();
     window.location.href = '/';
   }
@@ -143,9 +153,9 @@ export default function Navbar() {
             </button>
 
             {/* Show role badge if logged in */}
-            {mounted && userRole && (
+            {mounted && userRole && userName && (
               <span style={{ background: userRole === 'therapist' ? '#EFF6FF' : '#F0FDF4', color: userRole === 'therapist' ? '#1D4ED8' : '#15803D', padding: '4px 12px', borderRadius: 999, fontSize: 12, fontWeight: 600 }}>
-                {userRole === 'therapist' ? '👨‍⚕️ Θεραπευτής' : '🏥 Ασθενής'}
+                {userRole === 'therapist' ? '👨‍⚕️' : '🏥'} {userName}
               </span>
             )}
 
