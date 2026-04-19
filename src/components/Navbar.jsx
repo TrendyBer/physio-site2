@@ -99,6 +99,7 @@ export default function Navbar() {
   const therapistLinks = [
     { label: lang === 'el' ? 'Αρχική' : 'Home', href: '/' },
     { label: 'Dashboard', href: '/dashboard/therapist' },
+    { label: lang === 'el' ? 'Υπηρεσίες' : 'Services', href: '/services' },
     { label: lang === 'el' ? 'Διαθεσιμότητα' : 'Availability', href: '/dashboard/therapist?tab=calendar' },
     { label: lang === 'el' ? 'Ραντεβού' : 'Appointments', href: '/dashboard/therapist?tab=requests' },
     { label: lang === 'el' ? 'Προφίλ' : 'Profile', href: '/dashboard/therapist?tab=profile' },
@@ -107,6 +108,7 @@ export default function Navbar() {
   const patientLinks = [
     { label: lang === 'el' ? 'Αρχική' : 'Home', href: '/' },
     { label: lang === 'el' ? 'Θεραπευτές' : 'Therapists', href: '/therapists' },
+    { label: lang === 'el' ? 'Υπηρεσίες' : 'Services', href: '/services' },
     { label: lang === 'el' ? 'Κλείσε Συνεδρία' : 'Book Session', href: '/dashboard/patient/new-request' },
     { label: 'My Account', href: '/dashboard/patient' },
   ];
