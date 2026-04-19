@@ -1,29 +1,48 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLang } from '@/context/LanguageContext';
+import { supabase } from '@/lib/supabase';
 
 /**
  * BookingButton — Ενιαίο κουμπί "Κλείσε Ραντεβού"
  *
- * Χρήση:
- *   <BookingButton>Κλείστε Ραντεβού</BookingButton>
- *   <BookingButton style={{...}}>Custom text</BookingButton>
- *   <BookingButton variant="link">Κλείστε Ραντεβού →</BookingButton>
- *
  * Συμπεριφορά:
- *  - Αν είναι συνδεδεμένος patient → /dashboard/patient/new-request
- *  - Αν όχι → ανοίγει auth modal με επιλογές Σύνδεση / Εγγραφή
- *  - Μετά το login, συνεχίζει στη φόρμα (μέσω pendingRedirect στο localStorage)
+ *  - Αν είσαι συνδεδεμένος → /dashboard/patient/new-request
+ *  - Αν όχι → ανοίγει auth modal
+ *
+ * Ελέγχει το auth μέσω Supabase (όχι localStorage).
  */
-export default function BookingButton({ children, style, variant = 'button', className }) {
+export default function BookingButton({ children, style, className }) {
   const { lang } = useLang();
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // Έλεγχος αν ο χρήστης είναι συνδεδεμένος — μέσω Supabase
+  useEffect(() => {
+    let cancelled = false;
+
+    async function checkAuth() {
+      const { data } = await supabase.auth.getSession();
+      if (!cancelled) {
+        setIsLoggedIn(!!data?.session);
+      }
+    }
+    checkAuth();
+
+    // Παρακολούθηση αλλαγών auth
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!cancelled) setIsLoggedIn(!!session);
+    });
+
+    return () => {
+      cancelled = true;
+      listener?.subscription?.unsubscribe();
+    };
+  }, []);
 
   function handleClick(e) {
     e.preventDefault();
-    const role = typeof window !== 'undefined' ? localStorage.getItem('userRole') : null;
-
-    if (role === 'patient') {
+    if (isLoggedIn) {
       window.location.href = '/dashboard/patient/new-request';
     } else {
       localStorage.setItem('pendingRedirect', '/dashboard/patient/new-request');
@@ -49,7 +68,6 @@ export default function BookingButton({ children, style, variant = 'button', cla
   };
   const text = t[lang];
 
-  // Default button styles (αν δεν έχει δοθεί style prop)
   const defaultStyle = {
     background: '#1a2e44',
     color: '#fff',
