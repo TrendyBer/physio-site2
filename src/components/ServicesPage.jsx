@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
+import BookingButton from './BookingButton';
 
 const DEFAULT_SERVICES = [
   { id: 1, icon: '🦴', titleEl: 'Μυοσκελετική Φυσιοθεραπεία', titleEn: 'Musculoskeletal Physiotherapy', descEl: 'Θεραπεία για πόνο στη μέση, αυχένα, αρθρώσεις και καθημερινές μυοσκελετικές κακώσεις.', descEn: 'Treatment for back pain, neck pain, joint issues, and everyday musculoskeletal injuries.' },
@@ -143,7 +144,10 @@ export default function ServicesPage() {
             <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{hero.heroTitleEm}</em>
           </h1>
           <p style={{ fontSize: 17, color: '#4a5568', lineHeight: 1.7, marginBottom: 32, maxWidth: 560 }}>{hero.heroDesc}</p>
-          <a href="/request" style={{ background: '#1a2e44', color: '#fff', padding: '14px 32px', borderRadius: 30, fontSize: 15, fontWeight: 600, textDecoration: 'none', display: 'inline-block' }}>{hero.cta}</a>
+
+          <BookingButton style={{ background: '#1a2e44', color: '#fff', padding: '14px 32px', borderRadius: 30, fontSize: 15, fontWeight: 600, display: 'inline-block', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+            {hero.cta}
+          </BookingButton>
         </div>
       </section>
 
@@ -170,9 +174,9 @@ export default function ServicesPage() {
                   <p style={{ fontSize: 14, color: '#6b7a8d', lineHeight: 1.6, marginBottom: 16 }}>
                     {lang === 'el' ? s.descEl : s.descEn}
                   </p>
-                  <a href="/request" style={{ fontSize: 14, color: '#2a6fdb', fontWeight: 500, textDecoration: 'none' }}>
+                  <BookingButton style={{ background: 'none', border: 'none', padding: 0, fontSize: 14, color: '#2a6fdb', fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}>
                     {text.bookBtn}
-                  </a>
+                  </BookingButton>
                 </div>
               </div>
             ))}
@@ -200,7 +204,9 @@ export default function ServicesPage() {
             ))}
           </div>
           <div style={{ marginTop: 32 }}>
-            <a href="/request" style={{ background: '#1a2e44', color: '#fff', padding: '12px 28px', borderRadius: 30, fontSize: 15, fontWeight: 500, textDecoration: 'none' }}>{text.howCta}</a>
+            <BookingButton style={{ background: '#1a2e44', color: '#fff', padding: '12px 28px', borderRadius: 30, fontSize: 15, fontWeight: 500, border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-block' }}>
+              {text.howCta}
+            </BookingButton>
           </div>
         </div>
       </section>
@@ -237,7 +243,9 @@ export default function ServicesPage() {
               <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 16, lineHeight: 1.7 }}>{text.ctaBannerDesc}</p>
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <a href="/request" style={{ background: '#fff', color: '#1a2e44', padding: '14px 32px', borderRadius: 30, fontWeight: 600, fontSize: 15, textDecoration: 'none', display: 'inline-block' }}>{text.ctaBannerBtn}</a>
+              <BookingButton style={{ background: '#fff', color: '#1a2e44', padding: '14px 32px', borderRadius: 30, fontWeight: 600, fontSize: 15, display: 'inline-block', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+                {text.ctaBannerBtn}
+              </BookingButton>
             </div>
           </div>
         </div>
