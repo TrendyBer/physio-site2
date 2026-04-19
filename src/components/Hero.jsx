@@ -34,10 +34,8 @@ export default function Hero() {
   const [ctaHref, setCtaHref] = useState('/dashboard/patient/new-request');
 
   useEffect(() => {
-    // Set CTA href based on login state
-    const role = localStorage.getItem('userRole');
-    if (role === 'patient') setCtaHref('/dashboard/patient/new-request');
-    else if (role === 'therapist') setCtaHref('/dashboard/therapist');
+    const role = typeof window !== 'undefined' ? localStorage.getItem('userRole') : null;
+    if (role === 'therapist') setCtaHref('/dashboard/therapist');
     else setCtaHref('/dashboard/patient/new-request');
 
     async function fetchData() {
@@ -69,7 +67,7 @@ export default function Hero() {
 
   return (
     <>
-      <style>{\`
+      <style>{`
         .hero-section { max-width: 1200px; margin: 0 auto; padding: 80px 24px 60px; display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
         .hero-visual { position: relative; }
         @media (max-width: 768px) {
@@ -85,7 +83,7 @@ export default function Hero() {
           aspect-ratio: 4/5;
           width: 100%;
         }
-      \`}</style>
+      `}</style>
 
       <section className="hero-section">
         <div>
@@ -113,8 +111,12 @@ export default function Hero() {
           {text.image_url ? (
             <>
               {!imgLoaded && <div className="img-skeleton" />}
-              <img src={text.image_url} alt="Hero" onLoad={() => setImgLoaded(true)}
-                style={{ width: '100%', borderRadius: 24, boxShadow: '0 12px 48px rgba(26,46,68,0.14)', objectFit: 'cover', aspectRatio: '4/5', display: imgLoaded ? 'block' : 'none' }} />
+              <img
+                src={text.image_url}
+                alt="Hero"
+                onLoad={() => setImgLoaded(true)}
+                style={{ width: '100%', borderRadius: 24, boxShadow: '0 12px 48px rgba(26,46,68,0.14)', objectFit: 'cover', aspectRatio: '4/5', display: imgLoaded ? 'block' : 'none' }}
+              />
             </>
           ) : (
             <div style={{ borderRadius: 24, boxShadow: '0 12px 48px rgba(26,46,68,0.14)', aspectRatio: '4/5', background: 'linear-gradient(135deg, #d4e8ff 0%, #b8d4f8 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2a6fdb', fontSize: 14 }}>
