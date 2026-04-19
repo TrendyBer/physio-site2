@@ -31,17 +31,12 @@ export default function Hero() {
   const { lang } = useLang();
   const [data, setData] = useState(DEFAULT);
   const [imgLoaded, setImgLoaded] = useState(false);
-  const [ctaHref, setCtaHref] = useState('/dashboard/patient/new-request');
 
-  // NEW — state για το πεδίο διεύθυνσης & auth modal
+  // State για το πεδίο διεύθυνσης & auth modal
   const [address, setAddress] = useState('');
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   useEffect(() => {
-    const role = typeof window !== 'undefined' ? localStorage.getItem('userRole') : null;
-    if (role === 'therapist') setCtaHref('/dashboard/therapist');
-    else setCtaHref('/dashboard/patient/new-request');
-
     async function fetchData() {
       try {
         const cached = sessionStorage.getItem(CACHE_KEY);
@@ -69,7 +64,7 @@ export default function Hero() {
 
   const text = data[lang] || DEFAULT[lang];
 
-  // NEW — handler για το κουμπί booking πάνω-πάνω
+  // Handler για το κουμπί booking
   function handleHeroBook() {
     if (!address.trim()) return;
     const role = typeof window !== 'undefined' ? localStorage.getItem('userRole') : null;
@@ -84,7 +79,7 @@ export default function Hero() {
     }
   }
 
-  // NEW — translations για το hero booking box & modal
+  // Translations για το booking box & modal
   const bookT = {
     el: {
       placeholder: '📍 Διεύθυνση (π.χ. Αθηνάς 12, Αθήνα)',
@@ -169,7 +164,15 @@ export default function Hero() {
 
       <section className="hero-section">
         <div>
-          {/* NEW — Address input + booking button πάνω-πάνω */}
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#e8f1fd', color: '#2a6fdb', padding: '6px 16px', borderRadius: 20, fontSize: 13, fontWeight: 500, marginBottom: 24 }}>
+            {text.badge}
+          </div>
+          <h1 style={{ fontFamily: 'Georgia, serif', fontSize: 'clamp(32px, 4vw, 52px)', lineHeight: 1.15, color: '#1a2e44', marginBottom: 20 }}>
+            {text.title1}{' '}<em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{text.title2}</em>
+          </h1>
+          <p style={{ fontSize: 17, color: '#6b7a8d', lineHeight: 1.7, marginBottom: 28, maxWidth: 460 }}>{text.desc}</p>
+
+          {/* Address input + booking button — κάτω από την περιγραφή */}
           <div className="hero-book-box">
             <input
               value={address}
@@ -186,19 +189,8 @@ export default function Hero() {
             {bt.hint}
           </div>
 
-          {/* Υπάρχον περιεχόμενο — τίποτα δεν αλλάζει από εδώ και κάτω */}
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#e8f1fd', color: '#2a6fdb', padding: '6px 16px', borderRadius: 20, fontSize: 13, fontWeight: 500, marginBottom: 24 }}>
-            {text.badge}
-          </div>
-          <h1 style={{ fontFamily: 'Georgia, serif', fontSize: 'clamp(32px, 4vw, 52px)', lineHeight: 1.15, color: '#1a2e44', marginBottom: 20 }}>
-            {text.title1}{' '}<em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{text.title2}</em>
-          </h1>
-          <p style={{ fontSize: 17, color: '#6b7a8d', lineHeight: 1.7, marginBottom: 36, maxWidth: 460 }}>{text.desc}</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-            <a href={ctaHref} style={{ background: '#1a2e44', color: '#fff', padding: '12px 28px', borderRadius: 30, fontSize: 15, fontWeight: 500, textDecoration: 'none' }}>{text.cta}</a>
-            <a href="/how-it-works" style={{ background: 'transparent', color: '#1a2e44', padding: '12px 28px', borderRadius: 30, fontSize: 15, fontWeight: 500, textDecoration: 'none', border: '1.5px solid #1a2e44' }}>{text.how}</a>
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 36 }}>
+          {/* Pills */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 8 }}>
             {(text.pills || []).map((pill) => (
               <span key={pill} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px solid #dce6f0', padding: '7px 14px', borderRadius: 20, fontSize: 13, color: '#6b7a8d', boxShadow: '0 4px 24px rgba(26,46,68,0.08)' }}>
                 {pill}
@@ -226,7 +218,7 @@ export default function Hero() {
         </div>
       </section>
 
-      {/* NEW — Auth Modal (ίδιο με του BookingCta) */}
+      {/* Auth Modal */}
       {showAuthModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}
           onClick={e => { if (e.target === e.currentTarget) setShowAuthModal(false); }}>
