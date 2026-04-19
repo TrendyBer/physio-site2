@@ -10,28 +10,25 @@ export default function Navbar() {
   const [loginModal, setLoginModal] = useState(false);
   const [user, setUser] = useState(null);
   const [userRole, setUserRole] = useState(null);
+  const [mounted, setMounted] = useState(false);
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
 
   useEffect(() => {
-    // Check localStorage for cached role first
-    const cachedRole = localStorage.getItem('userRole');
-    if (cachedRole) setUserRole(cachedRole);
+    setMounted(true);
+    const cached = localStorage.getItem('userRole');
+    if (cached) setUserRole(cached);
 
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
         setUser(session.user);
-        // Try localStorage first
         const cached = localStorage.getItem('userRole');
         if (cached) { setUserRole(cached); return; }
-        // Otherwise fetch from DB
         const { data } = await supabase.from('user_profiles').select('role').eq('id', session.user.id).single();
         if (data?.role) { setUserRole(data.role); localStorage.setItem('userRole', data.role); }
       } else {
-        setUser(null);
-        setUserRole(null);
-        localStorage.removeItem('userRole');
+        setUser(null); setUserRole(null); localStorage.removeItem('userRole');
       }
     });
 
@@ -43,9 +40,7 @@ export default function Navbar() {
         const { data } = await supabase.from('user_profiles').select('role').eq('id', session.user.id).single();
         if (data?.role) { setUserRole(data.role); localStorage.setItem('userRole', data.role); }
       } else {
-        setUser(null);
-        setUserRole(null);
-        localStorage.removeItem('userRole');
+        setUser(null); setUserRole(null); localStorage.removeItem('userRole');
       }
     });
     return () => subscription.unsubscribe();
@@ -53,8 +48,7 @@ export default function Navbar() {
 
   async function handleLogin(e) {
     e.preventDefault();
-    setLoginLoading(true);
-    setLoginError('');
+    setLoginLoading(true); setLoginError('');
     const { data, error } = await supabase.auth.signInWithPassword({ email: loginForm.email, password: loginForm.password });
     if (error) { setLoginError(error.message); setLoginLoading(false); return; }
     const { data: profile } = await supabase.from('user_profiles').select('role').eq('id', data.user.id).single();
@@ -70,80 +64,111 @@ export default function Navbar() {
   async function handleSignOut() {
     localStorage.removeItem('userRole');
     await supabase.auth.signOut();
-    setUser(null);
-    setUserRole(null);
     window.location.href = '/';
   }
 
   const t = {
-    el: { howItWorks: 'Πώς Λειτουργεί', services: 'Υπηρεσίες', therapists: 'Θεραπευτές', blog: 'Blog', contact: 'Επικοινωνία', login: 'Σύνδεση', register: 'Εγγραφή', myAccount: 'Ο λογαριασμός μου' },
-    en: { howItWorks: 'How it Works', services: 'Services', therapists: 'For Therapists', blog: 'Blog', contact: 'Contact', login: 'Login', register: 'Register', myAccount: 'My Account' },
+    el: { login: 'Σύνδεση', register: 'Εγγραφή' },
+    en: { login: 'Login', register: 'Register' },
   };
   const text = t[lang];
-  const links = [
-    { label: text.howItWorks, href: '/how-it-works' },
-    { label: text.services,   href: '/services' },
-    { label: text.blog,       href: '/blog' },
-    { label: text.therapists, href: '/therapists' },
-    { label: text.contact,    href: '/contact' },
+
+  // ── Nav links per role ──────────────────────────────────────────────────────
+  const publicLinks = [
+    { label: lang === 'el' ? 'Πώς Λειτουργεί' : 'How it Works', href: '/how-it-works' },
+    { label: lang === 'el' ? 'Υπηρεσίες' : 'Services', href: '/services' },
+    { label: lang === 'el' ? 'Θεραπευτές' : 'Therapists', href: '/therapists' },
+    { label: 'Blog', href: '/blog' },
+    { label: lang === 'el' ? 'Επικοινωνία' : 'Contact', href: '/contact' },
   ];
 
-  const dashboardHref = userRole === 'therapist' ? '/dashboard/therapist' : userRole === 'patient' ? '/dashboard/patient' : userRole === 'admin' ? '/admin' : '/';
+  const therapistLinks = [
+    { label: lang === 'el' ? 'Αρχική' : 'Home', href: '/' },
+    { label: 'Dashboard', href: '/dashboard/therapist' },
+    { label: lang === 'el' ? 'Διαθεσιμότητα' : 'Availability', href: '/dashboard/therapist?tab=calendar' },
+    { label: lang === 'el' ? 'Ραντεβού' : 'Appointments', href: '/dashboard/therapist?tab=requests' },
+    { label: lang === 'el' ? 'Προφίλ' : 'Profile', href: '/dashboard/therapist?tab=profile' },
+  ];
+
+  const patientLinks = [
+    { label: lang === 'el' ? 'Αρχική' : 'Home', href: '/' },
+    { label: lang === 'el' ? 'Θεραπευτές' : 'Therapists', href: '/therapists' },
+    { label: lang === 'el' ? 'Κλείσε Συνεδρία' : 'Book Session', href: '/request' },
+    { label: 'My Account', href: '/dashboard/patient' },
+  ];
+
+  const activeLinks = userRole === 'therapist' ? therapistLinks : userRole === 'patient' ? patientLinks : publicLinks;
+
   const inputStyle = { width: '100%', padding: '11px 14px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', color: '#1a2e44' };
 
   return (
     <>
       <style>{`
         .nav-links-desktop { display: flex; }
-        .nav-cta-desktop { display: flex; }
+        .nav-right-desktop { display: flex; }
         .hamburger { display: none !important; }
         @media (max-width: 768px) {
           .nav-links-desktop { display: none !important; }
-          .nav-cta-desktop { display: none !important; }
+          .nav-right-desktop { display: none !important; }
           .hamburger { display: flex !important; }
         }
       `}</style>
 
-      <nav style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #dce6f0', padding: '0 24px' }}>
+      <nav style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #dce6f0', padding: '0 24px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 68 }}>
-          <a href="/" style={{ fontFamily: 'Georgia, serif', fontSize: 22, fontWeight: 700, color: '#1a2e44', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
+
+          {/* Logo */}
+          <a href="/" style={{ fontFamily: 'Georgia, serif', fontSize: 22, fontWeight: 700, color: '#1a2e44', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
             <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#2a6fdb', display: 'inline-block' }} />
             PhysioHome
           </a>
 
+          {/* Nav links */}
           <ul className="nav-links-desktop" style={{ alignItems: 'center', gap: 28, listStyle: 'none', margin: 0, padding: 0 }}>
-            {links.map(item => (
-              <li key={item.href}>
-                <a href={item.href} style={{ fontSize: 14, fontWeight: 500, color: '#6b7a8d', textDecoration: 'none' }}>{item.label}</a>
+            {activeLinks.map(item => (
+              <li key={item.href + item.label}>
+                <a href={item.href} style={{ fontSize: 14, fontWeight: 500, color: '#6b7a8d', textDecoration: 'none' }}
+                  onMouseEnter={e => e.target.style.color = '#1a2e44'}
+                  onMouseLeave={e => e.target.style.color = '#6b7a8d'}>
+                  {item.label}
+                </a>
               </li>
             ))}
           </ul>
 
-          <div className="nav-cta-desktop" style={{ alignItems: 'center', gap: 10 }}>
+          {/* Right side */}
+          <div className="nav-right-desktop" style={{ alignItems: 'center', gap: 10 }}>
             <button onClick={toggleLang} style={{ border: '1px solid #dce6f0', background: 'none', padding: '6px 14px', borderRadius: 20, fontSize: 13, fontWeight: 500, color: '#6b7a8d', cursor: 'pointer' }}>
               {lang === 'el' ? 'EN' : 'ΕΛ'}
             </button>
-            {user ? (
-              <>
-                <a href={dashboardHref} style={{ fontSize: 14, fontWeight: 600, color: '#1a2e44', textDecoration: 'none', padding: '8px 16px', borderRadius: 20, border: '1px solid #dce6f0' }}>
-                  {text.myAccount}
-                </a>
-                <button onClick={handleSignOut} style={{ fontSize: 13, fontWeight: 500, color: '#6b7a8d', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 12px' }}>
-                  Αποσύνδεση
-                </button>
-              </>
+
+            {/* Show role badge if logged in */}
+            {mounted && userRole && (
+              <span style={{ background: userRole === 'therapist' ? '#EFF6FF' : '#F0FDF4', color: userRole === 'therapist' ? '#1D4ED8' : '#15803D', padding: '4px 12px', borderRadius: 999, fontSize: 12, fontWeight: 600 }}>
+                {userRole === 'therapist' ? '👨‍⚕️ Θεραπευτής' : '🏥 Ασθενής'}
+              </span>
+            )}
+
+            {mounted && user ? (
+              <button onClick={handleSignOut}
+                style={{ background: '#FEF2F2', color: '#DC2626', padding: '8px 18px', borderRadius: 20, fontSize: 14, fontWeight: 600, border: '1px solid #FECACA', cursor: 'pointer' }}>
+                Logout
+              </button>
             ) : (
-              <>
-                <button onClick={() => setLoginModal(true)} style={{ fontSize: 14, fontWeight: 600, color: '#1a2e44', background: 'none', border: '1px solid #dce6f0', padding: '8px 18px', borderRadius: 20, cursor: 'pointer' }}>
+              mounted && <>
+                <button onClick={() => setLoginModal(true)}
+                  style={{ fontSize: 14, fontWeight: 600, color: '#1a2e44', background: 'none', border: '1px solid #dce6f0', padding: '8px 18px', borderRadius: 20, cursor: 'pointer' }}>
                   {text.login}
                 </button>
-                <button onClick={() => setRoleModal(true)} style={{ background: '#1a2e44', color: '#fff', padding: '9px 20px', borderRadius: 30, fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer' }}>
+                <button onClick={() => setRoleModal(true)}
+                  style={{ background: '#1a2e44', color: '#fff', padding: '9px 20px', borderRadius: 30, fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer' }}>
                   {text.register}
                 </button>
               </>
             )}
           </div>
 
+          {/* Hamburger */}
           <button className="hamburger" onClick={() => setMenuOpen(true)} style={{ flexDirection: 'column', gap: 5, cursor: 'pointer', background: 'none', border: 'none', padding: 4 }}>
             <span style={{ width: 24, height: 2, background: '#1a2e44', borderRadius: 2, display: 'block' }} />
             <span style={{ width: 24, height: 2, background: '#1a2e44', borderRadius: 2, display: 'block' }} />
@@ -163,11 +188,11 @@ export default function Navbar() {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
               {[
-                { role: 'patient', icon: '🏥', title: 'Θέλω Φυσιοθεραπεία', desc: 'Εγγραφή ως ασθενής και κλείσιμο ραντεβού' },
-                { role: 'therapist', icon: '👨‍⚕️', title: 'Θέλω να Προσφέρω', desc: 'Εγγραφή ως θεραπευτής και αίτηση συνεργασίας' },
+                { role: 'patient',   icon: '🏥',   title: 'Θέλω Φυσιοθεραπεία',  desc: 'Εγγραφή ως ασθενής και κλείσιμο ραντεβού' },
+                { role: 'therapist', icon: '👨‍⚕️', title: 'Θέλω να Προσφέρω',    desc: 'Εγγραφή ως θεραπευτής και αίτηση συνεργασίας' },
               ].map(r => (
                 <a key={r.role} href={`/auth/register?role=${r.role}`} onClick={() => setRoleModal(false)}
-                  style={{ padding: '24px 16px', border: '2px solid #e2e8f0', borderRadius: 16, textAlign: 'center', textDecoration: 'none', display: 'block', background: '#fff' }}
+                  style={{ padding: '24px 16px', border: '2px solid #e2e8f0', borderRadius: 16, textAlign: 'center', textDecoration: 'none', display: 'block', background: '#fff', cursor: 'pointer' }}
                   onMouseEnter={e => { e.currentTarget.style.borderColor = '#2a6fdb'; e.currentTarget.style.background = '#EFF6FF'; }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.background = '#fff'; }}>
                   <div style={{ fontSize: 36, marginBottom: 10 }}>{r.icon}</div>
@@ -228,18 +253,17 @@ export default function Navbar() {
             <button onClick={() => { if (lang !== 'el') toggleLang(); }} style={{ padding: '6px 18px', borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: '1.5px solid', borderColor: lang === 'el' ? '#1a2e44' : '#dce6f0', background: lang === 'el' ? '#1a2e44' : '#fff', color: lang === 'el' ? '#fff' : '#6b7a8d' }}>EL</button>
           </div>
           <nav style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
-            {links.map(item => (
-              <a key={item.href} href={item.href} onClick={() => setMenuOpen(false)} style={{ fontSize: 18, fontWeight: 600, color: '#1a2e44', textDecoration: 'none', padding: '14px 0', borderBottom: '1px solid #f1f5f9' }}>
+            {activeLinks.map(item => (
+              <a key={item.href + item.label} href={item.href} onClick={() => setMenuOpen(false)} style={{ fontSize: 18, fontWeight: 600, color: '#1a2e44', textDecoration: 'none', padding: '14px 0', borderBottom: '1px solid #f1f5f9' }}>
                 {item.label}
               </a>
             ))}
           </nav>
           <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 10 }}>
             {user ? (
-              <>
-                <a href={dashboardHref} style={{ background: '#1a2e44', color: '#fff', padding: '13px', borderRadius: 30, fontSize: 15, fontWeight: 600, textDecoration: 'none', textAlign: 'center' }}>{text.myAccount}</a>
-                <button onClick={handleSignOut} style={{ background: 'transparent', color: '#6b7a8d', padding: '12px', borderRadius: 30, fontSize: 14, fontWeight: 600, border: '1px solid #dce6f0', cursor: 'pointer' }}>Αποσύνδεση</button>
-              </>
+              <button onClick={handleSignOut} style={{ background: '#FEF2F2', color: '#DC2626', padding: '13px', borderRadius: 30, fontSize: 15, fontWeight: 600, border: '1px solid #FECACA', cursor: 'pointer' }}>
+                Logout
+              </button>
             ) : (
               <>
                 <button onClick={() => { setMenuOpen(false); setLoginModal(true); }} style={{ background: 'transparent', color: '#1a2e44', padding: '12px', borderRadius: 30, fontSize: 15, fontWeight: 600, border: '1.5px solid #1a2e44', cursor: 'pointer' }}>{text.login}</button>
