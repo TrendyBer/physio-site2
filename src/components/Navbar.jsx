@@ -150,10 +150,10 @@ export default function Navbar() {
             )}
 
             {mounted && user ? (
-              <button onClick={handleSignOut}
-                style={{ background: '#FEF2F2', color: '#DC2626', padding: '8px 18px', borderRadius: 20, fontSize: 14, fontWeight: 600, border: '1px solid #FECACA', cursor: 'pointer' }}>
+              <a href="/auth/logout"
+                style={{ background: '#FEF2F2', color: '#DC2626', padding: '8px 18px', borderRadius: 20, fontSize: 14, fontWeight: 600, border: '1px solid #FECACA', cursor: 'pointer', textDecoration: 'none' }}>
                 Logout
-              </button>
+              </a>
             ) : (
               mounted && <>
                 <button onClick={() => setLoginModal(true)}
@@ -261,9 +261,9 @@ export default function Navbar() {
           </nav>
           <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 10 }}>
             {user ? (
-              <button onClick={handleSignOut} style={{ background: '#FEF2F2', color: '#DC2626', padding: '13px', borderRadius: 30, fontSize: 15, fontWeight: 600, border: '1px solid #FECACA', cursor: 'pointer' }}>
+              <a href="/auth/logout" style={{ background: '#FEF2F2', color: '#DC2626', padding: '13px', borderRadius: 30, fontSize: 15, fontWeight: 600, border: '1px solid #FECACA', textDecoration: 'none', textAlign: 'center', display: 'block' }}>
                 Logout
-              </button>
+              </a>
             ) : (
               <>
                 <button onClick={() => { setMenuOpen(false); setLoginModal(true); }} style={{ background: 'transparent', color: '#1a2e44', padding: '12px', borderRadius: 30, fontSize: 15, fontWeight: 600, border: '1.5px solid #1a2e44', cursor: 'pointer' }}>{text.login}</button>
