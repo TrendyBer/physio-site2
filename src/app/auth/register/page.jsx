@@ -35,7 +35,7 @@ export default function RegisterPage() {
 
     setLoading(true); setError('');
 
-    // Create auth user
+    // 1. Create auth user
     const { data, error: authError } = await supabase.auth.signUp({
       email: form.email,
       password: form.password,
@@ -47,10 +47,18 @@ export default function RegisterPage() {
     const userId = data.user?.id;
     if (!userId) { setError('Σφάλμα δημιουργίας χρήστη'); setLoading(false); return; }
 
-    // Create user profile with role
+    // 2. Sign in immediately after signup
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: form.email,
+      password: form.password,
+    });
+
+    if (signInError) { setError(signInError.message); setLoading(false); return; }
+
+    // 3. Create user profile with role
     await supabase.from('user_profiles').insert([{ id: userId, role }]);
 
-    // Create role-specific profile
+    // 4. Create role-specific profile
     if (role === 'therapist') {
       await supabase.from('therapist_profiles').insert([{
         id: userId,
@@ -89,7 +97,6 @@ export default function RegisterPage() {
           <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a2e44', margin: 0 }}>Δημιουργία Λογαριασμού</h1>
         </div>
 
-        {/* Step 1: Role selection */}
         {step === 1 && (
           <div>
             <p style={{ fontSize: 15, color: '#6b7a8d', textAlign: 'center', marginBottom: 24 }}>Επιλέξτε τον τύπο λογαριασμού σας</p>
@@ -113,7 +120,6 @@ export default function RegisterPage() {
           </div>
         )}
 
-        {/* Step 2: Form */}
         {step === 2 && (
           <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -158,7 +164,6 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Agreements */}
             <div style={{ background: '#f8fafc', borderRadius: 10, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
               <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', fontSize: 13, color: '#334155' }}>
                 <input type="checkbox" checked={agreements.gdpr} onChange={() => updAgr('gdpr')} style={{ marginTop: 2, accentColor: '#2a6fdb' }} />
