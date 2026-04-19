@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
+import BookingButton from '../../components/BookingButton';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
 
@@ -223,7 +224,11 @@ export default function HowItWorksPage() {
             {hero.heroTitle} <br /><em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{hero.heroTitleEm}</em>
           </h1>
           <p style={{ fontSize: 17, color: '#6b7a8d', maxWidth: 580, margin: '0 auto 32px' }}>{hero.heroDesc}</p>
-          <a href="/request" style={{ display: 'inline-block', background: '#1a2e44', color: '#fff', padding: '14px 36px', borderRadius: 30, fontSize: 15, fontWeight: 600, textDecoration: 'none' }}>{hero.heroBtn}</a>
+
+          <BookingButton style={{ display: 'inline-block', background: '#1a2e44', color: '#fff', padding: '14px 36px', borderRadius: 30, fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+            {hero.heroBtn}
+          </BookingButton>
+
           <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 40, flexWrap: 'wrap' }}>
             {(hero.heroBadges || []).map(b => (
               <div key={b} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 30, padding: '8px 18px', fontSize: 13, fontWeight: 500, color: '#1a2e44', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>{b}</div>
@@ -240,7 +245,10 @@ export default function HowItWorksPage() {
               {steps.stepsTitle} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{steps.stepsTitleEm}</em>
             </h2>
             <p style={{ fontSize: 15, color: '#6b7a8d', lineHeight: 1.7, marginBottom: 32 }}>{steps.stepsDesc}</p>
-            <a href="/request" style={{ display: 'inline-block', background: '#1a2e44', color: '#fff', padding: '13px 32px', borderRadius: 30, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>{steps.stepsBtn}</a>
+
+            <BookingButton style={{ display: 'inline-block', background: '#1a2e44', color: '#fff', padding: '13px 32px', borderRadius: 30, fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+              {steps.stepsBtn}
+            </BookingButton>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
             {(steps.steps || []).map((step, i) => (
@@ -271,7 +279,6 @@ export default function HowItWorksPage() {
                 <div style={{ fontSize: 13, color: '#6b7a8d', lineHeight: 1.6 }}>{(whypatients.whyPoints || [])[0]?.desc}</div>
               </div>
             </div>
-            {/* Center image με skeleton */}
             <div style={{ borderRadius: 20, overflow: 'hidden', aspectRatio: '3/4' }}>
               {whypatients.image_url ? (
                 <ImgWithSkeleton src={whypatients.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -308,7 +315,6 @@ export default function HowItWorksPage() {
               ))}
             </div>
           </div>
-          {/* Right image με skeleton */}
           <div style={{ borderRadius: 20, overflow: 'hidden', aspectRatio: '4/3' }}>
             {whyhome.image_url ? (
               <ImgWithSkeleton src={whyhome.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -343,7 +349,9 @@ export default function HowItWorksPage() {
             ))}
           </div>
           <div style={{ textAlign: 'center', marginTop: 32 }}>
-            <a href="/request" style={{ display: 'inline-block', background: '#1a2e44', color: '#fff', padding: '13px 32px', borderRadius: 30, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>{comparison.compBtn}</a>
+            <BookingButton style={{ display: 'inline-block', background: '#1a2e44', color: '#fff', padding: '13px 32px', borderRadius: 30, fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+              {comparison.compBtn}
+            </BookingButton>
           </div>
         </div>
       </section>
