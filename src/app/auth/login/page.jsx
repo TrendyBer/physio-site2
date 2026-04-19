@@ -12,26 +12,60 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({
       email: form.email,
       password: form.password,
     });
 
-    if (error) { setError(error.message); setLoading(false); return; }
+    if (signInError) { 
+      setError(signInError.message); 
+      setLoading(false); 
+      return; 
+    }
 
-    // Get role and redirect
-    const { data: profile } = await supabase
+    // Wait a moment for session to settle
+    await new Promise(r => setTimeout(r, 500));
+
+    // Try to get role
+    const { data: profile, error: profileError } = await supabase
       .from('user_profiles')
       .select('role')
       .eq('id', data.user.id)
       .single();
+
+    console.log('User ID:', data.user.id);
+    console.log('Profile:', profile);
+    console.log('Profile error:', profileError);
 
     if (profile?.role === 'therapist') {
       window.location.href = '/dashboard/therapist';
     } else if (profile?.role === 'patient') {
       window.location.href = '/dashboard/patient';
     } else {
-      window.location.href = '/';
+      // Fallback: try with fresh session
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('Session:', session);
+      
+      if (session) {
+        const { data: profile2 } = await supabase
+          .from('user_profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+        
+        console.log('Profile2:', profile2);
+        
+        if (profile2?.role === 'therapist') {
+          window.location.href = '/dashboard/therapist';
+          return;
+        } else if (profile2?.role === 'patient') {
+          window.location.href = '/dashboard/patient';
+          return;
+        }
+      }
+      
+      setError('Δεν βρέθηκε προφίλ. Επικοινωνήστε με την υποστήριξη.');
+      setLoading(false);
     }
   }
 
@@ -51,16 +85,12 @@ export default function LoginPage() {
           <div>
             <label style={{ fontSize: 13, fontWeight: 600, color: '#1a2e44', display: 'block', marginBottom: 6 }}>Email</label>
             <input type="email" required value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
-              style={{ width: '100%', padding: '12px 14px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', color: '#1a2e44' }}
-              onFocus={e => e.target.style.borderColor = '#2a6fdb'}
-              onBlur={e => e.target.style.borderColor = '#e2e8f0'} />
+              style={{ width: '100%', padding: '12px 14px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', color: '#1a2e44' }} />
           </div>
           <div>
             <label style={{ fontSize: 13, fontWeight: 600, color: '#1a2e44', display: 'block', marginBottom: 6 }}>Password</label>
             <input type="password" required value={form.password} onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
-              style={{ width: '100%', padding: '12px 14px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', color: '#1a2e44' }}
-              onFocus={e => e.target.style.borderColor = '#2a6fdb'}
-              onBlur={e => e.target.style.borderColor = '#e2e8f0'} />
+              style={{ width: '100%', padding: '12px 14px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', color: '#1a2e44' }} />
           </div>
 
           {error && (
