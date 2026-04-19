@@ -1,10 +1,8 @@
 'use client';
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
-  const router = useRouter();
   const [form, setForm] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -28,10 +26,13 @@ export default function LoginPage() {
       .eq('id', data.user.id)
       .single();
 
-    if (profile?.role === 'therapist') router.push('/dashboard/therapist');
-    else if (profile?.role === 'patient') router.push('/dashboard/patient');
-    else if (profile?.role === 'admin') router.push('/admin');
-    else router.push('/');
+    if (profile?.role === 'therapist') {
+      window.location.href = '/dashboard/therapist';
+    } else if (profile?.role === 'patient') {
+      window.location.href = '/dashboard/patient';
+    } else {
+      window.location.href = '/';
+    }
   }
 
   return (
