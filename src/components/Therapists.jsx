@@ -1,21 +1,30 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLang } from '@/context/LanguageContext';
+import { supabase } from '@/lib/supabase';
 
-const THERAPISTS_DATA = {
-  el: [
-    { id: 1, name: 'Dr. Anna Kowalska', title: 'Νευρολογική Φυσιοθεραπεύτρια', rating: '4.9', reviews: 12, desc: 'Υποστηρίζει την ανάρρωση μετά από εγκεφαλικό και νευρολογικές παθήσεις με εξατομικευμένη αποκατάσταση στο σπίτι.', experience: '8+ χρόνια εμπειρίας', tags: ['Αποκατάσταση μετά εγκεφαλικό', 'Ισορροπία', 'Κινητικότητα'], area: 'Αθήνα', bio: 'Η Dr. Anna Kowalska είναι εξειδικευμένη νευρολογική φυσιοθεραπεύτρια με πάνω από 8 χρόνια εμπειρίας.' },
-    { id: 2, name: 'Dr. Mark Jenkins', title: 'Μυοσκελετικός Φυσιοθεραπευτής', rating: '4.8', reviews: 25, desc: 'Αντιμετωπίζει πόνο στη μέση, τον αυχένα και αρθρώσεις, βοηθώντας στη βελτίωση της κίνησης.', experience: '10+ χρόνια εμπειρίας', tags: ['Πόνος στη μέση', 'Αυχένας', 'Αρθρώσεις'], area: 'Αθήνα', bio: 'Ο Dr. Mark Jenkins ειδικεύεται στη μυοσκελετική φυσιοθεραπεία με έμφαση στην αντιμετώπιση χρόνιου πόνου.' },
-    { id: 3, name: 'Maria Lopez', title: 'Φυσιοθεραπεύτρια Αποκατάστασης', rating: '4.7', reviews: 30, desc: 'Βοηθά ασθενείς να ανακάμψουν μετά από χειρουργείο, αποκαθιστώντας δύναμη και κινητικότητα στο σπίτι.', experience: '5+ χρόνια εμπειρίας', tags: ['Μετεγχειρητική', 'Δύναμη', 'Κινητικότητα'], area: 'Πειραιάς', bio: 'Η Maria Lopez εξειδικεύεται στη μετεγχειρητική αποκατάσταση.' },
-    { id: 4, name: 'Dr. James Thompson', title: 'Αθλητικός Φυσιοθεραπευτής', rating: '4.9', reviews: 50, desc: 'Υποστηρίζει την ανάρρωση από τραυματισμούς και ασφαλή επιστροφή στη δραστηριότητα.', experience: '15+ χρόνια εμπειρίας', tags: ['Αθλητικοί τραυματισμοί', 'Αποκατάσταση', 'Πρόληψη'], area: 'Γλυφάδα', bio: 'Ο Dr. James Thompson είναι ένας από τους πιο έμπειρους αθλητικούς φυσιοθεραπευτές μας.' },
-  ],
-  en: [
-    { id: 1, name: 'Dr. Anna Kowalska', title: 'Neurological Physiotherapist', rating: '4.9', reviews: 12, desc: 'Supports recovery after stroke and neurological conditions with personalized home-based rehabilitation.', experience: '8+ years experience', tags: ['Stroke recovery', 'Balance training', 'Mobility'], area: 'Athens', bio: 'Dr. Anna Kowalska is a specialized neurological physiotherapist with over 8 years of experience.' },
-    { id: 2, name: 'Dr. Mark Jenkins', title: 'Musculoskeletal Physiotherapist', rating: '4.8', reviews: 25, desc: 'Treats back pain, neck pain, and joint issues, helping improve movement and reduce discomfort.', experience: '10+ years experience', tags: ['Back pain', 'Neck pain', 'Joint therapy'], area: 'Athens', bio: 'Dr. Mark Jenkins specializes in musculoskeletal physiotherapy with a focus on chronic pain management.' },
-    { id: 3, name: 'Maria Lopez', title: 'Rehabilitation Physiotherapist', rating: '4.7', reviews: 30, desc: 'Helps patients recover after surgery, restoring strength, mobility, and confidence at home.', experience: '5+ years experience', tags: ['Post-surgery', 'Strength recovery', 'Mobility'], area: 'Piraeus', bio: 'Maria Lopez specializes in post-surgical rehabilitation.' },
-    { id: 4, name: 'Dr. James Thompson', title: 'Sports Physiotherapist', rating: '4.9', reviews: 50, desc: 'Supports injury recovery and safe return to activity with tailored rehabilitation plans.', experience: '15+ years experience', tags: ['Sports injuries', 'Recovery plans', 'Injury prevention'], area: 'Glyfada', bio: 'Dr. James Thompson is one of our most experienced sports physiotherapists.' },
-  ],
-};
+function Avatar({ name, photoUrl, size = 60 }) {
+  if (photoUrl) {
+    return (
+      <img
+        src={photoUrl}
+        alt={name}
+        style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+      />
+    );
+  }
+  const initials = (name || '?').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: '50%',
+      background: 'linear-gradient(135deg, #c8dff9, #a0c4f4)',
+      color: '#1a2e44', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontSize: size * 0.32, fontWeight: 700, flexShrink: 0,
+    }}>
+      {initials}
+    </div>
+  );
+}
 
 function TherapistModal({ therapist, lang, onClose }) {
   if (!therapist) return null;
@@ -23,44 +32,41 @@ function TherapistModal({ therapist, lang, onClose }) {
   const closeLabel = lang === 'el' ? 'Κλείσιμο' : 'Close';
   const bioLabel   = lang === 'el' ? 'Βιογραφικό' : 'About';
   const areaLabel  = lang === 'el' ? 'Περιοχή' : 'Area';
-  const reviewsLabel = lang === 'el' ? 'κριτικές' : 'reviews';
+  const priceLabel = lang === 'el' ? 'Τιμή/Συνεδρία' : 'Price/Session';
 
-  const bookHref = `/dashboard/patient/new-request?therapist=${encodeURIComponent(therapist.name)}`;
+  const bookHref = `/dashboard/patient/new-request?therapist=${encodeURIComponent(therapist.name || '')}`;
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 560, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
         <div style={{ padding: '28px 28px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'flex-start', gap: 16 }}>
-          <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'linear-gradient(135deg, #c8dff9, #a0c4f4)', flexShrink: 0 }} />
+          <Avatar name={therapist.name} photoUrl={therapist.photo_url} size={72} />
           <div style={{ flex: 1 }}>
             <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1a2e44', marginBottom: 4 }}>{therapist.name}</h2>
-            <div style={{ fontSize: 14, color: '#6b7a8d', marginBottom: 6 }}>{therapist.title}</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
-              <span style={{ color: '#f59e0b' }}>★</span>
-              <span style={{ fontWeight: 600, color: '#1a2e44' }}>{therapist.rating}</span>
-              <span style={{ color: '#6b7a8d' }}>({therapist.reviews} {reviewsLabel})</span>
-            </div>
+            <div style={{ fontSize: 14, color: '#6b7a8d', marginBottom: 6 }}>{therapist.specialty}</div>
+            {therapist.price_per_session && (
+              <div style={{ fontSize: 14, color: '#2a6fdb', fontWeight: 600 }}>{therapist.price_per_session}€/{lang === 'el' ? 'συνεδρία' : 'session'}</div>
+            )}
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#94a3b8', padding: 4 }}>✕</button>
         </div>
+
         <div style={{ padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 8 }}>{bioLabel}</div>
-            <p style={{ fontSize: 14, color: '#475569', lineHeight: 1.7, background: '#f8fafc', padding: '12px 14px', borderRadius: 8, borderLeft: '3px solid #dce6f0' }}>{therapist.bio}</p>
-          </div>
-          <div style={{ display: 'flex', gap: 16 }}>
+          {therapist.bio && (
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 8 }}>{bioLabel}</div>
+              <p style={{ fontSize: 14, color: '#475569', lineHeight: 1.7, background: '#f8fafc', padding: '12px 14px', borderRadius: 8, borderLeft: '3px solid #dce6f0' }}>{therapist.bio}</p>
+            </div>
+          )}
+
+          {therapist.area && (
             <div>
               <div style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 4 }}>{areaLabel}</div>
               <div style={{ fontSize: 14, color: '#1a2e44', fontWeight: 500 }}>{therapist.area}</div>
             </div>
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            <span style={{ padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600, background: '#1a2e44', color: '#fff' }}>{therapist.experience}</span>
-            {therapist.tags.map(tag => (
-              <span key={tag} style={{ padding: '4px 12px', borderRadius: 20, fontSize: 12, background: '#e8f1fd', color: '#2a6fdb', border: '1px solid #c8dff9' }}>{tag}</span>
-            ))}
-          </div>
+          )}
+
           <div style={{ display: 'flex', gap: 12, paddingTop: 8, borderTop: '1px solid #f1f5f9' }}>
             <a href={bookHref} style={{ flex: 1, background: '#1a2e44', color: '#fff', padding: '12px', borderRadius: 30, fontSize: 14, fontWeight: 600, textDecoration: 'none', textAlign: 'center' }}>{bookLabel} →</a>
             <button onClick={onClose} style={{ flex: 1, background: 'transparent', color: '#1a2e44', padding: '12px', borderRadius: 30, fontSize: 14, fontWeight: 600, border: '1.5px solid #dce6f0', cursor: 'pointer', fontFamily: 'inherit' }}>{closeLabel}</button>
@@ -74,13 +80,48 @@ function TherapistModal({ therapist, lang, onClose }) {
 export default function Therapists() {
   const { lang } = useLang();
   const [selectedTherapist, setSelectedTherapist] = useState(null);
-  const therapists = THERAPISTS_DATA[lang];
+  const [therapists, setTherapists] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchTherapists() {
+      const { data, error } = await supabase
+        .from('therapist_profiles')
+        .select('*')
+        .eq('is_approved', true)
+        .order('created_at', { ascending: false });
+
+      if (!error && data) setTherapists(data);
+      setLoading(false);
+    }
+    fetchTherapists();
+  }, []);
 
   const t = {
-    el: { title: 'Οι', titleEm: 'Φυσιοθεραπευτές', titleEnd: 'μας', desc: 'Γνωρίστε έμπειρους, αδειοδοτημένους επαγγελματίες που παρέχουν εξατομικευμένη φροντίδα στο σπίτι σας.', viewAll: 'Όλοι οι Θεραπευτές', viewProfile: 'Δείτε Προφίλ' },
-    en: { title: 'Our', titleEm: 'Physiotherapists', titleEnd: '', desc: 'Meet experienced, licensed professionals providing personalized care at home.', viewAll: 'All Therapists', viewProfile: 'View Profile' },
+    el: {
+      title: 'Οι', titleEm: 'Φυσιοθεραπευτές', titleEnd: 'μας',
+      desc: 'Γνωρίστε έμπειρους, αδειοδοτημένους επαγγελματίες που παρέχουν εξατομικευμένη φροντίδα στο σπίτι σας.',
+      viewAll: 'Όλοι οι Θεραπευτές',
+      viewProfile: 'Δείτε Προφίλ',
+      experience: 'χρόνια εμπειρίας',
+      perSession: '€/συνεδρία',
+    },
+    en: {
+      title: 'Our', titleEm: 'Physiotherapists', titleEnd: '',
+      desc: 'Meet experienced, licensed professionals providing personalized care at home.',
+      viewAll: 'All Therapists',
+      viewProfile: 'View Profile',
+      experience: 'years experience',
+      perSession: '€/session',
+    },
   };
   const text = t[lang];
+
+  // Αν φορτώνει ακόμα, δεν δείχνουμε τίποτα για να μη κάνει flash
+  if (loading) return null;
+
+  // Αν δεν υπάρχουν approved therapists, κρύβουμε όλο το section
+  if (therapists.length === 0) return null;
 
   return (
     <>
@@ -101,27 +142,40 @@ export default function Therapists() {
             </div>
             <a href="/therapists" style={{ background: 'transparent', color: '#1a2e44', padding: '10px 22px', borderRadius: 30, fontSize: 14, fontWeight: 500, textDecoration: 'none', border: '1.5px solid #1a2e44' }}>{text.viewAll}</a>
           </div>
+
           <div className="therapists-grid">
             {therapists.map(th => (
               <div key={th.id} className="th-card" onClick={() => setSelectedTherapist(th)}>
                 <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
-                  <div style={{ width: 60, height: 60, borderRadius: '50%', background: 'linear-gradient(135deg, #c8dff9, #a0c4f4)', flexShrink: 0 }} />
-                  <div>
-                    <div style={{ fontSize: 16, fontWeight: 600, color: '#1a2e44' }}>{th.name}</div>
-                    <div style={{ fontSize: 13, color: '#6b7a8d', marginBottom: 4 }}>{th.title}</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13 }}>
-                      <span style={{ color: '#f59e0b' }}>★</span>{th.rating}
-                      <span style={{ color: '#6b7a8d' }}>({th.reviews})</span>
-                    </div>
+                  <Avatar name={th.name} photoUrl={th.photo_url} size={60} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 16, fontWeight: 600, color: '#1a2e44' }}>{th.name || '—'}</div>
+                    {th.specialty && <div style={{ fontSize: 13, color: '#6b7a8d', marginBottom: 4 }}>{th.specialty}</div>}
+                    {th.price_per_session && (
+                      <div style={{ fontSize: 13, color: '#2a6fdb', fontWeight: 600 }}>{th.price_per_session}{text.perSession}</div>
+                    )}
                   </div>
                 </div>
-                <p style={{ fontSize: 14, color: '#6b7a8d', marginBottom: 16, lineHeight: 1.6 }}>{th.desc}</p>
+
+                {th.bio && (
+                  <p style={{ fontSize: 14, color: '#6b7a8d', marginBottom: 16, lineHeight: 1.6 }}>
+                    {th.bio.length > 140 ? th.bio.slice(0, 140) + '...' : th.bio}
+                  </p>
+                )}
+
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
-                  <span style={{ padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 500, background: '#1a2e44', color: '#fff' }}>{th.experience}</span>
-                  {th.tags.map(tag => (
-                    <span key={tag} style={{ padding: '4px 10px', borderRadius: 20, fontSize: 12, background: '#e8f1fd', color: '#2a6fdb', border: '1px solid #c8dff9' }}>{tag}</span>
-                  ))}
+                  {th.years_experience && (
+                    <span style={{ padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 500, background: '#1a2e44', color: '#fff' }}>
+                      {th.years_experience}+ {text.experience}
+                    </span>
+                  )}
+                  {th.area && (
+                    <span style={{ padding: '4px 10px', borderRadius: 20, fontSize: 12, background: '#e8f1fd', color: '#2a6fdb', border: '1px solid #c8dff9' }}>
+                      📍 {th.area}
+                    </span>
+                  )}
                 </div>
+
                 <div style={{ fontSize: 13, color: '#2a6fdb', fontWeight: 600 }}>{text.viewProfile} →</div>
               </div>
             ))}
