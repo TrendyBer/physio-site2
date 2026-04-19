@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
-import Navbar from '../../components/Navbar';
-import Footer from '../../components/Footer';
+import Navbar from './Navbar';
+import Footer from './Footer';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
 
