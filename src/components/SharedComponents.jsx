@@ -2,6 +2,7 @@
 import { useLang } from '@/context/LanguageContext';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import BookingButton from './BookingButton';
 
 // ─── Shared settings hook ─────────────────────────────────────────────────────
 const CACHE_KEY = 'cms_platform_settings';
@@ -78,7 +79,9 @@ export function CtaBanner() {
           {text.title} <em style={{ fontStyle: 'italic', color: '#4a8ff5' }}>{text.titleEm}</em>?
         </h2>
         <p style={{ color: 'rgba(255,255,255,0.7)', marginBottom: 32, fontSize: 16 }}>{text.desc}</p>
-        <a href="/request" style={{ background: '#fff', color: '#1a2e44', padding: '14px 32px', borderRadius: 30, fontWeight: 600, fontSize: 15, textDecoration: 'none', display: 'inline-block' }}>{text.cta}</a>
+        <BookingButton style={{ background: '#fff', color: '#1a2e44', padding: '14px 32px', borderRadius: 30, fontWeight: 600, fontSize: 15, display: 'inline-block', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+          {text.cta}
+        </BookingButton>
       </div>
     </section>
   );
@@ -111,7 +114,6 @@ export function Blog() {
   };
   const text = t[lang];
 
-  // Αν φορτώνει ή δεν υπάρχουν άρθρα → κρύβουμε όλο το section
   if (loading) return null;
   if (posts.length === 0) return null;
 

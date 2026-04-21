@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
 import BookingButton from './BookingButton';
-import FreeAssessmentButton from './FreeAssessmentButton';
 
 const DEFAULT_SERVICES = [
   { id: 1, icon: '🦴', titleEl: 'Μυοσκελετική Φυσιοθεραπεία', titleEn: 'Musculoskeletal Physiotherapy', descEl: 'Θεραπεία για πόνο στη μέση, αυχένα, αρθρώσεις και καθημερινές μυοσκελετικές κακώσεις.', descEn: 'Treatment for back pain, neck pain, joint issues, and everyday musculoskeletal injuries.' },
@@ -233,7 +232,7 @@ export default function ServicesPage() {
         </div>
       </section>
 
-      {/* CTA BANNER - ΝΕΟ ΚΟΥΜΠΙ FREE ASSESSMENT */}
+      {/* CTA BANNER — Δωρεάν Αξιολόγηση με variant="assessment" */}
       <section style={{ padding: '60px 24px', background: '#1a2e44' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div className="cta-banner-grid">
@@ -244,9 +243,9 @@ export default function ServicesPage() {
               <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 16, lineHeight: 1.7 }}>{text.ctaBannerDesc}</p>
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <FreeAssessmentButton style={{ background: '#fff', color: '#1a2e44', padding: '14px 32px', borderRadius: 30, fontWeight: 600, fontSize: 15, display: 'inline-block', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+              <BookingButton variant="assessment" style={{ background: '#fff', color: '#1a2e44', padding: '14px 32px', borderRadius: 30, fontWeight: 600, fontSize: 15, display: 'inline-block', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
                 {text.ctaBannerBtn}
-              </FreeAssessmentButton>
+              </BookingButton>
             </div>
           </div>
         </div>

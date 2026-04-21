@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
+import BookingButton from './BookingButton';
 
 const DEFAULT = {
   el: {
@@ -31,10 +32,7 @@ export default function Hero() {
   const { lang } = useLang();
   const [data, setData] = useState(DEFAULT);
   const [imgLoaded, setImgLoaded] = useState(false);
-
-  // State για το πεδίο διεύθυνσης & auth modal
   const [address, setAddress] = useState('');
-  const [showAuthModal, setShowAuthModal] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -64,42 +62,16 @@ export default function Hero() {
 
   const text = data[lang] || DEFAULT[lang];
 
-  // Handler για το κουμπί booking
-  function handleHeroBook() {
-    if (!address.trim()) return;
-    const role = typeof window !== 'undefined' ? localStorage.getItem('userRole') : null;
-
-    if (role === 'patient') {
-      localStorage.setItem('bookingAddress', address);
-      window.location.href = '/dashboard/patient/new-request';
-    } else {
-      localStorage.setItem('bookingAddress', address);
-      localStorage.setItem('pendingRedirect', '/dashboard/patient/new-request');
-      setShowAuthModal(true);
-    }
-  }
-
-  // Translations για το booking box & modal
   const bookT = {
     el: {
       placeholder: '📍 Διεύθυνση (π.χ. Αθηνάς 12, Αθήνα)',
       btn: 'Κλείσε Ραντεβού',
       hint: '✓ Χωρίς δέσμευση · ✓ Πιστοποιημένοι θεραπευτές',
-      authTitle: 'Συνδεθείτε για να συνεχίσετε',
-      authDesc: 'Χρειάζεστε λογαριασμό για να κλείσετε ραντεβού.',
-      login: 'Σύνδεση',
-      register: 'Εγγραφή',
-      cancel: 'Άκυρο',
     },
     en: {
       placeholder: '📍 Address (e.g. 12 Athens St, Athens)',
       btn: 'Book a Session',
       hint: '✓ No commitment · ✓ Certified therapists',
-      authTitle: 'Sign in to continue',
-      authDesc: 'You need an account to book a session.',
-      login: 'Sign In',
-      register: 'Register',
-      cancel: 'Cancel',
     },
   };
   const bt = bookT[lang];
@@ -172,18 +144,17 @@ export default function Hero() {
           </h1>
           <p style={{ fontSize: 17, color: '#6b7a8d', lineHeight: 1.7, marginBottom: 28, maxWidth: 460 }}>{text.desc}</p>
 
-          {/* Address input + booking button — κάτω από την περιγραφή */}
+          {/* Address input + BookingButton */}
           <div className="hero-book-box">
             <input
               value={address}
               onChange={e => setAddress(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleHeroBook()}
               placeholder={bt.placeholder}
               className="hero-book-input"
             />
-            <button onClick={handleHeroBook} className="hero-book-btn">
+            <BookingButton address={address} className="hero-book-btn">
               {bt.btn} →
-            </button>
+            </BookingButton>
           </div>
           <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 28 }}>
             {bt.hint}
@@ -217,29 +188,6 @@ export default function Hero() {
           )}
         </div>
       </section>
-
-      {/* Auth Modal */}
-      {showAuthModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}
-          onClick={e => { if (e.target === e.currentTarget) setShowAuthModal(false); }}>
-          <div style={{ background: '#fff', borderRadius: 20, padding: '40px 32px', maxWidth: 420, width: '100%', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
-            <div style={{ fontSize: 40, marginBottom: 16 }}>🔐</div>
-            <h2 style={{ fontSize: 22, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>{bt.authTitle}</h2>
-            <p style={{ fontSize: 14, color: '#64748B', marginBottom: 28, lineHeight: 1.7 }}>{bt.authDesc}</p>
-            <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
-              <a href="/auth/login" style={{ flex: 1, padding: '13px', borderRadius: 30, background: '#1a2e44', color: '#fff', fontSize: 15, fontWeight: 600, textDecoration: 'none', textAlign: 'center' }}>
-                {bt.login}
-              </a>
-              <a href="/auth/register?role=patient" style={{ flex: 1, padding: '13px', borderRadius: 30, background: 'transparent', color: '#1a2e44', fontSize: 15, fontWeight: 600, textDecoration: 'none', textAlign: 'center', border: '1.5px solid #1a2e44' }}>
-                {bt.register}
-              </a>
-            </div>
-            <button onClick={() => setShowAuthModal(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: 13, cursor: 'pointer' }}>
-              {bt.cancel}
-            </button>
-          </div>
-        </div>
-      )}
     </>
   );
 }

@@ -2,7 +2,30 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 
-export default function BookingButton({ children, style, className }) {
+/**
+ * Ενιαίο κουμπί που χρησιμοποιείται ΠΑΝΤΟΥ για κλείσιμο ραντεβού/αξιολόγησης.
+ *
+ * Props:
+ *   - variant: "booking" (default) ή "assessment"
+ *       booking    → /dashboard/patient/new-request
+ *       assessment → /free-assessment
+ *   - address: (optional) αν περαστεί, αποθηκεύεται στο localStorage
+ *   - disabled: αν true, το κουμπί είναι disabled
+ *   - style, className, children: standard props
+ *
+ * Λογική:
+ *   - Αν ο χρήστης είναι logged-in → πάει κατευθείαν στον προορισμό
+ *   - Αν ΔΕΝ είναι logged-in → πάει στο /auth/login
+ *     (αποθηκεύει το pendingRedirect για να γυρίσει μετά το login)
+ */
+export default function BookingButton({
+  children,
+  style,
+  className,
+  variant = 'booking',
+  address = '',
+  disabled = false,
+}) {
   const [user, setUser] = useState(null);
   const [mounted, setMounted] = useState(false);
 
@@ -19,20 +42,36 @@ export default function BookingButton({ children, style, className }) {
 
   function handleClick(e) {
     e.preventDefault();
-    if (!mounted) return;
+    if (!mounted || disabled) return;
+
+    // Destination ανάλογα με το variant
+    const destination = variant === 'assessment'
+      ? '/free-assessment'
+      : '/dashboard/patient/new-request';
+
+    // Save address αν υπάρχει
+    if (address && address.trim()) {
+      try { localStorage.setItem('bookingAddress', address.trim()); } catch (_) {}
+    }
 
     if (user) {
-      // Logged in → κατευθείαν στη φόρμα αιτήματος
-      window.location.href = '/dashboard/patient/new-request';
+      // Logged in → κατευθείαν στον προορισμό
+      window.location.href = destination;
     } else {
-      // Not logged in → login page (με redirect back μετά το login)
-      try { localStorage.setItem('pendingRedirect', '/dashboard/patient/new-request'); } catch (_) {}
+      // Not logged in → login page (με redirect back μετά)
+      try { localStorage.setItem('pendingRedirect', destination); } catch (_) {}
       window.location.href = '/auth/login';
     }
   }
 
   return (
-    <button onClick={handleClick} style={style} className={className}>
+    <button
+      onClick={handleClick}
+      style={style}
+      className={className}
+      disabled={disabled}
+      type="button"
+    >
       {children}
     </button>
   );
