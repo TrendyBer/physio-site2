@@ -17,10 +17,11 @@ function Badge({ label, bg, color }) {
 }
 
 const STATUS = {
-  pending:   { label: 'Εκκρεμές',     bg: '#FEF3C7', color: '#92400E' },
-  accepted:  { label: 'Αποδεκτό',     bg: '#D1FAE5', color: '#065F46' },
-  rejected:  { label: 'Απορρίφθηκε', bg: '#FFE4E6', color: '#9F1239' },
-  completed: { label: 'Ολοκληρώθηκε', bg: '#EDE9FE', color: '#5B21B6' },
+  pending:   { label: 'Εκκρεμές',      bg: '#FEF3C7', color: '#92400E' },
+  confirmed: { label: 'Επιβεβαιωμένη', bg: '#DBEAFE', color: '#1D4ED8' },
+  completed: { label: 'Ολοκληρώθηκε',  bg: '#EDE9FE', color: '#5B21B6' },
+  cancelled: { label: 'Ακυρώθηκε',     bg: '#FFE4E6', color: '#9F1239' },
+  no_show:   { label: 'Δεν εμφανίστηκε', bg: '#FEE2E2', color: '#991B1B' },
 };
 
 const DAYS_EL = ['Κυρ', 'Δευ', 'Τρι', 'Τετ', 'Πεμ', 'Παρ', 'Σαβ'];
@@ -64,7 +65,7 @@ export default function TherapistDashboard() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
-  const [appointments, setAppointments] = useState([]);
+  const [requests, setRequests] = useState([]); // session_requests + joined bookings + patient name
   const [slots, setSlots] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [commission, setCommission] = useState(20);
@@ -77,6 +78,11 @@ export default function TherapistDashboard() {
   const [weekOffset, setWeekOffset] = useState(0);
   const photoInputRef = useRef();
 
+  // Cancel modal
+  const [cancelModal, setCancelModal] = useState(null); // { type: 'request'|'booking', id, data }
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelling, setCancelling] = useState(false);
+
   const currentWeek = ALL_WEEKS[weekOffset] || ALL_WEEKS[0];
 
   useEffect(() => { init(); }, []);
@@ -86,21 +92,67 @@ export default function TherapistDashboard() {
     if (!user) { router.push('/auth/login'); return; }
     setUser(user);
 
-    const [{ data: prof }, { data: appts }, { data: slts }, { data: revs }, { data: comm }] = await Promise.all([
-      supabase.from('therapist_profiles').select('*').eq('id', user.id).single(),
-      supabase.from('appointments').select('*').eq('therapist_id', user.id).order('created_at', { ascending: false }),
-      supabase.from('availability_slots').select('*').eq('therapist_id', user.id),
-      supabase.from('reviews').select('*').eq('therapist_id', user.id).eq('status', 'published'),
-      supabase.from('platform_settings').select('value').eq('key', 'commission').single(),
-    ]);
-
+    // 1. Profile
+    const { data: prof } = await supabase.from('therapist_profiles').select('*').eq('id', user.id).single();
     setProfile(prof || {});
     setProfileForm(prof || {});
-    setAppointments(appts || []);
+
+    await loadRequests(user.id);
+
+    // Slots
+    const { data: slts } = await supabase.from('availability_slots').select('*').eq('therapist_id', user.id);
     setSlots(slts || []);
+
+    // Reviews
+    const { data: revs } = await supabase.from('reviews').select('*').eq('therapist_id', user.id).eq('is_published', true);
     setReviews(revs || []);
+
+    // Commission
+    const { data: comm } = await supabase.from('platform_settings').select('value').eq('key', 'commission').single();
     if (comm) setCommission(parseInt(comm.value) || 20);
+
     setLoading(false);
+  }
+
+  // Φορτώνει session_requests + joined bookings + patient name (ΟΧΙ phone/email)
+  async function loadRequests(therapistId) {
+    // Fetch requests για αυτόν τον θεραπευτή
+    const { data: reqs } = await supabase
+      .from('session_requests')
+      .select('*')
+      .eq('therapist_id', therapistId)
+      .eq('type', 'booking')
+      .order('created_at', { ascending: false });
+
+    if (!reqs || reqs.length === 0) { setRequests([]); return; }
+
+    // Fetch bookings για τα requests
+    const requestIds = reqs.map(r => r.id);
+    const { data: bks } = await supabase
+      .from('session_bookings')
+      .select('*')
+      .in('request_id', requestIds)
+      .order('session_date', { ascending: true });
+
+    // Fetch patient profiles (μόνο name — όχι phone/email)
+    const patientIds = [...new Set(reqs.map(r => r.patient_id).filter(Boolean))];
+    const { data: patients } = await supabase
+      .from('patient_profiles')
+      .select('id, name')
+      .in('id', patientIds);
+
+    // Combine: κάθε request με τα bookings του και το όνομα ασθενή
+    const combined = reqs.map(req => {
+      const reqBookings = (bks || []).filter(b => b.request_id === req.id);
+      const patient = (patients || []).find(p => p.id === req.patient_id);
+      return {
+        ...req,
+        bookings: reqBookings,
+        patient_name: patient?.name || 'Άγνωστο',
+      };
+    });
+
+    setRequests(combined);
   }
 
   async function uploadPhoto(e) {
@@ -134,18 +186,88 @@ export default function TherapistDashboard() {
     setSaving(false);
   }
 
-  async function respondAppointment(id, status) {
-    await supabase.from('appointments').update({ status }).eq('id', id);
-    if (status === 'accepted') {
-      const appt = appointments.find(a => a.id === id);
-      if (appt?.slot_id) await supabase.from('availability_slots').update({ is_blocked: true }).eq('id', appt.slot_id);
-    }
-    setAppointments(prev => prev.map(a => a.id === id ? { ...a, status } : a));
+  // Αποδοχή αιτήματος: όλα τα bookings pending → confirmed + request pending → confirmed
+  async function confirmRequest(request) {
+    const bookingIds = request.bookings.map(b => b.id);
+    await supabase.from('session_bookings').update({ status: 'confirmed' }).in('id', bookingIds);
+    await supabase.from('session_requests').update({ status: 'confirmed' }).eq('id', request.id);
+    await loadRequests(user.id);
   }
 
-  async function markCompleted(id) {
-    await supabase.from('appointments').update({ status: 'completed', session_completed: true }).eq('id', id);
-    setAppointments(prev => prev.map(a => a.id === id ? { ...a, status: 'completed', session_completed: true } : a));
+  // Ολοκλήρωση ΜΙΑΣ συνεδρίας
+  async function markBookingCompleted(bookingId) {
+    await supabase.from('session_bookings').update({
+      status: 'completed',
+      completed_at: new Date().toISOString(),
+      completed_by_therapist: true,
+    }).eq('id', bookingId);
+    await loadRequests(user.id);
+  }
+
+  // Άνοιγμα modal ακύρωσης (όλο το αίτημα)
+  function openCancelRequestModal(request) {
+    setCancelModal({ type: 'request', data: request });
+    setCancelReason('');
+  }
+
+  // Άνοιγμα modal ακύρωσης (μία συνεδρία)
+  function openCancelBookingModal(booking, request) {
+    setCancelModal({ type: 'booking', data: booking, request });
+    setCancelReason('');
+  }
+
+  async function doCancel() {
+    if (!cancelReason.trim()) {
+      alert('Παρακαλώ συμπληρώστε λόγο ακύρωσης.');
+      return;
+    }
+    setCancelling(true);
+
+    const now = new Date().toISOString();
+    const reason = `[Θεραπευτής] ${cancelReason}`;
+
+    if (cancelModal.type === 'request') {
+      // Ακύρωση όλου του αιτήματος
+      const req = cancelModal.data;
+      const bookingIds = req.bookings.filter(b => b.status !== 'completed').map(b => b.id);
+
+      if (bookingIds.length > 0) {
+        await supabase.from('session_bookings').update({
+          status: 'cancelled',
+          cancelled_at: now,
+          cancelled_reason: reason,
+        }).in('id', bookingIds);
+
+        // Ξεκλειδώνουμε τα slots
+        const slotIds = req.bookings.filter(b => b.status !== 'completed').map(b => b.slot_id).filter(Boolean);
+        if (slotIds.length > 0) {
+          await supabase.from('availability_slots').update({ is_blocked: false }).in('id', slotIds);
+        }
+      }
+
+      await supabase.from('session_requests').update({
+        status: 'cancelled',
+        cancelled_at: now,
+        cancelled_reason: reason,
+      }).eq('id', req.id);
+    } else {
+      // Ακύρωση μίας συνεδρίας
+      const booking = cancelModal.data;
+      await supabase.from('session_bookings').update({
+        status: 'cancelled',
+        cancelled_at: now,
+        cancelled_reason: reason,
+      }).eq('id', booking.id);
+
+      if (booking.slot_id) {
+        await supabase.from('availability_slots').update({ is_blocked: false }).eq('id', booking.slot_id);
+      }
+    }
+
+    await loadRequests(user.id);
+    setCancelling(false);
+    setCancelModal(null);
+    setCancelReason('');
   }
 
   async function toggleSlot(day, hour) {
@@ -174,11 +296,21 @@ export default function TherapistDashboard() {
     router.push('/');
   }
 
-  const pending   = appointments.filter(a => a.status === 'pending').length;
-  const accepted  = appointments.filter(a => a.status === 'accepted').length;
-  const completed = appointments.filter(a => a.status === 'completed').length;
+  // Στατιστικά (μετράει bookings, όχι requests)
+  const allBookings = requests.flatMap(r => r.bookings);
+  const pendingCount = requests.filter(r => r.status === 'pending').length;
+  const confirmedCount = allBookings.filter(b => b.status === 'confirmed').length;
+  const completedCount = allBookings.filter(b => b.status === 'completed').length;
   const avgRating = reviews.length > 0 ? (reviews.reduce((s, r) => s + (r.rating || 0), 0) / reviews.length).toFixed(1) : '—';
-  const earned    = completed * commission;
+  const pricePerSession = profile?.price_per_session || 0;
+  const netPerSession = Math.max(0, pricePerSession - commission);
+  const earned = completedCount * netPerSession;
+
+  // Υπολογισμός καθαρού ποσού ανά αίτημα
+  function getNetAmount(request) {
+    const totalSessions = request.bookings.length || request.package_size || 1;
+    return totalSessions * netPerSession;
+  }
 
   const fmtDate = d => new Date(d + 'T12:00:00').toLocaleDateString('el-GR', { day: '2-digit', month: '2-digit' });
   const weekStart = currentWeek?.[0];
@@ -192,7 +324,7 @@ export default function TherapistDashboard() {
 
   const TABS = [
     { id: 'overview', label: '📊 Επισκόπηση' },
-    { id: 'requests', label: `📋 Αιτήματα ${pending > 0 ? `(${pending})` : ''}` },
+    { id: 'requests', label: `📋 Αιτήματα ${pendingCount > 0 ? `(${pendingCount})` : ''}` },
     { id: 'calendar', label: '📅 Διαθεσιμότητα' },
     { id: 'reviews',  label: '⭐ Αξιολογήσεις' },
     { id: 'profile',  label: '👤 Προφίλ' },
@@ -230,11 +362,11 @@ export default function TherapistDashboard() {
           <div>
             <div style={{ display: 'flex', gap: 14, marginBottom: 24, flexWrap: 'wrap' }}>
               {[
-                { label: 'Εκκρεμή', value: pending, bg: '#FEF3C7', border: '#FDE68A', text: '#B45309' },
-                { label: 'Αποδεκτά', value: accepted, bg: '#DBEAFE', border: '#BFDBFE', text: '#1D4ED8' },
-                { label: 'Ολοκληρωμένα', value: completed, bg: '#D1FAE5', border: '#BBF7D0', text: '#15803D' },
+                { label: 'Νέα Αιτήματα', value: pendingCount, bg: '#FEF3C7', border: '#FDE68A', text: '#B45309' },
+                { label: 'Επιβεβαιωμένες', value: confirmedCount, bg: '#DBEAFE', border: '#BFDBFE', text: '#1D4ED8' },
+                { label: 'Ολοκληρωμένες', value: completedCount, bg: '#D1FAE5', border: '#BBF7D0', text: '#15803D' },
                 { label: 'Μέση Βαθμολογία', value: avgRating, bg: '#FFFBEB', border: '#FDE68A', text: '#B45309' },
-                { label: 'Έσοδα', value: `${earned}€`, bg: '#F0FDF4', border: '#BBF7D0', text: '#15803D' },
+                { label: 'Καθαρά Έσοδα', value: `${earned}€`, bg: '#F0FDF4', border: '#BBF7D0', text: '#15803D' },
               ].map(c => (
                 <div key={c.label} style={{ flex: 1, minWidth: 130, background: c.bg, border: `1px solid ${c.border}`, borderRadius: 14, padding: '18px 20px' }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: c.text, textTransform: 'uppercase', marginBottom: 6 }}>{c.label}</div>
@@ -243,25 +375,25 @@ export default function TherapistDashboard() {
               ))}
             </div>
             <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 14, padding: '20px 24px', marginBottom: 20 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#1D4ED8', marginBottom: 8 }}>💳 Πληροφορίες Προμήθειας</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#1D4ED8', marginBottom: 8 }}>💳 Πληροφορίες Πληρωμής</div>
               <div style={{ fontSize: 13, color: '#1E40AF', lineHeight: 1.7 }}>
-                Προμήθεια πλατφόρμας: <strong>{commission}€ ανά περιστατικό</strong><br />
-                Τιμή συνεδρίας σας: <strong>{profile?.price_per_session || '—'}€</strong><br />
-                Καθαρά έσοδα ανά συνεδρία: <strong>{profile?.price_per_session ? profile.price_per_session - commission : '—'}€</strong>
+                Τιμή συνεδρίας σας: <strong>{pricePerSession}€</strong><br />
+                Προμήθεια πλατφόρμας: <strong>{commission}€ ανά συνεδρία</strong><br />
+                Καθαρά έσοδα ανά συνεδρία: <strong>{netPerSession}€</strong>
               </div>
             </div>
             <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
               <div style={{ padding: '14px 20px', borderBottom: '1px solid #f1f5f9', fontSize: 14, fontWeight: 700, color: '#0F172A' }}>Πρόσφατα Αιτήματα</div>
-              {appointments.slice(0, 5).length === 0
+              {requests.slice(0, 5).length === 0
                 ? <div style={{ padding: 40, textAlign: 'center', color: '#94A3B8', fontSize: 14 }}>Δεν υπάρχουν αιτήματα ακόμα</div>
-                : appointments.slice(0, 5).map((a, i) => {
-                  const st = STATUS[a.status] || STATUS.pending;
+                : requests.slice(0, 5).map((r, i) => {
+                  const st = STATUS[r.status] || STATUS.pending;
                   return (
-                    <div key={a.id} style={{ padding: '14px 20px', borderTop: i > 0 ? '1px solid #f1f5f9' : 'none', display: 'flex', alignItems: 'center', gap: 14 }}>
-                      <Avatar name={a.patient_name} size={36} />
+                    <div key={r.id} style={{ padding: '14px 20px', borderTop: i > 0 ? '1px solid #f1f5f9' : 'none', display: 'flex', alignItems: 'center', gap: 14 }}>
+                      <Avatar name={r.patient_name} size={36} />
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 600, fontSize: 14, color: '#0F172A' }}>{a.patient_name}</div>
-                        <div style={{ fontSize: 12, color: '#64748B' }}>{a.service} · {new Date(a.created_at).toLocaleDateString('el-GR')}</div>
+                        <div style={{ fontWeight: 600, fontSize: 14, color: '#0F172A' }}>{r.patient_name}</div>
+                        <div style={{ fontSize: 12, color: '#64748B' }}>{r.problem_type} · {r.bookings.length} {r.bookings.length === 1 ? 'συνεδρία' : 'συνεδρίες'} · {new Date(r.created_at).toLocaleDateString('el-GR')}</div>
                       </div>
                       <Badge label={st.label} bg={st.bg} color={st.color} />
                     </div>
@@ -273,35 +405,130 @@ export default function TherapistDashboard() {
 
         {/* REQUESTS */}
         {activeTab === 'requests' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {appointments.length === 0
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {requests.length === 0
               ? <div style={{ padding: 40, textAlign: 'center', color: '#94A3B8', background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0' }}>Δεν υπάρχουν αιτήματα ακόμα</div>
-              : appointments.map(a => {
-                const st = STATUS[a.status] || STATUS.pending;
+              : requests.map(req => {
+                const st = STATUS[req.status] || STATUS.pending;
+                const netAmount = getNetAmount(req);
+                const isPending = req.status === 'pending';
+                const hasActiveBookings = req.bookings.some(b => b.status === 'confirmed' || b.status === 'pending');
                 return (
-                  <div key={a.id} style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: '18px 20px' }}>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-                      <Avatar name={a.patient_name} size={44} />
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
-                          <span style={{ fontWeight: 700, fontSize: 15, color: '#0F172A' }}>{a.patient_name}</span>
-                          <Badge label={st.label} bg={st.bg} color={st.color} />
-                          <span style={{ fontSize: 11, color: '#94A3B8', marginLeft: 'auto' }}>{new Date(a.created_at).toLocaleDateString('el-GR')}</span>
+                  <div key={req.id} style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+                    {/* Header */}
+                    <div style={{ padding: '18px 20px', borderBottom: '1px solid #f1f5f9' }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                        <Avatar name={req.patient_name} size={48} />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
+                            <span style={{ fontWeight: 700, fontSize: 16, color: '#0F172A' }}>{req.patient_name}</span>
+                            <Badge label={st.label} bg={st.bg} color={st.color} />
+                            <span style={{ fontSize: 11, color: '#94A3B8', marginLeft: 'auto' }}>{new Date(req.created_at).toLocaleDateString('el-GR')}</span>
+                          </div>
+
+                          {/* Address */}
+                          <div style={{ fontSize: 13, color: '#475569', marginBottom: 4 }}>
+                            📍 {req.address}, {req.area}{req.postal_code ? `, ${req.postal_code}` : ''}
+                          </div>
+                          {req.floor_info && (
+                            <div style={{ fontSize: 12, color: '#64748B', marginBottom: 8 }}>
+                              🏠 {req.floor_info}
+                            </div>
+                          )}
+
+                          {/* Problem */}
+                          <div style={{ fontSize: 13, color: '#475569', background: '#f8fafc', padding: '10px 14px', borderRadius: 8, borderLeft: '3px solid #cbd5e1', marginBottom: 10 }}>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 4 }}>{req.problem_type}</div>
+                            {req.problem_description || 'Χωρίς περιγραφή'}
+                          </div>
+
+                          {req.notes && (
+                            <div style={{ fontSize: 12, color: '#64748B', marginBottom: 10, fontStyle: 'italic' }}>
+                              💬 Σημειώσεις: {req.notes}
+                            </div>
+                          )}
+
+                          {/* Σύνοψη */}
+                          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 13, padding: '10px 14px', background: '#F0FDF4', borderRadius: 8, border: '1px solid #BBF7D0' }}>
+                            <div>
+                              <span style={{ color: '#64748B' }}>Τύπος: </span>
+                              <strong style={{ color: '#0F172A' }}>
+                                {req.session_type === 'single' ? 'Μεμονωμένη' : `Πακέτο ${req.package_size} συνεδριών`}
+                              </strong>
+                            </div>
+                            <div>
+                              <span style={{ color: '#64748B' }}>Συνεδρίες: </span>
+                              <strong style={{ color: '#0F172A' }}>{req.bookings.length}</strong>
+                            </div>
+                            <div style={{ marginLeft: 'auto' }}>
+                              <span style={{ color: '#64748B' }}>Καθαρά: </span>
+                              <strong style={{ color: '#15803D', fontSize: 15 }}>{netAmount}€</strong>
+                            </div>
+                          </div>
                         </div>
-                        {a.patient_phone && <div style={{ fontSize: 12, color: '#64748B', marginBottom: 4 }}>📞 {a.patient_phone}</div>}
-                        {a.patient_address && <div style={{ fontSize: 12, color: '#2a6fdb', marginBottom: 4 }}>📍 {a.patient_address}, {a.patient_city}</div>}
-                        {a.service && <div style={{ fontSize: 13, color: '#475569', background: '#f8fafc', padding: '8px 12px', borderRadius: 8, borderLeft: '3px solid #cbd5e1', marginTop: 6 }}>{a.service}{a.notes ? ` — ${a.notes}` : ''}</div>}
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
-                        {a.status === 'pending' && (<>
-                          <button onClick={() => respondAppointment(a.id, 'accepted')} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: '#15803D', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>✓ Αποδοχή</button>
-                          <button onClick={() => respondAppointment(a.id, 'rejected')} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid #FECDD3', background: 'transparent', color: '#BE123C', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>✕ Απόρριψη</button>
-                        </>)}
-                        {a.status === 'accepted' && (
-                          <button onClick={() => markCompleted(a.id)} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: '#7C3AED', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>✓ Ολοκλήρωση</button>
-                        )}
                       </div>
                     </div>
+
+                    {/* Συνεδρίες */}
+                    <div style={{ padding: '16px 20px' }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 10 }}>
+                        📅 Συνεδρίες
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {req.bookings.map((b, i) => {
+                          const bSt = STATUS[b.status] || STATUS.pending;
+                          const d = new Date(b.session_date + 'T12:00:00');
+                          const isPast = new Date(b.session_date + 'T' + (b.session_time || '00:00')) < new Date();
+                          return (
+                            <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: '#f8fafc', borderRadius: 8, fontSize: 13 }}>
+                              <span style={{ color: '#64748B', fontWeight: 600 }}>{i + 1}.</span>
+                              <span style={{ color: '#0F172A', fontWeight: 500 }}>
+                                {DAYS_EL[d.getDay()]} {d.toLocaleDateString('el-GR', { day: '2-digit', month: '2-digit' })} στις {b.session_time?.slice(0, 5)}
+                              </span>
+                              <Badge label={bSt.label} bg={bSt.bg} color={bSt.color} />
+                              <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+                                {b.status === 'confirmed' && isPast && (
+                                  <button onClick={() => markBookingCompleted(b.id)}
+                                    style={{ padding: '5px 10px', borderRadius: 6, border: 'none', background: '#7C3AED', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+                                    ✓ Ολοκληρώθηκε
+                                  </button>
+                                )}
+                                {b.status === 'confirmed' && !isPast && (
+                                  <button onClick={() => openCancelBookingModal(b, req)}
+                                    style={{ padding: '5px 10px', borderRadius: 6, border: '1px solid #FECDD3', background: 'transparent', color: '#BE123C', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+                                    Ακύρωση
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Κύρια κουμπιά */}
+                    {(isPending || hasActiveBookings) && (
+                      <div style={{ padding: '14px 20px', borderTop: '1px solid #f1f5f9', background: '#f8fafc', display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                        {isPending && (
+                          <>
+                            <button onClick={() => openCancelRequestModal(req)}
+                              style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #FECDD3', background: 'transparent', color: '#BE123C', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                              ✕ Απόρριψη
+                            </button>
+                            <button onClick={() => confirmRequest(req)}
+                              style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: '#15803D', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                              ✓ Αποδοχή Αιτήματος
+                            </button>
+                          </>
+                        )}
+                        {!isPending && hasActiveBookings && (
+                          <button onClick={() => openCancelRequestModal(req)}
+                            style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #FECDD3', background: 'transparent', color: '#BE123C', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                            Ακύρωση Όλου του Αιτήματος
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -314,7 +541,6 @@ export default function TherapistDashboard() {
             <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', marginBottom: 4 }}>📅 Διαθεσιμότητα — έως 2 χρόνια μπροστά</div>
             <div style={{ fontSize: 13, color: '#64748B', marginBottom: 16 }}>Κλικάρετε για να ορίσετε/αφαιρέσετε ώρες. Ώρες ανά 30 λεπτά, 09:00–21:00.</div>
 
-            {/* Week navigation */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
               <button onClick={() => setWeekOffset(w => Math.max(0, w - 1))} disabled={weekOffset === 0}
                 style={{ padding: '6px 16px', borderRadius: 8, border: '1px solid #e2e8f0', background: weekOffset === 0 ? '#f8fafc' : '#fff', color: weekOffset === 0 ? '#94a3b8' : '#1a2e44', fontSize: 13, fontWeight: 600, cursor: weekOffset === 0 ? 'not-allowed' : 'pointer' }}>
@@ -465,7 +691,7 @@ export default function TherapistDashboard() {
                   ['Ειδικότητα',      profile?.specialty],
                   ['Περιοχή',         profile?.area],
                   ['Τιμή/Συνεδρία',   profile?.price_per_session ? `${profile.price_per_session}€` : '—'],
-                  ['Καθαρά/Συνεδρία', profile?.price_per_session ? `${profile.price_per_session - commission}€` : '—'],
+                  ['Καθαρά/Συνεδρία', profile?.price_per_session ? `${netPerSession}€` : '—'],
                 ].map(([label, value]) => (
                   <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f1f5f9', fontSize: 14 }}>
                     <span style={{ color: '#64748B' }}>{label}</span>
@@ -483,6 +709,41 @@ export default function TherapistDashboard() {
           </div>
         )}
       </div>
+
+      {/* Cancel Modal */}
+      {cancelModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}
+          onClick={e => { if (e.target === e.currentTarget) setCancelModal(null); }}>
+          <div style={{ background: '#fff', borderRadius: 20, padding: '32px', maxWidth: 440, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>
+              {cancelModal.type === 'request' ? 'Ακύρωση Αιτήματος' : 'Ακύρωση Συνεδρίας'}
+            </h2>
+            <p style={{ fontSize: 14, color: '#64748B', marginBottom: 20, lineHeight: 1.6 }}>
+              {cancelModal.type === 'request'
+                ? 'Θα ακυρωθούν όλες οι ενεργές συνεδρίες του αιτήματος. Ο ασθενής θα ενημερωθεί.'
+                : 'Η συνεδρία θα ακυρωθεί. Ο ασθενής θα ενημερωθεί.'}
+            </p>
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 6 }}>Λόγος ακύρωσης *</label>
+            <textarea
+              value={cancelReason}
+              onChange={e => setCancelReason(e.target.value)}
+              rows={3}
+              placeholder="π.χ. Έκτακτη αδυναμία εξυπηρέτησης, κατανόηση από τον ασθενή..."
+              style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#0F172A', resize: 'vertical', boxSizing: 'border-box', marginBottom: 20 }}
+            />
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setCancelModal(null)}
+                style={{ flex: 1, padding: '11px', borderRadius: 30, border: '1px solid #e2e8f0', background: 'transparent', color: '#475569', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+                Ακύρωση
+              </button>
+              <button onClick={doCancel} disabled={cancelling}
+                style={{ flex: 1, padding: '11px', borderRadius: 30, border: 'none', background: cancelling ? '#94a3b8' : '#BE123C', color: '#fff', fontSize: 14, fontWeight: 600, cursor: cancelling ? 'not-allowed' : 'pointer' }}>
+                {cancelling ? 'Ακύρωση...' : 'Επιβεβαίωση Ακύρωσης'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
