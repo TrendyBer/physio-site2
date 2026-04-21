@@ -1,123 +1,39 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
 
-/**
- * BookingButton — Ενιαίο κουμπί "Κλείσε Ραντεβού"
- *
- * Συμπεριφορά:
- *  - Αν είσαι συνδεδεμένος → /dashboard/patient/new-request
- *  - Αν όχι → ανοίγει auth modal
- *
- * Ελέγχει το auth μέσω Supabase (όχι localStorage).
- */
 export default function BookingButton({ children, style, className }) {
-  const { lang } = useLang();
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState(null);
+  const [mounted, setMounted] = useState(false);
 
-  // Έλεγχος αν ο χρήστης είναι συνδεδεμένος — μέσω Supabase
   useEffect(() => {
-    let cancelled = false;
-
-    async function checkAuth() {
-      const { data } = await supabase.auth.getSession();
-      if (!cancelled) {
-        setIsLoggedIn(!!data?.session);
-      }
-    }
-    checkAuth();
-
-    // Παρακολούθηση αλλαγών auth
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!cancelled) setIsLoggedIn(!!session);
+    setMounted(true);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) setUser(session.user);
     });
-
-    return () => {
-      cancelled = true;
-      listener?.subscription?.unsubscribe();
-    };
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user || null);
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
   function handleClick(e) {
     e.preventDefault();
-    if (isLoggedIn) {
+    if (!mounted) return;
+
+    if (user) {
+      // Logged in → κατευθείαν στη φόρμα αιτήματος
       window.location.href = '/dashboard/patient/new-request';
     } else {
-      localStorage.setItem('pendingRedirect', '/dashboard/patient/new-request');
-      setShowAuthModal(true);
+      // Not logged in → login page (με redirect back μετά το login)
+      try { localStorage.setItem('pendingRedirect', '/dashboard/patient/new-request'); } catch (_) {}
+      window.location.href = '/auth/login';
     }
   }
 
-  const t = {
-    el: {
-      authTitle: 'Συνδεθείτε για να συνεχίσετε',
-      authDesc: 'Χρειάζεστε λογαριασμό για να κλείσετε ραντεβού.',
-      login: 'Σύνδεση',
-      register: 'Εγγραφή',
-      cancel: 'Άκυρο',
-    },
-    en: {
-      authTitle: 'Sign in to continue',
-      authDesc: 'You need an account to book a session.',
-      login: 'Sign In',
-      register: 'Register',
-      cancel: 'Cancel',
-    },
-  };
-  const text = t[lang];
-
-  const defaultStyle = {
-    background: '#1a2e44',
-    color: '#fff',
-    padding: '14px 32px',
-    borderRadius: 30,
-    fontSize: 15,
-    fontWeight: 600,
-    textDecoration: 'none',
-    display: 'inline-block',
-    border: 'none',
-    cursor: 'pointer',
-    fontFamily: 'inherit',
-  };
-
-  const finalStyle = style || defaultStyle;
-
   return (
-    <>
-      <button
-        type="button"
-        onClick={handleClick}
-        className={className}
-        style={finalStyle}
-      >
-        {children}
-      </button>
-
-      {showAuthModal && (
-        <div
-          style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}
-          onClick={e => { if (e.target === e.currentTarget) setShowAuthModal(false); }}
-        >
-          <div style={{ background: '#fff', borderRadius: 20, padding: '40px 32px', maxWidth: 420, width: '100%', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
-            <div style={{ fontSize: 40, marginBottom: 16 }}>🔐</div>
-            <h2 style={{ fontSize: 22, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>{text.authTitle}</h2>
-            <p style={{ fontSize: 14, color: '#64748B', marginBottom: 28, lineHeight: 1.7 }}>{text.authDesc}</p>
-            <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
-              <a href="/auth/login" style={{ flex: 1, padding: '13px', borderRadius: 30, background: '#1a2e44', color: '#fff', fontSize: 15, fontWeight: 600, textDecoration: 'none', textAlign: 'center' }}>
-                {text.login}
-              </a>
-              <a href="/auth/register?role=patient" style={{ flex: 1, padding: '13px', borderRadius: 30, background: 'transparent', color: '#1a2e44', fontSize: 15, fontWeight: 600, textDecoration: 'none', textAlign: 'center', border: '1.5px solid #1a2e44' }}>
-                {text.register}
-              </a>
-            </div>
-            <button onClick={() => setShowAuthModal(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: 13, cursor: 'pointer' }}>
-              {text.cancel}
-            </button>
-          </div>
-        </div>
-      )}
-    </>
+    <button onClick={handleClick} style={style} className={className}>
+      {children}
+    </button>
   );
 }
