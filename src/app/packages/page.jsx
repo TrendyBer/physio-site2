@@ -1,132 +1,253 @@
 'use client';
 import { useState, useEffect } from 'react';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
-import { supabase } from '@/lib/supabase';
+import Navbar from '../../components/Navbar';
+import { Footer } from '../../components/SharedComponents';
+import BookingButton from '../../components/BookingButton';
 import { useLang } from '@/context/LanguageContext';
+import { supabase } from '@/lib/supabase';
+
+const t = {
+  el: {
+    badge: 'Πακέτα Συνεδριών',
+    title: 'Επιλέξτε το',
+    titleEm: 'Κατάλληλο Πακέτο',
+    subtitle: 'Περισσότερες συνεδρίες = μεγαλύτερη έκπτωση. Επιλέξτε πακέτο και στη συνέχεια επιλέξτε τον θεραπευτή που σας ταιριάζει.',
+    saveBadge: 'Εξοικονόμηση',
+    selectBtn: 'Επιλογή Πακέτου →',
+    sessions: 'συνεδρίες',
+    popular: 'Δημοφιλές',
+    infoTitle: 'Πώς υπολογίζεται η τιμή;',
+    infoText: 'Η τελική τιμή του πακέτου διαμορφώνεται από την τιμή/συνεδρία του θεραπευτή που θα επιλέξετε, αφαιρώντας την έκπτωση του πακέτου. Θα δείτε τη συνολική τιμή πριν την τελική επιβεβαίωση.',
+    loading: 'Φόρτωση πακέτων...',
+    noPackages: 'Δεν υπάρχουν διαθέσιμα πακέτα αυτή τη στιγμή.',
+    whyTitle: 'Γιατί να επιλέξετε πακέτο;',
+    whyBullets: [
+      { icon: '💰', title: 'Καλύτερη τιμή', desc: 'Όσο μεγαλύτερο το πακέτο, τόσο μεγαλύτερη η έκπτωση στην τιμή/συνεδρία.' },
+      { icon: '📅', title: 'Προγραμματισμός', desc: 'Κλείνετε όλες τις συνεδρίες μαζί και δεν σκέφτεστε ξανά το κόστος.' },
+      { icon: '🎯', title: 'Συνέπεια στη θεραπεία', desc: 'Οι πολλαπλές συνεδρίες εξασφαλίζουν συνέχεια και καλύτερα αποτελέσματα.' },
+    ],
+  },
+  en: {
+    badge: 'Session Packages',
+    title: 'Choose the',
+    titleEm: 'Right Package',
+    subtitle: 'More sessions = bigger discount. Choose a package and then select the therapist that suits you.',
+    saveBadge: 'Save',
+    selectBtn: 'Select Package →',
+    sessions: 'sessions',
+    popular: 'Popular',
+    infoTitle: 'How is the price calculated?',
+    infoText: 'The final package price is based on your chosen therapist\'s per-session rate, minus the package discount. You\'ll see the total price before final confirmation.',
+    loading: 'Loading packages...',
+    noPackages: 'No packages available at the moment.',
+    whyTitle: 'Why choose a package?',
+    whyBullets: [
+      { icon: '💰', title: 'Better price', desc: 'The larger the package, the bigger the discount per session.' },
+      { icon: '📅', title: 'Planning ahead', desc: 'Book all sessions at once and stop worrying about costs.' },
+      { icon: '🎯', title: 'Treatment consistency', desc: 'Multiple sessions ensure continuity and better results.' },
+    ],
+  },
+};
 
 export default function PackagesPage() {
   const { lang } = useLang();
+  const tx = t[lang];
+
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.from('packages').select('*').eq('is_active', true).order('display_order').then(({ data }) => {
-      setPackages(data || []);
+    async function fetchPackages() {
+      const { data, error } = await supabase
+        .from('packages')
+        .select('id, name_el, name_en, sessions, discount_percent, description_el, description_en, display_order')
+        .eq('is_active', true)
+        .order('sessions', { ascending: true });
+
+      if (!error && data) setPackages(data);
       setLoading(false);
-    });
+    }
+    fetchPackages();
   }, []);
 
-  function finalPrice(pkg) {
-    const total = pkg.sessions * pkg.price_per_session;
-    return (total * (1 - pkg.discount_percent / 100)).toFixed(0);
-  }
-
-  function handleSelect(pkg) {
-    const role = localStorage.getItem('userRole');
-    if (role === 'patient') {
-      localStorage.setItem('selectedPackage', JSON.stringify(pkg));
-      window.location.href = `/dashboard/patient/new-request?package=${pkg.id}`;
-    } else {
-      localStorage.setItem('selectedPackage', JSON.stringify(pkg));
-      localStorage.setItem('pendingRedirect', `/dashboard/patient/new-request?package=${pkg.id}`);
-      window.location.href = '/auth/login';
-    }
-  }
-
-  const icons = ['1️⃣', '5️⃣', '🔟', '2️⃣0️⃣', '📅'];
+  // Βρίσκουμε το πακέτο με τη μεγαλύτερη έκπτωση για το "Δημοφιλές" badge
+  const mostPopularId = packages.length > 0
+    ? packages.reduce((max, p) => (p.discount_percent || 0) > (max.discount_percent || 0) ? p : max, packages[0]).id
+    : null;
 
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        .pkg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 24px; }
-        @media (max-width: 640px) { .pkg-grid { grid-template-columns: 1fr; } }
-        .pkg-card { background: #fff; border-radius: 20px; border: 2px solid #e2e8f0; padding: 28px; transition: all .25s; display: flex; flex-direction: column; }
-        .pkg-card:hover { border-color: #2a6fdb; box-shadow: 0 8px 32px rgba(42,111,219,0.12); transform: translateY(-4px); }
-        .pkg-card.featured { border-color: #2a6fdb; background: linear-gradient(135deg, #EFF6FF, #fff); }
+        body { font-family: 'DM Sans', sans-serif; }
+        .pkg-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+        @media (max-width: 1024px) { .pkg-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 640px)  { .pkg-grid { grid-template-columns: 1fr; } }
+        .pkg-card {
+          background: #fff;
+          border-radius: 20px;
+          border: 1.5px solid #dce6f0;
+          padding: 32px 28px;
+          display: flex;
+          flex-direction: column;
+          transition: all .3s;
+          position: relative;
+        }
+        .pkg-card:hover { box-shadow: 0 12px 40px rgba(26,46,68,0.10); transform: translateY(-4px); border-color: #2a6fdb; }
+        .pkg-card.popular { border-color: #2a6fdb; border-width: 2px; box-shadow: 0 8px 32px rgba(42,111,219,0.14); }
+        .popular-badge {
+          position: absolute;
+          top: -13px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: #2a6fdb;
+          color: #fff;
+          padding: 6px 18px;
+          border-radius: 20px;
+          font-size: 12px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: .05em;
+        }
+        .why-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+        @media (max-width: 768px) { .why-grid { grid-template-columns: 1fr; } }
       `}</style>
 
       <Navbar />
 
       {/* Hero */}
-      <section style={{ background: 'linear-gradient(135deg, #e8f3ff, #f0f7ff)', padding: '72px 24px 48px', textAlign: 'center' }}>
-        <div style={{ maxWidth: 700, margin: '0 auto' }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#2a6fdb', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 16 }}>
-            {lang === 'el' ? 'Πακέτα Συνεδριών' : 'Session Packages'}
+      <section style={{ background: 'linear-gradient(135deg, #f0f6ff 0%, #f8fafb 100%)', padding: '80px 24px 60px' }}>
+        <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#2a6fdb', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 16 }}>
+            {tx.badge}
           </div>
-          <h1 style={{ fontFamily: 'Georgia, serif', fontSize: 'clamp(32px, 4vw, 52px)', color: '#1a2e44', lineHeight: 1.15, marginBottom: 16 }}>
-            {lang === 'el' ? 'Επίλεξε το' : 'Choose Your'}{' '}
-            <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>
-              {lang === 'el' ? 'Πακέτο σου' : 'Package'}
-            </em>
+          <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(32px, 4vw, 52px)', color: '#1a2e44', lineHeight: 1.15, marginBottom: 20 }}>
+            {tx.title} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{tx.titleEm}</em>
           </h1>
-          <p style={{ fontSize: 17, color: '#6b7a8d', lineHeight: 1.7 }}>
-            {lang === 'el'
-              ? 'Εξοικονόμησε με πακέτα συνεδριών και λάβε εξατομικευμένη φροντίδα στο σπίτι σου.'
-              : 'Save with session packages and receive personalized care at home.'}
+          <p style={{ fontSize: 17, color: '#6b7a8d', maxWidth: 640, margin: '0 auto', lineHeight: 1.7 }}>
+            {tx.subtitle}
           </p>
         </div>
       </section>
 
-      {/* Packages */}
-      <section style={{ background: '#f8fafc', padding: '60px 24px 80px' }}>
+      {/* Packages Grid */}
+      <section style={{ background: '#f8fafb', padding: '60px 24px 40px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           {loading ? (
-            <div style={{ textAlign: 'center', padding: 60, color: '#64748B' }}>
-              {lang === 'el' ? 'Φόρτωση...' : 'Loading...'}
-            </div>
+            <div style={{ textAlign: 'center', color: '#6b7a8d', padding: '60px 0' }}>{tx.loading}</div>
+          ) : packages.length === 0 ? (
+            <div style={{ textAlign: 'center', color: '#6b7a8d', padding: '60px 0' }}>{tx.noPackages}</div>
           ) : (
             <div className="pkg-grid">
-              {packages.map((pkg, i) => {
-                const total = (pkg.sessions * pkg.price_per_session).toFixed(0);
-                const final = finalPrice(pkg);
-                const isFeatured = pkg.discount_percent >= 10;
+              {packages.map((pkg) => {
+                const isPopular = pkg.id === mostPopularId && packages.length > 1;
+                const name = lang === 'el' ? pkg.name_el : pkg.name_en;
+                const desc = lang === 'el' ? pkg.description_el : pkg.description_en;
                 return (
-                  <div key={pkg.id} className={`pkg-card${isFeatured ? ' featured' : ''}`}>
-                    {isFeatured && (
-                      <div style={{ background: '#2a6fdb', color: '#fff', fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 999, alignSelf: 'flex-start', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '.05em' }}>
-                        {lang === 'el' ? '⭐ Δημοφιλές' : '⭐ Popular'}
+                  <div key={pkg.id} className={`pkg-card ${isPopular ? 'popular' : ''}`}>
+                    {isPopular && <div className="popular-badge">⭐ {tx.popular}</div>}
+
+                    {/* Number of sessions */}
+                    <div style={{ textAlign: 'center', marginBottom: 16 }}>
+                      <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: 56, fontWeight: 700, color: '#1a2e44', lineHeight: 1 }}>
+                        {pkg.sessions}
                       </div>
-                    )}
-                    <div style={{ fontSize: 36, marginBottom: 12 }}>{icons[i] || '📦'}</div>
-                    <div style={{ fontSize: 18, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>
-                      {lang === 'el' ? pkg.name_el : (pkg.name_en || pkg.name_el)}
-                    </div>
-                    <div style={{ fontSize: 14, color: '#64748B', marginBottom: 16 }}>
-                      {pkg.sessions} {lang === 'el' ? 'συνεδρίες' : 'sessions'}
-                    </div>
-
-                    {pkg.discount_percent > 0 && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                        <span style={{ fontSize: 14, color: '#94A3B8', textDecoration: 'line-through' }}>€{total}</span>
-                        <span style={{ background: '#D1FAE5', color: '#065F46', fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 999 }}>
-                          -{pkg.discount_percent}%
-                        </span>
+                      <div style={{ fontSize: 13, color: '#6b7a8d', marginTop: 4, textTransform: 'uppercase', letterSpacing: '.06em', fontWeight: 600 }}>
+                        {tx.sessions}
                       </div>
-                    )}
-
-                    <div style={{ fontSize: 36, fontWeight: 700, color: '#1a2e44', marginBottom: 4 }}>€{final}</div>
-                    <div style={{ fontSize: 13, color: '#94A3B8', marginBottom: 20 }}>
-                      €{(final / pkg.sessions).toFixed(0)}/{lang === 'el' ? 'συνεδρία' : 'session'}
                     </div>
 
-                    {(lang === 'el' ? pkg.description_el : pkg.description_en) && (
-                      <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, marginBottom: 20, flex: 1 }}>
-                        {lang === 'el' ? pkg.description_el : pkg.description_en}
+                    {/* Package name */}
+                    <h3 style={{ fontSize: 18, fontWeight: 700, color: '#1a2e44', textAlign: 'center', marginBottom: 12 }}>
+                      {name}
+                    </h3>
+
+                    {/* Description */}
+                    {desc && (
+                      <p style={{ fontSize: 13, color: '#6b7a8d', textAlign: 'center', lineHeight: 1.6, marginBottom: 20, minHeight: 40 }}>
+                        {desc}
                       </p>
                     )}
 
-                    <button onClick={() => handleSelect(pkg)}
-                      style={{ marginTop: 'auto', width: '100%', padding: '13px', borderRadius: 30, border: 'none', background: isFeatured ? '#2a6fdb' : '#1a2e44', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                      {lang === 'el' ? 'Επιλογή →' : 'Select →'}
-                    </button>
+                    {/* Discount badge */}
+                    {pkg.discount_percent > 0 && (
+                      <div style={{
+                        background: 'linear-gradient(135deg, #D1FAE5, #A7F3D0)',
+                        color: '#065F46',
+                        padding: '14px 20px',
+                        borderRadius: 12,
+                        textAlign: 'center',
+                        marginBottom: 24,
+                        border: '1px solid #6EE7B7',
+                      }}>
+                        <div style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 2 }}>
+                          {tx.saveBadge}
+                        </div>
+                        <div style={{ fontSize: 28, fontWeight: 700 }}>
+                          -{pkg.discount_percent}%
+                        </div>
+                      </div>
+                    )}
+
+                    <div style={{ flex: 1 }} />
+
+                    {/* CTA button */}
+                    <BookingButton
+                      packageName={name}
+                      style={{
+                        width: '100%',
+                        background: isPopular ? '#2a6fdb' : '#1a2e44',
+                        color: '#fff',
+                        padding: '13px',
+                        borderRadius: 30,
+                        fontSize: 14,
+                        fontWeight: 600,
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      {tx.selectBtn}
+                    </BookingButton>
                   </div>
                 );
               })}
             </div>
           )}
+        </div>
+      </section>
+
+      {/* Info banner - πώς υπολογίζεται η τιμή */}
+      <section style={{ background: '#f8fafb', padding: '0 24px 60px' }}>
+        <div style={{ maxWidth: 900, margin: '0 auto' }}>
+          <div style={{ background: '#e8f1fd', border: '1.5px solid #bedcff', borderRadius: 16, padding: '24px 28px', display: 'flex', gap: 20, alignItems: 'flex-start' }}>
+            <div style={{ fontSize: 32, flexShrink: 0 }}>💡</div>
+            <div>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1a2e44', marginBottom: 8 }}>{tx.infoTitle}</h3>
+              <p style={{ fontSize: 14, color: '#475569', lineHeight: 1.7 }}>{tx.infoText}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Why choose a package */}
+      <section style={{ background: '#fff', padding: '80px 24px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(24px, 3vw, 36px)', color: '#1a2e44', textAlign: 'center', marginBottom: 48 }}>
+            {tx.whyTitle}
+          </h2>
+          <div className="why-grid">
+            {tx.whyBullets.map((bullet, i) => (
+              <div key={i} style={{ textAlign: 'center', padding: 20 }}>
+                <div style={{ width: 64, height: 64, borderRadius: 16, background: '#e8f1fd', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, margin: '0 auto 16px' }}>
+                  {bullet.icon}
+                </div>
+                <h3 style={{ fontSize: 17, fontWeight: 700, color: '#1a2e44', marginBottom: 8 }}>{bullet.title}</h3>
+                <p style={{ fontSize: 14, color: '#6b7a8d', lineHeight: 1.7 }}>{bullet.desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 

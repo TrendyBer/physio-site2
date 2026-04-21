@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase';
  *       booking    → /dashboard/patient/new-request
  *       assessment → /free-assessment
  *   - address: (optional) αν περαστεί, αποθηκεύεται στο localStorage
+ *   - packageName: (optional) αν περαστεί, προστίθεται σαν ?package=... στο URL
  *   - disabled: αν true, το κουμπί είναι disabled
  *   - style, className, children: standard props
  *
@@ -24,6 +25,7 @@ export default function BookingButton({
   className,
   variant = 'booking',
   address = '',
+  packageName = '',
   disabled = false,
 }) {
   const [user, setUser] = useState(null);
@@ -45,9 +47,15 @@ export default function BookingButton({
     if (!mounted || disabled) return;
 
     // Destination ανάλογα με το variant
-    const destination = variant === 'assessment'
+    let destination = variant === 'assessment'
       ? '/free-assessment'
       : '/dashboard/patient/new-request';
+
+    // Αν υπάρχει packageName, πρόσθεσέ το στο URL
+    if (packageName && packageName.trim()) {
+      const separator = destination.includes('?') ? '&' : '?';
+      destination += `${separator}package=${encodeURIComponent(packageName.trim())}`;
+    }
 
     // Save address αν υπάρχει
     if (address && address.trim()) {
