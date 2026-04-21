@@ -1,27 +1,54 @@
 'use client';
+import { useState, useEffect } from 'react';
 import { useLang } from '@/context/LanguageContext';
+import { supabase } from '@/lib/supabase';
 
-const POSTS = {
-  el: [
-    { slug: 'how-home-physiotherapy-can-help-with-back-and-neck-pain', cat: 'Pain Management', time: '5 λεπτά ανάγνωση', title: 'Πώς η φυσιοθεραπεία στο σπίτι βοηθά με πόνο στη πλάτη και τον αυχένα', desc: 'Απλές συνήθειες και πρακτικά βήματα που μπορούν να κάνουν τη διαδικασία ανάρρωσής σας πιο ομαλή και αποτελεσματική.' },
-    { slug: 'simple-ways-to-improve-mobility-and-balance-at-home', cat: 'Mobility & Balance', time: '4 λεπτά ανάγνωση', title: 'Απλοί τρόποι για να βελτιώσετε την κινητικότητα και ισορροπία σας στο σπίτι', desc: 'Εξερευνήστε εξειδικευμένες ασκήσεις και καθημερινές συνήθειες που βελτιώνουν την κινητικότητά σας.' },
-  ],
-  en: [
-    { slug: 'how-home-physiotherapy-can-help-with-back-and-neck-pain', cat: 'Pain Management', time: '5 min read', title: 'How home physiotherapy can help with back and neck pain', desc: 'Simple habits and practical steps that can make your recovery process smoother and more effective.' },
-    { slug: 'simple-ways-to-improve-mobility-and-balance-at-home', cat: 'Mobility & Balance', time: '4 min read', title: 'Simple ways to improve mobility and balance at home', desc: 'Explore specialized exercises and daily habits that improve your mobility and balance.' },
-  ],
-};
-
+/**
+ * Blog section για το homepage.
+ * Φορτώνει τα published articles από Supabase (table: articles).
+ * Αν δεν υπάρχουν published άρθρα → όλο το section κρύβεται.
+ */
 export default function Blog() {
   const { lang } = useLang();
-  const posts = POSTS[lang];
-  const allArticles = lang === 'el' ? 'Όλα τα Άρθρα' : 'View All Articles';
-  const readMore = lang === 'el' ? 'Διαβάστε περισσότερα →' : 'Read more →';
-  const title = lang === 'el' ? 'Συμβουλές & ' : 'Tips & ';
-  const titleEm = lang === 'el' ? 'Πόροι Φυσιοθεραπείας' : 'Physiotherapy Resources';
-  const desc = lang === 'el'
-    ? 'Εξερευνήστε εξειδικευμένες συμβουλές και πρακτική καθοδήγηση για να υποστηρίξετε την ανάρρωσή σας στο σπίτι.'
-    : 'Explore expert advice and practical guidance to support your recovery journey.';
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchPosts() {
+      const { data, error } = await supabase
+        .from('articles')
+        .select('id, slug, title_el, title_en, excerpt_el, excerpt_en, category, image_url, reads, created_at')
+        .eq('status', 'published')
+        .order('created_at', { ascending: false })
+        .limit(4);
+
+      if (!error && data) setPosts(data);
+      setLoading(false);
+    }
+    fetchPosts();
+  }, []);
+
+  const t = {
+    el: {
+      title: 'Συμβουλές & ',
+      titleEm: 'Πόροι Φυσιοθεραπείας',
+      desc: 'Εξερευνήστε εξειδικευμένες συμβουλές και πρακτική καθοδήγηση για να υποστηρίξετε την ανάρρωσή σας στο σπίτι.',
+      viewAll: 'Όλα τα Άρθρα',
+      readMore: 'Διαβάστε περισσότερα →',
+    },
+    en: {
+      title: 'Tips & ',
+      titleEm: 'Physiotherapy Resources',
+      desc: 'Explore expert advice and practical guidance to support your recovery journey.',
+      viewAll: 'View All Articles',
+      readMore: 'Read more →',
+    },
+  };
+  const text = t[lang];
+
+  // Αν φορτώνει ή δεν υπάρχουν άρθρα → κρύβουμε όλο το section
+  if (loading) return null;
+  if (posts.length === 0) return null;
 
   return (
     <>
@@ -36,24 +63,37 @@ export default function Blog() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 16, marginBottom: 48 }}>
             <div>
               <h2 style={{ fontFamily: 'Georgia, serif', fontSize: 'clamp(28px, 3vw, 40px)', color: '#1a2e44', lineHeight: 1.2, marginBottom: 12 }}>
-                {title}<em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{titleEm}</em>
+                {text.title}<em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{text.titleEm}</em>
               </h2>
-              <p style={{ fontSize: 16, color: '#6b7a8d', maxWidth: 560 }}>{desc}</p>
+              <p style={{ fontSize: 16, color: '#6b7a8d', maxWidth: 560 }}>{text.desc}</p>
             </div>
-            <a href="/blog" style={{ background: 'transparent', color: '#1a2e44', padding: '10px 22px', borderRadius: 30, fontSize: 14, fontWeight: 500, textDecoration: 'none', border: '1.5px solid #1a2e44' }}>{allArticles}</a>
+            <a href="/blog" style={{ background: 'transparent', color: '#1a2e44', padding: '10px 22px', borderRadius: 30, fontSize: 14, fontWeight: 500, textDecoration: 'none', border: '1.5px solid #1a2e44' }}>{text.viewAll}</a>
           </div>
+
           <div className="blog-grid">
-            {posts.map((post) => (
-              <a key={post.slug} href={`/blog/${post.slug}`} className="blog-card">
-                <div style={{ aspectRatio: '16/9', background: 'linear-gradient(135deg, #d4e8ff, #b8d4f8)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2a6fdb', fontSize: 13 }}>📷 Photo</div>
-                <div style={{ padding: 20 }}>
-                  <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em', color: '#2a6fdb', marginBottom: 8 }}>{post.cat} · {post.time}</div>
-                  <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1a2e44', marginBottom: 8, lineHeight: 1.4 }}>{post.title}</h3>
-                  <p style={{ fontSize: 13, color: '#6b7a8d', marginBottom: 16 }}>{post.desc}</p>
-                  <span style={{ fontSize: 13, color: '#2a6fdb', fontWeight: 500 }}>{readMore}</span>
-                </div>
-              </a>
-            ))}
+            {posts.map((post) => {
+              const title   = lang === 'el' ? post.title_el   : post.title_en;
+              const excerpt = lang === 'el' ? post.excerpt_el : post.excerpt_en;
+              return (
+                <a key={post.id} href={`/blog/${post.slug}`} className="blog-card">
+                  {post.image_url ? (
+                    <img src={post.image_url} alt={title || ''} style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', display: 'block' }} />
+                  ) : (
+                    <div style={{ aspectRatio: '16/9', background: 'linear-gradient(135deg, #d4e8ff, #b8d4f8)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2a6fdb', fontSize: 13 }}>📷</div>
+                  )}
+                  <div style={{ padding: 20 }}>
+                    {post.category && (
+                      <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em', color: '#2a6fdb', marginBottom: 8 }}>
+                        {post.category}
+                      </div>
+                    )}
+                    <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1a2e44', marginBottom: 8, lineHeight: 1.4 }}>{title}</h3>
+                    {excerpt && <p style={{ fontSize: 13, color: '#6b7a8d', marginBottom: 16 }}>{excerpt}</p>}
+                    <span style={{ fontSize: 13, color: '#2a6fdb', fontWeight: 500 }}>{text.readMore}</span>
+                  </div>
+                </a>
+              );
+            })}
           </div>
         </div>
       </section>
