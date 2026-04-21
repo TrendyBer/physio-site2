@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 function Avatar({ name, photoUrl, size = 44 }) {
@@ -18,20 +18,27 @@ const PROBLEM_TYPES = [
   'Αθλητικός Τραυματισμός', 'Χρόνιος Πόνος', 'Άλλο'
 ];
 
-const PACKAGES = [
-  { id: 'single', label: 'Μεμονωμένη Συνεδρία', sessions: 1, icon: '1️⃣', desc: '1 συνεδρία' },
-  { id: 'pack5',  label: 'Πακέτο 5 Συνεδριών',  sessions: 5, icon: '5️⃣', desc: '5 συνεδρίες' },
-  { id: 'pack10', label: 'Πακέτο 10 Συνεδριών', sessions: 10, icon: '🔟', desc: '10 συνεδρίες' },
-  { id: 'pack20', label: 'Πακέτο 20 Συνεδριών', sessions: 20, icon: '2️⃣0️⃣', desc: '20 συνεδρίες' },
-  { id: 'monthly',label: 'Μηνιαίο Πακέτο',      sessions: 8, icon: '📅', desc: '8 συνεδρίες/μήνα' },
-];
+// Η Μεμονωμένη Συνεδρία είναι πάντα διαθέσιμη (δεν είναι πακέτο)
+const SINGLE_SESSION = {
+  id: 'single',
+  isSingle: true,
+  name_el: 'Μεμονωμένη Συνεδρία',
+  name_en: 'Single Session',
+  sessions: 1,
+  discount_percent: 0,
+  description_el: '1 συνεδρία με την τιμή του θεραπευτή',
+  icon: '1️⃣',
+};
 
 const DAYS_EL = ['Κυρ', 'Δευ', 'Τρι', 'Τετ', 'Πεμ', 'Παρ', 'Σαβ'];
 
-const STEPS = ['Πρόβλημα', 'Πακέτο', 'Θεραπευτής', 'Ημερομηνίες', 'Επιβεβαίωση'];
+const STEPS = ['Πρόβλημα', 'Τύπος', 'Θεραπευτής', 'Ημερομηνίες', 'Επιβεβαίωση'];
 
 export default function NewRequestPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const preselectedPackageName = searchParams.get('package');
+
   const [user, setUser] = useState(null);
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
@@ -48,6 +55,8 @@ export default function NewRequestPage() {
   const [notes, setNotes] = useState('');
 
   // Step 2
+  const [packages, setPackages] = useState([]);
+  const [loadingPackages, setLoadingPackages] = useState(true);
   const [selectedPackage, setSelectedPackage] = useState(null);
 
   // Step 3
@@ -62,12 +71,43 @@ export default function NewRequestPage() {
   const [calendarWeek, setCalendarWeek] = useState(0);
   const [loadingSlots, setLoadingSlots] = useState(false);
 
+  // Load user + prefill address if exists from localStorage
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) { router.push('/auth/login'); return; }
       setUser(user);
+
+      // Prefill address από localStorage (αν πάτησε από Hero/CtaBanner με address)
+      try {
+        const savedAddress = localStorage.getItem('bookingAddress');
+        if (savedAddress) {
+          setAddress(savedAddress);
+          localStorage.removeItem('bookingAddress');
+        }
+      } catch (_) {}
     });
   }, []);
+
+  // Fetch packages από Supabase
+  useEffect(() => {
+    async function fetchPackages() {
+      const { data } = await supabase
+        .from('packages')
+        .select('id, name_el, name_en, sessions, discount_percent, description_el, description_en, display_order')
+        .eq('is_active', true)
+        .order('sessions', { ascending: true });
+      setPackages(data || []);
+      setLoadingPackages(false);
+    }
+    fetchPackages();
+  }, []);
+
+  // Αν ήρθε με ?package=... preselect το αντίστοιχο πακέτο
+  useEffect(() => {
+    if (!preselectedPackageName || packages.length === 0) return;
+    const matched = packages.find(p => p.name_el === preselectedPackageName || p.name_en === preselectedPackageName);
+    if (matched) setSelectedPackage(matched);
+  }, [preselectedPackageName, packages]);
 
   useEffect(() => {
     if (step === 3) fetchTherapists();
@@ -81,7 +121,7 @@ export default function NewRequestPage() {
     setLoadingTherapists(true);
     const { data } = await supabase
       .from('therapist_profiles')
-      .select('*, user_profiles!inner(role)')
+      .select('*')
       .eq('is_approved', true);
     setTherapists(data || []);
     setLoadingTherapists(false);
@@ -138,13 +178,27 @@ export default function NewRequestPage() {
     return true;
   }
 
+  // Υπολογισμός κόστους με βάση την έκπτωση του πακέτου
+  function calculateTotalCost() {
+    if (!selectedPackage || !selectedTherapist) return 0;
+    const pricePerSession = selectedTherapist.price_per_session || 0;
+    const sessions = selectedPackage.sessions;
+    const discountPercent = selectedPackage.discount_percent || 0;
+    const subtotal = sessions * pricePerSession;
+    const discount = subtotal * (discountPercent / 100);
+    return Math.round(subtotal - discount);
+  }
+
   async function handleSubmit() {
     if (!validateStep()) return;
     setSubmitting(true);
 
-    const pkg = selectedPackage;
-    const totalCost = pkg.sessions * (selectedTherapist?.price_per_session || 0);
+    const totalCost = calculateTotalCost();
+    const packageLabel = selectedPackage.isSingle
+      ? 'Μεμονωμένη Συνεδρία'
+      : selectedPackage.name_el;
 
+    // 1. Create session_request
     const { data: req, error: reqErr } = await supabase
       .from('session_requests')
       .insert([{
@@ -154,16 +208,17 @@ export default function NewRequestPage() {
         problem_description: problemDesc,
         address, area, postal_code: postalCode,
         floor_info: floorInfo, notes,
-        session_type: pkg.id === 'single' ? 'single' : 'package',
-        package_size: pkg.sessions,
+        session_type: selectedPackage.isSingle ? 'single' : 'package',
+        package_size: selectedPackage.sessions,
         total_cost: totalCost,
         status: 'pending',
+        type: 'booking',
       }])
       .select().single();
 
     if (reqErr) { setError('Σφάλμα: ' + reqErr.message); setSubmitting(false); return; }
 
-    // Create session bookings
+    // 2. Create session_bookings (ένα για κάθε slot)
     const bookings = selectedSlots.map(slot => ({
       request_id: req.id,
       patient_id: user.id,
@@ -176,7 +231,7 @@ export default function NewRequestPage() {
 
     await supabase.from('session_bookings').insert(bookings);
 
-    // Block the slots temporarily
+    // 3. Block the slots temporarily
     await supabase.from('availability_slots')
       .update({ is_blocked: true })
       .in('id', selectedSlots.map(s => s.id));
@@ -192,8 +247,7 @@ export default function NewRequestPage() {
     return d.toISOString().split('T')[0];
   });
 
-  const pkg = PACKAGES.find(p => p.id === selectedPackage?.id);
-  const needed = pkg?.sessions || 1;
+  const needed = selectedPackage?.sessions || 1;
 
   const inputStyle = { width: '100%', padding: '11px 14px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', color: '#1a2e44' };
   const labelStyle = { fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 5 };
@@ -212,6 +266,9 @@ export default function NewRequestPage() {
       </div>
     </div>
   );
+
+  // Όλες οι επιλογές: Μεμονωμένη + τα πακέτα
+  const allOptions = [SINGLE_SESSION, ...packages];
 
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: "'DM Sans', sans-serif" }}>
@@ -308,24 +365,60 @@ export default function NewRequestPage() {
             </div>
           )}
 
-          {/* STEP 2 — Πακέτο */}
+          {/* STEP 2 — Τύπος Συνεδρίας (Μεμονωμένη + Πακέτα) */}
           {step === 2 && (
             <div>
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>Επίλεξε υπηρεσία</h2>
-              <p style={{ fontSize: 13, color: '#64748B', marginBottom: 24 }}>Θέλεις μεμονωμένη συνεδρία ή πακέτο;</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 14 }}>
-                {PACKAGES.map(pkg => {
-                  const isSelected = selectedPackage?.id === pkg.id;
-                  return (
-                    <div key={pkg.id} onClick={() => setSelectedPackage(pkg)}
-                      style={{ padding: '20px 16px', border: `2px solid ${isSelected ? '#2a6fdb' : '#e2e8f0'}`, borderRadius: 14, cursor: 'pointer', textAlign: 'center', background: isSelected ? '#EFF6FF' : '#fff', transition: 'all .2s' }}>
-                      <div style={{ fontSize: 28, marginBottom: 8 }}>{pkg.icon}</div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 4 }}>{pkg.label}</div>
-                      <div style={{ fontSize: 12, color: '#64748B' }}>{pkg.desc}</div>
-                    </div>
-                  );
-                })}
-              </div>
+              <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>Επίλεξε τύπο συνεδρίας</h2>
+              <p style={{ fontSize: 13, color: '#64748B', marginBottom: 24 }}>
+                Μεμονωμένη συνεδρία ή πακέτο με έκπτωση; Η τελική τιμή υπολογίζεται όταν επιλέξεις θεραπευτή.
+              </p>
+
+              {preselectedPackageName && (
+                <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '10px 16px', marginBottom: 16, fontSize: 13, color: '#1D4ED8' }}>
+                  ✓ Προεπιλέχθηκε: <strong>{preselectedPackageName}</strong>
+                </div>
+              )}
+
+              {loadingPackages ? (
+                <div style={{ textAlign: 'center', padding: 40, color: '#64748B' }}>Φόρτωση...</div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 14 }}>
+                  {allOptions.map(pkg => {
+                    const isSelected = selectedPackage?.id === pkg.id;
+                    const name = pkg.name_el;
+                    const discount = pkg.discount_percent || 0;
+                    return (
+                      <div key={pkg.id} onClick={() => setSelectedPackage(pkg)}
+                        style={{
+                          padding: '20px 16px',
+                          border: `2px solid ${isSelected ? '#2a6fdb' : '#e2e8f0'}`,
+                          borderRadius: 14,
+                          cursor: 'pointer',
+                          textAlign: 'center',
+                          background: isSelected ? '#EFF6FF' : '#fff',
+                          transition: 'all .2s',
+                          position: 'relative',
+                        }}>
+                        {discount > 0 && (
+                          <div style={{ position: 'absolute', top: -10, right: 10, background: '#10b981', color: '#fff', padding: '3px 10px', borderRadius: 12, fontSize: 11, fontWeight: 700 }}>
+                            -{discount}%
+                          </div>
+                        )}
+                        <div style={{ fontSize: 32, fontWeight: 700, color: '#1a2e44', marginBottom: 4, fontFamily: 'Georgia, serif' }}>
+                          {pkg.sessions}
+                        </div>
+                        <div style={{ fontSize: 11, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.06em', fontWeight: 600, marginBottom: 10 }}>
+                          {pkg.sessions === 1 ? 'συνεδρία' : 'συνεδρίες'}
+                        </div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 4 }}>{name}</div>
+                        {pkg.description_el && (
+                          <div style={{ fontSize: 11, color: '#64748B', lineHeight: 1.4 }}>{pkg.description_el}</div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
@@ -333,7 +426,7 @@ export default function NewRequestPage() {
           {step === 3 && (
             <div>
               <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>Διάλεξε θεραπευτή</h2>
-              <p style={{ fontSize: 13, color: '#64748B', marginBottom: 24 }}>Επίλεξε τον θεραπευτή που σε εξυπηρετεί καλύτερα ή ζήτα να σου προταθεί ένας διαθέσιμος.</p>
+              <p style={{ fontSize: 13, color: '#64748B', marginBottom: 24 }}>Επίλεξε τον θεραπευτή που σε εξυπηρετεί καλύτερα.</p>
 
               {loadingTherapists ? (
                 <div style={{ textAlign: 'center', padding: 40, color: '#64748B' }}>Φόρτωση θεραπευτών...</div>
@@ -343,6 +436,14 @@ export default function NewRequestPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {therapists.map(t => {
                     const isSelected = selectedTherapist?.id === t.id;
+
+                    // Υπολογισμός κόστους για αυτόν τον θεραπευτή
+                    const pricePerSession = t.price_per_session || 0;
+                    const sessions = selectedPackage?.sessions || 1;
+                    const discountPercent = selectedPackage?.discount_percent || 0;
+                    const subtotal = sessions * pricePerSession;
+                    const totalWithDiscount = Math.round(subtotal - (subtotal * discountPercent / 100));
+
                     return (
                       <div key={t.id} style={{ border: `2px solid ${isSelected ? '#2a6fdb' : '#e2e8f0'}`, borderRadius: 14, padding: '16px 20px', background: isSelected ? '#EFF6FF' : '#fff', transition: 'all .2s' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -350,7 +451,15 @@ export default function NewRequestPage() {
                           <div style={{ flex: 1 }}>
                             <div style={{ fontWeight: 700, fontSize: 15, color: '#0F172A', marginBottom: 2 }}>{t.name || '—'}</div>
                             <div style={{ fontSize: 13, color: '#64748B', marginBottom: 4 }}>{t.specialty} · {t.area}</div>
-                            <div style={{ fontSize: 13, color: '#2a6fdb', fontWeight: 600 }}>{t.price_per_session}€/συνεδρία</div>
+                            <div style={{ fontSize: 13, color: '#2a6fdb', fontWeight: 600 }}>
+                              {pricePerSession}€/συνεδρία
+                              {selectedPackage && sessions > 1 && (
+                                <span style={{ color: '#64748b', fontWeight: 400, marginLeft: 8 }}>
+                                  · Σύνολο: <strong style={{ color: '#10b981' }}>{totalWithDiscount}€</strong>
+                                  {discountPercent > 0 && <span style={{ textDecoration: 'line-through', marginLeft: 6, color: '#94a3b8' }}>{subtotal}€</span>}
+                                </span>
+                              )}
+                            </div>
                             {t.bio && <p style={{ fontSize: 12, color: '#94A3B8', marginTop: 4, lineHeight: 1.5 }}>{t.bio.slice(0, 100)}{t.bio.length > 100 ? '...' : ''}</p>}
                           </div>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
@@ -380,12 +489,10 @@ export default function NewRequestPage() {
                 Επίλεξε {needed === 1 ? '1 διαθέσιμο slot' : `${needed} διαθέσιμα slots`} από το ημερολόγιο του θεραπευτή.
               </p>
 
-              {/* Progress */}
               <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '10px 16px', marginBottom: 20, fontSize: 13, color: '#1D4ED8', fontWeight: 600 }}>
                 Έχετε επιλέξει {selectedSlots.length} από {needed} συνεδρία/ες
               </div>
 
-              {/* Week nav */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
                 <button onClick={() => setCalendarWeek(w => Math.max(0, w - 1))} disabled={calendarWeek === 0}
                   style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: calendarWeek === 0 ? '#f8fafc' : '#fff', color: calendarWeek === 0 ? '#94a3b8' : '#1a2e44', fontSize: 13, fontWeight: 600, cursor: calendarWeek === 0 ? 'not-allowed' : 'pointer' }}>
@@ -404,7 +511,6 @@ export default function NewRequestPage() {
                 <div style={{ textAlign: 'center', padding: 32, color: '#64748B' }}>Φόρτωση διαθεσιμότητας...</div>
               ) : (
                 <div>
-                  {/* Group slots by date */}
                   {weekDates.map(date => {
                     const daySlots = slots.filter(s => s.date === date);
                     if (daySlots.length === 0) return null;
@@ -437,7 +543,6 @@ export default function NewRequestPage() {
                 </div>
               )}
 
-              {/* Selected slots list */}
               {selectedSlots.length > 0 && (
                 <div style={{ marginTop: 20, background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '14px 16px' }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#15803D', marginBottom: 8 }}>✓ Επιλεγμένες συνεδρίες:</div>
@@ -470,10 +575,12 @@ export default function NewRequestPage() {
                   ['Διεύθυνση', `${address}, ${area}${postalCode ? ', ' + postalCode : ''}`],
                   ['Όροφος/Κουδούνι', floorInfo || '—'],
                   ['Σημειώσεις', notes || '—'],
-                  ['Τύπος συνεδρίας', selectedPackage?.label],
+                  ['Τύπος συνεδρίας', selectedPackage?.name_el],
+                  ['Συνεδρίες', selectedPackage?.sessions],
+                  ['Έκπτωση', selectedPackage?.discount_percent ? `${selectedPackage.discount_percent}%` : '—'],
                   ['Θεραπευτής', selectedTherapist?.name],
                   ['Τιμή/Συνεδρία', `${selectedTherapist?.price_per_session}€`],
-                  ['Συνολικό κόστος', `${selectedPackage?.sessions * (selectedTherapist?.price_per_session || 0)}€`],
+                  ['Συνολικό κόστος', `${calculateTotalCost()}€`],
                 ].map(([label, value], i) => (
                   <div key={label} style={{ display: 'flex', padding: '12px 16px', borderBottom: '1px solid #f1f5f9', background: i % 2 === 0 ? '#f8fafc' : '#fff', fontSize: 14 }}>
                     <span style={{ color: '#64748B', width: 160, flexShrink: 0 }}>{label}</span>
@@ -482,7 +589,6 @@ export default function NewRequestPage() {
                 ))}
               </div>
 
-              {/* Sessions summary */}
               <div style={{ marginTop: 16, background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '14px 16px' }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#1D4ED8', marginBottom: 8 }}>📅 Επιλεγμένες Συνεδρίες:</div>
                 {selectedSlots.map((slot, i) => {
@@ -497,14 +603,12 @@ export default function NewRequestPage() {
             </div>
           )}
 
-          {/* Error */}
           {error && (
             <div style={{ marginTop: 16, background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#DC2626' }}>
               {error}
             </div>
           )}
 
-          {/* Navigation */}
           <div style={{ display: 'flex', justifyContent: step === 1 ? 'flex-end' : 'space-between', marginTop: 28 }}>
             {step > 1 && (
               <button onClick={() => { setError(''); setStep(s => s - 1); }}
