@@ -79,19 +79,24 @@ export default function Hero() {
   return (
     <>
       <style>{`
+        /* Hero section ― warm off-white background για λιγότερη 'ψυχρότητα' */
         .hero-section { max-width: 1200px; margin: 0 auto; padding: 80px 24px 60px; display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
         .hero-visual { position: relative; }
         .hero-book-box {
-          background: #fff;
+          background: #ffffff;
           border-radius: 16px;
-          border: 2px solid #e2e8f0;
+          border: 1.5px solid #dce6f0;
           padding: 8px 8px 8px 20px;
           display: flex;
           align-items: center;
           gap: 8px;
           max-width: 520px;
-          box-shadow: 0 8px 32px rgba(26,46,68,0.10);
+          box-shadow: 0 8px 32px rgba(26,46,68,0.08);
           margin-bottom: 14px;
+        }
+        .hero-book-box:focus-within {
+          border-color: #2a6fdb;
+          box-shadow: 0 8px 32px rgba(42,111,219,0.14);
         }
         .hero-book-input {
           flex: 1;
@@ -103,6 +108,7 @@ export default function Hero() {
           background: transparent;
           padding: 14px 0;
         }
+        .hero-book-input::placeholder { color: #94a3b8; }
         .hero-book-btn {
           background: #1a2e44;
           color: #fff;
@@ -114,8 +120,9 @@ export default function Hero() {
           cursor: pointer;
           font-family: inherit;
           white-space: nowrap;
+          transition: background .2s;
         }
-        .hero-book-btn:hover { background: #0f1e30; }
+        .hero-book-btn:hover { background: #0f1d2c; }
         @media (max-width: 768px) {
           .hero-section { grid-template-columns: 1fr; padding: 40px 16px; gap: 32px; }
           .hero-visual { order: -1; }
@@ -125,7 +132,7 @@ export default function Hero() {
         }
         @keyframes shimmer { 0% { background-position: -600px 0; } 100% { background-position: 600px 0; } }
         .img-skeleton {
-          background: linear-gradient(90deg, #e8f1fd 25%, #d4e4f7 50%, #e8f1fd 75%);
+          background: linear-gradient(90deg, #eaf2fc 25%, #d9e8f7 50%, #eaf2fc 75%);
           background-size: 600px 100%;
           animation: shimmer 1.5s infinite;
           border-radius: 24px;
@@ -134,60 +141,128 @@ export default function Hero() {
         }
       `}</style>
 
-      <section className="hero-section">
-        <div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#e8f1fd', color: '#2a6fdb', padding: '6px 16px', borderRadius: 20, fontSize: 13, fontWeight: 500, marginBottom: 24 }}>
-            {text.badge}
-          </div>
-          <h1 style={{ fontFamily: 'Georgia, serif', fontSize: 'clamp(32px, 4vw, 52px)', lineHeight: 1.15, color: '#1a2e44', marginBottom: 20 }}>
-            {text.title1}{' '}<em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{text.title2}</em>
-          </h1>
-          <p style={{ fontSize: 17, color: '#6b7a8d', lineHeight: 1.7, marginBottom: 28, maxWidth: 460 }}>{text.desc}</p>
-
-          {/* Address input + BookingButton */}
-          <div className="hero-book-box">
-            <input
-              value={address}
-              onChange={e => setAddress(e.target.value)}
-              placeholder={bt.placeholder}
-              className="hero-book-input"
-            />
-            <BookingButton address={address} className="hero-book-btn">
-              {bt.btn} →
-            </BookingButton>
-          </div>
-          <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 28 }}>
-            {bt.hint}
-          </div>
-
-          {/* Pills */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 8 }}>
-            {(text.pills || []).map((pill) => (
-              <span key={pill} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px solid #dce6f0', padding: '7px 14px', borderRadius: 20, fontSize: 13, color: '#6b7a8d', boxShadow: '0 4px 24px rgba(26,46,68,0.08)' }}>
-                {pill}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <div className="hero-visual">
-          {text.image_url ? (
-            <>
-              {!imgLoaded && <div className="img-skeleton" />}
-              <img
-                src={text.image_url}
-                alt="Hero"
-                onLoad={() => setImgLoaded(true)}
-                style={{ width: '100%', borderRadius: 24, boxShadow: '0 12px 48px rgba(26,46,68,0.14)', objectFit: 'cover', aspectRatio: '4/5', display: imgLoaded ? 'block' : 'none' }}
-              />
-            </>
-          ) : (
-            <div style={{ borderRadius: 24, boxShadow: '0 12px 48px rgba(26,46,68,0.14)', aspectRatio: '4/5', background: 'linear-gradient(135deg, #d4e8ff 0%, #b8d4f8 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2a6fdb', fontSize: 14 }}>
-              📷 Photo
+      {/* Hero background: warm off-white αντί για pure white */}
+      <div style={{ background: '#faf9f6' }}>
+        <section className="hero-section">
+          <div>
+            {/* Badge με soft powder blue */}
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              background: '#eaf2fc',
+              color: '#2a6fdb',
+              padding: '6px 16px',
+              borderRadius: 20,
+              fontSize: 13,
+              fontWeight: 500,
+              marginBottom: 24,
+              border: '1px solid #d9e8f7',
+            }}>
+              {text.badge}
             </div>
-          )}
-        </div>
-      </section>
+
+            {/* Heading ― κρατάμε το italic accent αλλά όχι παντού */}
+            <h1 style={{
+              fontFamily: 'Georgia, serif',
+              fontSize: 'clamp(32px, 4vw, 52px)',
+              lineHeight: 1.15,
+              color: '#1a2e44',
+              marginBottom: 20,
+            }}>
+              {text.title1}{' '}
+              <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{text.title2}</em>
+            </h1>
+
+            {/* Body text: dark slate για καλύτερη αναγνωσιμότητα (αντί για #6b7a8d) */}
+            <p style={{
+              fontSize: 17,
+              color: '#334155',
+              lineHeight: 1.7,
+              marginBottom: 28,
+              maxWidth: 460,
+            }}>
+              {text.desc}
+            </p>
+
+            {/* Booking box */}
+            <div className="hero-book-box">
+              <input
+                value={address}
+                onChange={e => setAddress(e.target.value)}
+                placeholder={bt.placeholder}
+                className="hero-book-input"
+              />
+              <BookingButton address={address} className="hero-book-btn">
+                {bt.btn} →
+              </BookingButton>
+            </div>
+
+            {/* Hint ― slightly darker */}
+            <div style={{ fontSize: 13, color: '#64748b', marginBottom: 28 }}>
+              {bt.hint}
+            </div>
+
+            {/* Pills με warm white background */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 8 }}>
+              {(text.pills || []).map((pill) => (
+                <span
+                  key={pill}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    background: '#ffffff',
+                    border: '1px solid #dce6f0',
+                    padding: '7px 14px',
+                    borderRadius: 20,
+                    fontSize: 13,
+                    color: '#475569',
+                    boxShadow: '0 4px 24px rgba(26,46,68,0.06)',
+                  }}
+                >
+                  {pill}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="hero-visual">
+            {text.image_url ? (
+              <>
+                {!imgLoaded && <div className="img-skeleton" />}
+                <img
+                  src={text.image_url}
+                  alt="Hero"
+                  onLoad={() => setImgLoaded(true)}
+                  style={{
+                    width: '100%',
+                    borderRadius: 24,
+                    boxShadow: '0 12px 48px rgba(26,46,68,0.14)',
+                    objectFit: 'cover',
+                    aspectRatio: '4/5',
+                    display: imgLoaded ? 'block' : 'none',
+                  }}
+                />
+              </>
+            ) : (
+              <div style={{
+                borderRadius: 24,
+                boxShadow: '0 12px 48px rgba(26,46,68,0.14)',
+                aspectRatio: '4/5',
+                background: 'linear-gradient(135deg, #eaf2fc 0%, #c9ddf4 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#2a6fdb',
+                fontSize: 14,
+              }}>
+                📷 Photo
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
     </>
   );
 }
