@@ -71,34 +71,41 @@ export default function HowItWorks() {
   const text = data[lang] || DEFAULT[lang];
 
   return (
-    <section id="how-it-works" style={{ background: 'linear-gradient(135deg, #f0f7ff 0%, #e8f3ff 100%)', padding: '80px 24px' }}>
+    // Soft powder blue background - πιο ζωντανό από πριν
+    <section id="how-it-works" style={{ background: '#eaf2fc', padding: '80px 24px' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: 56 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: '#2a6fdb', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 16 }}>
             {text.badge}
           </div>
+          {/* Italic accent signature - μόνο στο ένα κομμάτι */}
           <h2 style={{ fontFamily: 'Georgia, serif', fontSize: 'clamp(28px, 3vw, 42px)', color: '#1a2e44', lineHeight: 1.2, marginBottom: 16 }}>
             {text.title} <br />
             <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{text.titleEm}</em>
           </h2>
-          <p style={{ fontSize: 16, color: '#6b7a8d', lineHeight: 1.7, maxWidth: 600, margin: '0 auto' }}>{text.desc}</p>
+          {/* Dark slate body text */}
+          <p style={{ fontSize: 16, color: '#334155', lineHeight: 1.7, maxWidth: 600, margin: '0 auto' }}>{text.desc}</p>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 32, marginBottom: 48 }} className="steps-grid">
           {(text.steps || []).map((step, i) => (
-            <div key={i} style={{ background: '#fff', borderRadius: 16, padding: '28px 24px', border: '1px solid #dce6f0', position: 'relative' }}>
+            <div key={i} style={{ background: '#ffffff', borderRadius: 16, padding: '28px 24px', border: '1px solid #dce6f0', position: 'relative' }}>
               <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#1a2e44', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 16, marginBottom: 16 }}>
                 {i + 1}
               </div>
               <div style={{ fontSize: 12, fontWeight: 700, color: '#2a6fdb', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6 }}>{step.num}</div>
               <h3 style={{ fontSize: 18, fontWeight: 700, color: '#1a2e44', marginBottom: 10 }}>{step.title}</h3>
-              <p style={{ fontSize: 14, color: '#6b7a8d', lineHeight: 1.6 }}>{step.desc}</p>
+              {/* Dark slate για καλύτερη ανάγνωση */}
+              <p style={{ fontSize: 14, color: '#475569', lineHeight: 1.6 }}>{step.desc}</p>
             </div>
           ))}
         </div>
 
         <div style={{ textAlign: 'center' }}>
-          <a href={ctaHref} style={{ display: 'inline-block', background: '#1a2e44', color: '#fff', padding: '14px 36px', borderRadius: 30, fontSize: 15, fontWeight: 600, textDecoration: 'none' }}>
+          <a href={ctaHref} style={{ display: 'inline-block', background: '#1a2e44', color: '#fff', padding: '14px 36px', borderRadius: 30, fontSize: 15, fontWeight: 600, textDecoration: 'none', transition: 'background .2s' }}
+            onMouseEnter={e => e.currentTarget.style.background = '#0f1d2c'}
+            onMouseLeave={e => e.currentTarget.style.background = '#1a2e44'}
+          >
             {text.cta} →
           </a>
         </div>

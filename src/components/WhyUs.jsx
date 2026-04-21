@@ -71,23 +71,27 @@ export default function WhyUs() {
         @media (max-width: 1024px) { .why-grid { grid-template-columns: 1fr 1fr; } }
         @media (max-width: 640px) { .why-grid { grid-template-columns: 1fr; } }
       `}</style>
-      <section id="why" style={{ padding: '80px 24px', background: '#fff' }}>
+      {/* Warm off-white αντί για pure white */}
+      <section id="why" style={{ padding: '80px 24px', background: '#faf9f6' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ marginBottom: 48 }}>
             <h2 style={{ fontFamily: 'Georgia, serif', fontSize: 'clamp(28px, 3vw, 40px)', color: '#1a2e44', lineHeight: 1.2, marginBottom: 12 }}>
+              {/* Italic accent ΜΟΝΟ εδώ ― signature accent */}
               {text.title} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{text.titleEm}</em>
             </h2>
-            <p style={{ fontSize: 16, color: '#6b7a8d', maxWidth: 560 }}>{text.desc}</p>
+            {/* Body text: dark slate αντί για ξεθωριασμένο γκρι */}
+            <p style={{ fontSize: 16, color: '#334155', maxWidth: 560 }}>{text.desc}</p>
           </div>
           <div className="why-grid">
             {(text.cards || []).map((card, i) => (
-              <div key={i} style={{ background: '#f8fafb', border: '1px solid #dce6f0', borderRadius: 16, padding: 32, transition: 'all .3s' }}
+              <div key={i} style={{ background: '#ffffff', border: '1px solid #dce6f0', borderRadius: 16, padding: 32, transition: 'all .3s' }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = '#2a6fdb'; e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 4px 24px rgba(26,46,68,0.08)'; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = '#dce6f0'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
               >
-                <div style={{ width: 52, height: 52, borderRadius: 14, background: '#e8f1fd', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, marginBottom: 20 }}>{card.icon}</div>
+                {/* Icon background: powder blue */}
+                <div style={{ width: 52, height: 52, borderRadius: 14, background: '#eaf2fc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, marginBottom: 20, color: '#2a6fdb' }}>{card.icon}</div>
                 <h3 style={{ fontSize: 18, fontWeight: 600, color: '#1a2e44', marginBottom: 10 }}>{card.title}</h3>
-                <p style={{ fontSize: 14, color: '#6b7a8d', lineHeight: 1.6 }}>{card.desc}</p>
+                <p style={{ fontSize: 14, color: '#475569', lineHeight: 1.6 }}>{card.desc}</p>
               </div>
             ))}
           </div>

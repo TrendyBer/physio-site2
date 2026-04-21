@@ -17,7 +17,7 @@ function Avatar({ name, photoUrl, size = 60 }) {
   return (
     <div style={{
       width: size, height: size, borderRadius: '50%',
-      background: 'linear-gradient(135deg, #c8dff9, #a0c4f4)',
+      background: 'linear-gradient(135deg, #eaf2fc, #c9ddf4)',
       color: '#1a2e44', display: 'flex', alignItems: 'center', justifyContent: 'center',
       fontSize: size * 0.32, fontWeight: 700, flexShrink: 0,
     }}>
@@ -32,7 +32,6 @@ function TherapistModal({ therapist, lang, onClose }) {
   const closeLabel = lang === 'el' ? 'Κλείσιμο' : 'Close';
   const bioLabel   = lang === 'el' ? 'Βιογραφικό' : 'About';
   const areaLabel  = lang === 'el' ? 'Περιοχή' : 'Area';
-  const priceLabel = lang === 'el' ? 'Τιμή/Συνεδρία' : 'Price/Session';
 
   const bookHref = `/dashboard/patient/new-request?therapist=${encodeURIComponent(therapist.name || '')}`;
 
@@ -44,25 +43,25 @@ function TherapistModal({ therapist, lang, onClose }) {
           <Avatar name={therapist.name} photoUrl={therapist.photo_url} size={72} />
           <div style={{ flex: 1 }}>
             <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1a2e44', marginBottom: 4 }}>{therapist.name}</h2>
-            <div style={{ fontSize: 14, color: '#6b7a8d', marginBottom: 6 }}>{therapist.specialty}</div>
+            <div style={{ fontSize: 14, color: '#475569', marginBottom: 6 }}>{therapist.specialty}</div>
             {therapist.price_per_session && (
               <div style={{ fontSize: 14, color: '#2a6fdb', fontWeight: 600 }}>{therapist.price_per_session}€/{lang === 'el' ? 'συνεδρία' : 'session'}</div>
             )}
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#94a3b8', padding: 4 }}>✕</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#64748b', padding: 4 }}>✕</button>
         </div>
 
         <div style={{ padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 20 }}>
           {therapist.bio && (
             <div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 8 }}>{bioLabel}</div>
-              <p style={{ fontSize: 14, color: '#475569', lineHeight: 1.7, background: '#f8fafc', padding: '12px 14px', borderRadius: 8, borderLeft: '3px solid #dce6f0' }}>{therapist.bio}</p>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 8 }}>{bioLabel}</div>
+              <p style={{ fontSize: 14, color: '#334155', lineHeight: 1.7, background: '#faf9f6', padding: '12px 14px', borderRadius: 8, borderLeft: '3px solid #dce6f0' }}>{therapist.bio}</p>
             </div>
           )}
 
           {therapist.area && (
             <div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 4 }}>{areaLabel}</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 4 }}>{areaLabel}</div>
               <div style={{ fontSize: 14, color: '#1a2e44', fontWeight: 500 }}>{therapist.area}</div>
             </div>
           )}
@@ -117,10 +116,7 @@ export default function Therapists() {
   };
   const text = t[lang];
 
-  // Αν φορτώνει ακόμα, δεν δείχνουμε τίποτα για να μη κάνει flash
   if (loading) return null;
-
-  // Αν δεν υπάρχουν approved therapists, κρύβουμε όλο το section
   if (therapists.length === 0) return null;
 
   return (
@@ -129,16 +125,18 @@ export default function Therapists() {
         .therapists-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
         @media (max-width: 640px) { .therapists-grid { grid-template-columns: 1fr; } }
         .th-card { background: #fff; border-radius: 16px; border: 1px solid #dce6f0; padding: 24px; transition: all .3s; cursor: pointer; }
-        .th-card:hover { box-shadow: 0 4px 24px rgba(26,46,68,0.08); transform: translateY(-4px); }
+        .th-card:hover { box-shadow: 0 4px 24px rgba(26,46,68,0.08); transform: translateY(-4px); border-color: #c9ddf4; }
       `}</style>
-      <section id="therapists" style={{ padding: '80px 24px', background: '#f8fafb' }}>
+      {/* Soft powder blue - πιο ζωντανό */}
+      <section id="therapists" style={{ padding: '80px 24px', background: '#eaf2fc' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 16, marginBottom: 48 }}>
             <div>
+              {/* Italic accent signature */}
               <h2 style={{ fontFamily: 'Georgia, serif', fontSize: 'clamp(28px, 3vw, 40px)', color: '#1a2e44', lineHeight: 1.2, marginBottom: 12 }}>
                 {text.title} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{text.titleEm}</em> {text.titleEnd}
               </h2>
-              <p style={{ fontSize: 16, color: '#6b7a8d', maxWidth: 560 }}>{text.desc}</p>
+              <p style={{ fontSize: 16, color: '#334155', maxWidth: 560 }}>{text.desc}</p>
             </div>
             <a href="/therapists" style={{ background: 'transparent', color: '#1a2e44', padding: '10px 22px', borderRadius: 30, fontSize: 14, fontWeight: 500, textDecoration: 'none', border: '1.5px solid #1a2e44' }}>{text.viewAll}</a>
           </div>
@@ -150,7 +148,7 @@ export default function Therapists() {
                   <Avatar name={th.name} photoUrl={th.photo_url} size={60} />
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 16, fontWeight: 600, color: '#1a2e44' }}>{th.name || '—'}</div>
-                    {th.specialty && <div style={{ fontSize: 13, color: '#6b7a8d', marginBottom: 4 }}>{th.specialty}</div>}
+                    {th.specialty && <div style={{ fontSize: 13, color: '#475569', marginBottom: 4 }}>{th.specialty}</div>}
                     {th.price_per_session && (
                       <div style={{ fontSize: 13, color: '#2a6fdb', fontWeight: 600 }}>{th.price_per_session}{text.perSession}</div>
                     )}
@@ -158,7 +156,7 @@ export default function Therapists() {
                 </div>
 
                 {th.bio && (
-                  <p style={{ fontSize: 14, color: '#6b7a8d', marginBottom: 16, lineHeight: 1.6 }}>
+                  <p style={{ fontSize: 14, color: '#475569', marginBottom: 16, lineHeight: 1.6 }}>
                     {th.bio.length > 140 ? th.bio.slice(0, 140) + '...' : th.bio}
                   </p>
                 )}
@@ -170,7 +168,7 @@ export default function Therapists() {
                     </span>
                   )}
                   {th.area && (
-                    <span style={{ padding: '4px 10px', borderRadius: 20, fontSize: 12, background: '#e8f1fd', color: '#2a6fdb', border: '1px solid #c8dff9' }}>
+                    <span style={{ padding: '4px 10px', borderRadius: 20, fontSize: 12, background: '#eaf2fc', color: '#2a6fdb', border: '1px solid #c9ddf4' }}>
                       📍 {th.area}
                     </span>
                   )}

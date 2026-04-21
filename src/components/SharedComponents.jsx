@@ -51,9 +51,9 @@ function usePlatformSettings() {
 export function Partners() {
   const { lang } = useLang();
   return (
-    <div style={{ background: '#f8fafb', padding: '36px 24px', borderTop: '1px solid #dce6f0', borderBottom: '1px solid #dce6f0' }}>
+    <div style={{ background: '#faf9f6', padding: '36px 24px', borderTop: '1px solid #dce6f0', borderBottom: '1px solid #dce6f0' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        <p style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '.1em', color: '#6b7a8d', marginBottom: 20, fontWeight: 500 }}>
+        <p style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '.1em', color: '#64748b', marginBottom: 20, fontWeight: 500 }}>
           {lang === 'el' ? 'Οι Συνεργάτες μας' : 'Our Partners'}
         </p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 32, flexWrap: 'wrap' }}>
@@ -73,12 +73,13 @@ export function CtaBanner() {
   };
   const text = t[lang];
   return (
+    // Navy section - το κρατάμε, δίνει αντίθεση
     <section style={{ background: '#1a2e44', padding: '60px 24px' }}>
       <div style={{ maxWidth: 700, margin: '0 auto', textAlign: 'center' }}>
         <h2 style={{ fontFamily: 'Georgia, serif', fontSize: 'clamp(28px, 3vw, 40px)', color: '#fff', marginBottom: 16 }}>
-          {text.title} <em style={{ fontStyle: 'italic', color: '#4a8ff5' }}>{text.titleEm}</em>?
+          {text.title} <em style={{ fontStyle: 'italic', color: '#7fb0f0' }}>{text.titleEm}</em>?
         </h2>
-        <p style={{ color: 'rgba(255,255,255,0.7)', marginBottom: 32, fontSize: 16 }}>{text.desc}</p>
+        <p style={{ color: 'rgba(255,255,255,0.85)', marginBottom: 32, fontSize: 16, lineHeight: 1.7 }}>{text.desc}</p>
         <BookingButton style={{ background: '#fff', color: '#1a2e44', padding: '14px 32px', borderRadius: 30, fontWeight: 600, fontSize: 15, display: 'inline-block', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
           {text.cta}
         </BookingButton>
@@ -118,14 +119,16 @@ export function Faq() {
   const text = t[lang];
   return (
     <>
-      <style>{`.faq-item { border: 1px solid #dce6f0; border-radius: 12px; overflow: hidden; margin-bottom: 12px; cursor: pointer; }`}</style>
-      <section style={{ padding: '80px 24px', background: '#fff' }}>
+      <style>{`.faq-item { border: 1px solid #dce6f0; border-radius: 12px; overflow: hidden; margin-bottom: 12px; cursor: pointer; background: #ffffff; transition: border-color .2s; }
+      .faq-item:hover { border-color: #c9ddf4; }`}</style>
+      {/* Warm off-white */}
+      <section style={{ padding: '80px 24px', background: '#faf9f6' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 80, alignItems: 'start' }}>
           <div>
             <h2 style={{ fontFamily: 'Georgia, serif', fontSize: 'clamp(28px, 3vw, 40px)', color: '#1a2e44', lineHeight: 1.2, marginBottom: 12 }}>
               {text.title} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{text.titleEm}</em>
             </h2>
-            <p style={{ fontSize: 16, color: '#6b7a8d', marginBottom: 28 }}>{text.desc}</p>
+            <p style={{ fontSize: 16, color: '#334155', marginBottom: 28, lineHeight: 1.7 }}>{text.desc}</p>
             <a href="/contact" style={{ display: 'inline-block', background: 'transparent', color: '#1a2e44', padding: '10px 22px', borderRadius: 30, fontSize: 14, fontWeight: 500, textDecoration: 'none', border: '1.5px solid #1a2e44' }}>{text.contact}</a>
           </div>
           <div>
@@ -135,7 +138,7 @@ export function Faq() {
                   <span style={{ fontSize: 15, fontWeight: open === i ? 700 : 500, color: '#1a2e44' }}>{faq.q}</span>
                   <span style={{ fontSize: 20, color: '#2a6fdb', flexShrink: 0, transition: 'transform .2s', transform: open === i ? 'rotate(45deg)' : 'none' }}>+</span>
                 </div>
-                {open === i && <div style={{ padding: '0 24px 18px', fontSize: 14, color: '#6b7a8d', lineHeight: 1.7 }}>{faq.a}</div>}
+                {open === i && <div style={{ padding: '0 24px 18px', fontSize: 14, color: '#475569', lineHeight: 1.7 }}>{faq.a}</div>}
               </div>
             ))}
           </div>
@@ -175,40 +178,41 @@ export function Contact() {
   return (
     <>
       <style>{`.contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: start; } .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; } @media (max-width: 768px) { .contact-grid { grid-template-columns: 1fr; gap: 32px; } .form-row { grid-template-columns: 1fr; } }`}</style>
-      <section id="contact" style={{ padding: '80px 24px', background: '#f8fafb' }}>
+      {/* Soft powder blue */}
+      <section id="contact" style={{ padding: '80px 24px', background: '#eaf2fc' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div className="contact-grid">
             <div>
               <h2 style={{ fontFamily: 'Georgia, serif', fontSize: 'clamp(28px, 3vw, 40px)', color: '#1a2e44', lineHeight: 1.2, marginBottom: 12 }}>
                 {text.title} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{text.titleEm}</em>
               </h2>
-              <p style={{ fontSize: 16, color: '#6b7a8d', marginBottom: 32 }}>{text.desc}</p>
+              <p style={{ fontSize: 16, color: '#334155', marginBottom: 32, lineHeight: 1.7 }}>{text.desc}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 12, background: '#e8f1fd', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>✉</div>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0, border: '1px solid #dce6f0' }}>✉</div>
                   <div>
-                    <div style={{ fontSize: 12, color: '#6b7a8d', marginBottom: 2 }}>Email</div>
+                    <div style={{ fontSize: 12, color: '#64748b', marginBottom: 2 }}>Email</div>
                     <a href={`mailto:${settings.email}`} style={{ fontWeight: 500, color: '#1a2e44', textDecoration: 'none' }}>{settings.email}</a>
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 12, background: '#e8f1fd', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>📞</div>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0, border: '1px solid #dce6f0' }}>📞</div>
                   <div>
-                    <div style={{ fontSize: 12, color: '#6b7a8d', marginBottom: 2 }}>{text.phone}</div>
+                    <div style={{ fontSize: 12, color: '#64748b', marginBottom: 2 }}>{text.phone}</div>
                     <a href={`tel:${settings.phone}`} style={{ fontWeight: 500, color: '#1a2e44', textDecoration: 'none' }}>{settings.phone}</a>
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 12, background: '#e8f1fd', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>📍</div>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0, border: '1px solid #dce6f0' }}>📍</div>
                   <div>
-                    <div style={{ fontSize: 12, color: '#6b7a8d', marginBottom: 2 }}>{text.area}</div>
+                    <div style={{ fontSize: 12, color: '#64748b', marginBottom: 2 }}>{text.area}</div>
                     <span style={{ fontWeight: 500, color: '#1a2e44' }}>{settings.address}</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #dce6f0', padding: 32 }}>
+            <div style={{ background: '#ffffff', borderRadius: 16, border: '1px solid #dce6f0', padding: 32 }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div className="form-row">
                   {[text.firstName, text.lastName].map((label) => (
@@ -262,7 +266,8 @@ export function Footer() {
   return (
     <>
       <style>{`.footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 48px; } .footer-bottom { display: flex; align-items: center; justify-content: space-between; } @media (max-width: 1024px) { .footer-grid { grid-template-columns: 1fr 1fr; } } @media (max-width: 640px) { .footer-grid { grid-template-columns: 1fr; gap: 32px; } .footer-bottom { flex-direction: column; gap: 16px; text-align: center; } }`}</style>
-      <footer style={{ background: '#0f1d2c', color: 'rgba(255,255,255,0.7)', padding: '60px 24px 32px' }}>
+      {/* Deep navy footer */}
+      <footer style={{ background: '#0f1d2c', color: 'rgba(255,255,255,0.75)', padding: '60px 24px 32px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div className="footer-grid">
             <div>
@@ -275,13 +280,13 @@ export function Footer() {
             <div>
               <h4 style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: '.08em', color: '#fff', marginBottom: 16, fontWeight: 600 }}>{text.menu}</h4>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {text.links.map(([href, label]) => (<li key={href}><a href={href} style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>{label}</a></li>))}
+                {text.links.map(([href, label]) => (<li key={href}><a href={href} style={{ fontSize: 14, color: 'rgba(255,255,255,0.75)', textDecoration: 'none' }}>{label}</a></li>))}
               </ul>
             </div>
             <div>
               <h4 style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: '.08em', color: '#fff', marginBottom: 16, fontWeight: 600 }}>{text.legal}</h4>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {text.legalLinks.map(([href, label]) => (<li key={label}><a href={href} style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>{label}</a></li>))}
+                {text.legalLinks.map(([href, label]) => (<li key={label}><a href={href} style={{ fontSize: 14, color: 'rgba(255,255,255,0.75)', textDecoration: 'none' }}>{label}</a></li>))}
               </ul>
             </div>
             <div>
@@ -289,11 +294,11 @@ export function Footer() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 14 }}>
                   <span>✉</span>
-                  <a href={`mailto:${settings.email}`} style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>{settings.email}</a>
+                  <a href={`mailto:${settings.email}`} style={{ color: 'rgba(255,255,255,0.75)', textDecoration: 'none' }}>{settings.email}</a>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 14 }}>
                   <span>📞</span>
-                  <a href={`tel:${settings.phone}`} style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>{settings.phone}</a>
+                  <a href={`tel:${settings.phone}`} style={{ color: 'rgba(255,255,255,0.75)', textDecoration: 'none' }}>{settings.phone}</a>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 14 }}>
                   <span>📍</span>
@@ -306,7 +311,7 @@ export function Footer() {
             <div className="footer-bottom">
               <span style={{ fontSize: 13 }}>© {new Date().getFullYear()} {settings.platform_name}. {lang === 'el' ? 'Με επιφύλαξη παντός δικαιώματος.' : 'All rights reserved.'}</span>
               <div style={{ display: 'flex', gap: 24 }}>
-                {text.privLinks.map(([href, label]) => (<a key={label} href={href} style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>{label}</a>))}
+                {text.privLinks.map(([href, label]) => (<a key={label} href={href} style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', textDecoration: 'none' }}>{label}</a>))}
               </div>
             </div>
           </div>
