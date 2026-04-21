@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
+import BookingButton from '../../components/BookingButton';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
 
@@ -19,7 +20,7 @@ const t = {
     loading: 'Φόρτωση...',
     ctaTitle: 'Ξεκινήστε με μια Δωρεάν Αξιολόγηση',
     ctaSubtitle: 'Μιλήστε με έναν ειδικό φυσιοθεραπευτή σήμερα.',
-    ctaBtn: 'Κλείστε Ραντεβού',
+    ctaBtn: 'Κλείσε Αξιολόγηση',
   },
   en: {
     badge: 'Blog & Articles',
@@ -32,7 +33,7 @@ const t = {
     loading: 'Loading...',
     ctaTitle: 'Start With a Free Assessment',
     ctaSubtitle: 'Talk to a specialist physiotherapist today.',
-    ctaBtn: 'Book a Session',
+    ctaBtn: 'Book Assessment',
   },
 };
 
@@ -152,16 +153,19 @@ export default function BlogPage() {
         </div>
       </section>
 
-      {/* CTA */}
+      {/* CTA — χρησιμοποιεί BookingButton με variant=assessment */}
       <section style={{ background: '#1a2e44', padding: '64px 24px', textAlign: 'center' }}>
         <div style={{ maxWidth: 600, margin: '0 auto' }}>
           <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(24px, 3vw, 36px)', color: '#fff', marginBottom: 16 }}>
             {tx.ctaTitle}
           </h2>
           <p style={{ fontSize: 16, color: '#94a3b8', marginBottom: 32 }}>{tx.ctaSubtitle}</p>
-          <a href="/request" style={{ display: 'inline-block', background: '#2a6fdb', color: '#fff', padding: '14px 36px', borderRadius: 30, fontSize: 15, fontWeight: 600, textDecoration: 'none' }}>
+          <BookingButton
+            variant="assessment"
+            style={{ background: '#2a6fdb', color: '#fff', padding: '14px 36px', borderRadius: 30, fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+          >
             {tx.ctaBtn}
-          </a>
+          </BookingButton>
         </div>
       </section>
 
