@@ -120,7 +120,7 @@ export default function Navbar() {
         }
       `}</style>
 
-      <nav style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(250,246,239,0.95)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #e8dfd0', padding: '0 24px' }}>
+    <nav style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(253,250,244,0.92)', backdropFilter: 'blur(14px)', boxShadow: '0 1px 3px rgba(120,80,40,0.06), 0 1px 0 rgba(232,223,208,0.6)', padding: '0 24px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 68 }}>
 
           <a href="/" style={{ fontFamily: 'Georgia, serif', fontSize: 22, fontWeight: 700, color: '#1a2e44', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
