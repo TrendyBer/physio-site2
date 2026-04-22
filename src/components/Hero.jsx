@@ -79,13 +79,13 @@ export default function Hero() {
   return (
     <>
       <style>{`
-        /* Hero section ― warm off-white background για λιγότερη 'ψυχρότητα' */
+        /* Hero section ― warm cream background για ζεστασιά που δένει με τη φωτογραφία */
         .hero-section { max-width: 1200px; margin: 0 auto; padding: 80px 24px 60px; display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
         .hero-visual { position: relative; }
         .hero-book-box {
           background: #ffffff;
           border-radius: 16px;
-          border: 1.5px solid #dce6f0;
+          border: 1.5px solid #e8dfd0;
           padding: 8px 8px 8px 20px;
           display: flex;
           align-items: center;
@@ -132,7 +132,7 @@ export default function Hero() {
         }
         @keyframes shimmer { 0% { background-position: -600px 0; } 100% { background-position: 600px 0; } }
         .img-skeleton {
-          background: linear-gradient(90deg, #eaf2fc 25%, #d9e8f7 50%, #eaf2fc 75%);
+          background: linear-gradient(90deg, #f5ede0 25%, #ebe0cd 50%, #f5ede0 75%);
           background-size: 600px 100%;
           animation: shimmer 1.5s infinite;
           border-radius: 24px;
@@ -141,28 +141,29 @@ export default function Hero() {
         }
       `}</style>
 
-      {/* Hero background: warm off-white αντί για pure white */}
-      <div style={{ background: '#faf9f6' }}>
+      {/* Hero background: warm cream gradient που δένει με τα earth tones της φωτό */}
+      <div style={{ background: 'linear-gradient(180deg, #faf6ef 0%, #f3e9d8 100%)' }}>
         <section className="hero-section">
           <div>
-            {/* Badge με soft powder blue */}
+            {/* Badge με soft powder blue (κρατάμε accent για cohesion με brand) */}
             <div style={{
               display: 'inline-flex',
               alignItems: 'center',
               gap: 8,
-              background: '#eaf2fc',
+              background: '#ffffff',
               color: '#2a6fdb',
               padding: '6px 16px',
               borderRadius: 20,
               fontSize: 13,
               fontWeight: 500,
               marginBottom: 24,
-              border: '1px solid #d9e8f7',
+              border: '1px solid #e8dfd0',
+              boxShadow: '0 2px 8px rgba(26,46,68,0.04)',
             }}>
               {text.badge}
             </div>
 
-            {/* Heading ― κρατάμε το italic accent αλλά όχι παντού */}
+            {/* Heading ― navy + italic blue accent */}
             <h1 style={{
               fontFamily: 'Georgia, serif',
               fontSize: 'clamp(32px, 4vw, 52px)',
@@ -174,7 +175,7 @@ export default function Hero() {
               <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{text.title2}</em>
             </h1>
 
-            {/* Body text: dark slate για καλύτερη αναγνωσιμότητα (αντί για #6b7a8d) */}
+            {/* Body text: dark slate για καλύτερη αναγνωσιμότητα */}
             <p style={{
               fontSize: 17,
               color: '#334155',
@@ -198,7 +199,7 @@ export default function Hero() {
               </BookingButton>
             </div>
 
-            {/* Hint ― slightly darker */}
+            {/* Hint */}
             <div style={{ fontSize: 13, color: '#64748b', marginBottom: 28 }}>
               {bt.hint}
             </div>
@@ -213,7 +214,7 @@ export default function Hero() {
                     alignItems: 'center',
                     gap: 6,
                     background: '#ffffff',
-                    border: '1px solid #dce6f0',
+                    border: '1px solid #e8dfd0',
                     padding: '7px 14px',
                     borderRadius: 20,
                     fontSize: 13,
@@ -250,11 +251,11 @@ export default function Hero() {
                 borderRadius: 24,
                 boxShadow: '0 12px 48px rgba(26,46,68,0.14)',
                 aspectRatio: '4/5',
-                background: 'linear-gradient(135deg, #eaf2fc 0%, #c9ddf4 100%)',
+                background: 'linear-gradient(135deg, #f5ede0 0%, #ebe0cd 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#2a6fdb',
+                color: '#94785a',
                 fontSize: 14,
               }}>
                 📷 Photo
