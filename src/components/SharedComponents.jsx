@@ -48,16 +48,107 @@ function usePlatformSettings() {
 }
 
 // ─── Partners ─────────────────────────────────────────────────────────────────
+const PARTNERS_CACHE_KEY = 'cms_partners';
+const PARTNERS_CACHE_TTL = 5 * 60 * 1000;
+
 export function Partners() {
   const { lang } = useLang();
+  const [partners, setPartners] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchPartners() {
+      // Check cache first
+      try {
+        const cached = sessionStorage.getItem(PARTNERS_CACHE_KEY);
+        if (cached) {
+          const { value, timestamp } = JSON.parse(cached);
+          if (Date.now() - timestamp < PARTNERS_CACHE_TTL && Array.isArray(value)) {
+            setPartners(value);
+            setLoading(false);
+            return;
+          }
+        }
+      } catch (_) {}
+
+      // Fetch from Supabase
+      try {
+        const { data, error } = await supabase
+          .from('partners')
+          .select('id, name, logo_url, website_url, display_order')
+          .eq('is_active', true)
+          .order('display_order', { ascending: true });
+
+        if (error) {
+          console.error('Partners fetch error:', error);
+          setPartners([]);
+        } else {
+          const list = data || [];
+          setPartners(list);
+          if (list.length > 0) {
+            try {
+              sessionStorage.setItem(PARTNERS_CACHE_KEY, JSON.stringify({ value: list, timestamp: Date.now() }));
+            } catch (_) {}
+          }
+        }
+      } catch (err) {
+        console.error('Partners fetch failed:', err);
+        setPartners([]);
+      }
+      setLoading(false);
+    }
+    fetchPartners();
+  }, []);
+
+  // Hide entire section if loading or no partners exist
+  if (loading || partners.length === 0) return null;
+
   return (
     <div style={{ background: '#f8fafb', padding: '36px 24px', borderTop: '1px solid #dce6f0', borderBottom: '1px solid #dce6f0' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <p style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '.1em', color: '#6b7a8d', marginBottom: 20, fontWeight: 500 }}>
           {lang === 'el' ? 'Οι Συνεργάτες μας' : 'Our Partners'}
         </p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 32, flexWrap: 'wrap' }}>
-          {[1, 2, 3, 4].map((i) => (<div key={i} style={{ width: 90, height: 32, borderRadius: 6, background: '#dce6f0', opacity: 0.6 }} />))}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 40, flexWrap: 'wrap' }}>
+          {partners.map((p) => {
+            const content = p.logo_url ? (
+              <img
+                src={p.logo_url}
+                alt={p.name}
+                title={p.name}
+                style={{
+                  maxHeight: 40,
+                  maxWidth: 140,
+                  objectFit: 'contain',
+                  filter: 'grayscale(100%)',
+                  opacity: 0.65,
+                  transition: 'all .3s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.filter = 'grayscale(0%)'; e.currentTarget.style.opacity = '1'; }}
+                onMouseLeave={e => { e.currentTarget.style.filter = 'grayscale(100%)'; e.currentTarget.style.opacity = '0.65'; }}
+              />
+            ) : (
+              <span style={{ fontSize: 16, fontWeight: 600, color: '#6b7a8d', letterSpacing: '.02em' }}>
+                {p.name}
+              </span>
+            );
+
+            return p.website_url ? (
+              
+                key={p.id}
+                href={p.website_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
+              >
+                {content}
+              </a>
+            ) : (
+              <div key={p.id} style={{ display: 'inline-flex', alignItems: 'center' }}>
+                {content}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -178,6 +269,8 @@ export function Contact() {
   };
   const text = t[lang];
 
+  const inputStyle = { width: '100%', padding: '12px 14px', border: '1px solid #dce6f0', borderRadius: 8, fontFamily: 'inherit', fontSize: 14, color: '#1a2e44', outline: 'none', boxSizing: 'border-box', background: '#fff' };
+
   return (
     <>
       <style>{`
@@ -227,26 +320,26 @@ export function Contact() {
                   {[text.firstName, text.lastName].map((label) => (
                     <div key={label}>
                       <label style={{ fontSize: 13, fontWeight: 500, color: '#1a2e44', display: 'block', marginBottom: 6 }}>{label}</label>
-                      <input type="text" style={{ width: '100%', padding: '12px 14px', border: '1px solid #dce6f0', borderRadius: 8, fontFamily: 'inherit', fontSize: 14, color: '#1a2e44', outline: 'none', boxSizing: 'border-box', background: '#fff' }} />
+                      <input type="text" style={inputStyle} />
                     </div>
                   ))}
                 </div>
                 {[{ label: 'Email', type: 'email' }, { label: text.phone, type: 'tel' }].map((field) => (
                   <div key={field.label}>
                     <label style={{ fontSize: 13, fontWeight: 500, color: '#1a2e44', display: 'block', marginBottom: 6 }}>{field.label}</label>
-                    <input type={field.type} style={{ width: '100%', padding: '12px 14px', border: '1px solid #dce6f0', borderRadius: 8, fontFamily: 'inherit', fontSize: 14, color: '#1a2e44', outline: 'none', boxSizing: 'border-box', background: '#fff' }} />
+                    <input type={field.type} style={inputStyle} />
                   </div>
                 ))}
                 <div>
                   <label style={{ fontSize: 13, fontWeight: 500, color: '#1a2e44', display: 'block', marginBottom: 6 }}>{text.service}</label>
-                  <select style={{ width: '100%', padding: '12px 14px', border: '1px solid #dce6f0', borderRadius: 8, fontFamily: 'inherit', fontSize: 14, color: '#1a2e44', outline: 'none', background: '#fff', boxSizing: 'border-box' }}>
+                  <select style={inputStyle}>
                     <option>{text.selectService}</option>
                     {text.services.map(s => <option key={s}>{s}</option>)}
                   </select>
                 </div>
                 <div>
                   <label style={{ fontSize: 13, fontWeight: 500, color: '#1a2e44', display: 'block', marginBottom: 6 }}>{text.message}</label>
-                  <textarea rows={4} style={{ width: '100%', padding: '12px 14px', border: '1px solid #dce6f0', borderRadius: 8, fontFamily: 'inherit', fontSize: 14, color: '#1a2e44', outline: 'none', resize: 'vertical', boxSizing: 'border-box', background: '#fff' }} />
+                  <textarea rows={4} style={{ ...inputStyle, resize: 'vertical' }} />
                 </div>
                 <button style={{ width: '100%', background: '#1a2e44', color: '#fff', padding: 14, borderRadius: 30, fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
                   onClick={() => alert(text.successMsg)}>
