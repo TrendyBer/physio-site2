@@ -79,6 +79,10 @@ export default function Hero() {
   return (
     <>
       <style>{`
+        .hero-wrapper {
+          background: linear-gradient(180deg, #faf9f6 0%, #f0f7ff 100%);
+          color-scheme: light;
+        }
         .hero-section { max-width: 1200px; margin: 0 auto; padding: 80px 24px 60px; display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
         .hero-visual { position: relative; }
         .hero-book-box {
@@ -116,13 +120,19 @@ export default function Hero() {
           white-space: nowrap;
         }
         .hero-book-btn:hover { background: #0f1e30; }
+        .hero-title { font-family: Georgia, serif; font-size: clamp(28px, 4vw, 52px); line-height: 1.15; color: #1a2e44; margin-bottom: 20px; }
+        .hero-desc { font-size: 17px; color: #6b7a8d; line-height: 1.7; margin-bottom: 28px; max-width: 460px; }
+
         @media (max-width: 768px) {
-          .hero-section { grid-template-columns: 1fr; padding: 40px 16px; gap: 32px; }
+          .hero-section { grid-template-columns: 1fr; padding: 32px 20px; gap: 28px; }
           .hero-visual { order: -1; }
           .hero-book-box { flex-direction: column; align-items: stretch; padding: 12px; }
           .hero-book-input { padding: 12px; }
           .hero-book-btn { width: 100%; }
+          .hero-title { font-size: 30px; line-height: 1.2; }
+          .hero-desc { font-size: 15px; max-width: 100%; }
         }
+
         @keyframes shimmer { 0% { background-position: -600px 0; } 100% { background-position: 600px 0; } }
         .img-skeleton {
           background: linear-gradient(90deg, #e8f1fd 25%, #d4e4f7 50%, #e8f1fd 75%);
@@ -132,62 +142,82 @@ export default function Hero() {
           aspect-ratio: 4/5;
           width: 100%;
         }
+        .hero-image-fallback {
+          width: 100%;
+          aspect-ratio: 4/5;
+          border-radius: 24px;
+          background:
+            radial-gradient(circle at 30% 30%, rgba(255,255,255,0.4) 0%, transparent 50%),
+            linear-gradient(135deg, #d4e8ff 0%, #a0c4f4 100%);
+          box-shadow: 0 12px 48px rgba(26,46,68,0.14);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+          overflow: hidden;
+        }
+        .hero-image-fallback::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(ellipse at center, transparent 40%, rgba(42,111,219,0.08) 100%);
+        }
       `}</style>
 
-      <section className="hero-section">
-        <div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#e8f1fd', color: '#2a6fdb', padding: '6px 16px', borderRadius: 20, fontSize: 13, fontWeight: 500, marginBottom: 24 }}>
-            {text.badge}
-          </div>
-          <h1 style={{ fontFamily: 'Georgia, serif', fontSize: 'clamp(32px, 4vw, 52px)', lineHeight: 1.15, color: '#1a2e44', marginBottom: 20 }}>
-            {text.title1}{' '}<em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{text.title2}</em>
-          </h1>
-          <p style={{ fontSize: 17, color: '#6b7a8d', lineHeight: 1.7, marginBottom: 28, maxWidth: 460 }}>{text.desc}</p>
-
-          {/* Address input + BookingButton */}
-          <div className="hero-book-box">
-            <input
-              value={address}
-              onChange={e => setAddress(e.target.value)}
-              placeholder={bt.placeholder}
-              className="hero-book-input"
-            />
-            <BookingButton address={address} className="hero-book-btn">
-              {bt.btn} →
-            </BookingButton>
-          </div>
-          <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 28 }}>
-            {bt.hint}
-          </div>
-
-          {/* Pills */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 8 }}>
-            {(text.pills || []).map((pill) => (
-              <span key={pill} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px solid #dce6f0', padding: '7px 14px', borderRadius: 20, fontSize: 13, color: '#6b7a8d', boxShadow: '0 4px 24px rgba(26,46,68,0.08)' }}>
-                {pill}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <div className="hero-visual">
-          {text.image_url ? (
-            <>
-              {!imgLoaded && <div className="img-skeleton" />}
-              <img
-                src={text.image_url}
-                alt="Hero"
-                onLoad={() => setImgLoaded(true)}
-                style={{ width: '100%', borderRadius: 24, boxShadow: '0 12px 48px rgba(26,46,68,0.14)', objectFit: 'cover', aspectRatio: '4/5', display: imgLoaded ? 'block' : 'none' }}
-              />
-            </>
-          ) : (
-            <div style={{ borderRadius: 24, boxShadow: '0 12px 48px rgba(26,46,68,0.14)', aspectRatio: '4/5', background: 'linear-gradient(135deg, #d4e8ff 0%, #b8d4f8 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2a6fdb', fontSize: 14 }}>
-              📷 Photo
+      <div className="hero-wrapper">
+        <section className="hero-section">
+          <div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#e8f1fd', color: '#2a6fdb', padding: '6px 16px', borderRadius: 20, fontSize: 13, fontWeight: 500, marginBottom: 24 }}>
+              {text.badge}
             </div>
-          )}
-        </div>
-      </section>
+            <h1 className="hero-title">
+              {text.title1}{' '}<em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{text.title2}</em>
+            </h1>
+            <p className="hero-desc">{text.desc}</p>
+
+            {/* Address input + BookingButton */}
+            <div className="hero-book-box">
+              <input
+                value={address}
+                onChange={e => setAddress(e.target.value)}
+                placeholder={bt.placeholder}
+                className="hero-book-input"
+              />
+              <BookingButton address={address} className="hero-book-btn">
+                {bt.btn} →
+              </BookingButton>
+            </div>
+            <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 28 }}>
+              {bt.hint}
+            </div>
+
+            {/* Pills */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 8 }}>
+              {(text.pills || []).map((pill) => (
+                <span key={pill} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px solid #dce6f0', padding: '7px 14px', borderRadius: 20, fontSize: 13, color: '#6b7a8d', boxShadow: '0 4px 24px rgba(26,46,68,0.08)' }}>
+                  {pill}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="hero-visual">
+            {text.image_url ? (
+              <>
+                {!imgLoaded && <div className="img-skeleton" />}
+                <img
+                  src={text.image_url}
+                  alt="Hero"
+                  onLoad={() => setImgLoaded(true)}
+                  style={{ width: '100%', borderRadius: 24, boxShadow: '0 12px 48px rgba(26,46,68,0.14)', objectFit: 'cover', aspectRatio: '4/5', display: imgLoaded ? 'block' : 'none' }}
+                />
+              </>
+            ) : (
+              <div className="hero-image-fallback" />
+            )}
+          </div>
+        </section>
+      </div>
     </>
   );
 }

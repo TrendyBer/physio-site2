@@ -118,9 +118,15 @@ export function Faq() {
   const text = t[lang];
   return (
     <>
-      <style>{`.faq-item { border: 1px solid #dce6f0; border-radius: 12px; overflow: hidden; margin-bottom: 12px; cursor: pointer; }`}</style>
+      <style>{`
+        .faq-item { border: 1px solid #dce6f0; border-radius: 12px; overflow: hidden; margin-bottom: 12px; cursor: pointer; background: #fff; }
+        .faq-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 80px; align-items: start; }
+        @media (max-width: 768px) {
+          .faq-grid { grid-template-columns: 1fr; gap: 32px; }
+        }
+      `}</style>
       <section style={{ padding: '80px 24px', background: '#fff' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 80, alignItems: 'start' }}>
+        <div className="faq-grid" style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div>
             <h2 style={{ fontFamily: 'Georgia, serif', fontSize: 'clamp(28px, 3vw, 40px)', color: '#1a2e44', lineHeight: 1.2, marginBottom: 12 }}>
               {text.title} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{text.titleEm}</em>
@@ -174,7 +180,14 @@ export function Contact() {
 
   return (
     <>
-      <style>{`.contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: start; } .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; } @media (max-width: 768px) { .contact-grid { grid-template-columns: 1fr; gap: 32px; } .form-row { grid-template-columns: 1fr; } }`}</style>
+      <style>{`
+        .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: start; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 768px) {
+          .contact-grid { grid-template-columns: 1fr; gap: 32px; }
+          .form-row { grid-template-columns: 1fr; }
+        }
+      `}</style>
       <section id="contact" style={{ padding: '80px 24px', background: '#f8fafb' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div className="contact-grid">
@@ -214,14 +227,14 @@ export function Contact() {
                   {[text.firstName, text.lastName].map((label) => (
                     <div key={label}>
                       <label style={{ fontSize: 13, fontWeight: 500, color: '#1a2e44', display: 'block', marginBottom: 6 }}>{label}</label>
-                      <input type="text" style={{ width: '100%', padding: '12px 14px', border: '1px solid #dce6f0', borderRadius: 8, fontFamily: 'inherit', fontSize: 14, color: '#1a2e44', outline: 'none', boxSizing: 'border-box' }} />
+                      <input type="text" style={{ width: '100%', padding: '12px 14px', border: '1px solid #dce6f0', borderRadius: 8, fontFamily: 'inherit', fontSize: 14, color: '#1a2e44', outline: 'none', boxSizing: 'border-box', background: '#fff' }} />
                     </div>
                   ))}
                 </div>
                 {[{ label: 'Email', type: 'email' }, { label: text.phone, type: 'tel' }].map((field) => (
                   <div key={field.label}>
                     <label style={{ fontSize: 13, fontWeight: 500, color: '#1a2e44', display: 'block', marginBottom: 6 }}>{field.label}</label>
-                    <input type={field.type} style={{ width: '100%', padding: '12px 14px', border: '1px solid #dce6f0', borderRadius: 8, fontFamily: 'inherit', fontSize: 14, color: '#1a2e44', outline: 'none', boxSizing: 'border-box' }} />
+                    <input type={field.type} style={{ width: '100%', padding: '12px 14px', border: '1px solid #dce6f0', borderRadius: 8, fontFamily: 'inherit', fontSize: 14, color: '#1a2e44', outline: 'none', boxSizing: 'border-box', background: '#fff' }} />
                   </div>
                 ))}
                 <div>
@@ -233,7 +246,7 @@ export function Contact() {
                 </div>
                 <div>
                   <label style={{ fontSize: 13, fontWeight: 500, color: '#1a2e44', display: 'block', marginBottom: 6 }}>{text.message}</label>
-                  <textarea rows={4} style={{ width: '100%', padding: '12px 14px', border: '1px solid #dce6f0', borderRadius: 8, fontFamily: 'inherit', fontSize: 14, color: '#1a2e44', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
+                  <textarea rows={4} style={{ width: '100%', padding: '12px 14px', border: '1px solid #dce6f0', borderRadius: 8, fontFamily: 'inherit', fontSize: 14, color: '#1a2e44', outline: 'none', resize: 'vertical', boxSizing: 'border-box', background: '#fff' }} />
                 </div>
                 <button style={{ width: '100%', background: '#1a2e44', color: '#fff', padding: 14, borderRadius: 30, fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
                   onClick={() => alert(text.successMsg)}>
@@ -261,7 +274,12 @@ export function Footer() {
 
   return (
     <>
-      <style>{`.footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 48px; } .footer-bottom { display: flex; align-items: center; justify-content: space-between; } @media (max-width: 1024px) { .footer-grid { grid-template-columns: 1fr 1fr; } } @media (max-width: 640px) { .footer-grid { grid-template-columns: 1fr; gap: 32px; } .footer-bottom { flex-direction: column; gap: 16px; text-align: center; } }`}</style>
+      <style>{`
+        .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 48px; }
+        .footer-bottom { display: flex; align-items: center; justify-content: space-between; }
+        @media (max-width: 1024px) { .footer-grid { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 640px) { .footer-grid { grid-template-columns: 1fr; gap: 32px; } .footer-bottom { flex-direction: column; gap: 16px; text-align: center; } }
+      `}</style>
       <footer style={{ background: '#0f1d2c', color: 'rgba(255,255,255,0.7)', padding: '60px 24px 32px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div className="footer-grid">

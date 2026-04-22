@@ -163,18 +163,50 @@ export default function TherapistsPage() {
   }
 
   async function fetchTherapists() {
+    // Διάβασε cache ΜΟΝΟ αν δεν είναι άδειο
     try {
       const cached = sessionStorage.getItem(CACHE_KEY_TH);
       if (cached) {
         const { value, timestamp } = JSON.parse(cached);
-        if (Date.now() - timestamp < CACHE_TTL) { setTherapists(value); setLoadingTherapists(false); return; }
+        if (Date.now() - timestamp < CACHE_TTL && Array.isArray(value) && value.length > 0) {
+          setTherapists(value);
+          setLoadingTherapists(false);
+          return;
+        }
       }
     } catch (_) {}
-    const { data } = await supabase.from('therapist_profiles').select('*').eq('is_approved', true).order('created_at', { ascending: false });
-    if (data) {
-      setTherapists(data);
-      try { sessionStorage.setItem(CACHE_KEY_TH, JSON.stringify({ value: data, timestamp: Date.now() })); } catch (_) {}
+
+    // Safety timeout: αν το request κολλήσει, σταμάτα μετά από 8s
+    const timeoutId = setTimeout(() => setLoadingTherapists(false), 8000);
+
+    try {
+      const { data, error } = await supabase
+        .from('therapist_profiles')
+        .select('*')
+        .eq('is_approved', true)
+        .order('created_at', { ascending: false });
+
+      clearTimeout(timeoutId);
+
+      if (error) {
+        console.error('Therapists fetch error:', error);
+        setTherapists([]);
+      } else {
+        const list = data || [];
+        setTherapists(list);
+        // Cache ΜΟΝΟ αν έχουμε δεδομένα
+        if (list.length > 0) {
+          try {
+            sessionStorage.setItem(CACHE_KEY_TH, JSON.stringify({ value: list, timestamp: Date.now() }));
+          } catch (_) {}
+        }
+      }
+    } catch (err) {
+      clearTimeout(timeoutId);
+      console.error('Therapists fetch failed:', err);
+      setTherapists([]);
     }
+
     setLoadingTherapists(false);
   }
 
@@ -203,7 +235,7 @@ export default function TherapistsPage() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'DM Sans', sans-serif; }
+        body { font-family: 'DM Sans', sans-serif; background: #faf9f6; }
         .th-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
         @media (max-width: 1024px) { .th-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 640px) { .th-grid { grid-template-columns: 1fr; } }
@@ -222,6 +254,8 @@ export default function TherapistsPage() {
         @media (max-width: 768px) { .workflow-layout { grid-template-columns: 1fr; gap: 40px; } }
         .platform-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
         @media (max-width: 768px) { .platform-layout { grid-template-columns: 1fr; gap: 40px; } }
+        .upload-area { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+        @media (max-width: 640px) { .upload-area { flex-direction: column; align-items: stretch; gap: 12px; } }
         @keyframes shimmer { 0% { background-position: -600px 0; } 100% { background-position: 600px 0; } }
       `}</style>
 
@@ -231,7 +265,7 @@ export default function TherapistsPage() {
       <section style={{ background: 'linear-gradient(135deg, #e8f3ff 0%, #f0f7ff 100%)', padding: '80px 24px 60px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: '#2a6fdb', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 16 }}>{hero.badge}</div>
-          <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(32px, 4vw, 54px)', color: '#1a2e44', lineHeight: 1.15, marginBottom: 20 }}>
+          <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(28px, 4vw, 54px)', color: '#1a2e44', lineHeight: 1.15, marginBottom: 20 }}>
             {hero.hero} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{hero.heroEm}</em>
           </h1>
           <p style={{ fontSize: 17, color: '#6b7a8d', maxWidth: 580, margin: '0 auto 32px' }}>{hero.heroDesc}</p>
@@ -259,7 +293,10 @@ export default function TherapistsPage() {
               ))}
             </div>
           ) : therapists.length === 0 ? (
-            <div style={{ textAlign: 'center', color: '#6b7a8d', padding: '40px 0' }}>{tx.noTherapists}</div>
+            <div style={{ textAlign: 'center', color: '#6b7a8d', padding: '60px 24px', background: '#fff', borderRadius: 16, border: '1px dashed #dce6f0' }}>
+              <div style={{ fontSize: 32, marginBottom: 12 }}>👥</div>
+              <div style={{ fontSize: 15 }}>{tx.noTherapists}</div>
+            </div>
           ) : (
             <div className="th-grid">
               {therapists.map(th => (
@@ -303,7 +340,7 @@ export default function TherapistsPage() {
                 </div>
               ))}
             </div>
-            <div className="why-center-img" style={{ width: 300, height: 380, borderRadius: 20, overflow: 'hidden', flexShrink: 0, background: 'linear-gradient(135deg, #c8dff9, #a0c4f4)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2a6fdb', fontSize: 14 }}>📷</div>
+            <div className="why-center-img" style={{ width: 300, height: 380, borderRadius: 20, overflow: 'hidden', flexShrink: 0, background: 'linear-gradient(135deg, #c8dff9, #a0c4f4)' }} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               {(whywork.benefits || []).slice(2, 4).map((b, i) => (
                 <div key={i} className="benefit-card">
@@ -364,7 +401,7 @@ export default function TherapistsPage() {
                 ))}
               </div>
             </div>
-            <div style={{ borderRadius: 20, overflow: 'hidden', aspectRatio: '4/3', background: 'linear-gradient(135deg, #c8dff9, #a0c4f4)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2a6fdb', fontSize: 14 }}>📷</div>
+            <div style={{ borderRadius: 20, overflow: 'hidden', aspectRatio: '4/3', background: 'linear-gradient(135deg, #c8dff9, #a0c4f4)' }} />
           </div>
         </div>
       </section>
@@ -376,7 +413,7 @@ export default function TherapistsPage() {
             <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(26px, 3vw, 38px)', color: '#1a2e44', marginBottom: 12 }}>{tx.formTitle}</h2>
             <p style={{ fontSize: 16, color: '#6b7a8d' }}>{tx.formDesc}</p>
           </div>
-          <div style={{ background: '#fff', borderRadius: 20, border: '1px solid #e2e8f0', padding: '40px', boxShadow: '0 4px 24px rgba(0,0,0,0.04)' }}>
+          <div style={{ background: '#fff', borderRadius: 20, border: '1px solid #e2e8f0', padding: '32px', boxShadow: '0 4px 24px rgba(0,0,0,0.04)' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               <div className="form-row">
                 <div><label className="form-label">{tx.fullName} *</label><input name="name" value={form.name} onChange={handleChange} className="form-input" /></div>
@@ -403,22 +440,22 @@ export default function TherapistsPage() {
               </div>
               <div>
                 <label className="form-label">{tx.upload}</label>
-                <div style={{ border: '2px dashed #e2e8f0', borderRadius: 12, padding: '20px 24px', background: '#f8fafb', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 10, background: '#e8f1fd', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: '#2a6fdb' }}>⬆</div>
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: '#1a2e44' }}>{files.length > 0 ? files.map(f => f.name).join(', ') : 'Upload files'}</div>
+                <div style={{ border: '2px dashed #e2e8f0', borderRadius: 12, padding: '20px 24px', background: '#f8fafb' }} className="upload-area">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 0 }}>
+                    <div style={{ width: 44, height: 44, borderRadius: 10, background: '#e8f1fd', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: '#2a6fdb', flexShrink: 0 }}>⬆</div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: '#1a2e44', overflow: 'hidden', textOverflow: 'ellipsis' }}>{files.length > 0 ? files.map(f => f.name).join(', ') : tx.upload.split(',')[0]}</div>
                       <div style={{ fontSize: 12, color: '#94a3b8' }}>{tx.uploadDesc}</div>
                     </div>
                   </div>
-                  <label style={{ background: '#fff', border: '1.5px solid #e2e8f0', borderRadius: 20, padding: '8px 20px', fontSize: 13, fontWeight: 600, color: '#1a2e44', cursor: 'pointer' }}>
+                  <label style={{ background: '#fff', border: '1.5px solid #e2e8f0', borderRadius: 20, padding: '10px 20px', fontSize: 13, fontWeight: 600, color: '#1a2e44', cursor: 'pointer', textAlign: 'center', whiteSpace: 'nowrap' }}>
                     {tx.uploadBtn}
                     <input type="file" multiple accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" onChange={handleFiles} style={{ display: 'none' }} />
                   </label>
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <input type="checkbox" id="terms" checked={accepted} onChange={e => setAccepted(e.target.checked)} style={{ width: 18, height: 18, cursor: 'pointer', accentColor: '#2a6fdb' }} />
+                <input type="checkbox" id="terms" checked={accepted} onChange={e => setAccepted(e.target.checked)} style={{ width: 18, height: 18, cursor: 'pointer', accentColor: '#2a6fdb', flexShrink: 0 }} />
                 <label htmlFor="terms" style={{ fontSize: 14, color: '#1a2e44', cursor: 'pointer' }}>
                   {tx.terms}<a href="#" style={{ color: '#2a6fdb', fontWeight: 600 }}>{tx.termsLink}</a>
                 </label>
