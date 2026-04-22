@@ -65,20 +65,12 @@ export default function Navbar() {
       if (nameData?.name) { const fn = nameData.name.split(' ')[0]; localStorage.setItem('userName', fn); }
     }
     setLoginModal(false);
-    // Check pending redirect after login
     const pending = localStorage.getItem('pendingRedirect');
     if (pending && role === 'patient') { localStorage.removeItem('pendingRedirect'); window.location.href = pending; return; }
     if (role === 'therapist') window.location.href = '/dashboard/therapist';
     else if (role === 'patient') window.location.href = '/dashboard/patient';
     else if (role === 'admin') window.location.href = '/admin';
     else window.location.href = '/';
-  }
-
-  async function handleSignOut() {
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('userName');
-    await supabase.auth.signOut();
-    window.location.href = '/';
   }
 
   const t = {
@@ -95,7 +87,6 @@ export default function Navbar() {
     { label: 'Blog', href: '/blog' },
     { label: lang === 'el' ? 'Επικοινωνία' : 'Contact', href: '/contact' },
   ];
-
   const therapistLinks = [
     { label: lang === 'el' ? 'Αρχική' : 'Home', href: '/' },
     { label: 'Dashboard', href: '/dashboard/therapist' },
@@ -104,7 +95,6 @@ export default function Navbar() {
     { label: lang === 'el' ? 'Ραντεβού' : 'Appointments', href: '/dashboard/therapist?tab=requests' },
     { label: lang === 'el' ? 'Προφίλ' : 'Profile', href: '/dashboard/therapist?tab=profile' },
   ];
-
   const patientLinks = [
     { label: lang === 'el' ? 'Αρχική' : 'Home', href: '/' },
     { label: lang === 'el' ? 'Θεραπευτές' : 'Therapists', href: '/therapists' },
@@ -115,7 +105,7 @@ export default function Navbar() {
 
   const activeLinks = userRole === 'therapist' ? therapistLinks : userRole === 'patient' ? patientLinks : publicLinks;
 
-  const inputStyle = { width: '100%', padding: '11px 14px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', color: '#1a2e44' };
+  const inputStyle = { width: '100%', padding: '11px 14px', border: '1.5px solid #e8dfd0', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', color: '#1a2e44', background: '#fff' };
 
   return (
     <>
@@ -130,7 +120,7 @@ export default function Navbar() {
         }
       `}</style>
 
-      <nav style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #dce6f0', padding: '0 24px' }}>
+      <nav style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(250,246,239,0.95)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #e8dfd0', padding: '0 24px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 68 }}>
 
           <a href="/" style={{ fontFamily: 'Georgia, serif', fontSize: 22, fontWeight: 700, color: '#1a2e44', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
@@ -141,9 +131,9 @@ export default function Navbar() {
           <ul className="nav-links-desktop" style={{ alignItems: 'center', gap: 24, listStyle: 'none', margin: 0, padding: 0 }}>
             {activeLinks.map(item => (
               <li key={item.href + item.label}>
-                <a href={item.href} style={{ fontSize: 14, fontWeight: 500, color: '#6b7a8d', textDecoration: 'none' }}
+                <a href={item.href} style={{ fontSize: 14, fontWeight: 500, color: '#475569', textDecoration: 'none' }}
                   onMouseEnter={e => e.target.style.color = '#1a2e44'}
-                  onMouseLeave={e => e.target.style.color = '#6b7a8d'}>
+                  onMouseLeave={e => e.target.style.color = '#475569'}>
                   {item.label}
                 </a>
               </li>
@@ -151,7 +141,7 @@ export default function Navbar() {
           </ul>
 
           <div className="nav-right-desktop" style={{ alignItems: 'center', gap: 10 }}>
-            <button onClick={toggleLang} style={{ border: '1px solid #dce6f0', background: 'none', padding: '6px 14px', borderRadius: 20, fontSize: 13, fontWeight: 500, color: '#6b7a8d', cursor: 'pointer' }}>
+            <button onClick={toggleLang} style={{ border: '1px solid #e8dfd0', background: '#fff', padding: '6px 14px', borderRadius: 20, fontSize: 13, fontWeight: 500, color: '#475569', cursor: 'pointer' }}>
               {lang === 'el' ? 'EN' : 'ΕΛ'}
             </button>
 
@@ -167,7 +157,7 @@ export default function Navbar() {
               </a>
             ) : (
               mounted && <>
-                <button onClick={() => setLoginModal(true)} style={{ fontSize: 14, fontWeight: 600, color: '#1a2e44', background: 'none', border: '1px solid #dce6f0', padding: '8px 18px', borderRadius: 20, cursor: 'pointer' }}>
+                <button onClick={() => setLoginModal(true)} style={{ fontSize: 14, fontWeight: 600, color: '#1a2e44', background: '#fff', border: '1px solid #e8dfd0', padding: '8px 18px', borderRadius: 20, cursor: 'pointer' }}>
                   {text.login}
                 </button>
                 <button onClick={() => setRoleModal(true)} style={{ background: '#1a2e44', color: '#fff', padding: '9px 20px', borderRadius: 30, fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer' }}>
@@ -185,14 +175,13 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Role Modal */}
       {roleModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}
           onClick={e => { if (e.target === e.currentTarget) setRoleModal(false); }}>
           <div style={{ background: '#fff', borderRadius: 20, padding: '36px 32px', width: '100%', maxWidth: 480, boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
             <div style={{ textAlign: 'center', marginBottom: 28 }}>
               <div style={{ fontFamily: 'Georgia, serif', fontSize: 22, fontWeight: 700, color: '#1a2e44', marginBottom: 8 }}>Εγγραφή στο PhysioHome</div>
-              <p style={{ fontSize: 14, color: '#6b7a8d' }}>Τι θέλετε να κάνετε;</p>
+              <p style={{ fontSize: 14, color: '#64748b' }}>Τι θέλετε να κάνετε;</p>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
               {[
@@ -200,16 +189,16 @@ export default function Navbar() {
                 { role: 'therapist', icon: '👨‍⚕️', title: 'Θέλω να Προσφέρω', desc: 'Εγγραφή ως θεραπευτής και αίτηση συνεργασίας' },
               ].map(r => (
                 <a key={r.role} href={`/auth/register?role=${r.role}`} onClick={() => setRoleModal(false)}
-                  style={{ padding: '24px 16px', border: '2px solid #e2e8f0', borderRadius: 16, textAlign: 'center', textDecoration: 'none', display: 'block', background: '#fff', cursor: 'pointer' }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = '#2a6fdb'; e.currentTarget.style.background = '#EFF6FF'; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.background = '#fff'; }}>
+                  style={{ padding: '24px 16px', border: '2px solid #e8dfd0', borderRadius: 16, textAlign: 'center', textDecoration: 'none', display: 'block', background: '#fff', cursor: 'pointer' }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = '#2a6fdb'; e.currentTarget.style.background = '#faf6ef'; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#e8dfd0'; e.currentTarget.style.background = '#fff'; }}>
                   <div style={{ fontSize: 36, marginBottom: 10 }}>{r.icon}</div>
                   <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2e44', marginBottom: 6 }}>{r.title}</div>
-                  <div style={{ fontSize: 12, color: '#6b7a8d', lineHeight: 1.5 }}>{r.desc}</div>
+                  <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.5 }}>{r.desc}</div>
                 </a>
               ))}
             </div>
-            <div style={{ textAlign: 'center', fontSize: 13, color: '#6b7a8d' }}>
+            <div style={{ textAlign: 'center', fontSize: 13, color: '#64748b' }}>
               Έχετε ήδη λογαριασμό;{' '}
               <button onClick={() => { setRoleModal(false); setLoginModal(true); }} style={{ color: '#2a6fdb', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', fontSize: 13 }}>Σύνδεση</button>
             </div>
@@ -217,14 +206,13 @@ export default function Navbar() {
         </div>
       )}
 
-      {/* Login Modal */}
       {loginModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}
           onClick={e => { if (e.target === e.currentTarget) setLoginModal(false); }}>
           <div style={{ background: '#fff', borderRadius: 20, padding: '36px 32px', width: '100%', maxWidth: 420, boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
             <div style={{ textAlign: 'center', marginBottom: 24 }}>
               <div style={{ fontFamily: 'Georgia, serif', fontSize: 22, fontWeight: 700, color: '#1a2e44', marginBottom: 4 }}>Σύνδεση</div>
-              <p style={{ fontSize: 14, color: '#6b7a8d' }}>Καλώς ήρθατε πίσω</p>
+              <p style={{ fontSize: 14, color: '#64748b' }}>Καλώς ήρθατε πίσω</p>
             </div>
             <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
@@ -241,7 +229,7 @@ export default function Navbar() {
                 {loginLoading ? 'Σύνδεση...' : 'Σύνδεση →'}
               </button>
             </form>
-            <div style={{ textAlign: 'center', marginTop: 16, fontSize: 13, color: '#6b7a8d' }}>
+            <div style={{ textAlign: 'center', marginTop: 16, fontSize: 13, color: '#64748b' }}>
               Δεν έχετε λογαριασμό;{' '}
               <button onClick={() => { setLoginModal(false); setRoleModal(true); }} style={{ color: '#2a6fdb', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', fontSize: 13 }}>Εγγραφή</button>
             </div>
@@ -249,29 +237,26 @@ export default function Navbar() {
         </div>
       )}
 
-      {/* Mobile Menu */}
       {menuOpen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: '#fff', display: 'flex', flexDirection: 'column', padding: '20px 24px', overflowY: 'auto' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: '#faf6ef', display: 'flex', flexDirection: 'column', padding: '20px 24px', overflowY: 'auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
             <span style={{ fontFamily: 'Georgia, serif', fontSize: 20, fontWeight: 700, color: '#1a2e44' }}>PhysioHome</span>
             <button onClick={() => setMenuOpen(false)} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#1a2e44', padding: 4 }}>✕</button>
           </div>
           <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
-            <button onClick={() => { if (lang !== 'en') toggleLang(); }} style={{ padding: '6px 18px', borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: '1.5px solid', borderColor: lang === 'en' ? '#1a2e44' : '#dce6f0', background: lang === 'en' ? '#1a2e44' : '#fff', color: lang === 'en' ? '#fff' : '#6b7a8d' }}>EN</button>
-            <button onClick={() => { if (lang !== 'el') toggleLang(); }} style={{ padding: '6px 18px', borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: '1.5px solid', borderColor: lang === 'el' ? '#1a2e44' : '#dce6f0', background: lang === 'el' ? '#1a2e44' : '#fff', color: lang === 'el' ? '#fff' : '#6b7a8d' }}>EL</button>
+            <button onClick={() => { if (lang !== 'en') toggleLang(); }} style={{ padding: '6px 18px', borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: '1.5px solid', borderColor: lang === 'en' ? '#1a2e44' : '#e8dfd0', background: lang === 'en' ? '#1a2e44' : '#fff', color: lang === 'en' ? '#fff' : '#475569' }}>EN</button>
+            <button onClick={() => { if (lang !== 'el') toggleLang(); }} style={{ padding: '6px 18px', borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: '1.5px solid', borderColor: lang === 'el' ? '#1a2e44' : '#e8dfd0', background: lang === 'el' ? '#1a2e44' : '#fff', color: lang === 'el' ? '#fff' : '#475569' }}>EL</button>
           </div>
           <nav style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
             {activeLinks.map(item => (
-              <a key={item.href + item.label} href={item.href} onClick={() => setMenuOpen(false)} style={{ fontSize: 18, fontWeight: 600, color: '#1a2e44', textDecoration: 'none', padding: '14px 0', borderBottom: '1px solid #f1f5f9' }}>
+              <a key={item.href + item.label} href={item.href} onClick={() => setMenuOpen(false)} style={{ fontSize: 18, fontWeight: 600, color: '#1a2e44', textDecoration: 'none', padding: '14px 0', borderBottom: '1px solid #e8dfd0' }}>
                 {item.label}
               </a>
             ))}
           </nav>
           <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 10 }}>
             {user ? (
-              <a href="/auth/logout" style={{ background: '#FEF2F2', color: '#DC2626', padding: '13px', borderRadius: 30, fontSize: 15, fontWeight: 600, border: '1px solid #FECACA', textDecoration: 'none', textAlign: 'center', display: 'block' }}>
-                Logout
-              </a>
+              <a href="/auth/logout" style={{ background: '#FEF2F2', color: '#DC2626', padding: '13px', borderRadius: 30, fontSize: 15, fontWeight: 600, border: '1px solid #FECACA', textDecoration: 'none', textAlign: 'center', display: 'block' }}>Logout</a>
             ) : (
               <>
                 <button onClick={() => { setMenuOpen(false); setLoginModal(true); }} style={{ background: 'transparent', color: '#1a2e44', padding: '12px', borderRadius: 30, fontSize: 15, fontWeight: 600, border: '1.5px solid #1a2e44', cursor: 'pointer' }}>{text.login}</button>

@@ -54,22 +54,18 @@ export default function Benefits() {
         .benefits-img { border-radius: 24px; aspect-ratio: 1; overflow: hidden; }
         @media (max-width: 768px) { .benefits-grid { grid-template-columns: 1fr; gap: 32px; } .benefits-img { display: none; } }
       `}</style>
-      {/* Warm off-white για τα alternating sections */}
-      <section style={{ padding: '80px 24px', background: '#faf9f6' }}>
+      <section style={{ padding: '80px 24px', background: '#ffffff' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div className="benefits-grid">
             <div>
-              {/* Italic accent signature */}
               <h2 style={{ fontFamily: 'Georgia, serif', fontSize: 'clamp(28px, 3vw, 40px)', color: '#1a2e44', lineHeight: 1.2, marginBottom: 12 }}>
                 {text.title} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{text.titleEm}</em>
               </h2>
-              {/* Dark slate body text */}
               <p style={{ fontSize: 16, color: '#334155', marginBottom: 40, lineHeight: 1.7 }}>{text.desc}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
                 {(text.benefits || []).map((b, i) => (
                   <div key={i} style={{ display: 'flex', gap: 16 }}>
-                    {/* Powder blue icon bg */}
-                    <div style={{ flexShrink: 0, width: 44, height: 44, borderRadius: 12, background: '#eaf2fc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>{b.icon}</div>
+                    <div style={{ flexShrink: 0, width: 44, height: 44, borderRadius: 12, background: '#faf6ef', border: '1px solid #e8dfd0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>{b.icon}</div>
                     <div>
                       <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1a2e44', marginBottom: 4 }}>{b.title}</h3>
                       <p style={{ fontSize: 14, color: '#475569', lineHeight: 1.6 }}>{b.desc}</p>
@@ -82,7 +78,7 @@ export default function Benefits() {
               {text.image_url ? (
                 <img src={text.image_url} alt="Benefits" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 24 }} />
               ) : (
-                <div style={{ width: '100%', aspectRatio: '1', borderRadius: 24, background: 'linear-gradient(135deg, #eaf2fc 0%, #c9ddf4 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2a6fdb', fontSize: 14 }}>📷 Photo</div>
+                <div style={{ width: '100%', aspectRatio: '1', borderRadius: 24, background: 'linear-gradient(135deg, #f5ede0 0%, #ebe0cd 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94785a', fontSize: 14 }}>📷 Photo</div>
               )}
             </div>
           </div>

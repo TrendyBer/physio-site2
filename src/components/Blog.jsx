@@ -49,15 +49,13 @@ export default function Blog() {
       <style>{`
         .blog-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
         @media (max-width: 640px) { .blog-grid { grid-template-columns: 1fr; } }
-        .blog-card { background: #ffffff; border-radius: 16px; border: 1px solid #dce6f0; overflow: hidden; transition: all .3s; text-decoration: none; color: inherit; display: block; }
-        .blog-card:hover { box-shadow: 0 4px 24px rgba(26,46,68,0.08); transform: translateY(-4px); border-color: #c9ddf4; }
+        .blog-card { background: #faf6ef; border-radius: 16px; border: 1px solid #e8dfd0; overflow: hidden; transition: all .3s; text-decoration: none; color: inherit; display: block; }
+        .blog-card:hover { box-shadow: 0 4px 24px rgba(26,46,68,0.08); transform: translateY(-4px); border-color: #2a6fdb; }
       `}</style>
-      {/* Warm off-white */}
-      <section id="blog" style={{ padding: '80px 24px', background: '#faf9f6' }}>
+      <section id="blog" style={{ padding: '80px 24px', background: '#ffffff' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 16, marginBottom: 48 }}>
             <div>
-              {/* Italic accent signature */}
               <h2 style={{ fontFamily: 'Georgia, serif', fontSize: 'clamp(28px, 3vw, 40px)', color: '#1a2e44', lineHeight: 1.2, marginBottom: 12 }}>
                 {text.title}<em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{text.titleEm}</em>
               </h2>
@@ -75,7 +73,7 @@ export default function Blog() {
                   {post.image_url ? (
                     <img src={post.image_url} alt={title || ''} style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', display: 'block' }} />
                   ) : (
-                    <div style={{ aspectRatio: '16/9', background: 'linear-gradient(135deg, #eaf2fc, #c9ddf4)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2a6fdb', fontSize: 13 }}>📷</div>
+                    <div style={{ aspectRatio: '16/9', background: 'linear-gradient(135deg, #f5ede0, #ebe0cd)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94785a', fontSize: 13 }}>📷</div>
                   )}
                   <div style={{ padding: 20 }}>
                     {post.category && (

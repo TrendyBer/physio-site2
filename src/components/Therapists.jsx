@@ -5,22 +5,11 @@ import { supabase } from '@/lib/supabase';
 
 function Avatar({ name, photoUrl, size = 60 }) {
   if (photoUrl) {
-    return (
-      <img
-        src={photoUrl}
-        alt={name}
-        style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
-      />
-    );
+    return <img src={photoUrl} alt={name} style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />;
   }
   const initials = (name || '?').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
   return (
-    <div style={{
-      width: size, height: size, borderRadius: '50%',
-      background: 'linear-gradient(135deg, #eaf2fc, #c9ddf4)',
-      color: '#1a2e44', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: size * 0.32, fontWeight: 700, flexShrink: 0,
-    }}>
+    <div style={{ width: size, height: size, borderRadius: '50%', background: 'linear-gradient(135deg, #c8dff9, #a0c4f4)', color: '#1a2e44', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.32, fontWeight: 700, flexShrink: 0 }}>
       {initials}
     </div>
   );
@@ -48,14 +37,14 @@ function TherapistModal({ therapist, lang, onClose }) {
               <div style={{ fontSize: 14, color: '#2a6fdb', fontWeight: 600 }}>{therapist.price_per_session}€/{lang === 'el' ? 'συνεδρία' : 'session'}</div>
             )}
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#64748b', padding: 4 }}>✕</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#94a3b8', padding: 4 }}>✕</button>
         </div>
 
         <div style={{ padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 20 }}>
           {therapist.bio && (
             <div>
               <div style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 8 }}>{bioLabel}</div>
-              <p style={{ fontSize: 14, color: '#334155', lineHeight: 1.7, background: '#faf9f6', padding: '12px 14px', borderRadius: 8, borderLeft: '3px solid #dce6f0' }}>{therapist.bio}</p>
+              <p style={{ fontSize: 14, color: '#475569', lineHeight: 1.7, background: '#faf6ef', padding: '12px 14px', borderRadius: 8, borderLeft: '3px solid #e8dfd0' }}>{therapist.bio}</p>
             </div>
           )}
 
@@ -68,7 +57,7 @@ function TherapistModal({ therapist, lang, onClose }) {
 
           <div style={{ display: 'flex', gap: 12, paddingTop: 8, borderTop: '1px solid #f1f5f9' }}>
             <a href={bookHref} style={{ flex: 1, background: '#1a2e44', color: '#fff', padding: '12px', borderRadius: 30, fontSize: 14, fontWeight: 600, textDecoration: 'none', textAlign: 'center' }}>{bookLabel} →</a>
-            <button onClick={onClose} style={{ flex: 1, background: 'transparent', color: '#1a2e44', padding: '12px', borderRadius: 30, fontSize: 14, fontWeight: 600, border: '1.5px solid #dce6f0', cursor: 'pointer', fontFamily: 'inherit' }}>{closeLabel}</button>
+            <button onClick={onClose} style={{ flex: 1, background: 'transparent', color: '#1a2e44', padding: '12px', borderRadius: 30, fontSize: 14, fontWeight: 600, border: '1.5px solid #e8dfd0', cursor: 'pointer', fontFamily: 'inherit' }}>{closeLabel}</button>
           </div>
         </div>
       </div>
@@ -124,15 +113,13 @@ export default function Therapists() {
       <style>{`
         .therapists-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
         @media (max-width: 640px) { .therapists-grid { grid-template-columns: 1fr; } }
-        .th-card { background: #fff; border-radius: 16px; border: 1px solid #dce6f0; padding: 24px; transition: all .3s; cursor: pointer; }
-        .th-card:hover { box-shadow: 0 4px 24px rgba(26,46,68,0.08); transform: translateY(-4px); border-color: #c9ddf4; }
+        .th-card { background: #fff; border-radius: 16px; border: 1px solid #e8dfd0; padding: 24px; transition: all .3s; cursor: pointer; }
+        .th-card:hover { box-shadow: 0 4px 24px rgba(26,46,68,0.08); transform: translateY(-4px); border-color: #2a6fdb; }
       `}</style>
-      {/* Soft powder blue - πιο ζωντανό */}
-      <section id="therapists" style={{ padding: '80px 24px', background: '#eaf2fc' }}>
+      <section id="therapists" style={{ padding: '80px 24px', background: '#f5ede0' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 16, marginBottom: 48 }}>
             <div>
-              {/* Italic accent signature */}
               <h2 style={{ fontFamily: 'Georgia, serif', fontSize: 'clamp(28px, 3vw, 40px)', color: '#1a2e44', lineHeight: 1.2, marginBottom: 12 }}>
                 {text.title} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{text.titleEm}</em> {text.titleEnd}
               </h2>
@@ -168,7 +155,7 @@ export default function Therapists() {
                     </span>
                   )}
                   {th.area && (
-                    <span style={{ padding: '4px 10px', borderRadius: 20, fontSize: 12, background: '#eaf2fc', color: '#2a6fdb', border: '1px solid #c9ddf4' }}>
+                    <span style={{ padding: '4px 10px', borderRadius: 20, fontSize: 12, background: '#faf6ef', color: '#94785a', border: '1px solid #e8dfd0' }}>
                       📍 {th.area}
                     </span>
                   )}

@@ -52,15 +52,13 @@ export default function Services() {
         .services-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
         @media (max-width: 1024px) { .services-grid { grid-template-columns: 1fr 1fr; } }
         @media (max-width: 640px) { .services-grid { grid-template-columns: 1fr; } }
-        .service-card { border-radius: 16px; overflow: hidden; border: 1px solid #dce6f0; background: #ffffff; transition: all .3s; }
-        .service-card:hover { box-shadow: 0 12px 48px rgba(26,46,68,0.14); transform: translateY(-4px); border-color: #c9ddf4; }
+        .service-card { border-radius: 16px; overflow: hidden; border: 1px solid #e8dfd0; background: #ffffff; transition: all .3s; }
+        .service-card:hover { box-shadow: 0 12px 48px rgba(26,46,68,0.14); transform: translateY(-4px); border-color: #2a6fdb; }
       `}</style>
-      {/* Warm off-white */}
-      <section id="services" style={{ padding: '80px 24px', background: '#faf9f6' }}>
+      <section id="services" style={{ padding: '80px 24px', background: '#faf6ef' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 16, marginBottom: 48 }}>
             <div>
-              {/* Italic accent signature */}
               <h2 style={{ fontFamily: 'Georgia, serif', fontSize: 'clamp(28px, 3vw, 40px)', color: '#1a2e44', lineHeight: 1.2, marginBottom: 12 }}>
                 {text.title} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{text.titleEm}</em>
               </h2>
@@ -74,7 +72,7 @@ export default function Services() {
                 {s.image_url ? (
                   <img src={s.image_url} alt={s.title} style={{ width: '100%', aspectRatio: '16/10', objectFit: 'cover' }} />
                 ) : (
-                  <div style={{ aspectRatio: '16/10', background: 'linear-gradient(135deg, #eaf2fc, #c9ddf4)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2a6fdb', fontSize: 13 }}>📷</div>
+                  <div style={{ aspectRatio: '16/10', background: 'linear-gradient(135deg, #f5ede0, #ebe0cd)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94785a', fontSize: 13 }}>📷</div>
                 )}
                 <div style={{ padding: 20 }}>
                   <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1a2e44', marginBottom: 8 }}>{s.title}</h3>
