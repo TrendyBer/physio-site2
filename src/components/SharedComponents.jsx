@@ -51,6 +51,62 @@ function usePlatformSettings() {
 const PARTNERS_CACHE_KEY = 'cms_partners';
 const PARTNERS_CACHE_TTL = 5 * 60 * 1000;
 
+function PartnerLogo({ partner }) {
+  if (partner.logo_url) {
+    return (
+      <img
+        src={partner.logo_url}
+        alt={partner.name}
+        title={partner.name}
+        style={{
+          maxHeight: 40,
+          maxWidth: 140,
+          objectFit: 'contain',
+          filter: 'grayscale(100%)',
+          opacity: 0.65,
+          transition: 'all .3s',
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.filter = 'grayscale(0%)';
+          e.currentTarget.style.opacity = '1';
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.filter = 'grayscale(100%)';
+          e.currentTarget.style.opacity = '0.65';
+        }}
+      />
+    );
+  }
+  return (
+    <span style={{ fontSize: 16, fontWeight: 600, color: '#6b7a8d', letterSpacing: '.02em' }}>
+      {partner.name}
+    </span>
+  );
+}
+
+function PartnerItem({ partner }) {
+  const wrapperStyle = { display: 'inline-flex', alignItems: 'center' };
+
+  if (partner.website_url) {
+    return (
+      
+        href={partner.website_url}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ ...wrapperStyle, textDecoration: 'none' }}
+      >
+        <PartnerLogo partner={partner} />
+      </a>
+    );
+  }
+
+  return (
+    <div style={wrapperStyle}>
+      <PartnerLogo partner={partner} />
+    </div>
+  );
+}
+
 export function Partners() {
   const { lang } = useLang();
   const [partners, setPartners] = useState([]);
@@ -110,45 +166,9 @@ export function Partners() {
           {lang === 'el' ? 'Οι Συνεργάτες μας' : 'Our Partners'}
         </p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 40, flexWrap: 'wrap' }}>
-          {partners.map((p) => {
-            const content = p.logo_url ? (
-              <img
-                src={p.logo_url}
-                alt={p.name}
-                title={p.name}
-                style={{
-                  maxHeight: 40,
-                  maxWidth: 140,
-                  objectFit: 'contain',
-                  filter: 'grayscale(100%)',
-                  opacity: 0.65,
-                  transition: 'all .3s',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.filter = 'grayscale(0%)'; e.currentTarget.style.opacity = '1'; }}
-                onMouseLeave={e => { e.currentTarget.style.filter = 'grayscale(100%)'; e.currentTarget.style.opacity = '0.65'; }}
-              />
-            ) : (
-              <span style={{ fontSize: 16, fontWeight: 600, color: '#6b7a8d', letterSpacing: '.02em' }}>
-                {p.name}
-              </span>
-            );
-
-            return p.website_url ? (
-              
-                key={p.id}
-                href={p.website_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
-              >
-                {content}
-              </a>
-            ) : (
-              <div key={p.id} style={{ display: 'inline-flex', alignItems: 'center' }}>
-                {content}
-              </div>
-            );
-          })}
+          {partners.map(p => (
+            <PartnerItem key={p.id} partner={p} />
+          ))}
         </div>
       </div>
     </div>
