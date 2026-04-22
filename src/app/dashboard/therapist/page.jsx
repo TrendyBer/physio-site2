@@ -65,7 +65,7 @@ export default function TherapistDashboard() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
-  const [requests, setRequests] = useState([]); // session_requests + joined bookings + patient name
+  const [requests, setRequests] = useState([]);
   const [slots, setSlots] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [commission, setCommission] = useState(20);
@@ -78,8 +78,7 @@ export default function TherapistDashboard() {
   const [weekOffset, setWeekOffset] = useState(0);
   const photoInputRef = useRef();
 
-  // Cancel modal
-  const [cancelModal, setCancelModal] = useState(null); // { type: 'request'|'booking', id, data }
+  const [cancelModal, setCancelModal] = useState(null);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelling, setCancelling] = useState(false);
 
@@ -92,31 +91,25 @@ export default function TherapistDashboard() {
     if (!user) { router.push('/auth/login'); return; }
     setUser(user);
 
-    // 1. Profile
     const { data: prof } = await supabase.from('therapist_profiles').select('*').eq('id', user.id).single();
     setProfile(prof || {});
     setProfileForm(prof || {});
 
     await loadRequests(user.id);
 
-    // Slots
     const { data: slts } = await supabase.from('availability_slots').select('*').eq('therapist_id', user.id);
     setSlots(slts || []);
 
-    // Reviews
     const { data: revs } = await supabase.from('reviews').select('*').eq('therapist_id', user.id).eq('is_published', true);
     setReviews(revs || []);
 
-    // Commission
     const { data: comm } = await supabase.from('platform_settings').select('value').eq('key', 'commission').single();
     if (comm) setCommission(parseInt(comm.value) || 20);
 
     setLoading(false);
   }
 
-  // Φορτώνει session_requests + joined bookings + patient name (ΟΧΙ phone/email)
   async function loadRequests(therapistId) {
-    // Fetch requests για αυτόν τον θεραπευτή
     const { data: reqs } = await supabase
       .from('session_requests')
       .select('*')
@@ -126,7 +119,6 @@ export default function TherapistDashboard() {
 
     if (!reqs || reqs.length === 0) { setRequests([]); return; }
 
-    // Fetch bookings για τα requests
     const requestIds = reqs.map(r => r.id);
     const { data: bks } = await supabase
       .from('session_bookings')
@@ -134,14 +126,12 @@ export default function TherapistDashboard() {
       .in('request_id', requestIds)
       .order('session_date', { ascending: true });
 
-    // Fetch patient profiles (μόνο name — όχι phone/email)
     const patientIds = [...new Set(reqs.map(r => r.patient_id).filter(Boolean))];
     const { data: patients } = await supabase
       .from('patient_profiles')
       .select('id, name')
       .in('id', patientIds);
 
-    // Combine: κάθε request με τα bookings του και το όνομα ασθενή
     const combined = reqs.map(req => {
       const reqBookings = (bks || []).filter(b => b.request_id === req.id);
       const patient = (patients || []).find(p => p.id === req.patient_id);
@@ -158,12 +148,32 @@ export default function TherapistDashboard() {
   async function uploadPhoto(e) {
     const file = e.target.files[0];
     if (!file) return;
+
+    // Validation
+    if (!file.type.startsWith('image/')) {
+      alert('Παρακαλώ επιλέξτε εικόνα (JPG, PNG, WEBP).');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Η εικόνα είναι πολύ μεγάλη. Μέγιστο μέγεθος: 5 MB.');
+      return;
+    }
+
     setUploadingPhoto(true);
-    const ext = file.name.split('.').pop();
-    const path = `therapist-photos/${user.id}.${ext}`;
-    const { error: uploadError } = await supabase.storage.from('photos').upload(path, file, { upsert: true });
-    if (uploadError) { alert('Σφάλμα upload: ' + uploadError.message); setUploadingPhoto(false); return; }
-    const { data: { publicUrl } } = supabase.storage.from('photos').getPublicUrl(path);
+    const ext = file.name.split('.').pop().toLowerCase();
+    const path = `therapist-photos/${user.id}-${Date.now()}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('images')
+      .upload(path, file, { upsert: true, cacheControl: '3600' });
+
+    if (uploadError) {
+      alert('Σφάλμα upload: ' + uploadError.message);
+      setUploadingPhoto(false);
+      return;
+    }
+
+    const { data: { publicUrl } } = supabase.storage.from('images').getPublicUrl(path);
     await supabase.from('therapist_profiles').update({ photo_url: publicUrl }).eq('id', user.id);
     setProfile(p => ({ ...p, photo_url: publicUrl }));
     setProfileForm(p => ({ ...p, photo_url: publicUrl }));
@@ -186,7 +196,6 @@ export default function TherapistDashboard() {
     setSaving(false);
   }
 
-  // Αποδοχή αιτήματος: όλα τα bookings pending → confirmed + request pending → confirmed
   async function confirmRequest(request) {
     const bookingIds = request.bookings.map(b => b.id);
     await supabase.from('session_bookings').update({ status: 'confirmed' }).in('id', bookingIds);
@@ -194,7 +203,6 @@ export default function TherapistDashboard() {
     await loadRequests(user.id);
   }
 
-  // Ολοκλήρωση ΜΙΑΣ συνεδρίας
   async function markBookingCompleted(bookingId) {
     await supabase.from('session_bookings').update({
       status: 'completed',
@@ -204,13 +212,11 @@ export default function TherapistDashboard() {
     await loadRequests(user.id);
   }
 
-  // Άνοιγμα modal ακύρωσης (όλο το αίτημα)
   function openCancelRequestModal(request) {
     setCancelModal({ type: 'request', data: request });
     setCancelReason('');
   }
 
-  // Άνοιγμα modal ακύρωσης (μία συνεδρία)
   function openCancelBookingModal(booking, request) {
     setCancelModal({ type: 'booking', data: booking, request });
     setCancelReason('');
@@ -227,7 +233,6 @@ export default function TherapistDashboard() {
     const reason = `[Θεραπευτής] ${cancelReason}`;
 
     if (cancelModal.type === 'request') {
-      // Ακύρωση όλου του αιτήματος
       const req = cancelModal.data;
       const bookingIds = req.bookings.filter(b => b.status !== 'completed').map(b => b.id);
 
@@ -238,7 +243,6 @@ export default function TherapistDashboard() {
           cancelled_reason: reason,
         }).in('id', bookingIds);
 
-        // Ξεκλειδώνουμε τα slots
         const slotIds = req.bookings.filter(b => b.status !== 'completed').map(b => b.slot_id).filter(Boolean);
         if (slotIds.length > 0) {
           await supabase.from('availability_slots').update({ is_blocked: false }).in('id', slotIds);
@@ -251,7 +255,6 @@ export default function TherapistDashboard() {
         cancelled_reason: reason,
       }).eq('id', req.id);
     } else {
-      // Ακύρωση μίας συνεδρίας
       const booking = cancelModal.data;
       await supabase.from('session_bookings').update({
         status: 'cancelled',
@@ -296,7 +299,6 @@ export default function TherapistDashboard() {
     router.push('/');
   }
 
-  // Στατιστικά (μετράει bookings, όχι requests)
   const allBookings = requests.flatMap(r => r.bookings);
   const pendingCount = requests.filter(r => r.status === 'pending').length;
   const confirmedCount = allBookings.filter(b => b.status === 'confirmed').length;
@@ -306,7 +308,6 @@ export default function TherapistDashboard() {
   const netPerSession = Math.max(0, pricePerSession - commission);
   const earned = completedCount * netPerSession;
 
-  // Υπολογισμός καθαρού ποσού ανά αίτημα
   function getNetAmount(request) {
     const totalSessions = request.bookings.length || request.package_size || 1;
     return totalSessions * netPerSession;
@@ -415,7 +416,6 @@ export default function TherapistDashboard() {
                 const hasActiveBookings = req.bookings.some(b => b.status === 'confirmed' || b.status === 'pending');
                 return (
                   <div key={req.id} style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-                    {/* Header */}
                     <div style={{ padding: '18px 20px', borderBottom: '1px solid #f1f5f9' }}>
                       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
                         <Avatar name={req.patient_name} size={48} />
@@ -426,7 +426,6 @@ export default function TherapistDashboard() {
                             <span style={{ fontSize: 11, color: '#94A3B8', marginLeft: 'auto' }}>{new Date(req.created_at).toLocaleDateString('el-GR')}</span>
                           </div>
 
-                          {/* Address */}
                           <div style={{ fontSize: 13, color: '#475569', marginBottom: 4 }}>
                             📍 {req.address}, {req.area}{req.postal_code ? `, ${req.postal_code}` : ''}
                           </div>
@@ -436,7 +435,6 @@ export default function TherapistDashboard() {
                             </div>
                           )}
 
-                          {/* Problem */}
                           <div style={{ fontSize: 13, color: '#475569', background: '#f8fafc', padding: '10px 14px', borderRadius: 8, borderLeft: '3px solid #cbd5e1', marginBottom: 10 }}>
                             <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 4 }}>{req.problem_type}</div>
                             {req.problem_description || 'Χωρίς περιγραφή'}
@@ -448,7 +446,6 @@ export default function TherapistDashboard() {
                             </div>
                           )}
 
-                          {/* Σύνοψη */}
                           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 13, padding: '10px 14px', background: '#F0FDF4', borderRadius: 8, border: '1px solid #BBF7D0' }}>
                             <div>
                               <span style={{ color: '#64748B' }}>Τύπος: </span>
@@ -469,7 +466,6 @@ export default function TherapistDashboard() {
                       </div>
                     </div>
 
-                    {/* Συνεδρίες */}
                     <div style={{ padding: '16px 20px' }}>
                       <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 10 }}>
                         📅 Συνεδρίες
@@ -506,7 +502,6 @@ export default function TherapistDashboard() {
                       </div>
                     </div>
 
-                    {/* Κύρια κουμπιά */}
                     {(isPending || hasActiveBookings) && (
                       <div style={{ padding: '14px 20px', borderTop: '1px solid #f1f5f9', background: '#f8fafc', display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
                         {isPending && (
@@ -639,8 +634,8 @@ export default function TherapistDashboard() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
               <div style={{ position: 'relative' }}>
                 <Avatar name={profile?.name} photoUrl={profile?.photo_url} size={80} />
-                <button onClick={() => photoInputRef.current?.click()}
-                  style={{ position: 'absolute', bottom: 0, right: 0, width: 26, height: 26, borderRadius: '50%', background: '#2a6fdb', border: '2px solid #fff', color: '#fff', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <button onClick={() => photoInputRef.current?.click()} disabled={uploadingPhoto}
+                  style={{ position: 'absolute', bottom: 0, right: 0, width: 26, height: 26, borderRadius: '50%', background: '#2a6fdb', border: '2px solid #fff', color: '#fff', fontSize: 12, cursor: uploadingPhoto ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {uploadingPhoto ? '⏳' : '📷'}
                 </button>
                 <input ref={photoInputRef} type="file" accept="image/*" onChange={uploadPhoto} style={{ display: 'none' }} />
@@ -651,7 +646,7 @@ export default function TherapistDashboard() {
                 <div style={{ marginTop: 4 }}>
                   {profile?.is_approved ? <Badge label="✓ Εγκεκριμένος" bg="#D1FAE5" color="#065F46" /> : <Badge label="⏳ Αναμένει έγκριση" bg="#FEF3C7" color="#92400E" />}
                 </div>
-                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 6 }}>Πατήστε 📷 για αλλαγή φωτογραφίας</div>
+                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 6 }}>Πατήστε 📷 για αλλαγή φωτογραφίας (max 5MB)</div>
               </div>
               <button onClick={() => setEditProfile(!editProfile)}
                 style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid #e2e8f0', background: editProfile ? '#f1f5f9' : '#fff', color: '#475569', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
