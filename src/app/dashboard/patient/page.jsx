@@ -64,11 +64,9 @@ export default function PatientDashboard() {
     if (!user) { router.push('/auth/login'); return; }
     setUser(user);
 
-    // Profile
     const { data: prof } = await supabase.from('patient_profiles').select('*').eq('id', user.id).single();
     setProfile(prof || {});
 
-    // Services
     const { data: svcs } = await supabase.from('services').select('*').eq('is_active', true).order('display_order', { ascending: true });
     setServices(svcs || []);
 
@@ -76,19 +74,23 @@ export default function PatientDashboard() {
     setLoading(false);
   }
 
-  // Φορτώνει session_requests + joined bookings + therapist info + reviews
   async function loadRequests(patientId) {
-    // 1. Fetch session_requests
-    const { data: reqs } = await supabase
+    // 1. Fetch ΟΛΑ τα requests του ασθενή (χωρίς type filter)
+    const { data: reqs, error: reqsError } = await supabase
       .from('session_requests')
       .select('*, therapist_profiles(id, name, photo_url, specialty)')
       .eq('patient_id', patientId)
-      .eq('type', 'booking')
       .order('created_at', { ascending: false });
+
+    if (reqsError) {
+      console.error('Requests fetch error:', reqsError);
+      setSessionRequests([]);
+      return;
+    }
 
     if (!reqs || reqs.length === 0) { setSessionRequests([]); return; }
 
-    // 2. Fetch bookings for these requests
+    // 2. Fetch bookings για αυτά τα requests
     const requestIds = reqs.map(r => r.id);
     const { data: bks } = await supabase
       .from('session_bookings')
@@ -96,7 +98,7 @@ export default function PatientDashboard() {
       .in('request_id', requestIds)
       .order('session_date', { ascending: true });
 
-    // 3. Fetch reviews from this patient for these bookings
+    // 3. Fetch reviews από αυτόν τον ασθενή για αυτά τα bookings
     const bookingIds = (bks || []).map(b => b.id);
     let reviews = [];
     if (bookingIds.length > 0) {
@@ -111,7 +113,6 @@ export default function PatientDashboard() {
     // 4. Combine
     const combined = reqs.map(req => {
       const reqBookings = (bks || []).filter(b => b.request_id === req.id);
-      // Μαζεύουμε reviews που αντιστοιχούν σε bookings αυτού του αιτήματος
       const reqReview = reviews.find(rv => reqBookings.some(b => b.id === rv.booking_id));
       return {
         ...req,
@@ -123,7 +124,6 @@ export default function PatientDashboard() {
     setSessionRequests(combined);
   }
 
-  // Άνοιγμα modal για review — χρειάζεται το request + το πρώτο completed booking ως reference
   function openReviewModal(request) {
     const firstCompletedBooking = request.bookings.find(b => b.status === 'completed');
     if (!firstCompletedBooking) {
@@ -171,11 +171,12 @@ export default function PatientDashboard() {
   }
 
   // Stats
-  const pendingCount   = sessionRequests.filter(r => r.status === 'pending').length;
+  const pendingCount = sessionRequests.filter(r => r.status === 'pending').length;
   const confirmedCount = sessionRequests.filter(r => r.status === 'confirmed' || r.status === 'accepted').length;
   const completedCount = sessionRequests.filter(r =>
-    r.bookings.length > 0 && r.bookings.every(b => b.status === 'completed' || b.status === 'cancelled')
-    && r.bookings.some(b => b.status === 'completed')
+    r.bookings.length > 0 &&
+    r.bookings.every(b => b.status === 'completed' || b.status === 'cancelled') &&
+    r.bookings.some(b => b.status === 'completed')
   ).length;
 
   if (loading) return (
@@ -194,7 +195,6 @@ export default function PatientDashboard() {
     <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: "'DM Sans', sans-serif" }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap'); * { box-sizing: border-box; margin: 0; padding: 0; }`}</style>
 
-      {/* Navbar */}
       <nav style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', padding: '0 24px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
         <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'Georgia, serif', fontSize: 18, fontWeight: 700, color: '#1a2e44', textDecoration: 'none' }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#2a6fdb', display: 'inline-block' }} />
@@ -209,13 +209,11 @@ export default function PatientDashboard() {
 
       <div style={{ maxWidth: 900, margin: '0 auto', padding: '24px' }}>
 
-        {/* Welcome */}
         <div style={{ marginBottom: 24 }}>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0F172A' }}>Καλώς ήρθατε, {profile?.name?.split(' ')[0] || 'Ασθενής'}! 👋</h1>
           <p style={{ fontSize: 14, color: '#64748B', marginTop: 4 }}>Διαχειριστείτε τα αιτήματά σας και τα ραντεβού σας.</p>
         </div>
 
-        {/* Stats */}
         <div style={{ display: 'flex', gap: 14, marginBottom: 24, flexWrap: 'wrap' }}>
           {[
             { label: 'Εκκρεμή', value: pendingCount, bg: '#FEF3C7', border: '#FDE68A', text: '#B45309' },
@@ -229,7 +227,6 @@ export default function PatientDashboard() {
           ))}
         </div>
 
-        {/* New request CTA */}
         <div style={{ background: '#1a2e44', borderRadius: 14, padding: '20px 24px', marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
           <div>
             <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 4 }}>Θέλετε νέο ραντεβού;</div>
@@ -240,7 +237,6 @@ export default function PatientDashboard() {
           </a>
         </div>
 
-        {/* Tabs */}
         <div style={{ display: 'flex', gap: 4, background: '#e2e8f0', padding: 4, borderRadius: 12, width: 'fit-content', marginBottom: 20, flexWrap: 'wrap' }}>
           {TABS.map(t => (
             <button key={t.id} onClick={() => setActiveTab(t.id)}
@@ -265,7 +261,6 @@ export default function PatientDashboard() {
 
               return (
                 <div key={req.id} style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-                  {/* Header */}
                   <div style={{ padding: '18px 20px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
                       <span style={{ fontWeight: 700, fontSize: 15, color: '#0F172A' }}>{req.problem_type || 'Φυσιοθεραπεία'}</span>
@@ -295,7 +290,6 @@ export default function PatientDashboard() {
                     {req.problem_description && <div style={{ fontSize: 13, color: '#475569', background: '#f8fafc', padding: '8px 12px', borderRadius: 8, borderLeft: '3px solid #cbd5e1', marginTop: 6 }}>{req.problem_description}</div>}
                   </div>
 
-                  {/* Bookings list */}
                   {req.bookings.length > 0 && (
                     <div style={{ padding: '0 20px 16px' }}>
                       <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 8 }}>
@@ -319,9 +313,7 @@ export default function PatientDashboard() {
                     </div>
                   )}
 
-                  {/* Review section */}
                   {req.review ? (
-                    // Ήδη έχει αξιολογήσει
                     <div style={{ padding: '14px 20px', borderTop: '1px solid #f1f5f9', background: '#FFFBEB' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
                         <span style={{ fontSize: 12, fontWeight: 700, color: '#92400E', textTransform: 'uppercase', letterSpacing: '.05em' }}>✓ Η αξιολόγησή σας</span>
@@ -332,7 +324,6 @@ export default function PatientDashboard() {
                       )}
                     </div>
                   ) : canReview ? (
-                    // Μπορεί να αξιολογήσει
                     <div style={{ padding: '14px 20px', borderTop: '1px solid #f1f5f9', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                       <div style={{ fontSize: 13, color: '#475569' }}>
                         Πώς ήταν η εμπειρία σας με τον/την <strong>{req.therapist_profiles?.name}</strong>;
