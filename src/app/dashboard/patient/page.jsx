@@ -75,10 +75,10 @@ export default function PatientDashboard() {
   }
 
   async function loadRequests(patientId) {
-    // 1. Fetch ΟΛΑ τα requests του ασθενή (χωρίς type filter)
+    // 1. Fetch ΟΛΑ τα requests του ασθενή (χωρίς inline join — το FK δεν υπάρχει στο schema)
     const { data: reqs, error: reqsError } = await supabase
       .from('session_requests')
-      .select('*, therapist_profiles(id, name, photo_url, specialty)')
+      .select('*')
       .eq('patient_id', patientId)
       .order('created_at', { ascending: false });
 
@@ -90,7 +90,18 @@ export default function PatientDashboard() {
 
     if (!reqs || reqs.length === 0) { setSessionRequests([]); return; }
 
-    // 2. Fetch bookings για αυτά τα requests
+    // 2. Fetch therapist profiles ξεχωριστά
+    const therapistIds = [...new Set(reqs.map(r => r.therapist_id).filter(Boolean))];
+    let therapists = [];
+    if (therapistIds.length > 0) {
+      const { data: ths } = await supabase
+        .from('therapist_profiles')
+        .select('id, name, photo_url, specialty')
+        .in('id', therapistIds);
+      therapists = ths || [];
+    }
+
+    // 3. Fetch bookings για αυτά τα requests
     const requestIds = reqs.map(r => r.id);
     const { data: bks } = await supabase
       .from('session_bookings')
@@ -98,7 +109,7 @@ export default function PatientDashboard() {
       .in('request_id', requestIds)
       .order('session_date', { ascending: true });
 
-    // 3. Fetch reviews από αυτόν τον ασθενή για αυτά τα bookings
+    // 4. Fetch reviews από αυτόν τον ασθενή για αυτά τα bookings
     const bookingIds = (bks || []).map(b => b.id);
     let reviews = [];
     if (bookingIds.length > 0) {
@@ -110,13 +121,15 @@ export default function PatientDashboard() {
       reviews = rvs || [];
     }
 
-    // 4. Combine
+    // 5. Combine
     const combined = reqs.map(req => {
       const reqBookings = (bks || []).filter(b => b.request_id === req.id);
+      const therapist = therapists.find(t => t.id === req.therapist_id);
       const reqReview = reviews.find(rv => reqBookings.some(b => b.id === rv.booking_id));
       return {
         ...req,
         bookings: reqBookings,
+        therapist: therapist || null,
         review: reqReview || null,
       };
     });
@@ -134,7 +147,7 @@ export default function PatientDashboard() {
       request,
       booking_id: firstCompletedBooking.id,
       therapist_id: request.therapist_id,
-      therapist_name: request.therapist_profiles?.name || 'Θεραπευτής',
+      therapist_name: request.therapist?.name || 'Θεραπευτής',
     });
     setReviewForm({ rating: 0, comment: '' });
   }
@@ -273,13 +286,13 @@ export default function PatientDashboard() {
                       <span style={{ fontSize: 11, color: '#94A3B8', marginLeft: 'auto' }}>{new Date(req.created_at).toLocaleDateString('el-GR')}</span>
                     </div>
 
-                    {req.therapist_profiles?.name && (
+                    {req.therapist?.name && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                        <Avatar name={req.therapist_profiles.name} size={32} />
+                        <Avatar name={req.therapist.name} size={32} />
                         <div>
-                          <div style={{ fontSize: 14, color: '#1a2e44', fontWeight: 600 }}>👨‍⚕️ {req.therapist_profiles.name}</div>
-                          {req.therapist_profiles.specialty && (
-                            <div style={{ fontSize: 12, color: '#64748B' }}>{req.therapist_profiles.specialty}</div>
+                          <div style={{ fontSize: 14, color: '#1a2e44', fontWeight: 600 }}>👨‍⚕️ {req.therapist.name}</div>
+                          {req.therapist.specialty && (
+                            <div style={{ fontSize: 12, color: '#64748B' }}>{req.therapist.specialty}</div>
                           )}
                         </div>
                       </div>
@@ -326,7 +339,7 @@ export default function PatientDashboard() {
                   ) : canReview ? (
                     <div style={{ padding: '14px 20px', borderTop: '1px solid #f1f5f9', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                       <div style={{ fontSize: 13, color: '#475569' }}>
-                        Πώς ήταν η εμπειρία σας με τον/την <strong>{req.therapist_profiles?.name}</strong>;
+                        Πώς ήταν η εμπειρία σας με τον/την <strong>{req.therapist?.name || 'θεραπευτή'}</strong>;
                       </div>
                       <button onClick={() => openReviewModal(req)}
                         style={{ padding: '8px 18px', borderRadius: 20, border: 'none', background: '#F59E0B', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
