@@ -86,15 +86,11 @@ function PartnerLogo({ partner }) {
 
 function PartnerItem({ partner }) {
   const wrapperStyle = { display: 'inline-flex', alignItems: 'center' };
+  const linkStyle = { ...wrapperStyle, textDecoration: 'none' };
 
   if (partner.website_url) {
     return (
-      
-        href={partner.website_url}
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{ ...wrapperStyle, textDecoration: 'none' }}
-      >
+      <a href={partner.website_url} target="_blank" rel="noopener noreferrer" style={linkStyle}>
         <PartnerLogo partner={partner} />
       </a>
     );
@@ -114,7 +110,6 @@ export function Partners() {
 
   useEffect(() => {
     async function fetchPartners() {
-      // Check cache first
       try {
         const cached = sessionStorage.getItem(PARTNERS_CACHE_KEY);
         if (cached) {
@@ -127,7 +122,6 @@ export function Partners() {
         }
       } catch (_) {}
 
-      // Fetch from Supabase
       try {
         const { data, error } = await supabase
           .from('partners')
@@ -156,7 +150,6 @@ export function Partners() {
     fetchPartners();
   }, []);
 
-  // Hide entire section if loading or no partners exist
   if (loading || partners.length === 0) return null;
 
   return (
