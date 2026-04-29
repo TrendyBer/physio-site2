@@ -18,8 +18,8 @@ const DEFAULT = {
     en: { title: 'Why Therapists Choose to', titleEm: 'Work With Us', desc: 'Join a growing network.', benefits: [{ title: 'Flexible schedule', desc: 'Choose when you work.' }, { title: 'Professional growth', desc: 'Variety of cases.' }, { title: 'Focus on care', desc: 'More time treating patients.' }, { title: 'Work locally', desc: 'Matched with nearby patients.' }] },
   },
   workflow: {
-    el: { title: 'Μια Απλή,', titleEm: 'Ευέλικτη Διαδικασία', desc: 'Πλήρης έλεγχος.', btn: 'Γίνετε Θεραπευτής', steps: [{ num: 'Βήμα 1', title: 'Λαμβάνετε αιτήματα', desc: 'Βάσει ειδικότητας.' }, { num: 'Βήμα 2', title: 'Επιλέγετε συνεδρίες', desc: 'Βάσει προγράμματος.' }, { num: 'Βήμα 3', title: 'Παρέχετε φροντίδα', desc: 'Στο σπίτι του ασθενή.' }, { num: 'Βήμα 4', title: 'Εμείς αναλαμβάνουμε τα υπόλοιπα', desc: 'Συντονισμός.' }] },
-    en: { title: 'A Simple,', titleEm: 'Flexible Workflow', desc: 'Full control.', btn: 'Become a Therapist', steps: [{ num: 'Step 1', title: 'Receive requests', desc: 'Based on specialization.' }, { num: 'Step 2', title: 'Choose sessions', desc: 'Fit your schedule.' }, { num: 'Step 3', title: 'Provide care', desc: 'At patient home.' }, { num: 'Step 4', title: 'We handle the rest', desc: 'Coordination.' }] },
+    el: { title: 'Μια Απλή,', titleEm: 'Ευέλικτη Διαδικασία', desc: 'Πλήρης έλεγχος.', btn: 'Γίνετε Θεραπευτής', steps: [{ num: 'Βήμα 1', title: 'Εγγραφείτε στην πλατφόρμα', desc: 'Δημιουργήστε λογαριασμό σε λίγα λεπτά.' }, { num: 'Βήμα 2', title: 'Ανεβάστε δικαιολογητικά', desc: 'Άδεια, βιογραφικό, πιστοποιήσεις.' }, { num: 'Βήμα 3', title: 'Έγκριση από admin', desc: 'Ελέγχουμε τα στοιχεία σας.' }, { num: 'Βήμα 4', title: 'Ξεκινήστε να δέχεστε αιτήματα', desc: 'Ασθενείς στην περιοχή σας.' }] },
+    en: { title: 'A Simple,', titleEm: 'Flexible Workflow', desc: 'Full control.', btn: 'Become a Therapist', steps: [{ num: 'Step 1', title: 'Sign up on the platform', desc: 'Create your account in minutes.' }, { num: 'Step 2', title: 'Upload your documents', desc: 'License, CV, certifications.' }, { num: 'Step 3', title: 'Admin approval', desc: 'We verify your credentials.' }, { num: 'Step 4', title: 'Start receiving requests', desc: 'Patients in your area.' }] },
   },
   platform: {
     el: { title: 'Μια Πλατφόρμα που', titleEm: 'Μπορείτε να Εμπιστευτείτε', desc: 'Σχεδιασμένο για εσάς.', points: [{ title: 'Ασθενείς έτοιμοι να συμμετάσχουν', desc: 'Αφοσιωμένοι στην ανάρρωση.' }, { title: 'Χωρίς γραφειοκρατία', desc: 'Εστίαση στη θεραπεία.' }, { title: 'Σύγχρονη πρακτική', desc: 'Πέρα από παραδοσιακές κλινικές.' }] },
@@ -27,43 +27,29 @@ const DEFAULT = {
   },
 };
 
-const FORM_TX = {
+const TX = {
   el: {
-    formTitle: 'Αίτηση Συνεργασίας', formDesc: 'Συμπληρώστε τα στοιχεία σας.',
-    fullName: 'Ονοματεπώνυμο', email: 'Email', phone: 'Τηλέφωνο',
-    specialty: 'Ειδικότητα', specialtyPh: 'π.χ. Ορθοπαιδική',
-    experience: 'Χρόνια Εμπειρίας', area: 'Πόλη', areaPh: 'π.χ. Αθήνα',
-    bio: 'Περιγράψτε τον εαυτό σας', bioPh: 'Σύντομη περιγραφή...',
-    upload: 'Ανεβάστε CV, Πιστοποιητικά & Άδεια', uploadDesc: 'JPEG, PNG, PDF · max 100 MB', uploadBtn: 'Επιλογή Αρχείων',
-    terms: 'Αποδέχομαι τους ', termsLink: 'Όρους & Πολιτική Απορρήτου',
-    submit: 'Υποβολή Αίτησης', expOptions: ['1-2 χρόνια', '3-5 χρόνια', '5-10 χρόνια', '10+ χρόνια'],
-    successTitle: 'Ευχαριστούμε!', successDesc: 'Λάβαμε την αίτησή σας.', successBtn: 'Εντάξει',
-    required: 'Παρακαλώ συμπληρώστε όλα τα υποχρεωτικά πεδία.',
+    ctaTitle: 'Έτοιμοι να ξεκινήσετε;',
+    ctaDesc: 'Δημιουργήστε λογαριασμό φυσιοθεραπευτή και ξεκινήστε να συνεργάζεστε μαζί μας. Η εγγραφή είναι δωρεάν.',
+    ctaBtn: 'Δημιουργία Λογαριασμού',
+    ctaSecondary: 'Έχετε ήδη λογαριασμό;',
+    ctaSecondaryLink: 'Σύνδεση',
+    benefitsList: ['✓ Δωρεάν εγγραφή', '✓ Ευέλικτο ωράριο', '✓ Πληρωμή ανά συνεδρία'],
   },
   en: {
-    formTitle: 'Apply to Join', formDesc: 'Fill in your details.',
-    fullName: 'Full Name', email: 'Email', phone: 'Phone',
-    specialty: 'Specialization', specialtyPh: 'e.g. Sports Rehabilitation',
-    experience: 'Years of Experience', area: 'City', areaPh: 'e.g. Athens',
-    bio: 'Tell Us About Yourself', bioPh: 'Briefly describe your background...',
-    upload: 'Upload CV, Certificates and License', uploadDesc: 'JPEG, PNG, PDF · max 100 MB', uploadBtn: 'Browse',
-    terms: 'I accept the ', termsLink: 'Terms and Privacy Policy',
-    submit: 'Submit Application', expOptions: ['1-2 years', '3-5 years', '5-10 years', '10+ years'],
-    successTitle: 'Thank you!', successDesc: 'We received your application.', successBtn: 'Got it',
-    required: 'Please fill in all required fields.',
+    ctaTitle: 'Ready to get started?',
+    ctaDesc: 'Create a physiotherapist account and start working with us. Registration is free.',
+    ctaBtn: 'Create Account',
+    ctaSecondary: 'Already have an account?',
+    ctaSecondaryLink: 'Log in',
+    benefitsList: ['✓ Free registration', '✓ Flexible schedule', '✓ Per-session payment'],
   },
 };
 
 export default function BecomeTherapistPage() {
   const { lang } = useLang();
-  const tx = FORM_TX[lang];
+  const tx = TX[lang];
   const [cms, setCms] = useState(DEFAULT);
-  const [form, setForm] = useState({ name: '', email: '', phone: '', specialty: '', experience: '', area: '', bio: '' });
-  const [files, setFiles] = useState([]);
-  const [accepted, setAccepted] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
 
   useEffect(() => { fetchCMS(); }, []);
 
@@ -75,7 +61,6 @@ export default function BecomeTherapistPage() {
         if (Date.now() - timestamp < CACHE_TTL) { setCms(value); return; }
       }
     } catch (_) {}
-    // Reuse the same 'therapists' CMS section αν θες, ή φτιάξε νέο 'become_therapist'
     const { data } = await supabase.from('site_content').select('section, content_el, content_en').eq('page', 'therapists');
     if (data) {
       const merged = { ...DEFAULT };
@@ -85,25 +70,13 @@ export default function BecomeTherapistPage() {
     }
   }
 
-  const handleChange = (e) => setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
-  const handleFiles = (e) => setFiles(Array.from(e.target.files));
-
-  const handleSubmit = async () => {
-    if (!form.name || !form.email || !form.specialty || !accepted) { setError(true); return; }
-    setError(false); setLoading(true);
-    const { error: insertError } = await supabase.from('therapist_applications').insert([{
-      name: form.name, email: form.email, phone: form.phone,
-      specialty: form.specialty, experience: form.experience,
-      area: form.area, bio: form.bio, status: 'pending',
-    }]);
-    if (insertError) { alert('Σφάλμα: ' + insertError.message); setLoading(false); return; }
-    setLoading(false); setSubmitted(true);
-  };
-
   const hero     = cms.hero?.[lang]     || DEFAULT.hero[lang];
   const whywork  = cms.whywork?.[lang]  || DEFAULT.whywork[lang];
   const workflow = cms.workflow?.[lang] || DEFAULT.workflow[lang];
   const platform = cms.platform?.[lang] || DEFAULT.platform[lang];
+
+  // Direct register link με preselected role
+  const registerHref = '/auth/register?role=therapist';
 
   return (
     <>
@@ -111,11 +84,6 @@ export default function BecomeTherapistPage() {
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'DM Sans', sans-serif; background: #faf9f6; }
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-        @media (max-width: 640px) { .form-row { grid-template-columns: 1fr; } }
-        .form-input { width: 100%; padding: 12px 14px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 14px; font-family: inherit; color: #1a2e44; outline: none; background: #fff; }
-        .form-input:focus { border-color: #2a6fdb; }
-        .form-label { font-size: 13px; font-weight: 600; color: #1a2e44; margin-bottom: 6px; display: block; }
         .benefit-card { background: #fff; border-radius: 14px; border: 1px solid #e8f0fb; padding: 24px; }
         .platform-point { background: #fff; border-radius: 12px; border: 1px solid #e8f0fb; padding: 20px 24px; display: flex; align-items: flex-start; gap: 14px; }
         .why-grid-layout { display: grid; grid-template-columns: 1fr auto 1fr; gap: 32px; align-items: center; }
@@ -124,8 +92,6 @@ export default function BecomeTherapistPage() {
         @media (max-width: 768px) { .workflow-layout { grid-template-columns: 1fr; gap: 40px; } }
         .platform-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
         @media (max-width: 768px) { .platform-layout { grid-template-columns: 1fr; gap: 40px; } }
-        .upload-area { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-        @media (max-width: 640px) { .upload-area { flex-direction: column; align-items: stretch; gap: 12px; } }
       `}</style>
 
       <Navbar />
@@ -138,7 +104,9 @@ export default function BecomeTherapistPage() {
             {hero.hero} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{hero.heroEm}</em>
           </h1>
           <p style={{ fontSize: 17, color: '#6b7a8d', maxWidth: 580, margin: '0 auto 32px' }}>{hero.heroDesc}</p>
-          <a href="#apply" style={{ display: 'inline-block', background: '#1a2e44', color: '#fff', padding: '14px 36px', borderRadius: 30, fontSize: 15, fontWeight: 600, textDecoration: 'none' }}>{hero.heroBtn}</a>
+          <a href={registerHref} style={{ display: 'inline-block', background: '#1a2e44', color: '#fff', padding: '14px 36px', borderRadius: 30, fontSize: 15, fontWeight: 600, textDecoration: 'none' }}>
+            {hero.heroBtn} →
+          </a>
         </div>
       </section>
 
@@ -182,7 +150,9 @@ export default function BecomeTherapistPage() {
                 {workflow.title} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{workflow.titleEm}</em>
               </h2>
               <p style={{ fontSize: 15, color: '#6b7a8d', lineHeight: 1.7, marginBottom: 32 }}>{workflow.desc}</p>
-              <a href="#apply" style={{ display: 'inline-block', background: '#1a2e44', color: '#fff', padding: '13px 32px', borderRadius: 30, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>{workflow.btn}</a>
+              <a href={registerHref} style={{ display: 'inline-block', background: '#1a2e44', color: '#fff', padding: '13px 32px', borderRadius: 30, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
+                {workflow.btn} →
+              </a>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
               {(workflow.steps || []).map((step, i) => (
@@ -226,79 +196,31 @@ export default function BecomeTherapistPage() {
         </div>
       </section>
 
-      {/* FORM */}
-      <section id="apply" style={{ background: '#f8fafb', padding: '72px 24px 80px' }}>
-        <div style={{ maxWidth: 760, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(26px, 3vw, 38px)', color: '#1a2e44', marginBottom: 12 }}>{tx.formTitle}</h2>
-            <p style={{ fontSize: 16, color: '#6b7a8d' }}>{tx.formDesc}</p>
+      {/* CTA — replaces the form */}
+      <section style={{ background: 'linear-gradient(135deg, #1a2e44 0%, #2a3e54 100%)', padding: '80px 24px' }}>
+        <div style={{ maxWidth: 720, margin: '0 auto', textAlign: 'center' }}>
+          <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(28px, 4vw, 42px)', color: '#fff', marginBottom: 16 }}>
+            {tx.ctaTitle}
+          </h2>
+          <p style={{ fontSize: 17, color: 'rgba(255,255,255,0.85)', lineHeight: 1.6, marginBottom: 32, maxWidth: 560, margin: '0 auto 32px' }}>
+            {tx.ctaDesc}
+          </p>
+          <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 24 }}>
+            {tx.benefitsList.map((b, i) => (
+              <div key={i} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', padding: '8px 18px', borderRadius: 30, fontSize: 13, fontWeight: 500 }}>
+                {b}
+              </div>
+            ))}
           </div>
-          <div style={{ background: '#fff', borderRadius: 20, border: '1px solid #e2e8f0', padding: '32px', boxShadow: '0 4px 24px rgba(0,0,0,0.04)' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              <div className="form-row">
-                <div><label className="form-label">{tx.fullName} *</label><input name="name" value={form.name} onChange={handleChange} className="form-input" /></div>
-                <div><label className="form-label">{tx.email} *</label><input name="email" type="email" value={form.email} onChange={handleChange} className="form-input" /></div>
-              </div>
-              <div className="form-row">
-                <div><label className="form-label">{tx.phone}</label><input name="phone" value={form.phone} onChange={handleChange} className="form-input" /></div>
-                <div><label className="form-label">{tx.specialty} *</label><input name="specialty" value={form.specialty} onChange={handleChange} className="form-input" placeholder={tx.specialtyPh} /></div>
-              </div>
-              <div className="form-row">
-                <div>
-                  <label className="form-label">{tx.experience}</label>
-                  <select name="experience" value={form.experience} onChange={handleChange} className="form-input">
-                    <option value="">—</option>
-                    {tx.expOptions.map(o => <option key={o} value={o}>{o}</option>)}
-                  </select>
-                </div>
-                <div><label className="form-label">{tx.area}</label><input name="area" value={form.area} onChange={handleChange} className="form-input" placeholder={tx.areaPh} /></div>
-              </div>
-              <div>
-                <label className="form-label">{tx.bio}</label>
-                <textarea name="bio" value={form.bio} onChange={handleChange} className="form-input" placeholder={tx.bioPh} rows={5} style={{ resize: 'vertical' }} maxLength={300} />
-                <div style={{ fontSize: 11, color: '#94a3b8', textAlign: 'right', marginTop: 4 }}>{form.bio.length}/300</div>
-              </div>
-              <div>
-                <label className="form-label">{tx.upload}</label>
-                <div style={{ border: '2px dashed #e2e8f0', borderRadius: 12, padding: '20px 24px', background: '#f8fafb' }} className="upload-area">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 0 }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 10, background: '#e8f1fd', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: '#2a6fdb', flexShrink: 0 }}>⬆</div>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: '#1a2e44', overflow: 'hidden', textOverflow: 'ellipsis' }}>{files.length > 0 ? files.map(f => f.name).join(', ') : tx.upload.split(',')[0]}</div>
-                      <div style={{ fontSize: 12, color: '#94a3b8' }}>{tx.uploadDesc}</div>
-                    </div>
-                  </div>
-                  <label style={{ background: '#fff', border: '1.5px solid #e2e8f0', borderRadius: 20, padding: '10px 20px', fontSize: 13, fontWeight: 600, color: '#1a2e44', cursor: 'pointer', textAlign: 'center', whiteSpace: 'nowrap' }}>
-                    {tx.uploadBtn}
-                    <input type="file" multiple accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" onChange={handleFiles} style={{ display: 'none' }} />
-                  </label>
-                </div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <input type="checkbox" id="terms" checked={accepted} onChange={e => setAccepted(e.target.checked)} style={{ width: 18, height: 18, cursor: 'pointer', accentColor: '#2a6fdb', flexShrink: 0 }} />
-                <label htmlFor="terms" style={{ fontSize: 14, color: '#1a2e44', cursor: 'pointer' }}>
-                  {tx.terms}<a href="#" style={{ color: '#2a6fdb', fontWeight: 600 }}>{tx.termsLink}</a>
-                </label>
-              </div>
-              {error && <div style={{ background: '#FFE4E6', color: '#9F1239', padding: '12px 16px', borderRadius: 10, fontSize: 13, fontWeight: 500 }}>{tx.required}</div>}
-              <button onClick={handleSubmit} disabled={loading} style={{ background: '#1a2e44', color: '#fff', padding: '14px 36px', borderRadius: 30, fontSize: 15, fontWeight: 600, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, alignSelf: 'center', minWidth: 220 }}>
-                {loading ? '...' : tx.submit}
-              </button>
-            </div>
+          <a href={registerHref}
+            style={{ display: 'inline-block', background: '#fff', color: '#1a2e44', padding: '16px 44px', borderRadius: 30, fontSize: 16, fontWeight: 700, textDecoration: 'none', marginBottom: 16 }}>
+            {tx.ctaBtn} →
+          </a>
+          <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)' }}>
+            {tx.ctaSecondary} <a href="/auth/login" style={{ color: '#fff', fontWeight: 600, textDecoration: 'underline' }}>{tx.ctaSecondaryLink}</a>
           </div>
         </div>
       </section>
-
-      {submitted && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}>
-          <div style={{ background: '#fff', borderRadius: 20, padding: '48px 40px', maxWidth: 480, width: '100%', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
-            <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#D1FAE5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: 28 }}>✓</div>
-            <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 24, color: '#1a2e44', marginBottom: 12 }}>{tx.successTitle}</h3>
-            <p style={{ fontSize: 15, color: '#6b7a8d', lineHeight: 1.6, marginBottom: 28 }}>{tx.successDesc} <strong>{form.email}</strong></p>
-            <button onClick={() => setSubmitted(false)} style={{ background: '#1a2e44', color: '#fff', padding: '12px 36px', borderRadius: 30, fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer' }}>{tx.successBtn}</button>
-          </div>
-        </div>
-      )}
 
       <Footer />
     </>
