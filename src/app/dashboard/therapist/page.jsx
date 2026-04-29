@@ -33,6 +33,21 @@ for (let h = 9; h <= 20; h++) {
 }
 HOURS.push('21:00');
 
+// Predefined areas of Athens — V1
+const ATHENS_AREAS = [
+  'Αθήνα Κέντρο', 'Παγκράτι', 'Κολωνάκι', 'Εξάρχεια', 'Κυψέλη', 'Πατήσια',
+  'Αμπελόκηποι', 'Ζωγράφου', 'Καισαριανή', 'Βύρωνας', 'Ηλιούπολη', 'Νέα Σμύρνη',
+  'Καλλιθέα', 'Παλαιό Φάληρο', 'Άγιος Δημήτριος', 'Δάφνη', 'Νέος Κόσμος',
+  'Πετράλωνα', 'Θησείο', 'Γκάζι', 'Μεταξουργείο', 'Ομόνοια',
+  'Γαλάτσι', 'Νέα Φιλαδέλφεια', 'Νέα Ιωνία', 'Χαλάνδρι', 'Μαρούσι', 'Κηφισιά',
+  'Νέα Ερυθραία', 'Νέο Ψυχικό', 'Ψυχικό', 'Φιλοθέη', 'Παπάγου', 'Χολαργός',
+  'Αγία Παρασκευή', 'Γέρακας', 'Παλλήνη', 'Πεύκη', 'Λυκόβρυση',
+  'Άλιμος', 'Ελληνικό', 'Γλυφάδα', 'Βούλα', 'Βουλιαγμένη', 'Βάρη', 'Βάρκιζα',
+  'Πειραιάς', 'Νίκαια', 'Κορυδαλλός', 'Καμίνια', 'Κερατσίνι', 'Πέραμα', 'Δραπετσώνα',
+  'Περιστέρι', 'Αιγάλεω', 'Χαϊδάρι', 'Ίλιον', 'Πετρούπολη', 'Καματερό',
+  'Άγιοι Ανάργυροι', 'Νέα Χαλκηδόνα', 'Μοσχάτο', 'Ταύρος',
+];
+
 function generateDates() {
   const dates = [];
   const today = new Date();
@@ -81,6 +96,18 @@ export default function TherapistDashboard() {
   const [cancelModal, setCancelModal] = useState(null);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelling, setCancelling] = useState(false);
+
+  // Documents upload modal
+  const [docsModal, setDocsModal] = useState(false);
+  const [uploadingDoc, setUploadingDoc] = useState(null); // 'license' | 'cv' | 'cert'
+  const licenseInputRef = useRef();
+  const cvInputRef = useRef();
+  const certInputRef = useRef();
+
+  // Areas (service_areas)
+  const [areaInput, setAreaInput] = useState('');
+  const [savingAreas, setSavingAreas] = useState(false);
+  const [areaSuggestions, setAreaSuggestions] = useState([]);
 
   const currentWeek = ALL_WEEKS[weekOffset] || ALL_WEEKS[0];
 
@@ -149,7 +176,6 @@ export default function TherapistDashboard() {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validation
     if (!file.type.startsWith('image/')) {
       alert('Παρακαλώ επιλέξτε εικόνα (JPG, PNG, WEBP).');
       return;
@@ -180,6 +206,139 @@ export default function TherapistDashboard() {
     setUploadingPhoto(false);
   }
 
+  // ============== DOCUMENT UPLOAD (license, CV, certifications) ==============
+  async function uploadDocument(file, kind) {
+    if (!file) return;
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+    if (!allowedTypes.includes(file.type)) {
+      alert('Επιτρέπονται μόνο: PDF, JPG, PNG');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Το αρχείο είναι πολύ μεγάλο. Μέγιστο μέγεθος: 10 MB.');
+      return;
+    }
+
+    setUploadingDoc(kind);
+    const ext = file.name.split('.').pop().toLowerCase();
+    const filename = kind === 'cert'
+      ? `${kind}-${Date.now()}.${ext}`
+      : `${kind}.${ext}`;
+    const path = `${user.id}/${filename}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('therapist-documents')
+      .upload(path, file, { upsert: true, cacheControl: '3600' });
+
+    if (uploadError) {
+      alert('Σφάλμα upload: ' + uploadError.message);
+      setUploadingDoc(null);
+      return;
+    }
+
+    const updates = {};
+    if (kind === 'license') {
+      updates.license_url = path;
+      // When license uploaded → application becomes "pending" (visible to admin)
+      updates.application_status = 'pending';
+    } else if (kind === 'cv') {
+      updates.cv_url = path;
+    } else if (kind === 'cert') {
+      const existing = profile?.certifications_urls || [];
+      updates.certifications_urls = [...existing, path];
+    }
+
+    const { error: updateError } = await supabase
+      .from('therapist_profiles')
+      .update(updates)
+      .eq('id', user.id);
+
+    if (updateError) {
+      alert('Σφάλμα ενημέρωσης: ' + updateError.message);
+      setUploadingDoc(null);
+      return;
+    }
+
+    setProfile(p => ({ ...p, ...updates }));
+    setUploadingDoc(null);
+  }
+
+  async function removeDocument(kind, certPath = null) {
+    if (!confirm('Διαγραφή αρχείου;')) return;
+
+    let pathsToRemove = [];
+    const updates = {};
+
+    if (kind === 'license') {
+      pathsToRemove = [profile.license_url];
+      updates.license_url = null;
+      updates.application_status = 'incomplete';
+    } else if (kind === 'cv') {
+      pathsToRemove = [profile.cv_url];
+      updates.cv_url = null;
+    } else if (kind === 'cert' && certPath) {
+      pathsToRemove = [certPath];
+      updates.certifications_urls = (profile.certifications_urls || []).filter(p => p !== certPath);
+    }
+
+    await supabase.storage.from('therapist-documents').remove(pathsToRemove.filter(Boolean));
+    await supabase.from('therapist_profiles').update(updates).eq('id', user.id);
+    setProfile(p => ({ ...p, ...updates }));
+  }
+
+  async function getSignedUrl(path) {
+    const { data, error } = await supabase.storage
+      .from('therapist-documents')
+      .createSignedUrl(path, 3600);
+    if (error) { alert('Σφάλμα: ' + error.message); return null; }
+    return data.signedUrl;
+  }
+
+  async function viewDocument(path) {
+    const url = await getSignedUrl(path);
+    if (url) window.open(url, '_blank');
+  }
+
+  // ============== AREAS ==============
+  function handleAreaInputChange(value) {
+    setAreaInput(value);
+    if (value.trim().length > 0) {
+      const filtered = ATHENS_AREAS.filter(a =>
+        a.toLowerCase().includes(value.toLowerCase()) &&
+        !(profile?.service_areas || []).includes(a)
+      ).slice(0, 6);
+      setAreaSuggestions(filtered);
+    } else {
+      setAreaSuggestions([]);
+    }
+  }
+
+  async function addArea(area) {
+    const cleaned = area.trim();
+    if (!cleaned) return;
+    const current = profile?.service_areas || [];
+    if (current.includes(cleaned)) {
+      setAreaInput('');
+      setAreaSuggestions([]);
+      return;
+    }
+    const updated = [...current, cleaned];
+    setSavingAreas(true);
+    await supabase.from('therapist_profiles').update({ service_areas: updated }).eq('id', user.id);
+    setProfile(p => ({ ...p, service_areas: updated }));
+    setAreaInput('');
+    setAreaSuggestions([]);
+    setSavingAreas(false);
+  }
+
+  async function removeArea(area) {
+    const updated = (profile?.service_areas || []).filter(a => a !== area);
+    setSavingAreas(true);
+    await supabase.from('therapist_profiles').update({ service_areas: updated }).eq('id', user.id);
+    setProfile(p => ({ ...p, service_areas: updated }));
+    setSavingAreas(false);
+  }
+
   async function saveProfile() {
     setSaving(true);
     await supabase.from('therapist_profiles').upsert({
@@ -190,8 +349,9 @@ export default function TherapistDashboard() {
       area: profileForm.area,
       photo_url: profileForm.photo_url,
       price_per_session: Math.min(50, Math.max(25, parseFloat(profileForm.price_per_session) || 25)),
+      years_experience: profileForm.years_experience ? parseInt(profileForm.years_experience) : null,
     });
-    setProfile(profileForm);
+    setProfile(p => ({ ...p, ...profileForm }));
     setEditProfile(false);
     setSaving(false);
   }
@@ -317,6 +477,12 @@ export default function TherapistDashboard() {
   const weekStart = currentWeek?.[0];
   const weekEnd   = currentWeek?.[currentWeek.length - 1];
 
+  // Documents — has license uploaded?
+  const hasLicense = !!profile?.license_url;
+  const hasCv = !!profile?.cv_url;
+  const certCount = (profile?.certifications_urls || []).length;
+  const showDocsBanner = !hasLicense; // Banner shown when license missing
+
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc' }}>
       <div style={{ fontSize: 16, color: '#64748B' }}>Φόρτωση...</div>
@@ -327,6 +493,7 @@ export default function TherapistDashboard() {
     { id: 'overview', label: '📊 Επισκόπηση' },
     { id: 'requests', label: `📋 Αιτήματα ${pendingCount > 0 ? `(${pendingCount})` : ''}` },
     { id: 'calendar', label: '📅 Διαθεσιμότητα' },
+    { id: 'areas',    label: '📍 Περιοχές' },
     { id: 'reviews',  label: '⭐ Αξιολογήσεις' },
     { id: 'profile',  label: '👤 Προφίλ' },
   ];
@@ -342,13 +509,34 @@ export default function TherapistDashboard() {
           <span style={{ fontSize: 12, fontWeight: 500, color: '#64748b', marginLeft: 8, background: '#f1f5f9', padding: '2px 10px', borderRadius: 999 }}>Θεραπευτής</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {!profile?.is_approved && <span style={{ background: '#FEF3C7', color: '#92400E', padding: '4px 12px', borderRadius: 999, fontSize: 12, fontWeight: 600 }}>⏳ Εκκρεμεί έγκριση admin</span>}
+          {!profile?.is_approved && hasLicense && <span style={{ background: '#FEF3C7', color: '#92400E', padding: '4px 12px', borderRadius: 999, fontSize: 12, fontWeight: 600 }}>⏳ Εκκρεμεί έγκριση admin</span>}
           <Avatar name={profile?.name || user?.email} photoUrl={profile?.photo_url} size={36} />
           <button onClick={signOut} style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: 'transparent', color: '#64748b', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Αποσύνδεση</button>
         </div>
       </nav>
 
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px' }}>
+
+        {/* DOCUMENTS BANNER — shown until license uploaded */}
+        {showDocsBanner && (
+          <div style={{ background: 'linear-gradient(135deg, #FEF3C7, #FDE68A)', border: '1px solid #F59E0B', borderRadius: 14, padding: '20px 24px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: 32 }}>⚠️</div>
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#92400E', marginBottom: 4 }}>
+                Ολοκλήρωσε την αίτησή σου
+              </div>
+              <div style={{ fontSize: 13, color: '#78350F', lineHeight: 1.5 }}>
+                Ανέβασε την <strong>Άδεια Εξασκήσεως</strong> σου για να σταλεί η αίτησή σου στον admin για έγκριση.
+                CV και Πιστοποιητικά είναι προαιρετικά.
+              </div>
+            </div>
+            <button onClick={() => setDocsModal(true)}
+              style={{ background: '#92400E', color: '#fff', border: 'none', padding: '10px 22px', borderRadius: 30, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+              📤 Ανέβασμα Δικαιολογητικών
+            </button>
+          </div>
+        )}
+
         <div style={{ display: 'flex', gap: 4, background: '#e2e8f0', padding: 4, borderRadius: 12, width: 'fit-content', marginBottom: 24, flexWrap: 'wrap' }}>
           {TABS.map(t => (
             <button key={t.id} onClick={() => setActiveTab(t.id)}
@@ -601,6 +789,86 @@ export default function TherapistDashboard() {
           </div>
         )}
 
+        {/* AREAS — V1 */}
+        {activeTab === 'areas' && (
+          <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: 24 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', marginBottom: 4 }}>📍 Περιοχές Εξυπηρέτησης</div>
+            <div style={{ fontSize: 13, color: '#64748B', marginBottom: 20 }}>
+              Επιλέξτε τις περιοχές της Αθήνας που εξυπηρετείτε. Οι ασθενείς σε αυτές τις περιοχές θα σας βρίσκουν πιο εύκολα.
+            </div>
+
+            {/* Coming soon banner */}
+            <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '12px 16px', marginBottom: 20, fontSize: 12, color: '#1E40AF', display: 'flex', alignItems: 'center', gap: 8 }}>
+              💡 <strong>Σύντομα:</strong> Σχεδίαση περιοχών σε χάρτη για ακριβέστερο matching!
+            </div>
+
+            {/* Selected areas */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 10 }}>
+                Επιλεγμένες περιοχές ({(profile?.service_areas || []).length})
+              </div>
+              {(profile?.service_areas || []).length === 0 ? (
+                <div style={{ padding: 20, textAlign: 'center', background: '#f8fafc', borderRadius: 10, color: '#94a3b8', fontSize: 13, fontStyle: 'italic' }}>
+                  Δεν έχετε επιλέξει ακόμα περιοχές. Ξεκινήστε γράφοντας παρακάτω 👇
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {(profile?.service_areas || []).map(area => (
+                    <div key={area} style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 30, padding: '6px 12px 6px 14px', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#1D4ED8', fontWeight: 500 }}>
+                      📍 {area}
+                      <button onClick={() => removeArea(area)} disabled={savingAreas}
+                        style={{ background: 'transparent', border: 'none', color: '#1D4ED8', cursor: 'pointer', fontSize: 14, fontWeight: 700, padding: 0, marginLeft: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', width: 18, height: 18, borderRadius: '50%' }}
+                        onMouseEnter={e => e.target.style.background = '#DBEAFE'}
+                        onMouseLeave={e => e.target.style.background = 'transparent'}>
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Add new area */}
+            <div style={{ position: 'relative' }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 8, display: 'block' }}>
+                Προσθήκη περιοχής
+              </label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  type="text"
+                  value={areaInput}
+                  onChange={e => handleAreaInputChange(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && areaInput.trim()) { e.preventDefault(); addArea(areaInput); } }}
+                  placeholder="π.χ. Παγκράτι, Κολωνάκι..."
+                  style={{ flex: 1, padding: '12px 14px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#0F172A' }}
+                />
+                <button onClick={() => addArea(areaInput)} disabled={!areaInput.trim() || savingAreas}
+                  style={{ padding: '12px 24px', borderRadius: 10, border: 'none', background: !areaInput.trim() ? '#cbd5e1' : '#1a2e44', color: '#fff', fontSize: 13, fontWeight: 600, cursor: !areaInput.trim() ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
+                  ➕ Προσθήκη
+                </button>
+              </div>
+
+              {/* Suggestions dropdown */}
+              {areaSuggestions.length > 0 && (
+                <div style={{ position: 'absolute', top: '100%', left: 0, right: 100, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, marginTop: 4, boxShadow: '0 8px 24px rgba(0,0,0,0.08)', zIndex: 10, maxHeight: 240, overflowY: 'auto' }}>
+                  {areaSuggestions.map(s => (
+                    <div key={s} onClick={() => addArea(s)}
+                      style={{ padding: '10px 14px', cursor: 'pointer', fontSize: 13, color: '#0F172A', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: 8 }}
+                      onMouseEnter={e => e.target.style.background = '#f8fafc'}
+                      onMouseLeave={e => e.target.style.background = 'transparent'}>
+                      📍 {s}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 8 }}>
+                💡 Πληκτρολογήστε για να δείτε προτάσεις από περιοχές της Αθήνας. Μπορείτε επίσης να γράψετε και δικές σας.
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* REVIEWS */}
         {activeTab === 'reviews' && (
           <div>
@@ -644,7 +912,12 @@ export default function TherapistDashboard() {
                 <div style={{ fontSize: 20, fontWeight: 700, color: '#0F172A' }}>{profile?.name || '—'}</div>
                 <div style={{ fontSize: 14, color: '#64748B' }}>{profile?.specialty} · {profile?.area}</div>
                 <div style={{ marginTop: 4 }}>
-                  {profile?.is_approved ? <Badge label="✓ Εγκεκριμένος" bg="#D1FAE5" color="#065F46" /> : <Badge label="⏳ Αναμένει έγκριση" bg="#FEF3C7" color="#92400E" />}
+                  {profile?.is_approved
+                    ? <Badge label="✓ Εγκεκριμένος" bg="#D1FAE5" color="#065F46" />
+                    : !hasLicense
+                      ? <Badge label="⚠️ Δικαιολογητικά εκκρεμούν" bg="#FEF3C7" color="#92400E" />
+                      : <Badge label="⏳ Αναμένει έγκριση admin" bg="#FEF3C7" color="#92400E" />
+                  }
                 </div>
                 <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 6 }}>Πατήστε 📷 για αλλαγή φωτογραφίας (max 5MB)</div>
               </div>
@@ -657,7 +930,7 @@ export default function TherapistDashboard() {
             {editProfile ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                  {[['name', 'Ονοματεπώνυμο'], ['specialty', 'Ειδικότητα'], ['area', 'Περιοχή']].map(([k, l]) => (
+                  {[['name', 'Ονοματεπώνυμο'], ['specialty', 'Ειδικότητα'], ['area', 'Περιοχή Έδρας']].map(([k, l]) => (
                     <div key={k}>
                       <label style={{ fontSize: 12, fontWeight: 600, color: '#64748B', display: 'block', marginBottom: 5 }}>{l}</label>
                       <input value={profileForm[k] || ''} onChange={e => setProfileForm(p => ({ ...p, [k]: e.target.value }))}
@@ -667,6 +940,12 @@ export default function TherapistDashboard() {
                   <div>
                     <label style={{ fontSize: 12, fontWeight: 600, color: '#64748B', display: 'block', marginBottom: 5 }}>Τιμή/Συνεδρία (€25–€50)</label>
                     <input type="number" min={25} max={50} value={profileForm.price_per_session || ''} onChange={e => setProfileForm(p => ({ ...p, price_per_session: e.target.value }))}
+                      style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#0F172A', boxSizing: 'border-box' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: '#64748B', display: 'block', marginBottom: 5 }}>Χρόνια Εμπειρίας</label>
+                    <input type="number" min={0} max={60} value={profileForm.years_experience || ''} onChange={e => setProfileForm(p => ({ ...p, years_experience: e.target.value }))}
+                      placeholder="π.χ. 5"
                       style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#0F172A', boxSizing: 'border-box' }} />
                   </div>
                 </div>
@@ -684,7 +963,8 @@ export default function TherapistDashboard() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {[
                   ['Ειδικότητα',      profile?.specialty],
-                  ['Περιοχή',         profile?.area],
+                  ['Περιοχή Έδρας',   profile?.area],
+                  ['Χρόνια Εμπειρίας', profile?.years_experience ? `${profile.years_experience} χρόνια` : '—'],
                   ['Τιμή/Συνεδρία',   profile?.price_per_session ? `${profile.price_per_session}€` : '—'],
                   ['Καθαρά/Συνεδρία', profile?.price_per_session ? `${netPerSession}€` : '—'],
                 ].map(([label, value]) => (
@@ -699,11 +979,162 @@ export default function TherapistDashboard() {
                     <p style={{ fontSize: 14, color: '#475569', lineHeight: 1.7, background: '#f8fafc', padding: '12px 16px', borderRadius: 8 }}>{profile.bio}</p>
                   </div>
                 )}
+
+                {/* Documents section */}
+                <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid #e2e8f0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>Δικαιολογητικά</div>
+                    <button onClick={() => setDocsModal(true)}
+                      style={{ background: 'transparent', border: '1px solid #e2e8f0', borderRadius: 20, padding: '6px 14px', fontSize: 12, fontWeight: 600, color: '#1a2e44', cursor: 'pointer', fontFamily: 'inherit' }}>
+                      📤 Διαχείριση
+                    </button>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: hasLicense ? '#F0FDF4' : '#FEF3C7', border: `1px solid ${hasLicense ? '#BBF7D0' : '#FDE68A'}`, borderRadius: 8, fontSize: 13 }}>
+                      <span>{hasLicense ? '✅' : '⚠️'}</span>
+                      <strong>Άδεια Εξασκήσεως</strong>
+                      <span style={{ marginLeft: 'auto', color: hasLicense ? '#15803D' : '#92400E', fontWeight: 600, fontSize: 12 }}>
+                        {hasLicense ? 'Ανέβηκε' : 'Λείπει (υποχρεωτικό)'}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 13 }}>
+                      <span>{hasCv ? '✅' : '➖'}</span>
+                      <span>Βιογραφικό</span>
+                      <span style={{ marginLeft: 'auto', color: '#64748B', fontSize: 12 }}>
+                        {hasCv ? 'Ανέβηκε' : 'Προαιρετικό'}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 13 }}>
+                      <span>{certCount > 0 ? '✅' : '➖'}</span>
+                      <span>Πιστοποιητικά</span>
+                      <span style={{ marginLeft: 'auto', color: '#64748B', fontSize: 12 }}>
+                        {certCount > 0 ? `${certCount} αρχείο/α` : 'Προαιρετικά'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>
         )}
       </div>
+
+      {/* DOCUMENTS MODAL */}
+      {docsModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}
+          onClick={e => { if (e.target === e.currentTarget) setDocsModal(false); }}>
+          <div style={{ background: '#fff', borderRadius: 20, padding: 0, maxWidth: 560, width: '100%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+            <div style={{ padding: '24px 28px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: '#0F172A' }}>📄 Δικαιολογητικά</h2>
+              <button onClick={() => setDocsModal(false)} style={{ background: 'transparent', border: 'none', fontSize: 20, cursor: 'pointer', color: '#94a3b8' }}>✕</button>
+            </div>
+            <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+              <div style={{ background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 10, padding: '12px 16px', fontSize: 13, color: '#92400E', lineHeight: 1.5 }}>
+                ⚠️ <strong>Η Άδεια Εξασκήσεως είναι υποχρεωτική.</strong> Μόλις την ανεβάσεις, η αίτησή σου θα σταλεί στον admin για έγκριση.
+              </div>
+
+              {/* LICENSE — required */}
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>
+                  🎓 Άδεια Εξασκήσεως <span style={{ color: '#BE123C' }}>*</span>
+                </div>
+                {hasLicense ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10 }}>
+                    <span style={{ fontSize: 18 }}>✅</span>
+                    <span style={{ fontSize: 13, color: '#15803D', fontWeight: 600, flex: 1 }}>Ανεβασμένο</span>
+                    <button onClick={() => viewDocument(profile.license_url)}
+                      style={{ background: 'transparent', border: '1px solid #BBF7D0', borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 600, color: '#15803D', cursor: 'pointer' }}>
+                      👁️ Προβολή
+                    </button>
+                    <button onClick={() => removeDocument('license')}
+                      style={{ background: 'transparent', border: '1px solid #FECDD3', borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 600, color: '#BE123C', cursor: 'pointer' }}>
+                      🗑️ Διαγραφή
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ border: '2px dashed #e2e8f0', borderRadius: 10, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                    <div style={{ fontSize: 12, color: '#64748B' }}>PDF, JPG, PNG · max 10 MB</div>
+                    <button onClick={() => licenseInputRef.current?.click()} disabled={uploadingDoc === 'license'}
+                      style={{ background: '#1a2e44', color: '#fff', border: 'none', borderRadius: 20, padding: '8px 18px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                      {uploadingDoc === 'license' ? '⏳ Upload...' : '📤 Επιλογή Αρχείου'}
+                    </button>
+                    <input ref={licenseInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={e => uploadDocument(e.target.files[0], 'license')} style={{ display: 'none' }} />
+                  </div>
+                )}
+              </div>
+
+              {/* CV — optional */}
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>
+                  📝 Βιογραφικό <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 500 }}>(προαιρετικό)</span>
+                </div>
+                {hasCv ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10 }}>
+                    <span style={{ fontSize: 18 }}>✅</span>
+                    <span style={{ fontSize: 13, color: '#1D4ED8', fontWeight: 600, flex: 1 }}>Ανεβασμένο</span>
+                    <button onClick={() => viewDocument(profile.cv_url)}
+                      style={{ background: 'transparent', border: '1px solid #BFDBFE', borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 600, color: '#1D4ED8', cursor: 'pointer' }}>
+                      👁️ Προβολή
+                    </button>
+                    <button onClick={() => removeDocument('cv')}
+                      style={{ background: 'transparent', border: '1px solid #FECDD3', borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 600, color: '#BE123C', cursor: 'pointer' }}>
+                      🗑️
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ border: '2px dashed #e2e8f0', borderRadius: 10, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                    <div style={{ fontSize: 12, color: '#64748B' }}>PDF, JPG, PNG · max 10 MB</div>
+                    <button onClick={() => cvInputRef.current?.click()} disabled={uploadingDoc === 'cv'}
+                      style={{ background: 'transparent', color: '#1a2e44', border: '1.5px solid #e2e8f0', borderRadius: 20, padding: '8px 18px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                      {uploadingDoc === 'cv' ? '⏳ Upload...' : '📤 Επιλογή'}
+                    </button>
+                    <input ref={cvInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={e => uploadDocument(e.target.files[0], 'cv')} style={{ display: 'none' }} />
+                  </div>
+                )}
+              </div>
+
+              {/* CERTIFICATIONS — optional, multiple */}
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>
+                  🏆 Πιστοποιητικά <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 500 }}>(προαιρετικά, πολλαπλά αρχεία)</span>
+                </div>
+                {(profile?.certifications_urls || []).length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
+                    {(profile.certifications_urls || []).map((path, idx) => (
+                      <div key={path} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10 }}>
+                        <span>📄</span>
+                        <span style={{ fontSize: 12, color: '#475569', flex: 1 }}>Πιστοποιητικό {idx + 1}</span>
+                        <button onClick={() => viewDocument(path)}
+                          style={{ background: 'transparent', border: '1px solid #e2e8f0', borderRadius: 20, padding: '4px 10px', fontSize: 11, fontWeight: 600, color: '#1a2e44', cursor: 'pointer' }}>
+                          👁️
+                        </button>
+                        <button onClick={() => removeDocument('cert', path)}
+                          style={{ background: 'transparent', border: '1px solid #FECDD3', borderRadius: 20, padding: '4px 10px', fontSize: 11, fontWeight: 600, color: '#BE123C', cursor: 'pointer' }}>
+                          🗑️
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div style={{ border: '2px dashed #e2e8f0', borderRadius: 10, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                  <div style={{ fontSize: 12, color: '#64748B' }}>Προσθέστε πιστοποιήσεις, σεμινάρια, εξειδικεύσεις</div>
+                  <button onClick={() => certInputRef.current?.click()} disabled={uploadingDoc === 'cert'}
+                    style={{ background: 'transparent', color: '#1a2e44', border: '1.5px solid #e2e8f0', borderRadius: 20, padding: '8px 18px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    {uploadingDoc === 'cert' ? '⏳ Upload...' : '➕ Προσθήκη'}
+                  </button>
+                  <input ref={certInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={e => uploadDocument(e.target.files[0], 'cert')} style={{ display: 'none' }} />
+                </div>
+              </div>
+            </div>
+            <div style={{ padding: '16px 28px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'flex-end' }}>
+              <button onClick={() => setDocsModal(false)}
+                style={{ background: '#1a2e44', color: '#fff', border: 'none', padding: '10px 24px', borderRadius: 30, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                Κλείσιμο
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Cancel Modal */}
       {cancelModal && (
