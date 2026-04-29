@@ -25,6 +25,35 @@ export default function RegisterPage() {
   const upd = (k, v) => setForm(p => ({ ...p, [k]: v }));
   const updAgr = k => setAgreements(p => ({ ...p, [k]: !p[k] }));
 
+  // Helper: redirect σε pendingRedirect αν υπάρχει, αλλιώς στο default
+  function redirectAfterRegister(userRole) {
+    let pending = null;
+    try { pending = localStorage.getItem('pendingRedirect'); } catch (_) {}
+
+    const defaultDest = userRole === 'therapist' ? '/dashboard/therapist?welcome=true' : '/dashboard/patient?welcome=true';
+
+    if (pending) {
+      try { localStorage.removeItem('pendingRedirect'); } catch (_) {}
+
+      const isPatientRoute   = pending.startsWith('/dashboard/patient') || pending.startsWith('/free-assessment');
+      const isTherapistRoute = pending.startsWith('/dashboard/therapist');
+
+      if (userRole === 'patient' && isTherapistRoute) {
+        window.location.href = defaultDest;
+        return;
+      }
+      if (userRole === 'therapist' && isPatientRoute) {
+        window.location.href = defaultDest;
+        return;
+      }
+
+      window.location.href = pending;
+      return;
+    }
+
+    window.location.href = defaultDest;
+  }
+
   async function handleRegister(e) {
     e.preventDefault();
     if (form.password !== form.confirmPassword) { setError('Τα passwords δεν ταιριάζουν'); return; }
@@ -64,11 +93,11 @@ export default function RegisterPage() {
         contract_accepted: agreements.contract, contract_accepted_at: new Date().toISOString(),
         is_approved: false,
       }]);
-      window.location.href = '/dashboard/therapist?welcome=true';
     } else {
       await supabase.from('patient_profiles').insert([{ id: userId, name: form.name, phone: form.phone }]);
-      window.location.href = '/dashboard/patient?welcome=true';
     }
+
+    redirectAfterRegister(role);
     setLoading(false);
   }
 

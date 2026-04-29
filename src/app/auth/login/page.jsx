@@ -7,6 +7,42 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Helper: redirect σε pendingRedirect αν υπάρχει, αλλιώς στο default
+  function redirectAfterLogin(role) {
+    let pending = null;
+    try { pending = localStorage.getItem('pendingRedirect'); } catch (_) {}
+
+    // Default destinations βάσει role
+    const defaultDest = role === 'therapist' ? '/dashboard/therapist' : '/dashboard/patient';
+
+    if (pending) {
+      // Καθάρισε το pendingRedirect ΠΡΙΝ το navigation
+      try { localStorage.removeItem('pendingRedirect'); } catch (_) {}
+
+      // Έλεγξε αν το pending route ταιριάζει με το role του user
+      const isPatientRoute   = pending.startsWith('/dashboard/patient') || pending.startsWith('/free-assessment');
+      const isTherapistRoute = pending.startsWith('/dashboard/therapist');
+
+      if (role === 'patient' && isTherapistRoute) {
+        // Patient προσπαθεί να μπει σε therapist route → στείλε στο patient dashboard
+        window.location.href = defaultDest;
+        return;
+      }
+      if (role === 'therapist' && isPatientRoute) {
+        // Therapist προσπαθεί να μπει σε patient route → στείλε στο therapist dashboard
+        window.location.href = defaultDest;
+        return;
+      }
+
+      // Ταιριάζει → πήγαινε στο pending destination (μαζί με τα query params)
+      window.location.href = pending;
+      return;
+    }
+
+    // Default
+    window.location.href = defaultDest;
+  }
+
   async function handleLogin(e) {
     e.preventDefault();
     setLoading(true);
@@ -17,10 +53,10 @@ export default function LoginPage() {
       password: form.password,
     });
 
-    if (signInError) { 
-      setError(signInError.message); 
-      setLoading(false); 
-      return; 
+    if (signInError) {
+      setError(signInError.message);
+      setLoading(false);
+      return;
     }
 
     // Wait a moment for session to settle
@@ -37,36 +73,32 @@ export default function LoginPage() {
     console.log('Profile:', profile);
     console.log('Profile error:', profileError);
 
-    if (profile?.role === 'therapist') {
-      window.location.href = '/dashboard/therapist';
-    } else if (profile?.role === 'patient') {
-      window.location.href = '/dashboard/patient';
-    } else {
-      // Fallback: try with fresh session
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log('Session:', session);
-      
-      if (session) {
-        const { data: profile2 } = await supabase
-          .from('user_profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .single();
-        
-        console.log('Profile2:', profile2);
-        
-        if (profile2?.role === 'therapist') {
-          window.location.href = '/dashboard/therapist';
-          return;
-        } else if (profile2?.role === 'patient') {
-          window.location.href = '/dashboard/patient';
-          return;
-        }
-      }
-      
-      setError('Δεν βρέθηκε προφίλ. Επικοινωνήστε με την υποστήριξη.');
-      setLoading(false);
+    if (profile?.role === 'therapist' || profile?.role === 'patient') {
+      redirectAfterLogin(profile.role);
+      return;
     }
+
+    // Fallback: try with fresh session
+    const { data: { session } } = await supabase.auth.getSession();
+    console.log('Session:', session);
+
+    if (session) {
+      const { data: profile2 } = await supabase
+        .from('user_profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .single();
+
+      console.log('Profile2:', profile2);
+
+      if (profile2?.role === 'therapist' || profile2?.role === 'patient') {
+        redirectAfterLogin(profile2.role);
+        return;
+      }
+    }
+
+    setError('Δεν βρέθηκε προφίλ. Επικοινωνήστε με την υποστήριξη.');
+    setLoading(false);
   }
 
   return (
