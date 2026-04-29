@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
 import Navbar from '../../../components/Navbar';
 import Footer from '../../../components/Footer';
 import { useLang } from '@/context/LanguageContext';
@@ -26,7 +27,9 @@ const t = {
   },
 };
 
-export default function ArticlePage({ params }) {
+export default function ArticlePage() {
+  const params = useParams();
+  const slug = params?.slug;
   const { lang } = useLang();
   const tx = t[lang];
   const [post, setPost] = useState(null);
@@ -34,28 +37,39 @@ export default function ArticlePage({ params }) {
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
+    if (!slug) return;
+
     async function fetchArticle() {
       setLoading(true);
+      console.log('[Blog] Fetching slug:', slug);
+
       const { data, error } = await supabase
         .from('articles')
         .select('*')
-        .eq('slug', params.slug)
+        .eq('slug', slug)
         .eq('status', 'published')
-        .single();
+        .maybeSingle();
 
-      if (error || !data) {
+      if (error) {
+        console.error('[Blog] Fetch error:', error);
+        setNotFound(true);
+      } else if (!data) {
+        console.warn('[Blog] No article found for slug:', slug);
         setNotFound(true);
       } else {
+        console.log('[Blog] Article loaded:', data.title_el);
         setPost(data);
-        await supabase
+        // Increment reads count (μη-blocking)
+        supabase
           .from('articles')
           .update({ reads: (data.reads || 0) + 1 })
-          .eq('id', data.id);
+          .eq('id', data.id)
+          .then(() => {});
       }
       setLoading(false);
     }
     fetchArticle();
-  }, [params.slug]);
+  }, [slug]);
 
   if (loading) {
     return (
@@ -150,7 +164,7 @@ export default function ArticlePage({ params }) {
             {tx.ctaTitle}
           </h3>
           <p style={{ fontSize: 15, color: '#6b7a8d', marginBottom: 24 }}>{tx.ctaSubtitle}</p>
-          <a href="/request" style={{ display: 'inline-block', background: '#2a6fdb', color: '#fff', padding: '12px 32px', borderRadius: 30, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
+          <a href="/dashboard/patient/new-request" style={{ display: 'inline-block', background: '#2a6fdb', color: '#fff', padding: '12px 32px', borderRadius: 30, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
             {tx.ctaBtn}
           </a>
         </div>
