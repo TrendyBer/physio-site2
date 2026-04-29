@@ -17,7 +17,18 @@ export default function RegisterPage() {
 
   const [role, setRole] = useState(preRole || '');
   const [step, setStep] = useState(preRole ? 2 : 1);
-  const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '', phone: '', specialty: '', area: '' });
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    phone: '',
+    specialty: '',
+    area: '',
+    address: '',
+    city: '',
+    postal_code: '',
+  });
   const [agreements, setAgreements] = useState({ gdpr: false, terms: false, contract: false });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -94,7 +105,15 @@ export default function RegisterPage() {
         is_approved: false,
       }]);
     } else {
-      await supabase.from('patient_profiles').insert([{ id: userId, name: form.name, phone: form.phone }]);
+      await supabase.from('patient_profiles').insert([{
+        id: userId,
+        name: form.name,
+        phone: form.phone || null,
+        area: form.area || null,
+        address: form.address || null,
+        city: form.city || null,
+        postal_code: form.postal_code || null,
+      }]);
     }
 
     redirectAfterRegister(role);
@@ -170,10 +189,38 @@ export default function RegisterPage() {
             )}
 
             {role === 'patient' && (
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: '#1a2e44', display: 'block', marginBottom: 5 }}>Τηλέφωνο</label>
-                <input value={form.phone} onChange={e => upd('phone', e.target.value)} style={inputStyle} placeholder="+30 69..." />
-              </div>
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: '#1a2e44', display: 'block', marginBottom: 5 }}>Τηλέφωνο *</label>
+                    <input required value={form.phone} onChange={e => upd('phone', e.target.value)} style={inputStyle} placeholder="+30 69..." />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: '#1a2e44', display: 'block', marginBottom: 5 }}>Περιοχή *</label>
+                    <input required value={form.area} onChange={e => upd('area', e.target.value)} style={inputStyle} placeholder="π.χ. Παγκράτι" />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: '#1a2e44', display: 'block', marginBottom: 5 }}>Διεύθυνση</label>
+                  <input value={form.address} onChange={e => upd('address', e.target.value)} style={inputStyle} placeholder="π.χ. Λεωφ. Κηφισίας 100 (προαιρετικό)" />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: '#1a2e44', display: 'block', marginBottom: 5 }}>Πόλη</label>
+                    <input value={form.city} onChange={e => upd('city', e.target.value)} style={inputStyle} placeholder="π.χ. Αθήνα" />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: '#1a2e44', display: 'block', marginBottom: 5 }}>ΤΚ</label>
+                    <input value={form.postal_code} onChange={e => upd('postal_code', e.target.value)} style={inputStyle} placeholder="11528" />
+                  </div>
+                </div>
+
+                <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 8, padding: '8px 12px', fontSize: 11, color: '#1D4ED8', lineHeight: 1.5 }}>
+                  💡 Η διεύθυνση και ο ΤΚ μπορούν να συμπληρωθούν αργότερα από το προφίλ σας — απαιτούνται όταν κλείνετε ραντεβού.
+                </div>
+              </>
             )}
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
