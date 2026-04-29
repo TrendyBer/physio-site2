@@ -71,8 +71,8 @@ export default function RegisterPage() {
     if (role === 'therapist' && (!agreements.gdpr || !agreements.terms || !agreements.contract)) {
       setError('Πρέπει να αποδεχτείτε όλους τους όρους'); return;
     }
-    if (role === 'patient' && !agreements.gdpr) {
-      setError('Πρέπει να αποδεχτείτε την πολιτική GDPR'); return;
+    if (role === 'patient' && (!agreements.gdpr || !agreements.terms)) {
+      setError('Πρέπει να αποδεχτείτε την πολιτική GDPR και τους Όρους Χρήσης'); return;
     }
 
     setLoading(true); setError('');
@@ -237,17 +237,23 @@ export default function RegisterPage() {
             <div style={{ background: '#f8fafc', borderRadius: 10, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
               <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', fontSize: 13, color: '#334155' }}>
                 <input type="checkbox" checked={agreements.gdpr} onChange={() => updAgr('gdpr')} style={{ marginTop: 2, accentColor: '#2a6fdb' }} />
-                Αποδέχομαι την <a href="#" style={{ color: '#2a6fdb', fontWeight: 600 }}>Πολιτική GDPR</a> και τη συλλογή προσωπικών δεδομένων
+                <span>
+                  Αποδέχομαι την <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: '#2a6fdb', fontWeight: 600 }}>Πολιτική Απορρήτου</a> και τη συλλογή προσωπικών δεδομένων σύμφωνα με τον GDPR
+                </span>
               </label>
               <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', fontSize: 13, color: '#334155' }}>
                 <input type="checkbox" checked={agreements.terms} onChange={() => updAgr('terms')} style={{ marginTop: 2, accentColor: '#2a6fdb' }} />
-                Αποδέχομαι τους <a href="#" style={{ color: '#2a6fdb', fontWeight: 600 }}>Όρους Χρήσης</a>
+                <span>
+                  Αποδέχομαι τους <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: '#2a6fdb', fontWeight: 600 }}>Όρους Χρήσης</a>
+                </span>
               </label>
               {role === 'therapist' && (
                 <div>
                   <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', fontSize: 13, color: '#334155', marginBottom: 8 }}>
                     <input type="checkbox" checked={agreements.contract} onChange={() => updAgr('contract')} style={{ marginTop: 2, accentColor: '#2a6fdb' }} />
-                    Αποδέχομαι ηλεκτρονικά τη <strong>Σύμβαση Συνεργασίας</strong> (anti-bypass, προμήθεια €20/περιστατικό)
+                    <span>
+                      Αποδέχομαι ηλεκτρονικά τη <strong>Σύμβαση Συνεργασίας</strong> (anti-bypass, προμήθεια €20/περιστατικό)
+                    </span>
                   </label>
                   <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: '10px 14px', fontSize: 11, color: '#64748b', lineHeight: 1.6, maxHeight: 100, overflowY: 'auto', whiteSpace: 'pre-line' }}>
                     {CONTRACT_TEXT}
