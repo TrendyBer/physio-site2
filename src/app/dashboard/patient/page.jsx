@@ -57,6 +57,11 @@ export default function PatientDashboard() {
   const [reviewForm, setReviewForm] = useState({ rating: 0, comment: '' });
   const [submittingReview, setSubmittingReview] = useState(false);
 
+  // Profile edit state
+  const [editProfile, setEditProfile] = useState({ name: '', phone: '', area: '', address: '', city: '', postal_code: '' });
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileMsg, setProfileMsg] = useState(null);
+
   useEffect(() => { init(); }, []);
 
   async function init() {
@@ -66,6 +71,14 @@ export default function PatientDashboard() {
 
     const { data: prof } = await supabase.from('patient_profiles').select('*').eq('id', user.id).single();
     setProfile(prof || {});
+    setEditProfile({
+      name: prof?.name || '',
+      phone: prof?.phone || '',
+      area: prof?.area || '',
+      address: prof?.address || '',
+      city: prof?.city || '',
+      postal_code: prof?.postal_code || '',
+    });
 
     const { data: svcs } = await supabase.from('services').select('*').eq('is_active', true).order('display_order', { ascending: true });
     setServices(svcs || []);
@@ -176,6 +189,38 @@ export default function PatientDashboard() {
     setSubmittingReview(false);
   }
 
+  async function saveProfile() {
+    if (!editProfile.name.trim()) {
+      setProfileMsg({ type: 'error', text: 'Το ονοματεπώνυμο είναι υποχρεωτικό' });
+      return;
+    }
+    setSavingProfile(true);
+    setProfileMsg(null);
+
+    const { error } = await supabase
+      .from('patient_profiles')
+      .update({
+        name: editProfile.name.trim(),
+        phone: editProfile.phone.trim() || null,
+        area: editProfile.area.trim() || null,
+        address: editProfile.address.trim() || null,
+        city: editProfile.city.trim() || null,
+        postal_code: editProfile.postal_code.trim() || null,
+      })
+      .eq('id', user.id);
+
+    setSavingProfile(false);
+
+    if (error) {
+      setProfileMsg({ type: 'error', text: 'Σφάλμα: ' + error.message });
+      return;
+    }
+
+    setProfile({ ...profile, ...editProfile });
+    setProfileMsg({ type: 'success', text: '✓ Το προφίλ αποθηκεύτηκε επιτυχώς' });
+    setTimeout(() => setProfileMsg(null), 3000);
+  }
+
   async function signOut() {
     localStorage.removeItem('userRole');
     localStorage.removeItem('userName');
@@ -203,6 +248,8 @@ export default function PatientDashboard() {
     { id: 'services', label: '🏥 Υπηρεσίες' },
     { id: 'profile',  label: '👤 Προφίλ' },
   ];
+
+  const profileInputStyle = { width: '100%', padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', color: '#0F172A' };
 
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: "'DM Sans', sans-serif" }}>
@@ -388,26 +435,123 @@ export default function PatientDashboard() {
           </div>
         )}
 
-        {/* PROFILE */}
+        {/* PROFILE — EDITABLE */}
         {activeTab === 'profile' && (
           <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: 28 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
-              <Avatar name={profile?.name || user?.email} size={64} />
-              <div>
-                <div style={{ fontSize: 20, fontWeight: 700, color: '#0F172A' }}>{profile?.name || '—'}</div>
-                <div style={{ fontSize: 14, color: '#64748B' }}>{user?.email}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, paddingBottom: 20, borderBottom: '1px solid #f1f5f9' }}>
+              <Avatar name={editProfile.name || user?.email} size={64} />
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontSize: 20, fontWeight: 700, color: '#0F172A' }}>{editProfile.name || '—'}</div>
+                <div style={{ fontSize: 14, color: '#64748B', wordBreak: 'break-word' }}>{user?.email}</div>
+                <div style={{ fontSize: 12, color: '#94A3B8', marginTop: 4 }}>
+                  Μέλος από {user?.created_at ? new Date(user.created_at).toLocaleDateString('el-GR') : '—'}
+                </div>
               </div>
             </div>
-            {[
-              ['Email', user?.email],
-              ['Τηλέφωνο', profile?.phone],
-              ['Μέλος από', user?.created_at ? new Date(user.created_at).toLocaleDateString('el-GR') : '—'],
-            ].map(([label, value]) => (
-              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #f1f5f9', fontSize: 14 }}>
-                <span style={{ color: '#64748B' }}>{label}</span>
-                <span style={{ fontWeight: 600, color: '#0F172A' }}>{value || '—'}</span>
+
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0F172A', marginBottom: 4 }}>Στοιχεία Προφίλ</h3>
+            <p style={{ fontSize: 13, color: '#64748B', marginBottom: 20 }}>
+              Ενημερώστε τα στοιχεία σας. Η διεύθυνση και ο ΤΚ απαιτούνται όταν κλείνετε ραντεβού.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#1a2e44', display: 'block', marginBottom: 5 }}>Ονοματεπώνυμο *</label>
+                <input
+                  value={editProfile.name}
+                  onChange={e => setEditProfile(p => ({ ...p, name: e.target.value }))}
+                  style={profileInputStyle}
+                  placeholder="Γιώργος Παπαδόπουλος"
+                />
               </div>
-            ))}
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: '#1a2e44', display: 'block', marginBottom: 5 }}>Τηλέφωνο</label>
+                  <input
+                    value={editProfile.phone}
+                    onChange={e => setEditProfile(p => ({ ...p, phone: e.target.value }))}
+                    style={profileInputStyle}
+                    placeholder="+30 69..."
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: '#1a2e44', display: 'block', marginBottom: 5 }}>Περιοχή</label>
+                  <input
+                    value={editProfile.area}
+                    onChange={e => setEditProfile(p => ({ ...p, area: e.target.value }))}
+                    style={profileInputStyle}
+                    placeholder="π.χ. Παγκράτι"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#1a2e44', display: 'block', marginBottom: 5 }}>Διεύθυνση</label>
+                <input
+                  value={editProfile.address}
+                  onChange={e => setEditProfile(p => ({ ...p, address: e.target.value }))}
+                  style={profileInputStyle}
+                  placeholder="π.χ. Λεωφ. Κηφισίας 100"
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: '#1a2e44', display: 'block', marginBottom: 5 }}>Πόλη</label>
+                  <input
+                    value={editProfile.city}
+                    onChange={e => setEditProfile(p => ({ ...p, city: e.target.value }))}
+                    style={profileInputStyle}
+                    placeholder="π.χ. Αθήνα"
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: '#1a2e44', display: 'block', marginBottom: 5 }}>ΤΚ</label>
+                  <input
+                    value={editProfile.postal_code}
+                    onChange={e => setEditProfile(p => ({ ...p, postal_code: e.target.value }))}
+                    style={profileInputStyle}
+                    placeholder="11528"
+                  />
+                </div>
+              </div>
+
+              {profileMsg && (
+                <div style={{
+                  background: profileMsg.type === 'success' ? '#D1FAE5' : '#FEF2F2',
+                  border: `1px solid ${profileMsg.type === 'success' ? '#86EFAC' : '#FECACA'}`,
+                  borderRadius: 8,
+                  padding: '10px 14px',
+                  fontSize: 13,
+                  color: profileMsg.type === 'success' ? '#15803D' : '#DC2626',
+                  fontWeight: 600,
+                }}>
+                  {profileMsg.text}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
+                <button
+                  onClick={saveProfile}
+                  disabled={savingProfile}
+                  style={{
+                    background: '#1a2e44',
+                    color: '#fff',
+                    padding: '11px 28px',
+                    borderRadius: 30,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    border: 'none',
+                    cursor: savingProfile ? 'not-allowed' : 'pointer',
+                    fontFamily: 'inherit',
+                    opacity: savingProfile ? 0.7 : 1,
+                  }}
+                >
+                  {savingProfile ? 'Αποθήκευση...' : '💾 Αποθήκευση'}
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
