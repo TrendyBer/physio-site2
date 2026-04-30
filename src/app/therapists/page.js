@@ -1,8 +1,10 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import RatingDisplay from '../../components/RatingDisplay';
+import ConditionSearch from '../../components/ConditionSearch';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
 
@@ -28,6 +30,7 @@ const TX = {
     sortPriceAsc: 'Τιμή: χαμηλή → υψηλή',
     sortPriceDesc: 'Τιμή: υψηλή → χαμηλή',
     sortExpDesc: 'Περισσότερη εμπειρία',
+    sortRelevance: 'Σχετικότητα',
     clearFilters: 'Καθαρισμός φίλτρων',
     resultsCount: (n) => `${n} ${n === 1 ? 'θεραπευτής' : 'θεραπευτές'}`,
     reviewsTitle: 'Αξιολογήσεις',
@@ -38,6 +41,10 @@ const TX = {
     becomeBanner: 'Είσαι φυσιοθεραπευτής;',
     becomeBannerDesc: 'Γίνε μέλος του δικτύου μας.',
     becomeBannerBtn: 'Μάθε περισσότερα →',
+    findHelpTitle: 'Τι σας ταλαιπωρεί;',
+    findHelpDesc: 'Περιγράψτε το πρόβλημά σας και θα σας βρούμε τον κατάλληλο θεραπευτή.',
+    matchedExact: '✓ Εξειδικεύεται',
+    matchedSpecialty: '~ Σχετική ειδικότητα',
   },
   en: {
     badge: 'Find your',
@@ -60,6 +67,7 @@ const TX = {
     sortPriceAsc: 'Price: low → high',
     sortPriceDesc: 'Price: high → low',
     sortExpDesc: 'Most experienced',
+    sortRelevance: 'Relevance',
     clearFilters: 'Clear filters',
     resultsCount: (n) => `${n} ${n === 1 ? 'therapist' : 'therapists'}`,
     reviewsTitle: 'Reviews',
@@ -70,6 +78,10 @@ const TX = {
     becomeBanner: 'Are you a physiotherapist?',
     becomeBannerDesc: 'Join our network.',
     becomeBannerBtn: 'Learn more →',
+    findHelpTitle: 'What is troubling you?',
+    findHelpDesc: 'Describe your problem and we will find the right therapist for you.',
+    matchedExact: '✓ Specialized',
+    matchedSpecialty: '~ Related specialty',
   },
 };
 
@@ -189,11 +201,15 @@ function TherapistModal({ therapist, lang, tx, onClose }) {
 export default function TherapistsPage() {
   const { lang } = useLang();
   const tx = TX[lang];
+  const searchParams = useSearchParams();
+
   const [therapists, setTherapists] = useState([]);
+  const [therapistConditionsMap, setTherapistConditionsMap] = useState({}); // therapist_id -> [condition_id]
   const [loadingTherapists, setLoadingTherapists] = useState(true);
   const [selectedTherapist, setSelectedTherapist] = useState(null);
 
   // Filter state
+  const [selectedCondition, setSelectedCondition] = useState(null);
   const [search, setSearch] = useState('');
   const [filterArea, setFilterArea] = useState('');
   const [filterSpecialty, setFilterSpecialty] = useState('');
@@ -201,6 +217,50 @@ export default function TherapistsPage() {
   const [filterMaxPrice, setFilterMaxPrice] = useState(null);
   const [sortBy, setSortBy] = useState('newest');
   const [showFilters, setShowFilters] = useState(false);
+
+  // Load condition από URL param αν υπάρχει
+  useEffect(() => {
+    const conditionSlug = searchParams.get('condition');
+    if (!conditionSlug) return;
+
+    (async () => {
+      const { data } = await supabase
+        .from('conditions')
+        .select('id, slug, name_el, name_en, related_specialties')
+        .eq('slug', conditionSlug)
+        .eq('is_active', true)
+        .single();
+      if (data) {
+        setSelectedCondition({
+          id: data.id,
+          slug: data.slug,
+          name: lang === 'el' ? data.name_el : data.name_en,
+          related_specialties: data.related_specialties || [],
+        });
+      }
+    })();
+  }, [searchParams, lang]);
+
+  // Update URL όταν αλλάζει το condition
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    if (selectedCondition) {
+      url.searchParams.set('condition', selectedCondition.slug);
+    } else {
+      url.searchParams.delete('condition');
+    }
+    window.history.replaceState({}, '', url.toString());
+  }, [selectedCondition]);
+
+  // Auto-switch sorting σε relevance όταν επιλέγεται condition
+  useEffect(() => {
+    if (selectedCondition && sortBy === 'newest') {
+      setSortBy('relevance');
+    } else if (!selectedCondition && sortBy === 'relevance') {
+      setSortBy('newest');
+    }
+  }, [selectedCondition]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { fetchTherapists(); }, []);
 
@@ -224,7 +284,10 @@ export default function TherapistsPage() {
 
       const therapistIds = ths.map(t => t.id);
       let ratingsMap = {};
+      let conditionsMap = {};
+
       if (therapistIds.length > 0) {
+        // Reviews
         const { data: reviewsData } = await supabase
           .from('reviews')
           .select('therapist_id, rating')
@@ -235,6 +298,18 @@ export default function TherapistsPage() {
             if (!ratingsMap[rv.therapist_id]) ratingsMap[rv.therapist_id] = { sum: 0, count: 0 };
             ratingsMap[rv.therapist_id].sum += rv.rating;
             ratingsMap[rv.therapist_id].count += 1;
+          });
+        }
+
+        // Therapist-Conditions tags
+        const { data: tcData } = await supabase
+          .from('therapist_conditions')
+          .select('therapist_id, condition_id')
+          .in('therapist_id', therapistIds);
+        if (tcData) {
+          tcData.forEach(tc => {
+            if (!conditionsMap[tc.therapist_id]) conditionsMap[tc.therapist_id] = [];
+            conditionsMap[tc.therapist_id].push(tc.condition_id);
           });
         }
       }
@@ -248,6 +323,7 @@ export default function TherapistsPage() {
         };
       });
       setTherapists(enriched);
+      setTherapistConditionsMap(conditionsMap);
     } catch (err) {
       clearTimeout(timeoutId);
       console.error('Therapists fetch failed:', err);
@@ -279,8 +355,42 @@ export default function TherapistsPage() {
     }
   }, [priceRange, filterMinPrice]);
 
+  // Compute match type για κάθε therapist (relevant όταν έχει επιλεγεί condition)
+  function getMatchType(therapist) {
+    if (!selectedCondition) return null;
+
+    const therapistConditionIds = therapistConditionsMap[therapist.id] || [];
+    const hasExactTag = therapistConditionIds.includes(selectedCondition.id);
+
+    if (hasExactTag) return 'exact'; // Manual tag = best match
+
+    // Specialty match: ο therapist έχει specialty που είναι στο related_specialties του condition
+    const relatedSpecs = selectedCondition.related_specialties || [];
+    const therapistSpec = (therapist.specialty || '').toLowerCase();
+    const hasSpecialtyMatch = relatedSpecs.some(
+      (rs) => therapistSpec.includes((rs || '').toLowerCase()) || (rs || '').toLowerCase().includes(therapistSpec)
+    );
+
+    if (hasSpecialtyMatch) return 'specialty';
+    return null;
+  }
+
   const filteredTherapists = useMemo(() => {
     let result = [...therapists];
+
+    // Condition filter — κρατάμε όσους έχουν exact tag ή specialty match
+    if (selectedCondition) {
+      const relatedSpecs = (selectedCondition.related_specialties || []).map((s) => (s || '').toLowerCase());
+      result = result.filter((t) => {
+        const therapistConditionIds = therapistConditionsMap[t.id] || [];
+        if (therapistConditionIds.includes(selectedCondition.id)) return true;
+        const therapistSpec = (t.specialty || '').toLowerCase();
+        return relatedSpecs.some(
+          (rs) => therapistSpec.includes(rs) || rs.includes(therapistSpec)
+        );
+      });
+    }
+
     if (search.trim()) {
       const q = search.toLowerCase().trim();
       result = result.filter(t =>
@@ -298,14 +408,29 @@ export default function TherapistsPage() {
         return p >= filterMinPrice && p <= filterMaxPrice;
       });
     }
-    if (sortBy === 'rating-desc') result.sort((a, b) => (b.avg_rating || 0) - (a.avg_rating || 0));
+
+    // Sorting
+    if (sortBy === 'relevance' && selectedCondition) {
+      // Exact tag matches πρώτα, μετά specialty matches
+      result.sort((a, b) => {
+        const aType = getMatchType(a);
+        const bType = getMatchType(b);
+        const score = (type) => (type === 'exact' ? 2 : type === 'specialty' ? 1 : 0);
+        const diff = score(bType) - score(aType);
+        if (diff !== 0) return diff;
+        // tie-break με rating
+        return (b.avg_rating || 0) - (a.avg_rating || 0);
+      });
+    } else if (sortBy === 'rating-desc') result.sort((a, b) => (b.avg_rating || 0) - (a.avg_rating || 0));
     else if (sortBy === 'price-asc') result.sort((a, b) => (a.price_per_session || 0) - (b.price_per_session || 0));
     else if (sortBy === 'price-desc') result.sort((a, b) => (b.price_per_session || 0) - (a.price_per_session || 0));
     else if (sortBy === 'experience-desc') result.sort((a, b) => (b.years_experience || 0) - (a.years_experience || 0));
+
     return result;
-  }, [therapists, search, filterArea, filterSpecialty, filterMinPrice, filterMaxPrice, sortBy]);
+  }, [therapists, therapistConditionsMap, selectedCondition, search, filterArea, filterSpecialty, filterMinPrice, filterMaxPrice, sortBy]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function clearFilters() {
+    setSelectedCondition(null);
     setSearch('');
     setFilterArea('');
     setFilterSpecialty('');
@@ -314,10 +439,10 @@ export default function TherapistsPage() {
     setSortBy('newest');
   }
 
-  const hasActiveFilters = search || filterArea || filterSpecialty
+  const hasActiveFilters = selectedCondition || search || filterArea || filterSpecialty
     || (filterMinPrice !== null && filterMinPrice !== priceRange.min)
     || (filterMaxPrice !== null && filterMaxPrice !== priceRange.max)
-    || sortBy !== 'newest';
+    || (sortBy !== 'newest' && sortBy !== 'relevance');
 
   const selectStyle = { padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 13, fontFamily: 'inherit', color: '#1a2e44', outline: 'none', background: '#fff', cursor: 'pointer', minWidth: 160 };
   const filterShown = showFilters || (typeof window !== 'undefined' && window.innerWidth >= 768);
@@ -355,6 +480,24 @@ export default function TherapistsPage() {
         </div>
       </section>
 
+      {/* CONDITION-BASED SEARCH (USP) */}
+      <section style={{ background: '#fff', padding: '40px 24px', borderBottom: '1px solid #f1f5f9' }}>
+        <div style={{ maxWidth: 760, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 24 }}>
+            <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(22px, 3vw, 32px)', color: '#1a2e44', marginBottom: 8 }}>
+              {tx.findHelpTitle}
+            </h2>
+            <p style={{ fontSize: 14, color: '#6b7a8d', lineHeight: 1.6 }}>{tx.findHelpDesc}</p>
+          </div>
+          <ConditionSearch
+            lang={lang}
+            value={selectedCondition}
+            onChange={setSelectedCondition}
+            showChips={true}
+          />
+        </div>
+      </section>
+
       {/* THERAPISTS + FILTERS */}
       <section style={{ background: '#f8fafb', padding: '60px 24px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
@@ -381,6 +524,7 @@ export default function TherapistsPage() {
                     {uniqueSpecialties.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                   <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={selectStyle}>
+                    {selectedCondition && <option value="relevance">🎯 {tx.sortRelevance}</option>}
                     <option value="newest">{tx.sortNewest}</option>
                     <option value="rating-desc">⭐ {tx.sortRatingDesc}</option>
                     <option value="price-asc">{tx.sortPriceAsc}</option>
@@ -443,27 +587,49 @@ export default function TherapistsPage() {
             </div>
           ) : (
             <div className="th-grid">
-              {filteredTherapists.map(th => (
-                <div key={th.id} className="th-card" onClick={() => setSelectedTherapist(th)}>
-                  {th.photo_url ? (
-                    <ImgWithSkeleton src={th.photo_url} alt={th.name}
-                      containerStyle={{ width: 72, height: 72, borderRadius: '50%', marginBottom: 16 }}
-                      style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover' }} />
-                  ) : (
-                    <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'linear-gradient(135deg, #c8dff9, #a0c4f4)', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, color: '#2a6fdb' }}>
-                      {th.name?.charAt(0)}
+              {filteredTherapists.map(th => {
+                const matchType = getMatchType(th);
+                return (
+                  <div key={th.id} className="th-card" onClick={() => setSelectedTherapist(th)}>
+                    {/* Match badge */}
+                    {matchType && (
+                      <div style={{
+                        display: 'inline-block',
+                        marginBottom: 12,
+                        padding: '3px 10px',
+                        borderRadius: 999,
+                        fontSize: 10,
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        letterSpacing: '.05em',
+                        background: matchType === 'exact' ? '#DCFCE7' : '#EFF6FF',
+                        color: matchType === 'exact' ? '#15803D' : '#1D4ED8',
+                        border: `1px solid ${matchType === 'exact' ? '#86EFAC' : '#BFDBFE'}`,
+                      }}>
+                        {matchType === 'exact' ? tx.matchedExact : tx.matchedSpecialty}
+                      </div>
+                    )}
+
+                    {th.photo_url ? (
+                      <ImgWithSkeleton src={th.photo_url} alt={th.name}
+                        containerStyle={{ width: 72, height: 72, borderRadius: '50%', marginBottom: 16 }}
+                        style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'linear-gradient(135deg, #c8dff9, #a0c4f4)', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, color: '#2a6fdb' }}>
+                        {th.name?.charAt(0)}
+                      </div>
+                    )}
+                    <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2e44', marginBottom: 4 }}>{th.name}</div>
+                    <div style={{ fontSize: 13, color: '#6b7a8d', marginBottom: 8 }}>{th.specialty}</div>
+                    <div style={{ marginBottom: 8 }}>
+                      <RatingDisplay rating={th.avg_rating} count={th.review_count} lang={lang} variant="compact" size={13} />
                     </div>
-                  )}
-                  <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2e44', marginBottom: 4 }}>{th.name}</div>
-                  <div style={{ fontSize: 13, color: '#6b7a8d', marginBottom: 8 }}>{th.specialty}</div>
-                  <div style={{ marginBottom: 8 }}>
-                    <RatingDisplay rating={th.avg_rating} count={th.review_count} lang={lang} variant="compact" size={13} />
+                    {th.area && <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>📍 {th.area}</div>}
+                    {th.price_per_session && <div style={{ fontSize: 13, color: '#2a6fdb', fontWeight: 600, marginBottom: 10 }}>💰 {th.price_per_session}€/{lang === 'el' ? 'συνεδρία' : 'session'}</div>}
+                    <div style={{ fontSize: 13, color: '#2a6fdb', fontWeight: 600 }}>{tx.viewProfile}</div>
                   </div>
-                  {th.area && <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>📍 {th.area}</div>}
-                  {th.price_per_session && <div style={{ fontSize: 13, color: '#2a6fdb', fontWeight: 600, marginBottom: 10 }}>💰 {th.price_per_session}€/{lang === 'el' ? 'συνεδρία' : 'session'}</div>}
-                  <div style={{ fontSize: 13, color: '#2a6fdb', fontWeight: 600 }}>{tx.viewProfile}</div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
