@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
+import TherapistConditions from '../../../components/TherapistConditions';
 
 function Avatar({ name, photoUrl, size = 48 }) {
   if (photoUrl) return <img src={photoUrl} alt={name} style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />;
@@ -494,6 +495,7 @@ export default function TherapistDashboard() {
     { id: 'requests', label: `📋 Αιτήματα ${pendingCount > 0 ? `(${pendingCount})` : ''}` },
     { id: 'calendar', label: '📅 Διαθεσιμότητα' },
     { id: 'areas',    label: '📍 Περιοχές' },
+    { id: 'conditions', label: '🎯 Παθήσεις' },
     { id: 'reviews',  label: '⭐ Αξιολογήσεις' },
     { id: 'profile',  label: '👤 Προφίλ' },
   ];
@@ -867,6 +869,11 @@ export default function TherapistDashboard() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* CONDITIONS — Manual condition tagging */}
+        {activeTab === 'conditions' && (
+          <TherapistConditions userId={user?.id} specialty={profile?.specialty} />
         )}
 
         {/* REVIEWS */}
