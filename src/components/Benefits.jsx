@@ -2,6 +2,14 @@
 import { useState, useEffect } from 'react';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
+import { Home, Clock, Heart, CheckCircle2 } from 'lucide-react';
+
+const ICON_MAP = {
+  Home: Home,
+  Clock: Clock,
+  Heart: Heart,
+  CheckCircle2: CheckCircle2,
+};
 
 const DEFAULT = {
   el: {
@@ -9,10 +17,10 @@ const DEFAULT = {
     desc: 'Η φυσιοθεραπεία στο σπίτι προσφέρει μια βολική και προσωπική προσέγγιση στην ανάρρωση.',
     image_url: '',
     benefits: [
-      { icon: '🏠', title: 'Μεγαλύτερη Άνεση', desc: 'Λάβετε θεραπεία σε οικείο, ιδιωτικό χώρο.' },
-      { icon: '⏱', title: 'Περισσότερη Ευκολία', desc: 'Αποφύγετε τον χρόνο μετακίνησης.' },
-      { icon: '♥', title: 'Φροντίδα Προσαρμοσμένη σε Εσάς', desc: 'Κάθε συνεδρία προσαρμόζεται στην κατάστασή σας.' },
-      { icon: '✓', title: 'Συνεπής Υποστήριξη', desc: 'Οι επισκέψεις στο σπίτι διευκολύνουν τη συνέπεια.' },
+      { icon: 'Home', title: 'Μεγαλύτερη Άνεση', desc: 'Λάβετε θεραπεία σε οικείο, ιδιωτικό χώρο.' },
+      { icon: 'Clock', title: 'Περισσότερη Ευκολία', desc: 'Αποφύγετε τον χρόνο μετακίνησης.' },
+      { icon: 'Heart', title: 'Φροντίδα Προσαρμοσμένη σε Εσάς', desc: 'Κάθε συνεδρία προσαρμόζεται στην κατάστασή σας.' },
+      { icon: 'CheckCircle2', title: 'Συνεπής Υποστήριξη', desc: 'Οι επισκέψεις στο σπίτι διευκολύνουν τη συνέπεια.' },
     ],
   },
   en: {
@@ -20,13 +28,22 @@ const DEFAULT = {
     desc: 'Home physiotherapy offers a convenient and personal approach to recovery.',
     image_url: '',
     benefits: [
-      { icon: '🏠', title: 'Greater Comfort', desc: 'Receive treatment in a familiar, private space.' },
-      { icon: '⏱', title: 'More Convenience', desc: 'Avoid travel time and clinic visits.' },
-      { icon: '♥', title: 'Care Tailored to You', desc: 'Each session is adapted to your condition and goals.' },
-      { icon: '✓', title: 'Consistent Support', desc: 'Home visits make it easier to stay consistent.' },
+      { icon: 'Home', title: 'Greater Comfort', desc: 'Receive treatment in a familiar, private space.' },
+      { icon: 'Clock', title: 'More Convenience', desc: 'Avoid travel time and clinic visits.' },
+      { icon: 'Heart', title: 'Care Tailored to You', desc: 'Each session is adapted to your condition and goals.' },
+      { icon: 'CheckCircle2', title: 'Consistent Support', desc: 'Home visits make it easier to stay consistent.' },
     ],
   },
 };
+
+// Backward compatibility — αν τα DB benefits έχουν emoji icons (παλιά format), χρησιμοποιούμε defaults
+function normalizeBenefits(benefits, defaultBenefits) {
+  if (!Array.isArray(benefits) || benefits.length === 0) return defaultBenefits;
+  // Αν το πρώτο benefit έχει emoji ως icon, fallback to defaults
+  const firstIcon = benefits[0]?.icon;
+  if (firstIcon && !ICON_MAP[firstIcon]) return defaultBenefits;
+  return benefits;
+}
 
 export default function Benefits() {
   const { lang } = useLang();
@@ -46,6 +63,7 @@ export default function Benefits() {
   }, []);
 
   const text = data[lang] || DEFAULT[lang];
+  const benefits = normalizeBenefits(text.benefits, DEFAULT[lang].benefits);
 
   return (
     <>
@@ -63,22 +81,27 @@ export default function Benefits() {
               </h2>
               <p style={{ fontSize: 16, color: '#6b7a8d', marginBottom: 40 }}>{text.desc}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-                {(text.benefits || []).map((b, i) => (
-                  <div key={i} style={{ display: 'flex', gap: 16 }}>
-                    <div style={{ flexShrink: 0, width: 44, height: 44, borderRadius: 12, background: '#e8f1fd', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>{b.icon}</div>
-                    <div>
-                      <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1a2e44', marginBottom: 4 }}>{b.title}</h3>
-                      <p style={{ fontSize: 14, color: '#6b7a8d', lineHeight: 1.6 }}>{b.desc}</p>
+                {benefits.map((b, i) => {
+                  const IconComp = ICON_MAP[b.icon] || Home;
+                  return (
+                    <div key={i} style={{ display: 'flex', gap: 16 }}>
+                      <div style={{ flexShrink: 0, width: 44, height: 44, borderRadius: 12, background: '#e8f1fd', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <IconComp size={20} color="#2a6fdb" strokeWidth={2.2} />
+                      </div>
+                      <div>
+                        <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1a2e44', marginBottom: 4 }}>{b.title}</h3>
+                        <p style={{ fontSize: 14, color: '#6b7a8d', lineHeight: 1.6 }}>{b.desc}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
             <div className="benefits-img">
               {text.image_url ? (
                 <img src={text.image_url} alt="Benefits" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 24 }} />
               ) : (
-                <div style={{ width: '100%', aspectRatio: '1', borderRadius: 24, background: 'linear-gradient(135deg, #c8dff9 0%, #a0c4f4 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2a6fdb', fontSize: 14 }}>📷 Photo</div>
+                <div style={{ width: '100%', aspectRatio: '1', borderRadius: 24, background: 'linear-gradient(135deg, #c8dff9 0%, #a0c4f4 100%)' }} />
               )}
             </div>
           </div>

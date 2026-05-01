@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
+import { ArrowRight } from 'lucide-react';
 
 const CACHE_KEY = 'cms_homepage_howitworks';
 const CACHE_TTL = 5 * 60 * 1000;
@@ -98,8 +99,9 @@ export default function HowItWorks() {
         </div>
 
         <div style={{ textAlign: 'center' }}>
-          <a href={ctaHref} style={{ display: 'inline-block', background: '#1a2e44', color: '#fff', padding: '14px 36px', borderRadius: 30, fontSize: 15, fontWeight: 600, textDecoration: 'none' }}>
-            {text.cta} →
+          <a href={ctaHref} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#1a2e44', color: '#fff', padding: '14px 36px', borderRadius: 30, fontSize: 15, fontWeight: 600, textDecoration: 'none' }}>
+            {text.cta}
+            <ArrowRight size={18} />
           </a>
         </div>
       </div>

@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { Mail, Phone, MapPin, ArrowRight } from 'lucide-react';
 
 const CACHE_KEY = 'cms_platform_settings';
 const CACHE_TTL = 5 * 60 * 1000;
@@ -59,21 +60,27 @@ export default function Contact() {
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 12, background: '#e8f1fd', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>✉</div>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: '#e8f1fd', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Mail size={20} color="#2a6fdb" strokeWidth={2} />
+                  </div>
                   <div>
                     <div style={{ fontSize: 12, color: '#6b7a8d', marginBottom: 2 }}>Email</div>
                     <a href={`mailto:${settings.email}`} style={{ fontWeight: 500, color: '#1a2e44', textDecoration: 'none' }}>{settings.email}</a>
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 12, background: '#e8f1fd', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>📞</div>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: '#e8f1fd', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Phone size={20} color="#2a6fdb" strokeWidth={2} />
+                  </div>
                   <div>
                     <div style={{ fontSize: 12, color: '#6b7a8d', marginBottom: 2 }}>Τηλέφωνο</div>
                     <a href={`tel:${settings.phone}`} style={{ fontWeight: 500, color: '#1a2e44', textDecoration: 'none' }}>{settings.phone}</a>
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 12, background: '#e8f1fd', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>📍</div>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: '#e8f1fd', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <MapPin size={20} color="#2a6fdb" strokeWidth={2} />
+                  </div>
                   <div>
                     <div style={{ fontSize: 12, color: '#6b7a8d', marginBottom: 2 }}>Περιοχή Εξυπηρέτησης</div>
                     <span style={{ fontWeight: 500, color: '#1a2e44' }}>{settings.address}</span>
@@ -112,9 +119,10 @@ export default function Contact() {
                   <label style={{ fontSize: 13, fontWeight: 500, color: '#1a2e44', display: 'block', marginBottom: 6 }}>Μήνυμα</label>
                   <textarea rows={4} style={{ width: '100%', padding: '12px 14px', border: '1px solid #dce6f0', borderRadius: 8, fontFamily: 'inherit', fontSize: 14, color: '#1a2e44', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
                 </div>
-                <button style={{ width: '100%', background: '#1a2e44', color: '#fff', padding: 14, borderRadius: 30, fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+                <button style={{ width: '100%', background: '#1a2e44', color: '#fff', padding: 14, borderRadius: 30, fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
                   onClick={() => alert('Ευχαριστούμε! Θα επικοινωνήσουμε μαζί σας εντός 24 ωρών.')}>
-                  Αποστολή Αιτήματος →
+                  Αποστολή Αιτήματος
+                  <ArrowRight size={16} />
                 </button>
               </div>
             </div>
