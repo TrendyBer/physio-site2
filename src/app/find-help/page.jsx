@@ -2,10 +2,10 @@ import { supabase } from '@/lib/supabase';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import Link from 'next/link';
+import { Search, Star, Tag, Users, ArrowRight, Globe } from 'lucide-react';
 
-export const revalidate = 3600; // ISR: regenerate κάθε 1 ώρα
+export const revalidate = 3600;
 
-// Detect γλώσσα από URL search param (?lang=en)
 export async function generateMetadata({ searchParams }) {
   const params = await searchParams;
   const lang = params?.lang === 'en' ? 'en' : 'el';
@@ -51,10 +51,10 @@ const TX = {
     allTitle: 'Όλες οι Παθήσεις ανά Κατηγορία',
     therapists: 'θεραπευτές',
     therapist: 'θεραπευτής',
-    findTherapists: 'Βρες θεραπευτές →',
+    findTherapists: 'Βρες θεραπευτές',
     notSure: 'Δεν είστε σίγουροι ποια πάθηση έχετε;',
     notSureDesc: 'Συμπληρώστε ένα αίτημα και θα σας προτείνουμε τους κατάλληλους θεραπευτές.',
-    notSureBtn: 'Νέο Αίτημα →',
+    notSureBtn: 'Νέο Αίτημα',
     switchLang: 'EN',
   },
   en: {
@@ -67,10 +67,10 @@ const TX = {
     allTitle: 'All Conditions by Category',
     therapists: 'therapists',
     therapist: 'therapist',
-    findTherapists: 'Find therapists →',
+    findTherapists: 'Find therapists',
     notSure: 'Not sure which condition you have?',
     notSureDesc: 'Submit a request and we will recommend the right therapists for you.',
-    notSureBtn: 'New Request →',
+    notSureBtn: 'New Request',
     switchLang: 'ΕΛ',
   },
 };
@@ -80,7 +80,6 @@ export default async function FindHelpPage({ searchParams }) {
   const lang = params?.lang === 'en' ? 'en' : 'el';
   const tx = TX[lang];
 
-  // Fetch categories + conditions + therapist counts
   const { data: categories } = await supabase
     .from('condition_categories')
     .select('*')
@@ -93,31 +92,21 @@ export default async function FindHelpPage({ searchParams }) {
     .eq('is_active', true)
     .order('display_order', { ascending: true });
 
-  // Count tagged therapists per condition
   const { data: tcData } = await supabase
     .from('therapist_conditions')
-    .select('condition_id');
+    .select('condition_id, therapist_id');
 
-  const tagCountsByCondition = {};
-  (tcData || []).forEach((tc) => {
-    tagCountsByCondition[tc.condition_id] = (tagCountsByCondition[tc.condition_id] || 0) + 1;
-  });
-
-  // Fetch therapists για να μετρήσουμε και specialty matches
   const { data: therapists } = await supabase
     .from('therapist_profiles')
     .select('id, specialty')
     .eq('is_approved', true);
 
-  // For each condition, compute total reach (exact tags + specialty matches, deduped)
   const reachByCondition = {};
   (conditions || []).forEach((c) => {
     const taggedIds = new Set();
-    // Exact tags
     (tcData || []).forEach((tc) => {
       if (tc.condition_id === c.id) taggedIds.add(tc.therapist_id);
     });
-    // Specialty matches
     const related = (c.related_specialties || []).map((s) => (s || '').toLowerCase());
     (therapists || []).forEach((t) => {
       const spec = (t.specialty || '').toLowerCase();
@@ -130,9 +119,7 @@ export default async function FindHelpPage({ searchParams }) {
 
   const popularConditions = (conditions || []).filter((c) => c.is_popular);
 
-  // Helper για link με γλώσσα
   const langSuffix = lang === 'en' ? '?lang=en' : '';
-  const langSuffixAmp = lang === 'en' ? '&lang=en' : '';
 
   return (
     <>
@@ -162,22 +149,23 @@ export default async function FindHelpPage({ searchParams }) {
         @media (max-width: 600px) { .fh-popular-grid { grid-template-columns: 1fr; } }
       `}</style>
 
-      {/* Lang switcher (top right of hero) */}
       <div style={{ background: 'linear-gradient(135deg, #e8f3ff 0%, #f0f7ff 100%)', position: 'relative' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '12px 24px 0', textAlign: 'right' }}>
           <Link
             href={lang === 'el' ? '/find-help?lang=en' : '/find-help'}
-            style={{ display: 'inline-block', padding: '6px 14px', background: '#fff', border: '1px solid #BFDBFE', borderRadius: 999, fontSize: 12, fontWeight: 600, color: '#1D4ED8', textDecoration: 'none' }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: '#fff', border: '1px solid #BFDBFE', borderRadius: 999, fontSize: 12, fontWeight: 600, color: '#1D4ED8', textDecoration: 'none' }}
           >
-            🌐 {tx.switchLang}
+            <Globe size={12} />
+            {tx.switchLang}
           </Link>
         </div>
 
         {/* HERO */}
         <section style={{ padding: '40px 24px 60px', textAlign: 'center' }}>
           <div style={{ maxWidth: 760, margin: '0 auto' }}>
-            <div style={{ display: 'inline-block', fontSize: 13, fontWeight: 600, color: '#2a6fdb', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 16 }}>
-              🎯 {tx.badge}
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: '#2a6fdb', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 16 }}>
+              <Search size={14} strokeWidth={2.5} />
+              {tx.badge}
             </div>
             <h1 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 'clamp(32px, 5vw, 56px)', color: '#1a2e44', lineHeight: 1.15, marginBottom: 20 }}>
               {tx.title1} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{tx.titleEm}</em> {tx.titleEnd}
@@ -192,9 +180,12 @@ export default async function FindHelpPage({ searchParams }) {
       {/* POPULAR CONDITIONS */}
       <section style={{ background: '#fff', padding: '60px 24px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <h2 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 'clamp(24px, 3vw, 36px)', color: '#1a2e44', marginBottom: 8, textAlign: 'center' }}>
-            ⭐ {tx.popularTitle}
-          </h2>
+          <div style={{ textAlign: 'center', marginBottom: 8 }}>
+            <h2 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 'clamp(24px, 3vw, 36px)', color: '#1a2e44', display: 'inline-flex', alignItems: 'center', gap: 12 }}>
+              <Star size={28} color="#2a6fdb" fill="#2a6fdb" strokeWidth={0} />
+              {tx.popularTitle}
+            </h2>
+          </div>
           <div style={{ width: 60, height: 3, background: '#2a6fdb', margin: '0 auto 32px' }} />
 
           <div className="fh-popular-grid">
@@ -209,7 +200,8 @@ export default async function FindHelpPage({ searchParams }) {
                     <div style={{ fontSize: 13, color: '#64748b', lineHeight: 1.5, marginBottom: 10 }}>{desc}</div>
                   )}
                   {reach > 0 && (
-                    <div style={{ fontSize: 12, color: '#2a6fdb', fontWeight: 600 }}>
+                    <div style={{ fontSize: 12, color: '#2a6fdb', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      <Users size={12} />
                       {reach} {reach === 1 ? tx.therapist : tx.therapists}
                     </div>
                   )}
@@ -223,9 +215,12 @@ export default async function FindHelpPage({ searchParams }) {
       {/* ALL CONDITIONS BY CATEGORY */}
       <section style={{ background: '#f8fafb', padding: '60px 24px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <h2 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 'clamp(24px, 3vw, 36px)', color: '#1a2e44', marginBottom: 8, textAlign: 'center' }}>
-            🏷️ {tx.allTitle}
-          </h2>
+          <div style={{ textAlign: 'center', marginBottom: 8 }}>
+            <h2 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 'clamp(24px, 3vw, 36px)', color: '#1a2e44', display: 'inline-flex', alignItems: 'center', gap: 12 }}>
+              <Tag size={26} color="#2a6fdb" strokeWidth={2} />
+              {tx.allTitle}
+            </h2>
+          </div>
           <div style={{ width: 60, height: 3, background: '#2a6fdb', margin: '0 auto 40px' }} />
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
@@ -247,7 +242,8 @@ export default async function FindHelpPage({ searchParams }) {
                       borderRadius: 10,
                     }}
                   >
-                    <span style={{ fontSize: 22 }}>{cat.icon || '🏷️'}</span>
+                    {/* Category accent — colored bar instead of emoji */}
+                    <div style={{ width: 4, height: 24, borderRadius: 2, background: cat.color || '#2a6fdb' }} />
                     <h3 style={{ fontSize: 18, fontWeight: 700, color: cat.color || '#1a2e44', margin: 0 }}>{catName}</h3>
                     <span style={{ marginLeft: 'auto', fontSize: 12, color: cat.color || '#64748b', fontWeight: 600 }}>
                       {catConditions.length}
@@ -266,8 +262,9 @@ export default async function FindHelpPage({ searchParams }) {
                             <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.5, marginBottom: 10 }}>{desc}</div>
                           )}
                           {reach > 0 && (
-                            <div style={{ fontSize: 11, color: '#2a6fdb', fontWeight: 600 }}>
-                              👥 {reach}
+                            <div style={{ fontSize: 11, color: '#2a6fdb', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                              <Users size={11} />
+                              {reach}
                             </div>
                           )}
                         </Link>
@@ -301,7 +298,9 @@ export default async function FindHelpPage({ searchParams }) {
           <a
             href="/dashboard/patient/new-request"
             style={{
-              display: 'inline-block',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
               background: '#2a6fdb',
               color: '#fff',
               padding: '13px 32px',
@@ -312,6 +311,7 @@ export default async function FindHelpPage({ searchParams }) {
             }}
           >
             {tx.notSureBtn}
+            <ArrowRight size={16} />
           </a>
         </div>
       </section>

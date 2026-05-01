@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { Mail, Phone, MapPin, ArrowRight } from 'lucide-react';
 
 const CACHE_KEY = 'cms_platform_settings';
 const CONDITIONS_CACHE_KEY = 'cms_popular_conditions';
@@ -18,7 +19,6 @@ export default function Footer() {
   const [popularConditions, setPopularConditions] = useState([]);
 
   useEffect(() => {
-    // Platform settings
     async function fetchSettings() {
       try {
         const cached = sessionStorage.getItem(CACHE_KEY);
@@ -37,7 +37,6 @@ export default function Footer() {
       }
     }
 
-    // Popular conditions για internal linking
     async function fetchConditions() {
       try {
         const cached = sessionStorage.getItem(CONDITIONS_CACHE_KEY);
@@ -74,6 +73,7 @@ export default function Footer() {
         .footer-conditions-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
         .footer-conditions-list a { font-size: 13px; color: rgba(255,255,255,0.7); text-decoration: none; transition: color .15s; }
         .footer-conditions-list a:hover { color: #fff; }
+        .footer-cta-btn { display: inline-flex; align-items: center; gap: 6px; background: #2a6fdb; color: #fff; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; text-decoration: none; }
         @media (max-width: 1024px) {
           .footer-grid { grid-template-columns: 1fr 1fr; }
         }
@@ -95,8 +95,9 @@ export default function Footer() {
               <p style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 16 }}>
                 Επαγγελματική, εξατομικευμένη φυσιοθεραπεία στην άνεση του σπιτιού σας.
               </p>
-              <a href="/find-help" style={{ display: 'inline-block', background: '#2a6fdb', color: '#fff', padding: '8px 16px', borderRadius: 20, fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>
-                Βρες τη βοήθειά σου →
+              <a href="/find-help" className="footer-cta-btn">
+                Βρες τη βοήθειά σου
+                <ArrowRight size={14} />
               </a>
             </div>
 
@@ -119,7 +120,7 @@ export default function Footer() {
               </ul>
             </div>
 
-            {/* Popular Conditions — Internal SEO Linking */}
+            {/* Popular Conditions */}
             <div>
               <h4 style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: '.08em', color: '#fff', marginBottom: 16, fontWeight: 600 }}>
                 Δημοφιλείς Παθήσεις
@@ -134,7 +135,6 @@ export default function Footer() {
                     </li>
                   ))
                 ) : (
-                  // Fallback αν δεν φορτωθούν τα popular
                   [
                     ['/find-help/low_back_pain', 'Οσφυαλγία'],
                     ['/find-help/neck_pain', 'Αυχενικό σύνδρομο'],
@@ -167,27 +167,26 @@ export default function Footer() {
               </ul>
             </div>
 
-            {/* Contact */}
+            {/* Contact — με Lucide icons αντί για emojis */}
             <div>
               <h4 style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: '.08em', color: '#fff', marginBottom: 16, fontWeight: 600 }}>Επικοινωνία</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 14 }}>
-                  <span>✉</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 14 }}>
+                  <Mail size={16} color="rgba(255,255,255,0.6)" strokeWidth={2} style={{ flexShrink: 0, marginTop: 2 }} />
                   <a href={`mailto:${settings.email}`} style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', wordBreak: 'break-all' }}>{settings.email}</a>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 14 }}>
-                  <span>📞</span>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 14 }}>
+                  <Phone size={16} color="rgba(255,255,255,0.6)" strokeWidth={2} style={{ flexShrink: 0, marginTop: 2 }} />
                   <a href={`tel:${settings.phone}`} style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>{settings.phone}</a>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 14 }}>
-                  <span>📍</span>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 14 }}>
+                  <MapPin size={16} color="rgba(255,255,255,0.6)" strokeWidth={2} style={{ flexShrink: 0, marginTop: 2 }} />
                   <span>{settings.address}</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Bottom — copyright + legal links */}
           <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 24 }}>
             <div className="footer-bottom">
               <span style={{ fontSize: 13 }}>

@@ -65,7 +65,6 @@ export default function Navbar() {
       if (nameData?.name) { const fn = nameData.name.split(' ')[0]; localStorage.setItem('userName', fn); }
     }
     setLoginModal(false);
-    // Check pending redirect after login
     const pending = localStorage.getItem('pendingRedirect');
     if (pending && role === 'patient') { localStorage.removeItem('pendingRedirect'); window.location.href = pending; return; }
     if (role === 'therapist') window.location.href = '/dashboard/therapist';
@@ -90,7 +89,7 @@ export default function Navbar() {
   const publicLinks = [
     { label: lang === 'el' ? 'Πώς Λειτουργεί' : 'How it Works', href: '/how-it-works' },
     { label: lang === 'el' ? 'Πακέτα' : 'Packages', href: '/packages' },
-    { label: lang === 'el' ? 'Υπηρεσίες' : 'Services', href: '/services' },
+    { label: lang === 'el' ? 'Παθήσεις' : 'Conditions', href: '/find-help' },
     { label: lang === 'el' ? 'Θεραπευτές' : 'Therapists', href: '/therapists' },
     { label: 'Blog', href: '/blog' },
     { label: lang === 'el' ? 'Επικοινωνία' : 'Contact', href: '/contact' },
@@ -99,7 +98,7 @@ export default function Navbar() {
   const therapistLinks = [
     { label: lang === 'el' ? 'Αρχική' : 'Home', href: '/' },
     { label: 'Dashboard', href: '/dashboard/therapist' },
-    { label: lang === 'el' ? 'Υπηρεσίες' : 'Services', href: '/services' },
+    { label: lang === 'el' ? 'Παθήσεις' : 'Conditions', href: '/find-help' },
     { label: lang === 'el' ? 'Διαθεσιμότητα' : 'Availability', href: '/dashboard/therapist?tab=calendar' },
     { label: lang === 'el' ? 'Ραντεβού' : 'Appointments', href: '/dashboard/therapist?tab=requests' },
     { label: lang === 'el' ? 'Προφίλ' : 'Profile', href: '/dashboard/therapist?tab=profile' },
@@ -108,7 +107,7 @@ export default function Navbar() {
   const patientLinks = [
     { label: lang === 'el' ? 'Αρχική' : 'Home', href: '/' },
     { label: lang === 'el' ? 'Θεραπευτές' : 'Therapists', href: '/therapists' },
-    { label: lang === 'el' ? 'Υπηρεσίες' : 'Services', href: '/services' },
+    { label: lang === 'el' ? 'Παθήσεις' : 'Conditions', href: '/find-help' },
     { label: lang === 'el' ? 'Κλείσε Συνεδρία' : 'Book Session', href: '/dashboard/patient/new-request' },
     { label: 'My Account', href: '/dashboard/patient' },
   ];
@@ -116,6 +115,11 @@ export default function Navbar() {
   const activeLinks = userRole === 'therapist' ? therapistLinks : userRole === 'patient' ? patientLinks : publicLinks;
 
   const inputStyle = { width: '100%', padding: '11px 14px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', color: '#1a2e44' };
+
+  // Role label — text only, no emoji
+  const roleLabel = userRole === 'therapist'
+    ? (lang === 'el' ? 'Θεραπευτής' : 'Therapist')
+    : (lang === 'el' ? 'Ασθενής' : 'Patient');
 
   return (
     <>
@@ -155,9 +159,27 @@ export default function Navbar() {
               {lang === 'el' ? 'EN' : 'ΕΛ'}
             </button>
 
+            {/* Role badge — text only, no emoji */}
             {mounted && userRole && userName && (
-              <span style={{ background: userRole === 'therapist' ? '#EFF6FF' : '#F0FDF4', color: userRole === 'therapist' ? '#1D4ED8' : '#15803D', padding: '4px 12px', borderRadius: 999, fontSize: 12, fontWeight: 600 }}>
-                {userRole === 'therapist' ? '👨‍⚕️' : '🏥'} {userName}
+              <span style={{
+                background: userRole === 'therapist' ? '#EFF6FF' : '#F0FDF4',
+                color: userRole === 'therapist' ? '#1D4ED8' : '#15803D',
+                padding: '4px 12px',
+                borderRadius: 999,
+                fontSize: 12,
+                fontWeight: 600,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+              }}>
+                <span style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  background: userRole === 'therapist' ? '#1D4ED8' : '#15803D',
+                  display: 'inline-block',
+                }} />
+                {userName}
               </span>
             )}
 
@@ -185,7 +207,7 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Role Modal */}
+      {/* Role Modal — clean, no emojis */}
       {roleModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}
           onClick={e => { if (e.target === e.currentTarget) setRoleModal(false); }}>
@@ -196,14 +218,17 @@ export default function Navbar() {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
               {[
-                { role: 'patient', icon: '🏥', title: 'Θέλω Φυσιοθεραπεία', desc: 'Εγγραφή ως ασθενής και κλείσιμο ραντεβού' },
-                { role: 'therapist', icon: '👨‍⚕️', title: 'Θέλω να Προσφέρω', desc: 'Εγγραφή ως θεραπευτής και αίτηση συνεργασίας' },
+                { role: 'patient', title: 'Θέλω Φυσιοθεραπεία', desc: 'Εγγραφή ως ασθενής και κλείσιμο ραντεβού', accent: '#15803D', bg: '#F0FDF4' },
+                { role: 'therapist', title: 'Θέλω να Προσφέρω', desc: 'Εγγραφή ως θεραπευτής και αίτηση συνεργασίας', accent: '#1D4ED8', bg: '#EFF6FF' },
               ].map(r => (
                 <a key={r.role} href={`/auth/register?role=${r.role}`} onClick={() => setRoleModal(false)}
-                  style={{ padding: '24px 16px', border: '2px solid #e2e8f0', borderRadius: 16, textAlign: 'center', textDecoration: 'none', display: 'block', background: '#fff', cursor: 'pointer' }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = '#2a6fdb'; e.currentTarget.style.background = '#EFF6FF'; }}
+                  style={{ padding: '24px 16px', border: '2px solid #e2e8f0', borderRadius: 16, textAlign: 'center', textDecoration: 'none', display: 'block', background: '#fff', cursor: 'pointer', transition: 'all .2s' }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = r.accent; e.currentTarget.style.background = r.bg; }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.background = '#fff'; }}>
-                  <div style={{ fontSize: 36, marginBottom: 10 }}>{r.icon}</div>
+                  {/* Decorative accent — no emoji */}
+                  <div style={{ width: 48, height: 48, borderRadius: '50%', background: r.bg, margin: '0 auto 12px', border: `2px solid ${r.accent}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: 14, height: 14, borderRadius: '50%', background: r.accent }} />
+                  </div>
                   <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2e44', marginBottom: 6 }}>{r.title}</div>
                   <div style={{ fontSize: 12, color: '#6b7a8d', lineHeight: 1.5 }}>{r.desc}</div>
                 </a>

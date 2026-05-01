@@ -7,6 +7,7 @@ import RatingDisplay from '../../components/RatingDisplay';
 import ConditionSearch from '../../components/ConditionSearch';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
+import { Search, MapPin, Star, Euro, SlidersHorizontal, X, Check, ArrowRight, Stethoscope, Users, ChevronDown, ChevronUp, Lightbulb } from 'lucide-react';
 
 const TX = {
   el: {
@@ -14,13 +15,13 @@ const TX = {
     hero: 'Οι', heroEm: 'Φυσιοθεραπευτές', heroEnd: 'μας',
     heroDesc: 'Έμπειροι, αδειοδοτημένοι επαγγελματίες, που παρέχουν εξατομικευμένη φροντίδα στο σπίτι σας.',
     bookCta: 'Κλείστε Ραντεβού',
-    viewProfile: 'Δείτε Προφίλ →',
+    viewProfile: 'Δείτε Προφίλ',
     bookSession: 'Κλείστε Ραντεβού',
     noTherapists: 'Δεν υπάρχουν ενεργοί θεραπευτές ακόμα.',
     noResults: 'Δεν βρέθηκαν θεραπευτές με αυτά τα φίλτρα.',
     close: 'Κλείσιμο',
     filters: 'Φίλτρα',
-    searchPh: '🔍 Αναζήτηση με όνομα ή ειδικότητα...',
+    searchPh: 'Αναζήτηση με όνομα ή ειδικότητα...',
     allAreas: 'Όλες οι περιοχές',
     allSpecialties: 'Όλες οι ειδικότητες',
     priceRange: 'Εύρος τιμής',
@@ -37,27 +38,31 @@ const TX = {
     noReviews: 'Δεν υπάρχουν αξιολογήσεις ακόμα.',
     notFoundTitle: 'Δεν βρίσκετε αυτό που ψάχνετε;',
     notFoundDesc: 'Συμπληρώστε το αίτημά σας και θα σας προτείνουμε τους κατάλληλους θεραπευτές.',
-    notFoundBtn: 'Νέο Αίτημα →',
+    notFoundBtn: 'Νέο Αίτημα',
     becomeBanner: 'Είσαι φυσιοθεραπευτής;',
     becomeBannerDesc: 'Γίνε μέλος του δικτύου μας.',
-    becomeBannerBtn: 'Μάθε περισσότερα →',
+    becomeBannerBtn: 'Μάθε περισσότερα',
     findHelpTitle: 'Τι σας ταλαιπωρεί;',
     findHelpDesc: 'Περιγράψτε το πρόβλημά σας και θα σας βρούμε τον κατάλληλο θεραπευτή.',
-    matchedExact: '✓ Εξειδικεύεται',
-    matchedSpecialty: '~ Σχετική ειδικότητα',
+    matchedExact: 'Εξειδικεύεται',
+    matchedSpecialty: 'Σχετική ειδικότητα',
+    crossLinkText: 'Δεν είστε σίγουροι ποιον χρειάζεστε;',
+    crossLinkBtn: 'Δείτε κατά πάθηση',
+    perSession: 'συνεδρία',
+    aboutTherapist: 'Βιογραφικό',
   },
   en: {
     badge: 'Find your',
     hero: 'Our', heroEm: 'Physiotherapists', heroEnd: '',
     heroDesc: 'Experienced, licensed professionals providing personalized care at your home.',
     bookCta: 'Book a Session',
-    viewProfile: 'View Profile →',
+    viewProfile: 'View Profile',
     bookSession: 'Book a Session',
     noTherapists: 'No active therapists yet.',
     noResults: 'No therapists match these filters.',
     close: 'Close',
     filters: 'Filters',
-    searchPh: '🔍 Search by name or specialty...',
+    searchPh: 'Search by name or specialty...',
     allAreas: 'All areas',
     allSpecialties: 'All specialties',
     priceRange: 'Price range',
@@ -74,14 +79,18 @@ const TX = {
     noReviews: 'No reviews yet.',
     notFoundTitle: "Can't find what you're looking for?",
     notFoundDesc: "Submit a request and we'll recommend therapists for you.",
-    notFoundBtn: 'New Request →',
+    notFoundBtn: 'New Request',
     becomeBanner: 'Are you a physiotherapist?',
     becomeBannerDesc: 'Join our network.',
-    becomeBannerBtn: 'Learn more →',
+    becomeBannerBtn: 'Learn more',
     findHelpTitle: 'What is troubling you?',
     findHelpDesc: 'Describe your problem and we will find the right therapist for you.',
-    matchedExact: '✓ Specialized',
-    matchedSpecialty: '~ Related specialty',
+    matchedExact: 'Specialized',
+    matchedSpecialty: 'Related specialty',
+    crossLinkText: "Not sure who you need?",
+    crossLinkBtn: 'Browse by condition',
+    perSession: 'session',
+    aboutTherapist: 'About',
   },
 };
 
@@ -136,7 +145,9 @@ function TherapistModal({ therapist, lang, tx, onClose }) {
             <div style={{ fontSize: 14, color: '#6b7a8d', marginBottom: 8 }}>{therapist.specialty}</div>
             <RatingDisplay rating={therapist.avg_rating || 0} count={therapist.review_count || 0} lang={lang} variant="stars" size={14} />
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#94a3b8' }}>✕</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 4 }}>
+            <X size={20} />
+          </button>
         </div>
         <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 20 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -152,19 +163,23 @@ function TherapistModal({ therapist, lang, tx, onClose }) {
           </div>
           {therapist.bio && (
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2e44', marginBottom: 10 }}>{lang === 'el' ? 'Βιογραφικό' : 'About'}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2e44', marginBottom: 10 }}>{tx.aboutTherapist}</div>
               <p style={{ fontSize: 14, color: '#475569', lineHeight: 1.7, background: '#f8fafc', padding: '14px 16px', borderRadius: 10, borderLeft: '3px solid #dce6f0', margin: 0 }}>{therapist.bio}</p>
             </div>
           )}
           {therapist.price_per_session && (
-            <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '12px 16px', fontSize: 14, color: '#1D4ED8', fontWeight: 600 }}>
-              💰 {therapist.price_per_session}€ / {lang === 'el' ? 'συνεδρία' : 'session'}
+            <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '12px 16px', fontSize: 14, color: '#1D4ED8', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Euro size={16} strokeWidth={2.5} />
+              {therapist.price_per_session}€ / {lang === 'el' ? 'συνεδρία' : 'session'}
             </div>
           )}
 
           {/* REVIEWS */}
           <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2e44', marginBottom: 10 }}>⭐ {tx.reviewsTitle}</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2e44', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Star size={14} color="#F59E0B" fill="#F59E0B" strokeWidth={0} />
+              {tx.reviewsTitle}
+            </div>
             {loadingReviews ? (
               <div style={{ fontSize: 13, color: '#94a3b8', padding: '8px 0' }}>...</div>
             ) : reviews.length === 0 ? (
@@ -189,7 +204,10 @@ function TherapistModal({ therapist, lang, tx, onClose }) {
           </div>
 
           <div style={{ display: 'flex', gap: 12, paddingTop: 8, borderTop: '1px solid #f1f5f9' }}>
-            <a href={bookHref} style={{ flex: 1, background: '#1a2e44', color: '#fff', padding: '13px', borderRadius: 30, fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'none', textAlign: 'center' }}>{tx.bookSession} →</a>
+            <a href={bookHref} style={{ flex: 1, background: '#1a2e44', color: '#fff', padding: '13px', borderRadius: 30, fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'none', textAlign: 'center', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              {tx.bookSession}
+              <ArrowRight size={16} />
+            </a>
             <button onClick={onClose} style={{ flex: 1, background: 'transparent', color: '#1a2e44', padding: '13px', borderRadius: 30, fontSize: 14, fontWeight: 600, border: '1.5px solid #dce6f0', cursor: 'pointer', fontFamily: 'inherit' }}>{tx.close}</button>
           </div>
         </div>
@@ -204,11 +222,10 @@ export default function TherapistsPage() {
   const searchParams = useSearchParams();
 
   const [therapists, setTherapists] = useState([]);
-  const [therapistConditionsMap, setTherapistConditionsMap] = useState({}); // therapist_id -> [condition_id]
+  const [therapistConditionsMap, setTherapistConditionsMap] = useState({});
   const [loadingTherapists, setLoadingTherapists] = useState(true);
   const [selectedTherapist, setSelectedTherapist] = useState(null);
 
-  // Filter state
   const [selectedCondition, setSelectedCondition] = useState(null);
   const [search, setSearch] = useState('');
   const [filterArea, setFilterArea] = useState('');
@@ -218,7 +235,6 @@ export default function TherapistsPage() {
   const [sortBy, setSortBy] = useState('newest');
   const [showFilters, setShowFilters] = useState(false);
 
-  // Load condition από URL param αν υπάρχει
   useEffect(() => {
     const conditionSlug = searchParams.get('condition');
     if (!conditionSlug) return;
@@ -241,7 +257,6 @@ export default function TherapistsPage() {
     })();
   }, [searchParams, lang]);
 
-  // Update URL όταν αλλάζει το condition
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const url = new URL(window.location.href);
@@ -253,7 +268,6 @@ export default function TherapistsPage() {
     window.history.replaceState({}, '', url.toString());
   }, [selectedCondition]);
 
-  // Auto-switch sorting σε relevance όταν επιλέγεται condition
   useEffect(() => {
     if (selectedCondition && sortBy === 'newest') {
       setSortBy('relevance');
@@ -287,7 +301,6 @@ export default function TherapistsPage() {
       let conditionsMap = {};
 
       if (therapistIds.length > 0) {
-        // Reviews
         const { data: reviewsData } = await supabase
           .from('reviews')
           .select('therapist_id, rating')
@@ -301,7 +314,6 @@ export default function TherapistsPage() {
           });
         }
 
-        // Therapist-Conditions tags
         const { data: tcData } = await supabase
           .from('therapist_conditions')
           .select('therapist_id, condition_id')
@@ -355,16 +367,14 @@ export default function TherapistsPage() {
     }
   }, [priceRange, filterMinPrice]);
 
-  // Compute match type για κάθε therapist (relevant όταν έχει επιλεγεί condition)
   function getMatchType(therapist) {
     if (!selectedCondition) return null;
 
     const therapistConditionIds = therapistConditionsMap[therapist.id] || [];
     const hasExactTag = therapistConditionIds.includes(selectedCondition.id);
 
-    if (hasExactTag) return 'exact'; // Manual tag = best match
+    if (hasExactTag) return 'exact';
 
-    // Specialty match: ο therapist έχει specialty που είναι στο related_specialties του condition
     const relatedSpecs = selectedCondition.related_specialties || [];
     const therapistSpec = (therapist.specialty || '').toLowerCase();
     const hasSpecialtyMatch = relatedSpecs.some(
@@ -378,7 +388,6 @@ export default function TherapistsPage() {
   const filteredTherapists = useMemo(() => {
     let result = [...therapists];
 
-    // Condition filter — κρατάμε όσους έχουν exact tag ή specialty match
     if (selectedCondition) {
       const relatedSpecs = (selectedCondition.related_specialties || []).map((s) => (s || '').toLowerCase());
       result = result.filter((t) => {
@@ -409,16 +418,13 @@ export default function TherapistsPage() {
       });
     }
 
-    // Sorting
     if (sortBy === 'relevance' && selectedCondition) {
-      // Exact tag matches πρώτα, μετά specialty matches
       result.sort((a, b) => {
         const aType = getMatchType(a);
         const bType = getMatchType(b);
         const score = (type) => (type === 'exact' ? 2 : type === 'specialty' ? 1 : 0);
         const diff = score(bType) - score(aType);
         if (diff !== 0) return diff;
-        // tie-break με rating
         return (b.avg_rating || 0) - (a.avg_rating || 0);
       });
     } else if (sortBy === 'rating-desc') result.sort((a, b) => (b.avg_rating || 0) - (a.avg_rating || 0));
@@ -468,7 +474,7 @@ export default function TherapistsPage() {
 
       <Navbar />
 
-      {/* HERO — for patients */}
+      {/* HERO */}
       <section style={{ background: 'linear-gradient(135deg, #e8f3ff 0%, #f0f7ff 100%)', padding: '80px 24px 60px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: '#2a6fdb', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 16 }}>{tx.badge}</div>
@@ -476,7 +482,24 @@ export default function TherapistsPage() {
             {tx.hero} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{tx.heroEm}</em> {tx.heroEnd}
           </h1>
           <p style={{ fontSize: 17, color: '#6b7a8d', maxWidth: 580, margin: '0 auto 32px' }}>{tx.heroDesc}</p>
-          <a href="/dashboard/patient/new-request" style={{ display: 'inline-block', background: '#1a2e44', color: '#fff', padding: '14px 36px', borderRadius: 30, fontSize: 15, fontWeight: 600, textDecoration: 'none' }}>{tx.bookCta} →</a>
+          <a href="/dashboard/patient/new-request" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#1a2e44', color: '#fff', padding: '14px 36px', borderRadius: 30, fontSize: 15, fontWeight: 600, textDecoration: 'none' }}>
+            {tx.bookCta}
+            <ArrowRight size={18} />
+          </a>
+        </div>
+      </section>
+
+      {/* CROSS-LINK BANNER → /find-help */}
+      <section style={{ background: '#FFFBEB', borderTop: '1px solid #FDE68A', borderBottom: '1px solid #FDE68A', padding: '16px 24px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, flexWrap: 'wrap', textAlign: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#92400E', fontSize: 14, fontWeight: 600 }}>
+            <Lightbulb size={18} color="#F59E0B" strokeWidth={2} />
+            {tx.crossLinkText}
+          </div>
+          <a href="/find-help" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', color: '#92400E', border: '1px solid #FDE68A', padding: '7px 16px', borderRadius: 20, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
+            {tx.crossLinkBtn}
+            <ArrowRight size={14} />
+          </a>
         </div>
       </section>
 
@@ -505,28 +528,33 @@ export default function TherapistsPage() {
           {/* FILTERS BAR */}
           {!loadingTherapists && therapists.length > 0 && (
             <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #e2e8f0', padding: 20, marginBottom: 24 }}>
-              <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder={tx.searchPh}
-                style={{ width: '100%', padding: '12px 16px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', color: '#1a2e44', outline: 'none', marginBottom: 16 }} />
+              <div style={{ position: 'relative', marginBottom: 16 }}>
+                <Search size={16} color="#94a3b8" strokeWidth={2} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder={tx.searchPh}
+                  style={{ width: '100%', padding: '12px 16px 12px 40px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', color: '#1a2e44', outline: 'none' }} />
+              </div>
 
               <button className="toggle-filters-btn" onClick={() => setShowFilters(!showFilters)}
                 style={{ width: '100%', padding: '10px 16px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, fontSize: 13, fontWeight: 600, color: '#1a2e44', cursor: 'pointer', marginBottom: 12, fontFamily: 'inherit', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                ⚙️ {tx.filters} {showFilters ? '▲' : '▼'}
+                <SlidersHorizontal size={14} />
+                {tx.filters}
+                {showFilters ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
               </button>
 
               <div style={{ display: filterShown ? 'block' : 'none' }}>
                 <div className="filters-bar" style={{ marginBottom: 14 }}>
                   <select value={filterArea} onChange={e => setFilterArea(e.target.value)} style={selectStyle}>
                     <option value="">{tx.allAreas}</option>
-                    {uniqueAreas.map(a => <option key={a} value={a}>📍 {a}</option>)}
+                    {uniqueAreas.map(a => <option key={a} value={a}>{a}</option>)}
                   </select>
                   <select value={filterSpecialty} onChange={e => setFilterSpecialty(e.target.value)} style={selectStyle}>
                     <option value="">{tx.allSpecialties}</option>
                     {uniqueSpecialties.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                   <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={selectStyle}>
-                    {selectedCondition && <option value="relevance">🎯 {tx.sortRelevance}</option>}
+                    {selectedCondition && <option value="relevance">{tx.sortRelevance}</option>}
                     <option value="newest">{tx.sortNewest}</option>
-                    <option value="rating-desc">⭐ {tx.sortRatingDesc}</option>
+                    <option value="rating-desc">{tx.sortRatingDesc}</option>
                     <option value="price-asc">{tx.sortPriceAsc}</option>
                     <option value="price-desc">{tx.sortPriceDesc}</option>
                     <option value="experience-desc">{tx.sortExpDesc}</option>
@@ -552,8 +580,9 @@ export default function TherapistsPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, paddingTop: 12, borderTop: '1px solid #f1f5f9' }}>
                   <div style={{ fontSize: 13, color: '#6b7a8d', fontWeight: 500 }}>{tx.resultsCount(filteredTherapists.length)}</div>
                   {hasActiveFilters && (
-                    <button onClick={clearFilters} style={{ background: 'transparent', border: '1.5px solid #e2e8f0', borderRadius: 20, padding: '6px 16px', fontSize: 12, fontWeight: 600, color: '#475569', cursor: 'pointer', fontFamily: 'inherit' }}>
-                      ✕ {tx.clearFilters}
+                    <button onClick={clearFilters} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'transparent', border: '1.5px solid #e2e8f0', borderRadius: 20, padding: '6px 16px', fontSize: 12, fontWeight: 600, color: '#475569', cursor: 'pointer', fontFamily: 'inherit' }}>
+                      <X size={12} />
+                      {tx.clearFilters}
                     </button>
                   )}
                 </div>
@@ -574,15 +603,16 @@ export default function TherapistsPage() {
             </div>
           ) : therapists.length === 0 ? (
             <div style={{ textAlign: 'center', color: '#6b7a8d', padding: '60px 24px', background: '#fff', borderRadius: 16, border: '1px dashed #dce6f0' }}>
-              <div style={{ fontSize: 32, marginBottom: 12 }}>👥</div>
+              <Users size={32} color="#94a3b8" style={{ margin: '0 auto 12px' }} />
               <div style={{ fontSize: 15 }}>{tx.noTherapists}</div>
             </div>
           ) : filteredTherapists.length === 0 ? (
             <div style={{ textAlign: 'center', color: '#6b7a8d', padding: '60px 24px', background: '#fff', borderRadius: 16, border: '1px dashed #dce6f0' }}>
-              <div style={{ fontSize: 32, marginBottom: 12 }}>🔍</div>
+              <Search size={32} color="#94a3b8" style={{ margin: '0 auto 12px' }} />
               <div style={{ fontSize: 15, marginBottom: 16 }}>{tx.noResults}</div>
-              <button onClick={clearFilters} style={{ background: '#1a2e44', color: '#fff', border: 'none', borderRadius: 20, padding: '8px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                ✕ {tx.clearFilters}
+              <button onClick={clearFilters} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#1a2e44', color: '#fff', border: 'none', borderRadius: 20, padding: '8px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                <X size={14} />
+                {tx.clearFilters}
               </button>
             </div>
           ) : (
@@ -594,7 +624,9 @@ export default function TherapistsPage() {
                     {/* Match badge */}
                     {matchType && (
                       <div style={{
-                        display: 'inline-block',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
                         marginBottom: 12,
                         padding: '3px 10px',
                         borderRadius: 999,
@@ -606,6 +638,7 @@ export default function TherapistsPage() {
                         color: matchType === 'exact' ? '#15803D' : '#1D4ED8',
                         border: `1px solid ${matchType === 'exact' ? '#86EFAC' : '#BFDBFE'}`,
                       }}>
+                        {matchType === 'exact' ? <Check size={10} strokeWidth={3} /> : <Stethoscope size={10} />}
                         {matchType === 'exact' ? tx.matchedExact : tx.matchedSpecialty}
                       </div>
                     )}
@@ -624,9 +657,22 @@ export default function TherapistsPage() {
                     <div style={{ marginBottom: 8 }}>
                       <RatingDisplay rating={th.avg_rating} count={th.review_count} lang={lang} variant="compact" size={13} />
                     </div>
-                    {th.area && <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>📍 {th.area}</div>}
-                    {th.price_per_session && <div style={{ fontSize: 13, color: '#2a6fdb', fontWeight: 600, marginBottom: 10 }}>💰 {th.price_per_session}€/{lang === 'el' ? 'συνεδρία' : 'session'}</div>}
-                    <div style={{ fontSize: 13, color: '#2a6fdb', fontWeight: 600 }}>{tx.viewProfile}</div>
+                    {th.area && (
+                      <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 6, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <MapPin size={12} />
+                        {th.area}
+                      </div>
+                    )}
+                    {th.price_per_session && (
+                      <div style={{ fontSize: 13, color: '#2a6fdb', fontWeight: 600, marginBottom: 10, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <Euro size={13} strokeWidth={2.5} />
+                        {th.price_per_session}€/{lang === 'el' ? 'συνεδρία' : 'session'}
+                      </div>
+                    )}
+                    <div style={{ fontSize: 13, color: '#2a6fdb', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      {tx.viewProfile}
+                      <ArrowRight size={13} />
+                    </div>
                   </div>
                 );
               })}
@@ -635,28 +681,33 @@ export default function TherapistsPage() {
         </div>
       </section>
 
-      {/* "Δεν βρίσκετε αυτό που ψάχνετε" — direct to new-request */}
+      {/* "Δεν βρίσκετε αυτό που ψάχνετε" */}
       {!loadingTherapists && (
         <section style={{ background: '#fff', padding: '60px 24px' }}>
           <div style={{ maxWidth: 760, margin: '0 auto', textAlign: 'center', background: 'linear-gradient(135deg, #f0f6ff, #e8f0fb)', border: '1px solid #dce6f0', borderRadius: 20, padding: '40px 32px' }}>
             <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(22px, 3vw, 28px)', color: '#1a2e44', marginBottom: 10 }}>{tx.notFoundTitle}</h3>
             <p style={{ fontSize: 15, color: '#6b7a8d', marginBottom: 24, lineHeight: 1.6 }}>{tx.notFoundDesc}</p>
-            <a href="/dashboard/patient/new-request" style={{ display: 'inline-block', background: '#2a6fdb', color: '#fff', padding: '13px 32px', borderRadius: 30, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
+            <a href="/dashboard/patient/new-request" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#2a6fdb', color: '#fff', padding: '13px 32px', borderRadius: 30, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
               {tx.notFoundBtn}
+              <ArrowRight size={16} />
             </a>
           </div>
         </section>
       )}
 
-      {/* "Become Therapist" mini-banner — direct to new page */}
+      {/* "Become Therapist" mini-banner */}
       <section style={{ background: '#1a2e44', padding: '32px 24px' }}>
         <div className="become-banner" style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 4 }}>👨‍⚕️ {tx.becomeBanner}</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 4, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              <Stethoscope size={18} color="#fff" />
+              {tx.becomeBanner}
+            </div>
             <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>{tx.becomeBannerDesc}</div>
           </div>
-          <a href="/become-therapist" style={{ background: '#fff', color: '#1a2e44', padding: '10px 22px', borderRadius: 30, fontSize: 13, fontWeight: 600, textDecoration: 'none', flexShrink: 0 }}>
+          <a href="/become-therapist" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', color: '#1a2e44', padding: '10px 22px', borderRadius: 30, fontSize: 13, fontWeight: 600, textDecoration: 'none', flexShrink: 0 }}>
             {tx.becomeBannerBtn}
+            <ArrowRight size={14} />
           </a>
         </div>
       </section>
