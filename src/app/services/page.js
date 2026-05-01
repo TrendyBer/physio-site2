@@ -1,13 +1,9 @@
-import Navbar from '@/components/Navbar';
-import { Footer } from '@/components/SharedComponents';
-import ServicesPage from '@/components/ServicesPage';
+import { redirect } from 'next/navigation';
 
-export default function Services() {
-  return (
-    <main>
-      <Navbar />
-      <ServicesPage />
-      <Footer />
-    </main>
-  );
+export const metadata = {
+  robots: { index: false, follow: false },
+};
+
+export default function ServicesPage() {
+  redirect('/find-help');
 }
