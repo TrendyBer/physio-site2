@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
+import { ClipboardList, Stethoscope, User, MapPin, Euro, Calendar, Star, Check, ArrowRight, Save, X } from 'lucide-react';
 
 function Avatar({ name, size = 44 }) {
   return (
@@ -19,8 +20,15 @@ function Stars({ rating, onChange, size = 24 }) {
   return (
     <div style={{ display: 'flex', gap: 4 }}>
       {[1, 2, 3, 4, 5].map(i => (
-        <span key={i} onClick={() => onChange && onChange(i)}
-          style={{ fontSize: size, color: i <= rating ? '#F59E0B' : '#E2E8F0', cursor: onChange ? 'pointer' : 'default', lineHeight: 1 }}>★</span>
+        <Star
+          key={i}
+          onClick={() => onChange && onChange(i)}
+          size={size}
+          fill={i <= rating ? '#F59E0B' : 'none'}
+          color={i <= rating ? '#F59E0B' : '#E2E8F0'}
+          strokeWidth={2}
+          style={{ cursor: onChange ? 'pointer' : 'default' }}
+        />
       ))}
     </div>
   );
@@ -88,7 +96,6 @@ export default function PatientDashboard() {
   }
 
   async function loadRequests(patientId) {
-    // 1. Fetch ΟΛΑ τα requests του ασθενή (χωρίς inline join — το FK δεν υπάρχει στο schema)
     const { data: reqs, error: reqsError } = await supabase
       .from('session_requests')
       .select('*')
@@ -103,7 +110,6 @@ export default function PatientDashboard() {
 
     if (!reqs || reqs.length === 0) { setSessionRequests([]); return; }
 
-    // 2. Fetch therapist profiles ξεχωριστά
     const therapistIds = [...new Set(reqs.map(r => r.therapist_id).filter(Boolean))];
     let therapists = [];
     if (therapistIds.length > 0) {
@@ -114,7 +120,6 @@ export default function PatientDashboard() {
       therapists = ths || [];
     }
 
-    // 3. Fetch bookings για αυτά τα requests
     const requestIds = reqs.map(r => r.id);
     const { data: bks } = await supabase
       .from('session_bookings')
@@ -122,7 +127,6 @@ export default function PatientDashboard() {
       .in('request_id', requestIds)
       .order('session_date', { ascending: true });
 
-    // 4. Fetch reviews από αυτόν τον ασθενή για αυτά τα bookings
     const bookingIds = (bks || []).map(b => b.id);
     let reviews = [];
     if (bookingIds.length > 0) {
@@ -134,7 +138,6 @@ export default function PatientDashboard() {
       reviews = rvs || [];
     }
 
-    // 5. Combine
     const combined = reqs.map(req => {
       const reqBookings = (bks || []).filter(b => b.request_id === req.id);
       const therapist = therapists.find(t => t.id === req.therapist_id);
@@ -217,7 +220,7 @@ export default function PatientDashboard() {
     }
 
     setProfile({ ...profile, ...editProfile });
-    setProfileMsg({ type: 'success', text: '✓ Το προφίλ αποθηκεύτηκε επιτυχώς' });
+    setProfileMsg({ type: 'success', text: 'Το προφίλ αποθηκεύτηκε επιτυχώς' });
     setTimeout(() => setProfileMsg(null), 3000);
   }
 
@@ -244,9 +247,9 @@ export default function PatientDashboard() {
   );
 
   const TABS = [
-    { id: 'requests', label: '📋 Τα Αιτήματά μου' },
-    { id: 'services', label: '🏥 Υπηρεσίες' },
-    { id: 'profile',  label: '👤 Προφίλ' },
+    { id: 'requests', label: 'Τα Αιτήματά μου', Icon: ClipboardList },
+    { id: 'services', label: 'Υπηρεσίες', Icon: Stethoscope },
+    { id: 'profile',  label: 'Προφίλ', Icon: User },
   ];
 
   const profileInputStyle = { width: '100%', padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', color: '#0F172A' };
@@ -270,7 +273,7 @@ export default function PatientDashboard() {
       <div style={{ maxWidth: 900, margin: '0 auto', padding: '24px' }}>
 
         <div style={{ marginBottom: 24 }}>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0F172A' }}>Καλώς ήρθατε, {profile?.name?.split(' ')[0] || 'Ασθενής'}! 👋</h1>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0F172A' }}>Καλώς ήρθατε, {profile?.name?.split(' ')[0] || 'Ασθενής'}</h1>
           <p style={{ fontSize: 14, color: '#64748B', marginTop: 4 }}>Διαχειριστείτε τα αιτήματά σας και τα ραντεβού σας.</p>
         </div>
 
@@ -292,18 +295,24 @@ export default function PatientDashboard() {
             <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 4 }}>Θέλετε νέο ραντεβού;</div>
             <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>Κλείστε ραντεβού με έναν από τους θεραπευτές μας</div>
           </div>
-          <a href="/dashboard/patient/new-request" style={{ background: '#fff', color: '#1a2e44', padding: '10px 20px', borderRadius: 30, fontSize: 14, fontWeight: 600, textDecoration: 'none', flexShrink: 0 }}>
-            Νέο Αίτημα →
+          <a href="/dashboard/patient/new-request" style={{ background: '#fff', color: '#1a2e44', padding: '10px 20px', borderRadius: 30, fontSize: 14, fontWeight: 600, textDecoration: 'none', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            Νέο Αίτημα
+            <ArrowRight size={14} />
           </a>
         </div>
 
         <div style={{ display: 'flex', gap: 4, background: '#e2e8f0', padding: 4, borderRadius: 12, width: 'fit-content', marginBottom: 20, flexWrap: 'wrap' }}>
-          {TABS.map(t => (
-            <button key={t.id} onClick={() => setActiveTab(t.id)}
-              style={{ padding: '8px 18px', borderRadius: 8, border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: activeTab === t.id ? '#fff' : 'transparent', color: activeTab === t.id ? '#0F172A' : '#64748B', boxShadow: activeTab === t.id ? '0 1px 4px rgba(0,0,0,0.1)' : 'none' }}>
-              {t.label}
-            </button>
-          ))}
+          {TABS.map(t => {
+            const TabIcon = t.Icon;
+            const isActive = activeTab === t.id;
+            return (
+              <button key={t.id} onClick={() => setActiveTab(t.id)}
+                style={{ padding: '8px 18px', borderRadius: 8, border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: isActive ? '#fff' : 'transparent', color: isActive ? '#0F172A' : '#64748B', boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <TabIcon size={14} />
+                {t.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* REQUESTS */}
@@ -312,7 +321,10 @@ export default function PatientDashboard() {
             {sessionRequests.length === 0 ? (
               <div style={{ padding: 40, textAlign: 'center', color: '#94A3B8', background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', fontSize: 14 }}>
                 Δεν έχετε κάνει αίτημα ακόμα.<br />
-                <a href="/dashboard/patient/new-request" style={{ color: '#2a6fdb', fontWeight: 600, textDecoration: 'none' }}>Κλείστε το πρώτο σας ραντεβού →</a>
+                <a href="/dashboard/patient/new-request" style={{ color: '#2a6fdb', fontWeight: 600, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 8 }}>
+                  Κλείστε το πρώτο σας ραντεβού
+                  <ArrowRight size={14} />
+                </a>
               </div>
             ) : sessionRequests.map(req => {
               const st = STATUS_MAP[req.status] || STATUS_MAP.pending;
@@ -337,7 +349,10 @@ export default function PatientDashboard() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                         <Avatar name={req.therapist.name} size={32} />
                         <div>
-                          <div style={{ fontSize: 14, color: '#1a2e44', fontWeight: 600 }}>👨‍⚕️ {req.therapist.name}</div>
+                          <div style={{ fontSize: 14, color: '#1a2e44', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                            <Stethoscope size={14} color="#2a6fdb" />
+                            {req.therapist.name}
+                          </div>
                           {req.therapist.specialty && (
                             <div style={{ fontSize: 12, color: '#64748B' }}>{req.therapist.specialty}</div>
                           )}
@@ -345,15 +360,26 @@ export default function PatientDashboard() {
                       </div>
                     )}
 
-                    {req.address && <div style={{ fontSize: 13, color: '#64748B', marginBottom: 4 }}>📍 {req.address}, {req.area}</div>}
-                    {req.total_cost && <div style={{ fontSize: 13, color: '#15803D', fontWeight: 600, marginBottom: 6 }}>💰 Σύνολο: {req.total_cost}€</div>}
+                    {req.address && (
+                      <div style={{ fontSize: 13, color: '#64748B', marginBottom: 4, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        <MapPin size={13} />
+                        {req.address}, {req.area}
+                      </div>
+                    )}
+                    {req.total_cost && (
+                      <div style={{ fontSize: 13, color: '#15803D', fontWeight: 600, marginBottom: 6, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        <Euro size={13} strokeWidth={2.5} />
+                        Σύνολο: {req.total_cost}€
+                      </div>
+                    )}
                     {req.problem_description && <div style={{ fontSize: 13, color: '#475569', background: '#f8fafc', padding: '8px 12px', borderRadius: 8, borderLeft: '3px solid #cbd5e1', marginTop: 6 }}>{req.problem_description}</div>}
                   </div>
 
                   {req.bookings.length > 0 && (
                     <div style={{ padding: '0 20px 16px' }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 8 }}>
-                        📅 Συνεδρίες ({req.bookings.length})
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 8, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        <Calendar size={12} />
+                        Συνεδρίες ({req.bookings.length})
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                         {req.bookings.map((b, i) => {
@@ -376,7 +402,10 @@ export default function PatientDashboard() {
                   {req.review ? (
                     <div style={{ padding: '14px 20px', borderTop: '1px solid #f1f5f9', background: '#FFFBEB' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: '#92400E', textTransform: 'uppercase', letterSpacing: '.05em' }}>✓ Η αξιολόγησή σας</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: '#92400E', textTransform: 'uppercase', letterSpacing: '.05em', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          <Check size={12} strokeWidth={3} />
+                          Η αξιολόγησή σας
+                        </span>
                         <Stars rating={req.review.rating} size={16} />
                       </div>
                       {req.review.comment && (
@@ -389,8 +418,9 @@ export default function PatientDashboard() {
                         Πώς ήταν η εμπειρία σας με τον/την <strong>{req.therapist?.name || 'θεραπευτή'}</strong>;
                       </div>
                       <button onClick={() => openReviewModal(req)}
-                        style={{ padding: '8px 18px', borderRadius: 20, border: 'none', background: '#F59E0B', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                        ⭐ Άφησε αξιολόγηση
+                        style={{ padding: '8px 18px', borderRadius: 20, border: 'none', background: '#F59E0B', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        <Star size={13} fill="#fff" strokeWidth={0} />
+                        Άφησε αξιολόγηση
                       </button>
                     </div>
                   ) : null}
@@ -417,16 +447,17 @@ export default function PatientDashboard() {
                 {services.map(s => (
                   <div key={s.id} style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: 20, display: 'flex', flexDirection: 'column' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-                      <div style={{ width: 48, height: 48, borderRadius: 12, background: 'linear-gradient(135deg, #d4e8ff, #b8d4f8)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0 }}>
-                        {s.icon || '🏥'}
+                      <div style={{ width: 48, height: 48, borderRadius: 12, background: 'linear-gradient(135deg, #d4e8ff, #b8d4f8)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <Stethoscope size={22} color="#2a6fdb" strokeWidth={2} />
                       </div>
                       <h3 style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', lineHeight: 1.3 }}>{s.title_el}</h3>
                     </div>
                     {s.desc_el && (
                       <p style={{ fontSize: 13, color: '#64748B', lineHeight: 1.6, marginBottom: 16, flex: 1 }}>{s.desc_el}</p>
                     )}
-                    <a href="/dashboard/patient/new-request" style={{ display: 'inline-block', textAlign: 'center', background: '#1a2e44', color: '#fff', padding: '9px 16px', borderRadius: 20, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
-                      Κλείσε Ραντεβού →
+                    <a href="/dashboard/patient/new-request" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, textAlign: 'center', background: '#1a2e44', color: '#fff', padding: '9px 16px', borderRadius: 20, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
+                      Κλείσε Ραντεβού
+                      <ArrowRight size={14} />
                     </a>
                   </div>
                 ))}
@@ -435,7 +466,7 @@ export default function PatientDashboard() {
           </div>
         )}
 
-        {/* PROFILE — EDITABLE */}
+        {/* PROFILE */}
         {activeTab === 'profile' && (
           <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: 28 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, paddingBottom: 20, borderBottom: '1px solid #f1f5f9' }}>
@@ -526,7 +557,11 @@ export default function PatientDashboard() {
                   fontSize: 13,
                   color: profileMsg.type === 'success' ? '#15803D' : '#DC2626',
                   fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
                 }}>
+                  {profileMsg.type === 'success' && <Check size={14} strokeWidth={3} />}
                   {profileMsg.text}
                 </div>
               )}
@@ -546,9 +581,13 @@ export default function PatientDashboard() {
                     cursor: savingProfile ? 'not-allowed' : 'pointer',
                     fontFamily: 'inherit',
                     opacity: savingProfile ? 0.7 : 1,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8,
                   }}
                 >
-                  {savingProfile ? 'Αποθήκευση...' : '💾 Αποθήκευση'}
+                  <Save size={16} />
+                  {savingProfile ? 'Αποθήκευση...' : 'Αποθήκευση'}
                 </button>
               </div>
             </div>
@@ -591,8 +630,9 @@ export default function PatientDashboard() {
                 Άκυρο
               </button>
               <button onClick={submitReview} disabled={!reviewForm.rating || submittingReview}
-                style={{ flex: 2, padding: '12px', borderRadius: 30, border: 'none', background: reviewForm.rating ? '#F59E0B' : '#e2e8f0', color: reviewForm.rating ? '#fff' : '#94a3b8', fontSize: 14, fontWeight: 600, cursor: reviewForm.rating ? 'pointer' : 'not-allowed' }}>
-                {submittingReview ? 'Αποστολή...' : '⭐ Υποβολή Αξιολόγησης'}
+                style={{ flex: 2, padding: '12px', borderRadius: 30, border: 'none', background: reviewForm.rating ? '#F59E0B' : '#e2e8f0', color: reviewForm.rating ? '#fff' : '#94a3b8', fontSize: 14, fontWeight: 600, cursor: reviewForm.rating ? 'pointer' : 'not-allowed', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                <Star size={14} fill={reviewForm.rating ? '#fff' : '#94a3b8'} strokeWidth={0} />
+                {submittingReview ? 'Αποστολή...' : 'Υποβολή Αξιολόγησης'}
               </button>
             </div>
           </div>

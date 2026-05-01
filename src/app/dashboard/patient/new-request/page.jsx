@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Check, X, ChevronLeft, ChevronRight, Calendar, ArrowRight } from 'lucide-react';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 function Avatar({ name, photoUrl, size = 44 }) {
@@ -18,7 +19,6 @@ const PROBLEM_TYPES = [
   'Αθλητικός Τραυματισμός', 'Χρόνιος Πόνος', 'Άλλο'
 ];
 
-// Η Μεμονωμένη Συνεδρία είναι πάντα διαθέσιμη (δεν είναι πακέτο)
 const SINGLE_SESSION = {
   id: 'single',
   isSingle: true,
@@ -27,7 +27,6 @@ const SINGLE_SESSION = {
   sessions: 1,
   discount_percent: 0,
   description_el: '1 συνεδρία με την τιμή του θεραπευτή',
-  icon: '1️⃣',
 };
 
 const DAYS_EL = ['Κυρ', 'Δευ', 'Τρι', 'Τετ', 'Πεμ', 'Παρ', 'Σαβ'];
@@ -71,13 +70,11 @@ export default function NewRequestPage() {
   const [calendarWeek, setCalendarWeek] = useState(0);
   const [loadingSlots, setLoadingSlots] = useState(false);
 
-  // Load user + prefill address if exists from localStorage
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) { router.push('/auth/login'); return; }
       setUser(user);
 
-      // Prefill address από localStorage (αν πάτησε από Hero/CtaBanner με address)
       try {
         const savedAddress = localStorage.getItem('bookingAddress');
         if (savedAddress) {
@@ -88,7 +85,6 @@ export default function NewRequestPage() {
     });
   }, []);
 
-  // Fetch packages από Supabase
   useEffect(() => {
     async function fetchPackages() {
       const { data } = await supabase
@@ -102,7 +98,6 @@ export default function NewRequestPage() {
     fetchPackages();
   }, []);
 
-  // Αν ήρθε με ?package=... preselect το αντίστοιχο πακέτο
   useEffect(() => {
     if (!preselectedPackageName || packages.length === 0) return;
     const matched = packages.find(p => p.name_el === preselectedPackageName || p.name_en === preselectedPackageName);
@@ -178,7 +173,6 @@ export default function NewRequestPage() {
     return true;
   }
 
-  // Υπολογισμός κόστους με βάση την έκπτωση του πακέτου
   function calculateTotalCost() {
     if (!selectedPackage || !selectedTherapist) return 0;
     const pricePerSession = selectedTherapist.price_per_session || 0;
@@ -194,11 +188,7 @@ export default function NewRequestPage() {
     setSubmitting(true);
 
     const totalCost = calculateTotalCost();
-    const packageLabel = selectedPackage.isSingle
-      ? 'Μεμονωμένη Συνεδρία'
-      : selectedPackage.name_el;
 
-    // 1. Create session_request
     const { data: req, error: reqErr } = await supabase
       .from('session_requests')
       .insert([{
@@ -218,7 +208,6 @@ export default function NewRequestPage() {
 
     if (reqErr) { setError('Σφάλμα: ' + reqErr.message); setSubmitting(false); return; }
 
-    // 2. Create session_bookings (ένα για κάθε slot)
     const bookings = selectedSlots.map(slot => ({
       request_id: req.id,
       patient_id: user.id,
@@ -231,7 +220,6 @@ export default function NewRequestPage() {
 
     await supabase.from('session_bookings').insert(bookings);
 
-    // 3. Block the slots temporarily
     await supabase.from('availability_slots')
       .update({ is_blocked: true })
       .in('id', selectedSlots.map(s => s.id));
@@ -240,7 +228,6 @@ export default function NewRequestPage() {
     setSubmitted(true);
   }
 
-  // Week dates
   const weekDates = [...Array(7)].map((_, i) => {
     const d = new Date();
     d.setDate(d.getDate() + calendarWeek * 7 + i);
@@ -255,24 +242,47 @@ export default function NewRequestPage() {
   if (submitted) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', padding: 24 }}>
       <div style={{ background: '#fff', borderRadius: 20, padding: '48px 40px', maxWidth: 480, width: '100%', textAlign: 'center', boxShadow: '0 8px 40px rgba(0,0,0,0.1)' }}>
-        <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#D1FAE5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: 28 }}>✓</div>
+        <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#D1FAE5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+          <Check size={32} color="#15803D" strokeWidth={3} />
+        </div>
         <h2 style={{ fontSize: 24, fontWeight: 700, color: '#0F172A', marginBottom: 12 }}>Το αίτημά σας εστάλη!</h2>
         <p style={{ fontSize: 15, color: '#64748B', lineHeight: 1.7, marginBottom: 28 }}>
           Ο θεραπευτής <strong>{selectedTherapist?.name}</strong> θα λάβει το αίτημά σας και θα απαντήσει σύντομα.
         </p>
-        <a href="/dashboard/patient" style={{ display: 'inline-block', background: '#1a2e44', color: '#fff', padding: '13px 32px', borderRadius: 30, fontSize: 15, fontWeight: 600, textDecoration: 'none' }}>
-          Επιστροφή στο Dashboard →
+        <a href="/dashboard/patient" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#1a2e44', color: '#fff', padding: '13px 32px', borderRadius: 30, fontSize: 15, fontWeight: 600, textDecoration: 'none' }}>
+          Επιστροφή στο Dashboard
+          <ArrowRight size={16} />
         </a>
       </div>
     </div>
   );
 
-  // Όλες οι επιλογές: Μεμονωμένη + τα πακέτα
   const allOptions = [SINGLE_SESSION, ...packages];
+
+  const currentStepLabel = STEPS[step - 1];
+  const progressPercent = (step / STEPS.length) * 100;
 
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: "'DM Sans', sans-serif" }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap'); * { box-sizing: border-box; margin: 0; padding: 0; }`}</style>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        .stepper-desktop { display: flex; }
+        .stepper-mobile { display: none; }
+
+        @media (max-width: 768px) {
+          .stepper-desktop { display: none !important; }
+          .stepper-mobile { display: block !important; }
+          .form-card { padding: 20px !important; }
+          .form-grid-2col { grid-template-columns: 1fr !important; }
+          .nav-buttons-mobile { flex-direction: column-reverse !important; gap: 10px; }
+          .nav-buttons-mobile button { width: 100% !important; }
+          .therapist-card-row { flex-direction: column !important; align-items: stretch !important; }
+          .therapist-card-actions { flex-direction: row !important; width: 100%; }
+          .therapist-card-actions button { flex: 1; }
+        }
+      `}</style>
 
       {/* Header */}
       <nav style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', padding: '0 24px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
@@ -280,19 +290,22 @@ export default function NewRequestPage() {
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#2a6fdb', display: 'inline-block' }} />
           PhysioHome
         </a>
-        <a href="/dashboard/patient" style={{ fontSize: 13, color: '#64748b', textDecoration: 'none' }}>← Πίσω στο Dashboard</a>
+        <a href="/dashboard/patient" style={{ fontSize: 13, color: '#64748b', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <ChevronLeft size={14} />
+          Πίσω στο Dashboard
+        </a>
       </nav>
 
       <div style={{ maxWidth: 860, margin: '0 auto', padding: '32px 24px' }}>
 
         {/* Title */}
-        <div style={{ marginBottom: 32, textAlign: 'center' }}>
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>Νέο Αίτημα Συνεδρίας</h1>
-          <p style={{ fontSize: 14, color: '#64748B' }}>Συμπλήρωσε τα στοιχεία σου και επίλεξε θεραπευτή και ώρα βάσει διαθεσιμότητας</p>
+        <div style={{ marginBottom: 24, textAlign: 'center' }}>
+          <h1 style={{ fontSize: 'clamp(22px, 4vw, 28px)', fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>Νέο Αίτημα Συνεδρίας</h1>
+          <p style={{ fontSize: 14, color: '#64748B' }}>Συμπλήρωσε τα στοιχεία σου και επίλεξε θεραπευτή και ώρα</p>
         </div>
 
-        {/* Stepper */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 40, gap: 0 }}>
+        {/* DESKTOP Stepper (768px+) */}
+        <div className="stepper-desktop" style={{ alignItems: 'center', justifyContent: 'center', marginBottom: 32, gap: 0 }}>
           {STEPS.map((s, i) => {
             const num = i + 1;
             const done = step > num;
@@ -301,7 +314,7 @@ export default function NewRequestPage() {
               <div key={s} style={{ display: 'flex', alignItems: 'center' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
                   <div style={{ width: 32, height: 32, borderRadius: '50%', background: done ? '#15803D' : active ? '#2a6fdb' : '#e2e8f0', color: done || active ? '#fff' : '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, transition: 'all .2s' }}>
-                    {done ? '✓' : num}
+                    {done ? <Check size={14} strokeWidth={3} /> : num}
                   </div>
                   <span style={{ fontSize: 10, fontWeight: 600, color: active ? '#2a6fdb' : done ? '#15803D' : '#94a3b8', whiteSpace: 'nowrap' }}>{s}</span>
                 </div>
@@ -311,8 +324,35 @@ export default function NewRequestPage() {
           })}
         </div>
 
+        {/* MOBILE Stepper */}
+        <div className="stepper-mobile" style={{ marginBottom: 24, background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', padding: '14px 16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#2a6fdb', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 }}>
+                {step}
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                  Βήμα {step} από {STEPS.length}
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>
+                  {currentStepLabel}
+                </div>
+              </div>
+            </div>
+            {step < STEPS.length && (
+              <div style={{ fontSize: 11, color: '#64748b' }}>
+                Επόμενο: <strong style={{ color: '#1a2e44' }}>{STEPS[step]}</strong>
+              </div>
+            )}
+          </div>
+          <div style={{ width: '100%', height: 6, background: '#f1f5f9', borderRadius: 4, overflow: 'hidden' }}>
+            <div style={{ width: `${progressPercent}%`, height: '100%', background: 'linear-gradient(90deg, #2a6fdb, #15803D)', transition: 'width .3s ease' }} />
+          </div>
+        </div>
+
         {/* Card */}
-        <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #e2e8f0', padding: '32px', marginBottom: 20 }}>
+        <div className="form-card" style={{ background: '#fff', borderRadius: 16, border: '1px solid #e2e8f0', padding: '32px', marginBottom: 20 }}>
 
           {/* STEP 1 — Πρόβλημα */}
           {step === 1 && (
@@ -336,7 +376,7 @@ export default function NewRequestPage() {
                     style={{ ...inputStyle, resize: 'vertical' }} />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div className="form-grid-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   <div>
                     <label style={labelStyle}>Διεύθυνση *</label>
                     <input value={address} onChange={e => setAddress(e.target.value)} placeholder="π.χ. Αθηνάς 12" style={inputStyle} />
@@ -365,7 +405,7 @@ export default function NewRequestPage() {
             </div>
           )}
 
-          {/* STEP 2 — Τύπος Συνεδρίας (Μεμονωμένη + Πακέτα) */}
+          {/* STEP 2 — Τύπος Συνεδρίας */}
           {step === 2 && (
             <div>
               <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>Επίλεξε τύπο συνεδρίας</h2>
@@ -374,15 +414,16 @@ export default function NewRequestPage() {
               </p>
 
               {preselectedPackageName && (
-                <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '10px 16px', marginBottom: 16, fontSize: 13, color: '#1D4ED8' }}>
-                  ✓ Προεπιλέχθηκε: <strong>{preselectedPackageName}</strong>
+                <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '10px 16px', marginBottom: 16, fontSize: 13, color: '#1D4ED8', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <Check size={14} strokeWidth={3} />
+                  Προεπιλέχθηκε: <strong>{preselectedPackageName}</strong>
                 </div>
               )}
 
               {loadingPackages ? (
                 <div style={{ textAlign: 'center', padding: 40, color: '#64748B' }}>Φόρτωση...</div>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 14 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 14 }}>
                   {allOptions.map(pkg => {
                     const isSelected = selectedPackage?.id === pkg.id;
                     const name = pkg.name_el;
@@ -437,7 +478,6 @@ export default function NewRequestPage() {
                   {therapists.map(t => {
                     const isSelected = selectedTherapist?.id === t.id;
 
-                    // Υπολογισμός κόστους για αυτόν τον θεραπευτή
                     const pricePerSession = t.price_per_session || 0;
                     const sessions = selectedPackage?.sessions || 1;
                     const discountPercent = selectedPackage?.discount_percent || 0;
@@ -446,7 +486,7 @@ export default function NewRequestPage() {
 
                     return (
                       <div key={t.id} style={{ border: `2px solid ${isSelected ? '#2a6fdb' : '#e2e8f0'}`, borderRadius: 14, padding: '16px 20px', background: isSelected ? '#EFF6FF' : '#fff', transition: 'all .2s' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                        <div className="therapist-card-row" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                           <Avatar name={t.name} photoUrl={t.photo_url} size={52} />
                           <div style={{ flex: 1 }}>
                             <div style={{ fontWeight: 700, fontSize: 15, color: '#0F172A', marginBottom: 2 }}>{t.name || '—'}</div>
@@ -462,14 +502,15 @@ export default function NewRequestPage() {
                             </div>
                             {t.bio && <p style={{ fontSize: 12, color: '#94A3B8', marginTop: 4, lineHeight: 1.5 }}>{t.bio.slice(0, 100)}{t.bio.length > 100 ? '...' : ''}</p>}
                           </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
+                          <div className="therapist-card-actions" style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
                             <button onClick={() => setProfileModal(t)}
                               style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#475569', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
                               Δες προφίλ
                             </button>
                             <button onClick={() => setSelectedTherapist(isSelected ? null : t)}
-                              style={{ padding: '7px 14px', borderRadius: 8, border: 'none', background: isSelected ? '#15803D' : '#1a2e44', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-                              {isSelected ? '✓ Επιλεγμένος' : 'Επιλογή'}
+                              style={{ padding: '7px 14px', borderRadius: 8, border: 'none', background: isSelected ? '#15803D' : '#1a2e44', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                              {isSelected && <Check size={12} strokeWidth={3} />}
+                              {isSelected ? 'Επιλεγμένος' : 'Επιλογή'}
                             </button>
                           </div>
                         </div>
@@ -495,15 +536,17 @@ export default function NewRequestPage() {
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
                 <button onClick={() => setCalendarWeek(w => Math.max(0, w - 1))} disabled={calendarWeek === 0}
-                  style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: calendarWeek === 0 ? '#f8fafc' : '#fff', color: calendarWeek === 0 ? '#94a3b8' : '#1a2e44', fontSize: 13, fontWeight: 600, cursor: calendarWeek === 0 ? 'not-allowed' : 'pointer' }}>
-                  ← Πριν
+                  style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: calendarWeek === 0 ? '#f8fafc' : '#fff', color: calendarWeek === 0 ? '#94a3b8' : '#1a2e44', fontSize: 13, fontWeight: 600, cursor: calendarWeek === 0 ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <ChevronLeft size={14} />
+                  Πριν
                 </button>
                 <div style={{ flex: 1, textAlign: 'center', fontSize: 13, fontWeight: 600, color: '#0F172A' }}>
                   {weekDates[0] && `${new Date(weekDates[0] + 'T12:00:00').toLocaleDateString('el-GR', { day: '2-digit', month: '2-digit' })} – ${new Date(weekDates[6] + 'T12:00:00').toLocaleDateString('el-GR', { day: '2-digit', month: '2-digit' })}`}
                 </div>
                 <button onClick={() => setCalendarWeek(w => w + 1)}
-                  style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#1a2e44', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                  Μετά →
+                  style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#1a2e44', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  Μετά
+                  <ChevronRight size={14} />
                 </button>
               </div>
 
@@ -545,14 +588,19 @@ export default function NewRequestPage() {
 
               {selectedSlots.length > 0 && (
                 <div style={{ marginTop: 20, background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '14px 16px' }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#15803D', marginBottom: 8 }}>✓ Επιλεγμένες συνεδρίες:</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#15803D', marginBottom: 8, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <Check size={14} strokeWidth={3} />
+                    Επιλεγμένες συνεδρίες:
+                  </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {selectedSlots.map((slot, i) => {
                       const d = new Date(slot.date + 'T12:00:00');
                       return (
                         <div key={slot.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13, color: '#15803D' }}>
                           <span>{i + 1}. {DAYS_EL[d.getDay()]} {d.toLocaleDateString('el-GR', { day: '2-digit', month: '2-digit' })} στις {slot.start_time?.slice(0, 5)}</span>
-                          <button onClick={() => toggleSlot(slot)} style={{ background: 'none', border: 'none', color: '#DC2626', cursor: 'pointer', fontSize: 14 }}>✕</button>
+                          <button onClick={() => toggleSlot(slot)} style={{ background: 'none', border: 'none', color: '#DC2626', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', padding: 2 }}>
+                            <X size={14} />
+                          </button>
                         </div>
                       );
                     })}
@@ -582,15 +630,18 @@ export default function NewRequestPage() {
                   ['Τιμή/Συνεδρία', `${selectedTherapist?.price_per_session}€`],
                   ['Συνολικό κόστος', `${calculateTotalCost()}€`],
                 ].map(([label, value], i) => (
-                  <div key={label} style={{ display: 'flex', padding: '12px 16px', borderBottom: '1px solid #f1f5f9', background: i % 2 === 0 ? '#f8fafc' : '#fff', fontSize: 14 }}>
-                    <span style={{ color: '#64748B', width: 160, flexShrink: 0 }}>{label}</span>
-                    <span style={{ fontWeight: 600, color: '#0F172A' }}>{value}</span>
+                  <div key={label} style={{ display: 'flex', padding: '12px 16px', borderBottom: '1px solid #f1f5f9', background: i % 2 === 0 ? '#f8fafc' : '#fff', fontSize: 14, flexWrap: 'wrap', gap: 8 }}>
+                    <span style={{ color: '#64748B', minWidth: 140, flexShrink: 0 }}>{label}</span>
+                    <span style={{ fontWeight: 600, color: '#0F172A', wordBreak: 'break-word' }}>{value}</span>
                   </div>
                 ))}
               </div>
 
               <div style={{ marginTop: 16, background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '14px 16px' }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#1D4ED8', marginBottom: 8 }}>📅 Επιλεγμένες Συνεδρίες:</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#1D4ED8', marginBottom: 8, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <Calendar size={14} />
+                  Επιλεγμένες Συνεδρίες:
+                </div>
                 {selectedSlots.map((slot, i) => {
                   const d = new Date(slot.date + 'T12:00:00');
                   return (
@@ -609,22 +660,25 @@ export default function NewRequestPage() {
             </div>
           )}
 
-          <div style={{ display: 'flex', justifyContent: step === 1 ? 'flex-end' : 'space-between', marginTop: 28 }}>
+          <div className="nav-buttons-mobile" style={{ display: 'flex', justifyContent: step === 1 ? 'flex-end' : 'space-between', marginTop: 28, gap: 10 }}>
             {step > 1 && (
               <button onClick={() => { setError(''); setStep(s => s - 1); }}
-                style={{ padding: '11px 28px', borderRadius: 30, border: '1.5px solid #e2e8f0', background: 'transparent', color: '#475569', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                ← Πίσω
+                style={{ padding: '11px 28px', borderRadius: 30, border: '1.5px solid #e2e8f0', background: 'transparent', color: '#475569', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                <ChevronLeft size={16} />
+                Πίσω
               </button>
             )}
             {step < 5 ? (
               <button onClick={() => { if (validateStep()) setStep(s => s + 1); }}
-                style={{ padding: '11px 32px', borderRadius: 30, border: 'none', background: '#1a2e44', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                Συνέχεια →
+                style={{ padding: '11px 32px', borderRadius: 30, border: 'none', background: '#1a2e44', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                Συνέχεια
+                <ChevronRight size={16} />
               </button>
             ) : (
               <button onClick={handleSubmit} disabled={submitting}
-                style={{ padding: '11px 32px', borderRadius: 30, border: 'none', background: submitting ? '#94a3b8' : '#15803D', color: '#fff', fontSize: 14, fontWeight: 600, cursor: submitting ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
-                {submitting ? 'Αποστολή...' : '✓ Αποστολή Αιτήματος'}
+                style={{ padding: '11px 32px', borderRadius: 30, border: 'none', background: submitting ? '#94a3b8' : '#15803D', color: '#fff', fontSize: 14, fontWeight: 600, cursor: submitting ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                {!submitting && <Check size={16} strokeWidth={3} />}
+                {submitting ? 'Αποστολή...' : 'Αποστολή Αιτήματος'}
               </button>
             )}
           </div>
@@ -665,8 +719,9 @@ export default function NewRequestPage() {
 
             <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
               <button onClick={() => { setSelectedTherapist(profileModal); setProfileModal(null); }}
-                style={{ flex: 1, padding: '12px', borderRadius: 30, border: 'none', background: '#1a2e44', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
-                ✓ Επιλογή αυτού του θεραπευτή
+                style={{ flex: 1, padding: '12px', borderRadius: 30, border: 'none', background: '#1a2e44', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                <Check size={14} strokeWidth={3} />
+                Επιλογή θεραπευτή
               </button>
               <button onClick={() => setProfileModal(null)}
                 style={{ padding: '12px 20px', borderRadius: 30, border: '1px solid #e2e8f0', background: 'transparent', color: '#64748b', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
