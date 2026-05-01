@@ -4,6 +4,7 @@ import Footer from '../../../components/Footer';
 import RatingDisplay from '../../../components/RatingDisplay';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { Globe, Lightbulb, ClipboardList, Stethoscope, Search, MapPin, Euro, Link2, Check, ArrowRight } from 'lucide-react';
 
 export const revalidate = 3600; // ISR: 1 ώρα
 
@@ -74,14 +75,14 @@ const TX = {
     therapistsTitle: 'Εξειδικευμένοι Θεραπευτές',
     therapistsDesc: 'Φυσιοθεραπευτές που εξειδικεύονται σε αυτή την πάθηση ή έχουν σχετική ειδικότητα.',
     noTherapists: 'Δεν υπάρχουν διαθέσιμοι θεραπευτές προς το παρόν για αυτή την πάθηση. Συμπληρώστε αίτημα και θα σας βρούμε.',
-    matchedExact: '✓ Εξειδικεύεται',
-    matchedSpecialty: '~ Σχετική ειδικότητα',
-    seeAll: 'Δες όλους τους θεραπευτές →',
+    matchedExact: 'Εξειδικεύεται',
+    matchedSpecialty: 'Σχετική ειδικότητα',
+    seeAll: 'Δες όλους τους θεραπευτές',
     bookSession: 'Κλείσε Ραντεβού',
-    viewProfile: 'Προφίλ →',
+    viewProfile: 'Προφίλ',
     ctaTitle: 'Έτοιμος να ξεκινήσεις;',
     ctaDesc: 'Συμπλήρωσε ένα γρήγορο αίτημα και θα σου βρούμε τον κατάλληλο θεραπευτή.',
-    ctaBtn: 'Νέο Αίτημα →',
+    ctaBtn: 'Νέο Αίτημα',
     relatedTitle: 'Σχετικές παθήσεις',
     switchLang: 'EN',
     perSession: 'συνεδρία',
@@ -93,14 +94,14 @@ const TX = {
     therapistsTitle: 'Specialized Therapists',
     therapistsDesc: 'Physiotherapists who specialize in this condition or have a related specialty.',
     noTherapists: 'No therapists currently available for this condition. Submit a request and we will find you one.',
-    matchedExact: '✓ Specialized',
-    matchedSpecialty: '~ Related specialty',
-    seeAll: 'See all therapists →',
+    matchedExact: 'Specialized',
+    matchedSpecialty: 'Related specialty',
+    seeAll: 'See all therapists',
     bookSession: 'Book Session',
-    viewProfile: 'Profile →',
+    viewProfile: 'Profile',
     ctaTitle: 'Ready to get started?',
     ctaDesc: 'Submit a quick request and we will match you with the right therapist.',
-    ctaBtn: 'New Request →',
+    ctaBtn: 'New Request',
     relatedTitle: 'Related conditions',
     switchLang: 'ΕΛ',
     perSession: 'session',
@@ -130,7 +131,7 @@ export default async function ConditionDetailPage({ params, searchParams }) {
     .eq('id', condition.category_id)
     .single();
 
-  // Fetch related conditions (same category, excluding current)
+  // Fetch related conditions
   const { data: relatedConditions } = await supabase
     .from('conditions')
     .select('id, slug, name_el, name_en')
@@ -139,7 +140,7 @@ export default async function ConditionDetailPage({ params, searchParams }) {
     .neq('id', condition.id)
     .limit(5);
 
-  // Fetch therapists με matching logic (exact tags + specialty)
+  // Fetch therapists
   const { data: therapists } = await supabase
     .from('therapist_profiles')
     .select('*')
@@ -163,14 +164,13 @@ export default async function ConditionDetailPage({ params, searchParams }) {
     })
     .filter((t) => t.matchType !== null)
     .sort((a, b) => {
-      // Exact matches πρώτα
       if (a.matchType === 'exact' && b.matchType !== 'exact') return -1;
       if (b.matchType === 'exact' && a.matchType !== 'exact') return 1;
       return 0;
     })
     .slice(0, 6);
 
-  // Reviews counts για top therapists
+  // Reviews counts
   const therapistIds = matchedTherapists.map((t) => t.id);
   let ratingsMap = {};
   if (therapistIds.length > 0) {
@@ -261,9 +261,10 @@ export default async function ConditionDetailPage({ params, searchParams }) {
             </Link>
             <Link
               href={lang === 'el' ? `/find-help/${slug}?lang=en` : `/find-help/${slug}`}
-              style={{ display: 'inline-block', padding: '6px 14px', background: '#fff', border: '1px solid #BFDBFE', borderRadius: 999, fontSize: 12, fontWeight: 600, color: '#1D4ED8', textDecoration: 'none' }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: '#fff', border: '1px solid #BFDBFE', borderRadius: 999, fontSize: 12, fontWeight: 600, color: '#1D4ED8', textDecoration: 'none' }}
             >
-              🌐 {tx.switchLang}
+              <Globe size={12} />
+              {tx.switchLang}
             </Link>
           </div>
 
@@ -283,7 +284,8 @@ export default async function ConditionDetailPage({ params, searchParams }) {
                 marginBottom: 16,
               }}
             >
-              <span>{category.icon}</span>
+              {/* Colored vertical bar instead of emoji */}
+              <span style={{ width: 3, height: 12, borderRadius: 2, background: category.color || '#2a6fdb', display: 'inline-block' }} />
               <span>{categoryName}</span>
             </div>
           )}
@@ -303,8 +305,9 @@ export default async function ConditionDetailPage({ params, searchParams }) {
           {/* Content */}
           {content && (
             <div>
-              <h2 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 'clamp(22px, 3vw, 30px)', color: '#1a2e44', marginBottom: 16 }}>
-                💡 {tx.aboutTitle}
+              <h2 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 'clamp(22px, 3vw, 30px)', color: '#1a2e44', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
+                <Lightbulb size={26} color="#2a6fdb" strokeWidth={2} />
+                {tx.aboutTitle}
               </h2>
               <p style={{ fontSize: 16, color: '#334155', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{content}</p>
             </div>
@@ -314,7 +317,8 @@ export default async function ConditionDetailPage({ params, searchParams }) {
           {symptoms && symptoms.length > 0 && (
             <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 14, padding: '24px 28px' }}>
               <h2 style={{ fontSize: 18, fontWeight: 700, color: '#92400E', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span>📋</span> {tx.symptomsTitle}
+                <ClipboardList size={20} color="#92400E" strokeWidth={2} />
+                {tx.symptomsTitle}
               </h2>
               <ul style={{ display: 'flex', flexDirection: 'column', gap: 8, listStyle: 'none', padding: 0, margin: 0 }}>
                 {symptoms.map((s, i) => (
@@ -333,8 +337,9 @@ export default async function ConditionDetailPage({ params, searchParams }) {
       <section style={{ background: '#f8fafb', padding: '60px 24px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 32 }}>
-            <h2 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 'clamp(24px, 3vw, 36px)', color: '#1a2e44', marginBottom: 10 }}>
-              👨‍⚕️ {tx.therapistsTitle}
+            <h2 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 'clamp(24px, 3vw, 36px)', color: '#1a2e44', marginBottom: 10, display: 'inline-flex', alignItems: 'center', gap: 12 }}>
+              <Stethoscope size={28} color="#2a6fdb" strokeWidth={2} />
+              {tx.therapistsTitle}
             </h2>
             <p style={{ fontSize: 14, color: '#6b7a8d', maxWidth: 580, margin: '0 auto' }}>
               {tx.therapistsDesc}
@@ -343,13 +348,14 @@ export default async function ConditionDetailPage({ params, searchParams }) {
 
           {enrichedTherapists.length === 0 ? (
             <div style={{ textAlign: 'center', color: '#6b7a8d', padding: '40px 24px', background: '#fff', borderRadius: 16, border: '1px dashed #dce6f0' }}>
-              <div style={{ fontSize: 32, marginBottom: 12 }}>🔍</div>
+              <Search size={32} color="#94a3b8" style={{ margin: '0 auto 12px' }} />
               <p style={{ fontSize: 14, marginBottom: 20, lineHeight: 1.5 }}>{tx.noTherapists}</p>
               <a
                 href="/dashboard/patient/new-request"
-                style={{ display: 'inline-block', background: '#1a2e44', color: '#fff', padding: '11px 24px', borderRadius: 30, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#1a2e44', color: '#fff', padding: '11px 24px', borderRadius: 30, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}
               >
                 {tx.ctaBtn}
+                <ArrowRight size={14} />
               </a>
             </div>
           ) : (
@@ -369,7 +375,9 @@ export default async function ConditionDetailPage({ params, searchParams }) {
                     {t.matchType && (
                       <div
                         style={{
-                          display: 'inline-block',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4,
                           marginBottom: 12,
                           padding: '3px 10px',
                           borderRadius: 999,
@@ -382,6 +390,7 @@ export default async function ConditionDetailPage({ params, searchParams }) {
                           border: `1px solid ${t.matchType === 'exact' ? '#86EFAC' : '#BFDBFE'}`,
                         }}
                       >
+                        {t.matchType === 'exact' ? <Check size={10} strokeWidth={3} /> : <Stethoscope size={10} />}
                         {t.matchType === 'exact' ? tx.matchedExact : tx.matchedSpecialty}
                       </div>
                     )}
@@ -419,17 +428,26 @@ export default async function ConditionDetailPage({ params, searchParams }) {
                       <RatingDisplay rating={t.avg_rating} count={t.review_count} lang={lang} variant="compact" size={12} />
                     </div>
 
-                    {t.area && <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 4 }}>📍 {t.area}</div>}
+                    {t.area && (
+                      <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 4, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <MapPin size={11} />
+                        {t.area}
+                      </div>
+                    )}
                     {t.price_per_session && (
-                      <div style={{ fontSize: 12, color: '#2a6fdb', fontWeight: 600, marginBottom: 14 }}>
-                        💰 {t.price_per_session}€/{tx.perSession}
+                      <div style={{ fontSize: 12, color: '#2a6fdb', fontWeight: 600, marginBottom: 14, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <Euro size={12} strokeWidth={2.5} />
+                        {t.price_per_session}€/{tx.perSession}
                       </div>
                     )}
 
                     <a
                       href={`/dashboard/patient/new-request?therapist=${encodeURIComponent(t.name)}&condition=${condition.slug}`}
                       style={{
-                        display: 'block',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 6,
                         background: '#1a2e44',
                         color: '#fff',
                         padding: '9px 14px',
@@ -440,7 +458,8 @@ export default async function ConditionDetailPage({ params, searchParams }) {
                         textAlign: 'center',
                       }}
                     >
-                      {tx.bookSession} →
+                      {tx.bookSession}
+                      <ArrowRight size={12} />
                     </a>
                   </div>
                 ))}
@@ -449,9 +468,10 @@ export default async function ConditionDetailPage({ params, searchParams }) {
               <div style={{ textAlign: 'center', marginTop: 32 }}>
                 <Link
                   href={`/therapists?condition=${condition.slug}`}
-                  style={{ display: 'inline-block', color: '#2a6fdb', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#2a6fdb', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}
                 >
                   {tx.seeAll}
+                  <ArrowRight size={14} />
                 </Link>
               </div>
             </>
@@ -463,8 +483,9 @@ export default async function ConditionDetailPage({ params, searchParams }) {
       {(relatedConditions || []).length > 0 && (
         <section style={{ background: '#fff', padding: '40px 24px' }}>
           <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: '#1a2e44', marginBottom: 16, textAlign: 'center' }}>
-              🔗 {tx.relatedTitle}
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: '#1a2e44', marginBottom: 16, textAlign: 'center', display: 'inline-flex', alignItems: 'center', gap: 8, justifyContent: 'center', width: '100%' }}>
+              <Link2 size={18} color="#2a6fdb" strokeWidth={2} />
+              {tx.relatedTitle}
             </h3>
             <div className="related-grid">
               {(relatedConditions || []).map((rc) => {
@@ -514,7 +535,9 @@ export default async function ConditionDetailPage({ params, searchParams }) {
           <a
             href={`/dashboard/patient/new-request?condition=${condition.slug}`}
             style={{
-              display: 'inline-block',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
               background: '#fff',
               color: '#1a2e44',
               padding: '14px 36px',
@@ -525,6 +548,7 @@ export default async function ConditionDetailPage({ params, searchParams }) {
             }}
           >
             {tx.ctaBtn}
+            <ArrowRight size={18} />
           </a>
         </div>
       </section>

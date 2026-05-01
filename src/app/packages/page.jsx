@@ -5,6 +5,13 @@ import { Footer } from '../../components/SharedComponents';
 import BookingButton from '../../components/BookingButton';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
+import { Star, Wallet, Calendar, Target, Lightbulb, ArrowRight } from 'lucide-react';
+
+const ICON_MAP = {
+  Wallet: Wallet,
+  Calendar: Calendar,
+  Target: Target,
+};
 
 const t = {
   el: {
@@ -13,7 +20,7 @@ const t = {
     titleEm: 'Κατάλληλο Πακέτο',
     subtitle: 'Περισσότερες συνεδρίες = μεγαλύτερη έκπτωση. Επιλέξτε πακέτο και στη συνέχεια επιλέξτε τον θεραπευτή που σας ταιριάζει.',
     saveBadge: 'Εξοικονόμηση',
-    selectBtn: 'Επιλογή Πακέτου →',
+    selectBtn: 'Επιλογή Πακέτου',
     sessions: 'συνεδρίες',
     popular: 'Δημοφιλές',
     infoTitle: 'Πώς υπολογίζεται η τιμή;',
@@ -22,9 +29,9 @@ const t = {
     noPackages: 'Δεν υπάρχουν διαθέσιμα πακέτα αυτή τη στιγμή.',
     whyTitle: 'Γιατί να επιλέξετε πακέτο;',
     whyBullets: [
-      { icon: '💰', title: 'Καλύτερη τιμή', desc: 'Όσο μεγαλύτερο το πακέτο, τόσο μεγαλύτερη η έκπτωση στην τιμή/συνεδρία.' },
-      { icon: '📅', title: 'Προγραμματισμός', desc: 'Κλείνετε όλες τις συνεδρίες μαζί και δεν σκέφτεστε ξανά το κόστος.' },
-      { icon: '🎯', title: 'Συνέπεια στη θεραπεία', desc: 'Οι πολλαπλές συνεδρίες εξασφαλίζουν συνέχεια και καλύτερα αποτελέσματα.' },
+      { icon: 'Wallet', title: 'Καλύτερη τιμή', desc: 'Όσο μεγαλύτερο το πακέτο, τόσο μεγαλύτερη η έκπτωση στην τιμή/συνεδρία.' },
+      { icon: 'Calendar', title: 'Προγραμματισμός', desc: 'Κλείνετε όλες τις συνεδρίες μαζί και δεν σκέφτεστε ξανά το κόστος.' },
+      { icon: 'Target', title: 'Συνέπεια στη θεραπεία', desc: 'Οι πολλαπλές συνεδρίες εξασφαλίζουν συνέχεια και καλύτερα αποτελέσματα.' },
     ],
   },
   en: {
@@ -33,7 +40,7 @@ const t = {
     titleEm: 'Right Package',
     subtitle: 'More sessions = bigger discount. Choose a package and then select the therapist that suits you.',
     saveBadge: 'Save',
-    selectBtn: 'Select Package →',
+    selectBtn: 'Select Package',
     sessions: 'sessions',
     popular: 'Popular',
     infoTitle: 'How is the price calculated?',
@@ -42,9 +49,9 @@ const t = {
     noPackages: 'No packages available at the moment.',
     whyTitle: 'Why choose a package?',
     whyBullets: [
-      { icon: '💰', title: 'Better price', desc: 'The larger the package, the bigger the discount per session.' },
-      { icon: '📅', title: 'Planning ahead', desc: 'Book all sessions at once and stop worrying about costs.' },
-      { icon: '🎯', title: 'Treatment consistency', desc: 'Multiple sessions ensure continuity and better results.' },
+      { icon: 'Wallet', title: 'Better price', desc: 'The larger the package, the bigger the discount per session.' },
+      { icon: 'Calendar', title: 'Planning ahead', desc: 'Book all sessions at once and stop worrying about costs.' },
+      { icon: 'Target', title: 'Treatment consistency', desc: 'Multiple sessions ensure continuity and better results.' },
     ],
   },
 };
@@ -70,7 +77,6 @@ export default function PackagesPage() {
     fetchPackages();
   }, []);
 
-  // Βρίσκουμε το πακέτο με τη μεγαλύτερη έκπτωση για το "Δημοφιλές" badge
   const mostPopularId = packages.length > 0
     ? packages.reduce((max, p) => (p.discount_percent || 0) > (max.discount_percent || 0) ? p : max, packages[0]).id
     : null;
@@ -109,6 +115,9 @@ export default function PackagesPage() {
           font-weight: 700;
           text-transform: uppercase;
           letter-spacing: .05em;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
         }
         .why-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
         @media (max-width: 768px) { .why-grid { grid-template-columns: 1fr; } }
@@ -146,7 +155,12 @@ export default function PackagesPage() {
                 const desc = lang === 'el' ? pkg.description_el : pkg.description_en;
                 return (
                   <div key={pkg.id} className={`pkg-card ${isPopular ? 'popular' : ''}`}>
-                    {isPopular && <div className="popular-badge">⭐ {tx.popular}</div>}
+                    {isPopular && (
+                      <div className="popular-badge">
+                        <Star size={12} fill="#fff" strokeWidth={0} />
+                        {tx.popular}
+                      </div>
+                    )}
 
                     {/* Number of sessions */}
                     <div style={{ textAlign: 'center', marginBottom: 16 }}>
@@ -206,9 +220,14 @@ export default function PackagesPage() {
                         border: 'none',
                         cursor: 'pointer',
                         fontFamily: 'inherit',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 8,
                       }}
                     >
                       {tx.selectBtn}
+                      <ArrowRight size={16} />
                     </BookingButton>
                   </div>
                 );
@@ -218,11 +237,13 @@ export default function PackagesPage() {
         </div>
       </section>
 
-      {/* Info banner - πώς υπολογίζεται η τιμή */}
+      {/* Info banner — πώς υπολογίζεται η τιμή */}
       <section style={{ background: '#f8fafb', padding: '0 24px 60px' }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
           <div style={{ background: '#e8f1fd', border: '1.5px solid #bedcff', borderRadius: 16, padding: '24px 28px', display: 'flex', gap: 20, alignItems: 'flex-start' }}>
-            <div style={{ fontSize: 32, flexShrink: 0 }}>💡</div>
+            <div style={{ flexShrink: 0, width: 48, height: 48, borderRadius: 12, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #bedcff' }}>
+              <Lightbulb size={24} color="#2a6fdb" strokeWidth={2} />
+            </div>
             <div>
               <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1a2e44', marginBottom: 8 }}>{tx.infoTitle}</h3>
               <p style={{ fontSize: 14, color: '#475569', lineHeight: 1.7 }}>{tx.infoText}</p>
@@ -238,15 +259,18 @@ export default function PackagesPage() {
             {tx.whyTitle}
           </h2>
           <div className="why-grid">
-            {tx.whyBullets.map((bullet, i) => (
-              <div key={i} style={{ textAlign: 'center', padding: 20 }}>
-                <div style={{ width: 64, height: 64, borderRadius: 16, background: '#e8f1fd', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, margin: '0 auto 16px' }}>
-                  {bullet.icon}
+            {tx.whyBullets.map((bullet, i) => {
+              const IconComp = ICON_MAP[bullet.icon] || Target;
+              return (
+                <div key={i} style={{ textAlign: 'center', padding: 20 }}>
+                  <div style={{ width: 64, height: 64, borderRadius: 16, background: '#e8f1fd', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                    <IconComp size={28} color="#2a6fdb" strokeWidth={2.2} />
+                  </div>
+                  <h3 style={{ fontSize: 17, fontWeight: 700, color: '#1a2e44', marginBottom: 8 }}>{bullet.title}</h3>
+                  <p style={{ fontSize: 14, color: '#6b7a8d', lineHeight: 1.7 }}>{bullet.desc}</p>
                 </div>
-                <h3 style={{ fontSize: 17, fontWeight: 700, color: '#1a2e44', marginBottom: 8 }}>{bullet.title}</h3>
-                <p style={{ fontSize: 14, color: '#6b7a8d', lineHeight: 1.7 }}>{bullet.desc}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
