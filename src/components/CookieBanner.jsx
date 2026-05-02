@@ -1,186 +1,151 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { Cookie, X, Check, Shield, BarChart3, Megaphone } from 'lucide-react';
 
-// Cookie Banner Component
-// Εμφανίζεται μόνο αν δεν έχει γίνει επιλογή ακόμα (localStorage check)
-// Επιλογές: Accept All / Reject Optional / Customize
+const COOKIE_PREFS_KEY = 'physiohome_cookie_prefs';
+const COOKIE_PREFS_VERSION = '1.0';
 
-const STORAGE_KEY = 'physiohome_cookie_consent';
-const CONSENT_VERSION = '1.0'; // Αν αλλάξει η πολιτική, αύξησε το version για να ξαναζητηθεί η συγκατάθεση
-
-const TEXT = {
-  el: {
-    title: '🍪 Χρησιμοποιούμε cookies',
-    desc: 'Χρησιμοποιούμε cookies για τη λειτουργία της Πλατφόρμας και για τη βελτίωση της εμπειρίας σας. Μπορείτε να επιλέξετε ποια θα αποδεχτείτε.',
-    learn: 'Μάθετε περισσότερα',
-    acceptAll: 'Αποδοχή όλων',
-    rejectOptional: 'Μόνο τα απαραίτητα',
-    customize: 'Προσαρμογή',
-    save: 'Αποθήκευση επιλογών',
-    cancel: 'Άκυρο',
-    customizeTitle: 'Προσαρμογή Cookies',
-    customizeDesc: 'Επιλέξτε ποια cookies θέλετε να αποδεχτείτε:',
-    cats: {
-      necessary: { title: 'Αυστηρώς Απαραίτητα', desc: 'Απαραίτητα για τη λειτουργία της πλατφόρμας. Δεν μπορούν να απενεργοποιηθούν.', required: 'Πάντα ενεργά' },
-      functional: { title: 'Λειτουργικά', desc: 'Απομνημόνευση γλώσσας και προτιμήσεων UI.' },
-      analytics: { title: 'Αναλυτικά', desc: 'Μας βοηθούν να βελτιώσουμε την Πλατφόρμα. (Δεν ενεργά αυτή τη στιγμή)' },
-      marketing: { title: 'Marketing', desc: 'Για στοχευμένη διαφήμιση. (Δεν ενεργά αυτή τη στιγμή)' },
-    },
-  },
-  en: {
-    title: '🍪 We use cookies',
-    desc: 'We use cookies to operate the Platform and improve your experience. You can choose which ones to accept.',
-    learn: 'Learn more',
-    acceptAll: 'Accept all',
-    rejectOptional: 'Only necessary',
-    customize: 'Customize',
-    save: 'Save preferences',
-    cancel: 'Cancel',
-    customizeTitle: 'Customize Cookies',
-    customizeDesc: 'Choose which cookies you want to accept:',
-    cats: {
-      necessary: { title: 'Strictly Necessary', desc: 'Required for platform operation. Cannot be disabled.', required: 'Always active' },
-      functional: { title: 'Functional', desc: 'Remember language and UI preferences.' },
-      analytics: { title: 'Analytics', desc: 'Help us improve the Platform. (Not currently active)' },
-      marketing: { title: 'Marketing', desc: 'For targeted advertising. (Not currently active)' },
-    },
-  },
+// Default preferences
+const DEFAULT_PREFS = {
+  necessary: true,    // always true, can't be disabled
+  analytics: false,
+  marketing: false,
+  version: COOKIE_PREFS_VERSION,
+  timestamp: null,
 };
 
+// Helper: get current preferences from localStorage
+export function getCookiePrefs() {
+  if (typeof window === 'undefined') return null;
+  try {
+    const stored = localStorage.getItem(COOKIE_PREFS_KEY);
+    if (!stored) return null;
+    const parsed = JSON.parse(stored);
+    // If version mismatch, treat as not consented (force re-prompt)
+    if (parsed.version !== COOKIE_PREFS_VERSION) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+// Helper: check if user has consented to specific category
+export function hasCookieConsent(category) {
+  const prefs = getCookiePrefs();
+  if (!prefs) return false;
+  return prefs[category] === true;
+}
+
 export default function CookieBanner() {
-  const [show, setShow] = useState(false);
-  const [showCustomize, setShowCustomize] = useState(false);
-  const [lang, setLang] = useState('el');
-  const [prefs, setPrefs] = useState({
-    necessary: true, // πάντα true, δεν μπορεί να αλλάξει
-    functional: false,
-    analytics: false,
-    marketing: false,
-  });
+  const [isVisible, setIsVisible] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [prefs, setPrefs] = useState({ ...DEFAULT_PREFS });
 
   useEffect(() => {
-    // Detect γλώσσα από browser
-    if (typeof window !== 'undefined') {
-      const browserLang = navigator.language?.startsWith('el') ? 'el' : 'en';
-      setLang(browserLang);
-
-      // Check αν υπάρχει saved consent
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (!saved) {
-          setShow(true);
-          return;
-        }
-        const parsed = JSON.parse(saved);
-        if (parsed.version !== CONSENT_VERSION) {
-          setShow(true);
-        }
-      } catch (_) {
-        setShow(true);
-      }
+    // Check if user has already made a choice
+    const stored = getCookiePrefs();
+    if (!stored) {
+      // First time visitor — show banner
+      setIsVisible(true);
     }
   }, []);
 
-  function saveConsent(consentPrefs) {
-    try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({
-          version: CONSENT_VERSION,
-          timestamp: new Date().toISOString(),
-          prefs: consentPrefs,
-        })
-      );
-    } catch (_) {}
-    setShow(false);
-    setShowCustomize(false);
+  function savePrefs(newPrefs) {
+    const toSave = {
+      ...newPrefs,
+      necessary: true, // always true
+      version: COOKIE_PREFS_VERSION,
+      timestamp: new Date().toISOString(),
+    };
+    localStorage.setItem(COOKIE_PREFS_KEY, JSON.stringify(toSave));
+    setIsVisible(false);
+    setShowSettings(false);
+
+    // Dispatch event so other components can react
+    window.dispatchEvent(new CustomEvent('cookie-prefs-changed', { detail: toSave }));
   }
 
   function acceptAll() {
-    saveConsent({ necessary: true, functional: true, analytics: true, marketing: true });
+    savePrefs({ necessary: true, analytics: true, marketing: true });
   }
 
-  function rejectOptional() {
-    saveConsent({ necessary: true, functional: false, analytics: false, marketing: false });
+  function acceptNecessaryOnly() {
+    savePrefs({ necessary: true, analytics: false, marketing: false });
   }
 
   function saveCustom() {
-    saveConsent(prefs);
+    savePrefs(prefs);
   }
 
-  if (!show) return null;
+  function openSettings() {
+    setShowSettings(true);
+  }
 
-  const t = TEXT[lang];
+  function togglePref(key) {
+    if (key === 'necessary') return; // can't toggle necessary
+    setPrefs(p => ({ ...p, [key]: !p[key] }));
+  }
+
+  if (!isVisible && !showSettings) return null;
 
   return (
     <>
-      {/* Banner */}
-      {!showCustomize && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            background: '#fff',
-            borderTop: '3px solid #2a6fdb',
-            boxShadow: '0 -4px 20px rgba(0,0,0,0.1)',
-            zIndex: 9999,
-            padding: '20px 24px',
-            fontFamily: "'DM Sans', sans-serif",
-          }}
-        >
-          <div
-            style={{
-              maxWidth: 1200,
-              margin: '0 auto',
+      {/* MAIN BANNER */}
+      {isVisible && !showSettings && (
+        <div style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          zIndex: 9999,
+          background: '#fff',
+          borderTop: '1px solid #e2e8f0',
+          boxShadow: '0 -4px 20px rgba(0,0,0,0.1)',
+          padding: '20px 24px',
+          fontFamily: "'DM Sans', sans-serif",
+        }}>
+          <div style={{
+            maxWidth: 1200,
+            margin: '0 auto',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 24,
+            flexWrap: 'wrap',
+          }}>
+            <div style={{
+              width: 48,
+              height: 48,
+              borderRadius: 12,
+              background: 'linear-gradient(135deg, #d4e8ff, #b8d4f8)',
               display: 'flex',
-              gap: 20,
               alignItems: 'center',
-              flexWrap: 'wrap',
-            }}
-          >
-            <div style={{ flex: '1 1 400px', minWidth: 280 }}>
-              <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1a2e44', marginBottom: 4 }}>
-                {t.title}
-              </h3>
-              <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, margin: 0 }}>
-                {t.desc}{' '}
-                <a
-                  href="/cookies"
-                  style={{ color: '#2a6fdb', textDecoration: 'underline', fontWeight: 600 }}
-                >
-                  {t.learn}
-                </a>
-                .
-              </p>
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              <Cookie size={24} color="#2a6fdb" strokeWidth={2.2} />
             </div>
 
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            <div style={{ flex: 1, minWidth: 280 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', marginBottom: 4 }}>
+                Χρησιμοποιούμε cookies
+              </div>
+              <div style={{ fontSize: 13, color: '#64748B', lineHeight: 1.5 }}>
+                Χρησιμοποιούμε cookies για να βελτιώσουμε την εμπειρία σας και να αναλύσουμε την
+                χρήση του site.{' '}
+                <a href="/cookies" style={{ color: '#2a6fdb', textDecoration: 'underline', fontWeight: 600 }}>
+                  Διαβάστε την Πολιτική Cookies
+                </a>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <button
-                onClick={() => setShowCustomize(true)}
+                onClick={acceptNecessaryOnly}
                 style={{
-                  padding: '10px 16px',
-                  borderRadius: 8,
+                  padding: '10px 18px',
+                  borderRadius: 30,
                   border: '1px solid #e2e8f0',
-                  background: 'transparent',
-                  color: '#64748b',
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {t.customize}
-              </button>
-              <button
-                onClick={rejectOptional}
-                style={{
-                  padding: '10px 16px',
-                  borderRadius: 8,
-                  border: '1px solid #e2e8f0',
-                  background: '#f8fafc',
+                  background: '#fff',
                   color: '#475569',
                   fontSize: 13,
                   fontWeight: 600,
@@ -189,13 +154,30 @@ export default function CookieBanner() {
                   whiteSpace: 'nowrap',
                 }}
               >
-                {t.rejectOptional}
+                Μόνο Απαραίτητα
+              </button>
+              <button
+                onClick={openSettings}
+                style={{
+                  padding: '10px 18px',
+                  borderRadius: 30,
+                  border: '1px solid #e2e8f0',
+                  background: '#fff',
+                  color: '#475569',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Ρυθμίσεις
               </button>
               <button
                 onClick={acceptAll}
                 style={{
-                  padding: '10px 20px',
-                  borderRadius: 8,
+                  padding: '10px 22px',
+                  borderRadius: 30,
                   border: 'none',
                   background: '#1a2e44',
                   color: '#fff',
@@ -204,17 +186,21 @@ export default function CookieBanner() {
                   cursor: 'pointer',
                   fontFamily: 'inherit',
                   whiteSpace: 'nowrap',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
                 }}
               >
-                {t.acceptAll}
+                <Check size={14} strokeWidth={2.5} />
+                Αποδοχή Όλων
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Customize Modal */}
-      {showCustomize && (
+      {/* SETTINGS MODAL */}
+      {showSettings && (
         <div
           style={{
             position: 'fixed',
@@ -224,101 +210,112 @@ export default function CookieBanner() {
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 10000,
-            padding: 20,
+            padding: 24,
             fontFamily: "'DM Sans', sans-serif",
           }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setShowCustomize(false);
-          }}
+          onClick={e => { if (e.target === e.currentTarget) { setShowSettings(false); if (!getCookiePrefs()) setIsVisible(true); } }}
         >
-          <div
-            style={{
-              background: '#fff',
-              borderRadius: 18,
-              maxWidth: 540,
-              width: '100%',
-              maxHeight: '85vh',
-              overflowY: 'auto',
-              padding: 28,
-              boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
-            }}
-          >
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1a2e44', marginBottom: 8 }}>
-              {t.customizeTitle}
-            </h2>
-            <p style={{ fontSize: 13, color: '#475569', marginBottom: 20, lineHeight: 1.6 }}>
-              {t.customizeDesc}
-            </p>
-
-            {/* Categories */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
-              {/* Necessary - always on */}
-              <div
-                style={{
-                  background: '#F0FDF4',
-                  border: '1px solid #BBF7D0',
-                  borderRadius: 12,
-                  padding: '14px 16px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                  gap: 12,
-                }}
-              >
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#15803D', marginBottom: 4 }}>
-                    {t.cats.necessary.title}
-                  </div>
-                  <div style={{ fontSize: 12, color: '#475569', lineHeight: 1.5 }}>
-                    {t.cats.necessary.desc}
-                  </div>
-                </div>
-                <span
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: '#15803D',
-                    background: '#fff',
-                    padding: '4px 10px',
-                    borderRadius: 999,
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {t.cats.necessary.required}
-                </span>
+          <div style={{
+            background: '#fff',
+            borderRadius: 20,
+            maxWidth: 540,
+            width: '100%',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+          }}>
+            {/* Header */}
+            <div style={{
+              padding: '24px 28px 20px',
+              borderBottom: '1px solid #f1f5f9',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <Cookie size={22} color="#2a6fdb" />
+                <h2 style={{ fontSize: 18, fontWeight: 700, color: '#0F172A', margin: 0 }}>
+                  Ρυθμίσεις Cookies
+                </h2>
               </div>
-
-              {/* Functional */}
-              <CategoryToggle
-                title={t.cats.functional.title}
-                desc={t.cats.functional.desc}
-                checked={prefs.functional}
-                onChange={(v) => setPrefs((p) => ({ ...p, functional: v }))}
-              />
-
-              {/* Analytics */}
-              <CategoryToggle
-                title={t.cats.analytics.title}
-                desc={t.cats.analytics.desc}
-                checked={prefs.analytics}
-                onChange={(v) => setPrefs((p) => ({ ...p, analytics: v }))}
-              />
-
-              {/* Marketing */}
-              <CategoryToggle
-                title={t.cats.marketing.title}
-                desc={t.cats.marketing.desc}
-                checked={prefs.marketing}
-                onChange={(v) => setPrefs((p) => ({ ...p, marketing: v }))}
-              />
+              <button
+                onClick={() => { setShowSettings(false); if (!getCookiePrefs()) setIsVisible(true); }}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center' }}
+              >
+                <X size={20} />
+              </button>
             </div>
 
-            {/* Buttons */}
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+            {/* Body */}
+            <div style={{ padding: '20px 28px' }}>
+              <p style={{ fontSize: 13, color: '#64748B', lineHeight: 1.6, marginBottom: 20 }}>
+                Επιλέξτε ποιά cookies επιτρέπετε. Τα απαραίτητα cookies είναι πάντα ενεργά για
+                τη σωστή λειτουργία του site.
+              </p>
+
+              {/* NECESSARY (always on) */}
+              <CookieCategory
+                Icon={Shield}
+                title="Απαραίτητα"
+                description="Login, security, βασικές λειτουργίες του site (πχ shopping cart, session). Δεν μπορούν να απενεργοποιηθούν."
+                checked={true}
+                disabled={true}
+                color="#15803D"
+                bg="#F0FDF4"
+                border="#BBF7D0"
+              />
+
+              {/* ANALYTICS */}
+              <CookieCategory
+                Icon={BarChart3}
+                title="Analytics"
+                description="Μας βοηθούν να καταλάβουμε πώς χρησιμοποιείτε το site (πχ ποιες σελίδες επισκέπτεστε) ώστε να το βελτιώσουμε. Δεν συλλέγουμε προσωπικά δεδομένα."
+                checked={prefs.analytics}
+                disabled={false}
+                onChange={() => togglePref('analytics')}
+                color="#1D4ED8"
+                bg="#EFF6FF"
+                border="#BFDBFE"
+              />
+
+              {/* MARKETING */}
+              <CookieCategory
+                Icon={Megaphone}
+                title="Marketing"
+                description="Επιτρέπουν εξατομικευμένο περιεχόμενο και διαφημίσεις βασισμένες στα ενδιαφέροντά σας."
+                checked={prefs.marketing}
+                disabled={false}
+                onChange={() => togglePref('marketing')}
+                color="#9333EA"
+                bg="#FAF5FF"
+                border="#E9D5FF"
+              />
+
+              <div style={{ marginTop: 16, padding: '12px 16px', background: '#F8FAFC', borderRadius: 10, fontSize: 12, color: '#64748B', lineHeight: 1.5 }}>
+                Για περισσότερες πληροφορίες, διαβάστε την{' '}
+                <a href="/cookies" style={{ color: '#2a6fdb', textDecoration: 'underline', fontWeight: 600 }}>
+                  Πολιτική Cookies
+                </a>{' '}
+                και την{' '}
+                <a href="/privacy" style={{ color: '#2a6fdb', textDecoration: 'underline', fontWeight: 600 }}>
+                  Πολιτική Απορρήτου
+                </a>.
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div style={{
+              padding: '16px 28px',
+              borderTop: '1px solid #f1f5f9',
+              display: 'flex',
+              gap: 10,
+              justifyContent: 'flex-end',
+              flexWrap: 'wrap',
+            }}>
               <button
-                onClick={() => setShowCustomize(false)}
+                onClick={acceptNecessaryOnly}
                 style={{
-                  padding: '10px 20px',
+                  padding: '10px 18px',
                   borderRadius: 30,
                   border: '1px solid #e2e8f0',
                   background: 'transparent',
@@ -329,12 +326,12 @@ export default function CookieBanner() {
                   fontFamily: 'inherit',
                 }}
               >
-                {t.cancel}
+                Μόνο Απαραίτητα
               </button>
               <button
                 onClick={saveCustom}
                 style={{
-                  padding: '10px 24px',
+                  padding: '10px 22px',
                   borderRadius: 30,
                   border: 'none',
                   background: '#1a2e44',
@@ -343,9 +340,13 @@ export default function CookieBanner() {
                   fontWeight: 600,
                   cursor: 'pointer',
                   fontFamily: 'inherit',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
                 }}
               >
-                {t.save}
+                <Check size={14} strokeWidth={2.5} />
+                Αποθήκευση Επιλογών
               </button>
             </div>
           </div>
@@ -355,63 +356,78 @@ export default function CookieBanner() {
   );
 }
 
-function CategoryToggle({ title, desc, checked, onChange }) {
+function CookieCategory({ Icon, title, description, checked, disabled, onChange, color, bg, border }) {
   return (
-    <div
-      style={{
-        background: '#f8fafc',
-        border: '1px solid #e2e8f0',
-        borderRadius: 12,
-        padding: '14px 16px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        gap: 12,
-      }}
-    >
-      <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: '#1a2e44', marginBottom: 4 }}>{title}</div>
-        <div style={{ fontSize: 12, color: '#475569', lineHeight: 1.5 }}>{desc}</div>
-      </div>
-      <label
-        style={{
-          position: 'relative',
-          display: 'inline-block',
-          width: 44,
-          height: 24,
+    <div style={{
+      background: bg,
+      border: `1px solid ${border}`,
+      borderRadius: 12,
+      padding: '14px 16px',
+      marginBottom: 10,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+        <div style={{
+          width: 36,
+          height: 36,
+          borderRadius: 8,
+          background: '#fff',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
           flexShrink: 0,
-          cursor: 'pointer',
-        }}
-      >
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={(e) => onChange(e.target.checked)}
-          style={{ opacity: 0, width: 0, height: 0 }}
-        />
-        <span
-          style={{
-            position: 'absolute',
-            inset: 0,
-            background: checked ? '#2a6fdb' : '#cbd5e1',
-            borderRadius: 24,
-            transition: '0.2s',
-          }}
-        />
-        <span
-          style={{
-            position: 'absolute',
-            top: 2,
-            left: checked ? 22 : 2,
-            width: 20,
-            height: 20,
-            background: '#fff',
-            borderRadius: '50%',
-            transition: '0.2s',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-          }}
-        />
-      </label>
+        }}>
+          <Icon size={18} color={color} strokeWidth={2.2} />
+        </div>
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>
+              {title}
+              {disabled && (
+                <span style={{ fontSize: 11, fontWeight: 600, color: '#15803D', marginLeft: 8, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                  · Πάντα ενεργά
+                </span>
+              )}
+            </div>
+
+            {/* Toggle switch */}
+            <label style={{ position: 'relative', display: 'inline-block', width: 40, height: 22, cursor: disabled ? 'not-allowed' : 'pointer', flexShrink: 0 }}>
+              <input
+                type="checkbox"
+                checked={checked}
+                onChange={onChange}
+                disabled={disabled}
+                style={{ opacity: 0, width: 0, height: 0 }}
+              />
+              <span style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: checked ? color : '#cbd5e1',
+                borderRadius: 999,
+                transition: 'background .2s',
+                opacity: disabled ? 0.7 : 1,
+              }} />
+              <span style={{
+                position: 'absolute',
+                left: checked ? 20 : 2,
+                top: 2,
+                width: 18,
+                height: 18,
+                background: '#fff',
+                borderRadius: '50%',
+                transition: 'left .2s',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+              }} />
+            </label>
+          </div>
+          <div style={{ fontSize: 12, color: '#475569', lineHeight: 1.5 }}>
+            {description}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

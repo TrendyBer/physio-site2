@@ -1,250 +1,366 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
+import { Cookie, Shield, BarChart3, Megaphone, Settings as SettingsIcon, Mail } from 'lucide-react';
 
-const CONTENT = {
-  el: {
-    title: 'Πολιτική Cookies',
-    lastUpdated: 'Τελευταία ενημέρωση: 29 Απριλίου 2026',
-    intro: 'Η παρούσα Πολιτική Cookies εξηγεί πώς χρησιμοποιούμε cookies και παρόμοιες τεχνολογίες στην πλατφόρμα PhysioHome.',
-    sections: [
-      {
-        h: '1. Τι είναι τα Cookies',
-        p: [
-          'Τα cookies είναι μικρά αρχεία κειμένου που αποθηκεύονται στη συσκευή σας όταν επισκέπτεστε έναν ιστότοπο. Επιτρέπουν στον ιστότοπο να αναγνωρίζει τη συσκευή σας και να αποθηκεύει πληροφορίες σχετικά με τις προτιμήσεις σας ή προηγούμενες ενέργειες.',
-        ],
-      },
-      {
-        h: '2. Είδη Cookies που Χρησιμοποιούμε',
-        cards: [
-          {
-            tag: 'Αυστηρώς Απαραίτητα',
-            color: '#15803D',
-            bg: '#F0FDF4',
-            border: '#BBF7D0',
-            req: 'Υποχρεωτικά',
-            desc: 'Απαραίτητα για τη λειτουργία της Πλατφόρμας. Χωρίς αυτά δεν μπορείτε να συνδεθείτε ή να χρησιμοποιήσετε βασικές λειτουργίες.',
-            examples: ['Authentication tokens (Supabase session)', 'Session cookies', 'Security/CSRF tokens'],
-          },
-          {
-            tag: 'Λειτουργικά',
-            color: '#1D4ED8',
-            bg: '#EFF6FF',
-            border: '#BFDBFE',
-            req: 'Προαιρετικά',
-            desc: 'Επιτρέπουν την απομνημόνευση επιλογών για βελτιωμένη εμπειρία (π.χ. προτιμώμενη γλώσσα).',
-            examples: ['Language preference', 'UI preferences', 'Cookie consent storage'],
-          },
-          {
-            tag: 'Αναλυτικά',
-            color: '#A16207',
-            bg: '#FFFBEB',
-            border: '#FDE68A',
-            req: 'Προαιρετικά (consent required)',
-            desc: 'Μας βοηθούν να καταλάβουμε πώς χρησιμοποιείται η Πλατφόρμα ώστε να τη βελτιώσουμε. Δεν χρησιμοποιούμε ακόμα analytics, αλλά όταν τα ενεργοποιήσουμε, θα ζητήσουμε τη συγκατάθεσή σας.',
-            examples: ['Google Analytics (μελλοντικά)', 'Vercel Analytics (όταν ενεργοποιηθεί)'],
-          },
-          {
-            tag: 'Marketing',
-            color: '#9F1239',
-            bg: '#FFF1F2',
-            border: '#FECDD3',
-            req: 'Προαιρετικά (consent required)',
-            desc: 'Δεν χρησιμοποιούμε αυτή τη στιγμή marketing/tracking cookies. Σε περίπτωση που τα ενεργοποιήσουμε στο μέλλον, θα ενημερωθείτε και θα ζητηθεί η συγκατάθεσή σας.',
-            examples: ['Δεν χρησιμοποιούνται προς το παρόν'],
-          },
-        ],
-      },
-      {
-        h: '3. Πώς να Διαχειριστείτε τα Cookies',
-        p: ['Έχετε τις εξής επιλογές:'],
-        list: [
-          'Στο cookies banner κατά την πρώτη επίσκεψη: επιλέξτε "Αποδοχή", "Απόρριψη" ή "Προσαρμογή"',
-          'Στις ρυθμίσεις του browser σας: μπορείτε να μπλοκάρετε ή να διαγράψετε cookies',
-          'Διαγραφή υπαρχόντων cookies: Settings → Privacy → Clear browsing data',
-        ],
-        p2: ['Σημείωση: Η απόρριψη των αυστηρώς απαραίτητων cookies θα εμποδίσει τη λειτουργία της Πλατφόρμας (π.χ. δεν θα μπορείτε να συνδεθείτε).'],
-      },
-      {
-        h: '4. Cookies Τρίτων',
-        p: [
-          'Χρησιμοποιούμε υπηρεσίες τρίτων που μπορεί να εγκαθιστούν δικά τους cookies:',
-        ],
-        list: [
-          'Supabase (αυθεντικοποίηση και βάση δεδομένων)',
-          'Vercel (hosting)',
-          'Google Fonts (αν φορτώνονται γραμματοσειρές)',
-        ],
-        p2: ['Αυτές οι υπηρεσίες έχουν τις δικές τους πολιτικές απορρήτου.'],
-      },
-      {
-        h: '5. Επικοινωνία',
-        p: [
-          'Για ερωτήσεις: support@physiohome.gr',
-        ],
-      },
-    ],
-  },
-  en: {
-    title: 'Cookie Policy',
-    lastUpdated: 'Last updated: April 29, 2026',
-    intro: 'This Cookie Policy explains how we use cookies and similar technologies on the PhysioHome platform.',
-    sections: [
-      {
-        h: '1. What are Cookies',
-        p: [
-          'Cookies are small text files stored on your device when you visit a website. They allow the website to recognize your device and store information about your preferences or previous actions.',
-        ],
-      },
-      {
-        h: '2. Types of Cookies We Use',
-        cards: [
-          {
-            tag: 'Strictly Necessary',
-            color: '#15803D',
-            bg: '#F0FDF4',
-            border: '#BBF7D0',
-            req: 'Required',
-            desc: 'Necessary for the operation of the Platform. Without them you cannot log in or use basic functionality.',
-            examples: ['Authentication tokens (Supabase session)', 'Session cookies', 'Security/CSRF tokens'],
-          },
-          {
-            tag: 'Functional',
-            color: '#1D4ED8',
-            bg: '#EFF6FF',
-            border: '#BFDBFE',
-            req: 'Optional',
-            desc: 'Allow remembering choices for an improved experience (e.g., preferred language).',
-            examples: ['Language preference', 'UI preferences', 'Cookie consent storage'],
-          },
-          {
-            tag: 'Analytics',
-            color: '#A16207',
-            bg: '#FFFBEB',
-            border: '#FDE68A',
-            req: 'Optional (consent required)',
-            desc: 'Help us understand how the Platform is used so we can improve it. We do not yet use analytics, but when we enable them, we will request your consent.',
-            examples: ['Google Analytics (future)', 'Vercel Analytics (when enabled)'],
-          },
-          {
-            tag: 'Marketing',
-            color: '#9F1239',
-            bg: '#FFF1F2',
-            border: '#FECDD3',
-            req: 'Optional (consent required)',
-            desc: 'We do not currently use marketing/tracking cookies. If we enable them in the future, you will be informed and your consent will be requested.',
-            examples: ['Not currently in use'],
-          },
-        ],
-      },
-      {
-        h: '3. How to Manage Cookies',
-        p: ['You have the following options:'],
-        list: [
-          'In the cookies banner on first visit: choose "Accept", "Reject" or "Customize"',
-          'In your browser settings: you can block or delete cookies',
-          'Delete existing cookies: Settings → Privacy → Clear browsing data',
-        ],
-        p2: ['Note: Rejecting strictly necessary cookies will prevent the Platform from functioning (e.g., you will not be able to log in).'],
-      },
-      {
-        h: '4. Third-Party Cookies',
-        p: ['We use third-party services that may install their own cookies:'],
-        list: [
-          'Supabase (authentication and database)',
-          'Vercel (hosting)',
-          'Google Fonts (if fonts are loaded)',
-        ],
-        p2: ['These services have their own privacy policies.'],
-      },
-      {
-        h: '5. Contact',
-        p: ['For questions: support@physiohome.gr'],
-      },
-    ],
-  },
-};
+const COOKIE_PREFS_KEY = 'physiohome_cookie_prefs';
 
-export default function CookiePolicyPage() {
-  const [lang, setLang] = useState('el');
-  const c = CONTENT[lang];
+export default function CookiesPage() {
+  const [currentPrefs, setCurrentPrefs] = useState(null);
+  const [lastUpdated] = useState('1 Μαΐου 2026'); // Update when policy changes
+
+  useEffect(() => {
+    // Load current preferences
+    try {
+      const stored = localStorage.getItem(COOKIE_PREFS_KEY);
+      if (stored) {
+        setCurrentPrefs(JSON.parse(stored));
+      }
+    } catch {}
+  }, []);
+
+  function reopenSettings() {
+    // Clear stored prefs to trigger banner re-display
+    localStorage.removeItem(COOKIE_PREFS_KEY);
+    window.location.reload();
+  }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: "'DM Sans', sans-serif" }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap'); * { box-sizing: border-box; margin: 0; padding: 0; }`}</style>
+    <div style={{ minHeight: '100vh', background: '#faf9f6', fontFamily: "'DM Sans', sans-serif" }}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap'); * { box-sizing: border-box; margin: 0; padding: 0; }`}</style>
 
-      <nav style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', padding: '0 24px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'Georgia, serif', fontSize: 18, fontWeight: 700, color: '#1a2e44', textDecoration: 'none' }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#2a6fdb', display: 'inline-block' }} />
-          PhysioHome
-        </a>
-        <a href="/" style={{ fontSize: 13, color: '#64748b', textDecoration: 'none' }}>← {lang === 'el' ? 'Επιστροφή' : 'Back'}</a>
-      </nav>
+      <Navbar />
 
-      <div style={{ maxWidth: 800, margin: '0 auto', padding: '40px 24px' }}>
-        <div style={{ display: 'flex', gap: 4, background: '#e2e8f0', padding: 4, borderRadius: 12, width: 'fit-content', marginBottom: 24 }}>
-          {['el', 'en'].map(l => (
-            <button key={l} onClick={() => setLang(l)}
-              style={{ padding: '6px 18px', borderRadius: 8, border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: lang === l ? '#fff' : 'transparent', color: lang === l ? '#0F172A' : '#64748B', textTransform: 'uppercase' }}>
-              {l}
-            </button>
-          ))}
-        </div>
-
-        <h1 style={{ fontSize: 32, fontWeight: 700, color: '#1a2e44', marginBottom: 8, fontFamily: 'Georgia, serif' }}>{c.title}</h1>
-        <p style={{ fontSize: 13, color: '#94a3b8', marginBottom: 32 }}>{c.lastUpdated}</p>
-
-        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 14, padding: 24, marginBottom: 24, fontSize: 15, color: '#475569', lineHeight: 1.7 }}>
-          {c.intro}
-        </div>
-
-        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 14, padding: '32px 28px' }}>
-          {c.sections.map((s, i) => (
-            <section key={i} style={{ marginBottom: i === c.sections.length - 1 ? 0 : 28 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1a2e44', marginBottom: 12 }}>{s.h}</h2>
-              {s.p && s.p.map((p, j) => (
-                <p key={j} style={{ fontSize: 14, color: '#475569', lineHeight: 1.7, marginBottom: 8 }}>{p}</p>
-              ))}
-              {s.cards && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 12 }}>
-                  {s.cards.map((card, j) => (
-                    <div key={j} style={{ background: card.bg, border: `1px solid ${card.border}`, borderRadius: 12, padding: '14px 18px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
-                        <span style={{ background: card.color, color: '#fff', padding: '3px 10px', borderRadius: 999, fontSize: 11, fontWeight: 700, textTransform: 'uppercase' }}>{card.tag}</span>
-                        <span style={{ fontSize: 11, color: card.color, fontWeight: 600 }}>{card.req}</span>
-                      </div>
-                      <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6, marginBottom: 8 }}>{card.desc}</p>
-                      <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, marginBottom: 4 }}>
-                        {lang === 'el' ? 'Παραδείγματα:' : 'Examples:'}
-                      </div>
-                      <ul style={{ paddingLeft: 18, margin: 0 }}>
-                        {card.examples.map((ex, k) => (
-                          <li key={k} style={{ fontSize: 12, color: '#64748B', lineHeight: 1.6 }}>{ex}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {s.list && (
-                <ul style={{ paddingLeft: 20, marginTop: 8, marginBottom: 8 }}>
-                  {s.list.map((item, j) => (
-                    <li key={j} style={{ fontSize: 14, color: '#475569', lineHeight: 1.7, marginBottom: 4 }}>{item}</li>
-                  ))}
-                </ul>
-              )}
-              {s.p2 && s.p2.map((p, j) => (
-                <p key={j} style={{ fontSize: 14, color: '#475569', lineHeight: 1.7, marginTop: 8 }}>{p}</p>
-              ))}
-            </section>
-          ))}
-        </div>
-
-        <div style={{ marginTop: 24, textAlign: 'center', fontSize: 13, color: '#94a3b8' }}>
-          <a href="/privacy" style={{ color: '#2a6fdb', textDecoration: 'none', margin: '0 12px' }}>{lang === 'el' ? 'Πολιτική Απορρήτου' : 'Privacy Policy'}</a>
-          •
-          <a href="/terms" style={{ color: '#2a6fdb', textDecoration: 'none', margin: '0 12px' }}>{lang === 'el' ? 'Όροι Χρήσης' : 'Terms of Service'}</a>
+      {/* Hero */}
+      <div style={{ background: 'linear-gradient(135deg, #1a2e44 0%, #2a6fdb 100%)', padding: '80px 24px 60px', color: '#fff' }}>
+        <div style={{ maxWidth: 800, margin: '0 auto', textAlign: 'center' }}>
+          <div style={{
+            width: 72,
+            height: 72,
+            borderRadius: 18,
+            background: 'rgba(255,255,255,0.15)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 20px',
+          }}>
+            <Cookie size={36} color="#fff" strokeWidth={2} />
+          </div>
+          <h1 style={{ fontSize: 38, fontWeight: 700, fontFamily: 'Georgia, serif', marginBottom: 12, letterSpacing: '-.02em' }}>
+            Πολιτική Cookies
+          </h1>
+          <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.85)', lineHeight: 1.6 }}>
+            Πώς και γιατί χρησιμοποιούμε cookies στο PhysioHome.
+          </p>
+          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', marginTop: 8 }}>
+            Τελευταία ενημέρωση: {lastUpdated}
+          </div>
         </div>
       </div>
+
+      {/* Content */}
+      <div style={{ maxWidth: 800, margin: '0 auto', padding: '60px 24px' }}>
+
+        {/* Quick action */}
+        <div style={{
+          background: '#fff',
+          border: '1px solid #e2e8f0',
+          borderRadius: 14,
+          padding: '20px 24px',
+          marginBottom: 32,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 16,
+          flexWrap: 'wrap',
+        }}>
+          <div style={{
+            width: 44,
+            height: 44,
+            borderRadius: 10,
+            background: 'linear-gradient(135deg, #d4e8ff, #b8d4f8)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}>
+            <SettingsIcon size={20} color="#2a6fdb" strokeWidth={2.2} />
+          </div>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', marginBottom: 2 }}>
+              Διαχείριση των επιλογών σας
+            </div>
+            <div style={{ fontSize: 13, color: '#64748B' }}>
+              Μπορείτε να αλλάξετε τις προτιμήσεις σας οποιαδήποτε στιγμή.
+            </div>
+          </div>
+          <button
+            onClick={reopenSettings}
+            style={{
+              padding: '11px 22px',
+              borderRadius: 30,
+              border: 'none',
+              background: '#1a2e44',
+              color: '#fff',
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Αλλαγή Ρυθμίσεων
+          </button>
+        </div>
+
+        {/* Sections */}
+        <Section title="Τι είναι τα cookies;">
+          <p>
+            Τα cookies είναι μικρά αρχεία κειμένου που αποθηκεύονται στη συσκευή σας (υπολογιστή,
+            tablet, κινητό) όταν επισκέπτεστε ένα website. Επιτρέπουν στο website να θυμάται
+            ενέργειες και προτιμήσεις σας (όπως login, γλώσσα, μέγεθος γραμματοσειράς) ώστε να μη
+            χρειάζεται να τις εισάγετε ξανά κάθε φορά.
+          </p>
+        </Section>
+
+        <Section title="Πώς χρησιμοποιούμε τα cookies στο PhysioHome;">
+          <p>Χρησιμοποιούμε cookies για 3 βασικούς σκοπούς:</p>
+          <ul style={{ marginTop: 12, paddingLeft: 24 }}>
+            <li style={{ marginBottom: 8 }}><strong>Λειτουργικότητα:</strong> Διατήρηση session login, προτιμήσεις γλώσσας, ασφάλεια.</li>
+            <li style={{ marginBottom: 8 }}><strong>Analytics:</strong> Κατανόηση πώς χρησιμοποιείται το site για να το βελτιώσουμε.</li>
+            <li style={{ marginBottom: 8 }}><strong>Marketing:</strong> Εξατομικευμένο περιεχόμενο και διαφημίσεις (όταν τα ενεργοποιήσετε).</li>
+          </ul>
+        </Section>
+
+        {/* Categories */}
+        <Section title="Κατηγορίες Cookies">
+          <CookieCategoryCard
+            Icon={Shield}
+            color="#15803D"
+            bg="#F0FDF4"
+            border="#BBF7D0"
+            title="Απαραίτητα Cookies"
+            alwaysOn
+            description="Είναι απαραίτητα για τη βασική λειτουργία του site. Χωρίς αυτά, δεν μπορείτε να συνδεθείτε ή να κάνετε κρατήσεις."
+            examples={[
+              { name: 'sb-access-token', purpose: 'Authentication με Supabase', duration: 'Session' },
+              { name: 'sb-refresh-token', purpose: 'Διατήρηση login session', duration: '7 μέρες' },
+              { name: 'physiohome_cookie_prefs', purpose: 'Αποθήκευση των επιλογών σας για cookies', duration: '1 χρόνος' },
+            ]}
+          />
+
+          <CookieCategoryCard
+            Icon={BarChart3}
+            color="#1D4ED8"
+            bg="#EFF6FF"
+            border="#BFDBFE"
+            title="Analytics Cookies"
+            description="Μας βοηθούν να καταλάβουμε πώς χρησιμοποιείτε το site (πχ ποιες σελίδες επισκέπτεστε, πόσο χρόνο μένετε, από πού μας βρήκατε). Όλα τα δεδομένα είναι ανώνυμα."
+            examples={[
+              { name: '(προαιρετικά)', purpose: 'Δεν τρέχουμε ακόμα analytics tools', duration: '—' },
+            ]}
+          />
+
+          <CookieCategoryCard
+            Icon={Megaphone}
+            color="#9333EA"
+            bg="#FAF5FF"
+            border="#E9D5FF"
+            title="Marketing Cookies"
+            description="Επιτρέπουν εξατομικευμένο περιεχόμενο και διαφημίσεις βασισμένες στα ενδιαφέροντά σας (πχ remarketing, social media tracking)."
+            examples={[
+              { name: '(προαιρετικά)', purpose: 'Δεν τρέχουμε ακόμα marketing tools', duration: '—' },
+            ]}
+          />
+        </Section>
+
+        <Section title="Πώς μπορείτε να ελέγξετε τα cookies;">
+          <p>Μπορείτε να ελέγξετε τα cookies με 3 τρόπους:</p>
+          <ol style={{ marginTop: 12, paddingLeft: 24 }}>
+            <li style={{ marginBottom: 8 }}>
+              <strong>Στο PhysioHome:</strong> Πατήστε "Αλλαγή Ρυθμίσεων" παραπάνω για να
+              αλλάξετε τις προτιμήσεις σας.
+            </li>
+            <li style={{ marginBottom: 8 }}>
+              <strong>Στον browser σας:</strong> Όλοι οι σύγχρονοι browsers (Chrome, Firefox,
+              Safari, Edge) σας επιτρέπουν να διαχειρίζεστε τα cookies στις ρυθμίσεις τους.
+              Μπορείτε να τα διαγράψετε ή να τα μπλοκάρετε.
+            </li>
+            <li style={{ marginBottom: 8 }}>
+              <strong>Με DNT (Do Not Track):</strong> Σεβόμαστε το Do Not Track signal αν είναι
+              ενεργό στον browser σας.
+            </li>
+          </ol>
+          <div style={{
+            background: '#FEF3C7',
+            border: '1px solid #FDE68A',
+            borderRadius: 10,
+            padding: '12px 16px',
+            marginTop: 16,
+            fontSize: 13,
+            color: '#92400E',
+          }}>
+            <strong>Σημαντικό:</strong> Αν απενεργοποιήσετε τα απαραίτητα cookies, ορισμένες
+            λειτουργίες του site (όπως login, κρατήσεις) δεν θα δουλεύουν.
+          </div>
+        </Section>
+
+        <Section title="Αλλαγές στην Πολιτική Cookies">
+          <p>
+            Μπορεί να ενημερώνουμε αυτή την Πολιτική περιοδικά για να αντικατοπτρίζει αλλαγές στις
+            πρακτικές μας ή για άλλους λειτουργικούς, νομικούς ή κανονιστικούς λόγους. Σας
+            ενθαρρύνουμε να την επισκέπτεστε τακτικά.
+          </p>
+        </Section>
+
+        <Section title="Επικοινωνία">
+          <p>
+            Αν έχετε ερωτήσεις σχετικά με την Πολιτική Cookies ή τη χρήση cookies στο PhysioHome,
+            μπορείτε να επικοινωνήσετε μαζί μας:
+          </p>
+          <div style={{
+            background: '#fff',
+            border: '1px solid #e2e8f0',
+            borderRadius: 10,
+            padding: '14px 18px',
+            marginTop: 12,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 10,
+          }}>
+            <Mail size={16} color="#2a6fdb" />
+            <a href="mailto:info@physiohome.gr" style={{ color: '#2a6fdb', fontWeight: 600, textDecoration: 'none' }}>
+              info@physiohome.gr
+            </a>
+          </div>
+        </Section>
+
+        {/* Related links */}
+        <div style={{
+          marginTop: 48,
+          padding: '20px 24px',
+          background: '#fff',
+          border: '1px solid #e2e8f0',
+          borderRadius: 14,
+          textAlign: 'center',
+        }}>
+          <div style={{ fontSize: 14, color: '#64748B', marginBottom: 12 }}>Σχετικά κείμενα:</div>
+          <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <a href="/privacy" style={{ color: '#2a6fdb', fontWeight: 600, fontSize: 14, textDecoration: 'none' }}>
+              Πολιτική Απορρήτου
+            </a>
+            <a href="/terms" style={{ color: '#2a6fdb', fontWeight: 600, fontSize: 14, textDecoration: 'none' }}>
+              Όροι Χρήσης
+            </a>
+            <a href="/contact" style={{ color: '#2a6fdb', fontWeight: 600, fontSize: 14, textDecoration: 'none' }}>
+              Επικοινωνία
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <Footer />
+    </div>
+  );
+}
+
+function Section({ title, children }) {
+  return (
+    <section style={{ marginBottom: 36 }}>
+      <h2 style={{
+        fontSize: 22,
+        fontWeight: 700,
+        color: '#0F172A',
+        fontFamily: 'Georgia, serif',
+        marginBottom: 12,
+        letterSpacing: '-.01em',
+      }}>
+        {title}
+      </h2>
+      <div style={{ fontSize: 15, color: '#475569', lineHeight: 1.7 }}>
+        {children}
+      </div>
+    </section>
+  );
+}
+
+function CookieCategoryCard({ Icon, color, bg, border, title, description, examples, alwaysOn }) {
+  return (
+    <div style={{
+      background: bg,
+      border: `1px solid ${border}`,
+      borderRadius: 14,
+      padding: '20px 22px',
+      marginBottom: 14,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 12 }}>
+        <div style={{
+          width: 44,
+          height: 44,
+          borderRadius: 10,
+          background: '#fff',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+        }}>
+          <Icon size={22} color={color} strokeWidth={2.2} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: '#0F172A', marginBottom: 2 }}>
+            {title}
+            {alwaysOn && (
+              <span style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: color,
+                marginLeft: 10,
+                textTransform: 'uppercase',
+                letterSpacing: '.05em',
+                background: '#fff',
+                padding: '2px 10px',
+                borderRadius: 999,
+              }}>
+                Πάντα ενεργά
+              </span>
+            )}
+          </div>
+          <div style={{ fontSize: 13, color: '#475569', lineHeight: 1.6 }}>
+            {description}
+          </div>
+        </div>
+      </div>
+
+      {examples && examples.length > 0 && (
+        <div style={{
+          background: 'rgba(255,255,255,0.7)',
+          borderRadius: 10,
+          padding: '12px 16px',
+          marginTop: 12,
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>
+            Παραδείγματα cookies
+          </div>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                <th style={{ textAlign: 'left', padding: '6px 8px', color: '#64748B', fontWeight: 600 }}>Όνομα</th>
+                <th style={{ textAlign: 'left', padding: '6px 8px', color: '#64748B', fontWeight: 600 }}>Σκοπός</th>
+                <th style={{ textAlign: 'left', padding: '6px 8px', color: '#64748B', fontWeight: 600 }}>Διάρκεια</th>
+              </tr>
+            </thead>
+            <tbody>
+              {examples.map((ex, i) => (
+                <tr key={i} style={{ borderBottom: i < examples.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
+                  <td style={{ padding: '8px', color: '#0F172A', fontFamily: 'monospace', fontSize: 11 }}>{ex.name}</td>
+                  <td style={{ padding: '8px', color: '#475569' }}>{ex.purpose}</td>
+                  <td style={{ padding: '8px', color: '#475569', whiteSpace: 'nowrap' }}>{ex.duration}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
