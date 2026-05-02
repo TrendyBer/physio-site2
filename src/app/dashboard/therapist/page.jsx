@@ -8,7 +8,7 @@ import {
   Clock, AlertTriangle, Upload, CreditCard, Home, MessageSquare,
   Check, X, Lock, ChevronLeft, ChevronRight, Plus, Lightbulb,
   Camera, Pencil, CheckCircle2, Save, FileText, GraduationCap,
-  Award, Eye, Trash2, Wallet, Hourglass,
+  Award, Eye, Trash2, Wallet, Hourglass, CalendarDays, List,
 } from 'lucide-react';
 
 function Avatar({ name, photoUrl, size = 48 }) {
@@ -60,7 +60,10 @@ const PAYMENT_STATUS = {
   refunded: { label: 'Επιστράφηκε',          bg: '#FEE2E2', color: '#991B1B', icon: X },
 };
 
-const DAYS_EL = ['Κυρ', 'Δευ', 'Τρι', 'Τετ', 'Πεμ', 'Παρ', 'Σαβ'];
+const DAYS_EL = ['Κυριακή', 'Δευτέρα', 'Τρίτη', 'Τετάρτη', 'Πέμπτη', 'Παρασκευή', 'Σάββατο'];
+const DAYS_EL_SHORT = ['Κυρ', 'Δευ', 'Τρι', 'Τετ', 'Πεμ', 'Παρ', 'Σαβ'];
+const MONTHS_EL = ['Ιανουαρίου', 'Φεβρουαρίου', 'Μαρτίου', 'Απριλίου', 'Μαΐου', 'Ιουνίου', 'Ιουλίου', 'Αυγούστου', 'Σεπτεμβρίου', 'Οκτωβρίου', 'Νοεμβρίου', 'Δεκεμβρίου'];
+const MONTHS_EL_FULL = ['Ιανουάριος', 'Φεβρουάριος', 'Μάρτιος', 'Απρίλιος', 'Μάιος', 'Ιούνιος', 'Ιούλιος', 'Αύγουστος', 'Σεπτέμβριος', 'Οκτώβριος', 'Νοέμβριος', 'Δεκέμβριος'];
 
 const HOURS = [];
 for (let h = 9; h <= 20; h++) {
@@ -111,7 +114,7 @@ function groupByWeek(dates) {
 
 const ALL_WEEKS = groupByWeek(generateDates());
 
-// Helper: how many days until auto-release
+// Helpers for dates
 function daysUntilAutoRelease(autoReleaseAt) {
   if (!autoReleaseAt) return null;
   const now = new Date();
@@ -119,6 +122,33 @@ function daysUntilAutoRelease(autoReleaseAt) {
   const diffMs = target - now;
   const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
   return Math.max(0, diffDays);
+}
+
+function friendlyDateLabel(dateStr) {
+  if (!dateStr) return '';
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(dateStr + 'T12:00:00');
+  target.setHours(0, 0, 0, 0);
+  const diffDays = Math.round((target - today) / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return 'ΣΗΜΕΡΑ';
+  if (diffDays === 1) return 'ΑΥΡΙΟ';
+  if (diffDays === 2) return 'ΜΕΘΑΥΡΙΟ';
+  if (diffDays > 2 && diffDays <= 7) return `ΣΕ ${diffDays} ΜΕΡΕΣ`;
+  if (diffDays > 7 && diffDays <= 14) return 'ΣΕ 1 ΕΒΔΟΜΑΔΑ';
+  if (diffDays < 0) return 'ΕΧΕΙ ΓΙΝΕΙ';
+  return null;
+}
+
+function formatFullDate(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  return `${DAYS_EL[d.getDay()]} ${d.getDate()} ${MONTHS_EL[d.getMonth()]}`;
+}
+
+function formatShortDate(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  return `${DAYS_EL_SHORT[d.getDay()]} ${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
 export default function TherapistDashboard() {
@@ -129,7 +159,7 @@ export default function TherapistDashboard() {
   const [slots, setSlots] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [commission, setCommission] = useState(3);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('appointments'); // default to appointments
   const [loading, setLoading] = useState(true);
   const [editProfile, setEditProfile] = useState(false);
   const [profileForm, setProfileForm] = useState({});
@@ -137,6 +167,14 @@ export default function TherapistDashboard() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [weekOffset, setWeekOffset] = useState(0);
   const photoInputRef = useRef();
+
+  // Appointments view mode
+  const [appointmentsView, setAppointmentsView] = useState('list');
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const d = new Date();
+    return { year: d.getFullYear(), month: d.getMonth() };
+  });
+  const [selectedDay, setSelectedDay] = useState(null);
 
   const [cancelModal, setCancelModal] = useState(null);
   const [cancelReason, setCancelReason] = useState('');
@@ -405,7 +443,6 @@ export default function TherapistDashboard() {
     await loadRequests(user.id);
   }
 
-  // ═══ NEW: Mark booking as done (escrow flow) ═══
   function openDoneModal(booking, request) {
     setDoneModal({ booking, request });
   }
@@ -526,7 +563,7 @@ export default function TherapistDashboard() {
   }
 
   // ═══ STATS ═══
-  const allBookings = requests.flatMap(r => r.bookings);
+  const allBookings = requests.flatMap(r => r.bookings.map(b => ({ ...b, request: r })));
   const pendingCount = requests.filter(r => r.status === 'pending').length;
   const confirmedCount = allBookings.filter(b => b.status === 'confirmed').length;
   const completedCount = allBookings.filter(b => b.status === 'completed').length;
@@ -540,9 +577,32 @@ export default function TherapistDashboard() {
   const releasedAmount = releasedBookings.reduce((sum, b) => sum + parseFloat(b.net_to_therapist || 0), 0);
 
   function getNetAmount(request) {
-    // Sum net_to_therapist for all bookings in request
     return (request.bookings || []).reduce((sum, b) => sum + parseFloat(b.net_to_therapist || 0), 0);
   }
+
+  // ═══ APPOINTMENTS DATA ═══
+  const sortedAppointments = [...allBookings].sort((a, b) => {
+    const aDate = a.session_date + 'T' + (a.session_time || '00:00');
+    const bDate = b.session_date + 'T' + (b.session_time || '00:00');
+    return aDate.localeCompare(bDate);
+  });
+
+  const now = new Date();
+
+  const upcomingAppointments = sortedAppointments.filter(a => {
+    if (a.status === 'cancelled') return false;
+    const d = new Date(a.session_date + 'T' + (a.session_time || '00:00'));
+    return d >= now || a.payment_status === 'held';
+  });
+
+  const pastAppointments = sortedAppointments.filter(a => {
+    const d = new Date(a.session_date + 'T' + (a.session_time || '00:00'));
+    return d < now && a.payment_status !== 'held' && a.status !== 'pending' && !(a.status === 'confirmed' && d >= now);
+  }).reverse();
+
+  const nextAppointment = upcomingAppointments.find(a =>
+    a.status === 'confirmed' || a.status === 'pending'
+  );
 
   const fmtDate = d => new Date(d + 'T12:00:00').toLocaleDateString('el-GR', { day: '2-digit', month: '2-digit' });
   const weekStart = currentWeek?.[0];
@@ -553,6 +613,59 @@ export default function TherapistDashboard() {
   const certCount = (profile?.certifications_urls || []).length;
   const showDocsBanner = !hasLicense;
 
+  // Calendar grid builder
+  function buildMonthGrid(year, month) {
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDayOfWeek = (firstDay.getDay() + 6) % 7;
+    const totalDays = lastDay.getDate();
+
+    const grid = [];
+    let week = [];
+
+    for (let i = 0; i < startDayOfWeek; i++) {
+      week.push(null);
+    }
+
+    for (let day = 1; day <= totalDays; day++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      week.push(dateStr);
+      if (week.length === 7) {
+        grid.push(week);
+        week = [];
+      }
+    }
+
+    if (week.length > 0) {
+      while (week.length < 7) week.push(null);
+      grid.push(week);
+    }
+
+    return grid;
+  }
+
+  const calendarGrid = buildMonthGrid(calendarMonth.year, calendarMonth.month);
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  const appointmentsByDate = {};
+  upcomingAppointments.forEach(a => {
+    if (!appointmentsByDate[a.session_date]) appointmentsByDate[a.session_date] = [];
+    appointmentsByDate[a.session_date].push(a);
+  });
+  pastAppointments.forEach(a => {
+    if (!appointmentsByDate[a.session_date]) appointmentsByDate[a.session_date] = [];
+    appointmentsByDate[a.session_date].push(a);
+  });
+
+  function navigateMonth(direction) {
+    setCalendarMonth(curr => {
+      const newMonth = curr.month + direction;
+      if (newMonth < 0) return { year: curr.year - 1, month: 11 };
+      if (newMonth > 11) return { year: curr.year + 1, month: 0 };
+      return { year: curr.year, month: newMonth };
+    });
+  }
+
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc' }}>
       <div style={{ fontSize: 16, color: '#64748B' }}>Φόρτωση...</div>
@@ -560,9 +673,10 @@ export default function TherapistDashboard() {
   );
 
   const TABS = [
+    { id: 'appointments', label: 'Ραντεβού', Icon: Calendar },
     { id: 'overview', label: 'Επισκόπηση', Icon: LayoutDashboard },
     { id: 'requests', label: `Αιτήματα ${pendingCount > 0 ? `(${pendingCount})` : ''}`, Icon: ClipboardList },
-    { id: 'calendar', label: 'Διαθεσιμότητα', Icon: Calendar },
+    { id: 'calendar', label: 'Διαθεσιμότητα', Icon: CalendarDays },
     { id: 'areas',    label: 'Περιοχές', Icon: MapPin },
     { id: 'conditions', label: 'Παθήσεις', Icon: Target },
     { id: 'reviews',  label: 'Αξιολογήσεις', Icon: Star },
@@ -593,7 +707,6 @@ export default function TherapistDashboard() {
 
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px' }}>
 
-        {/* DOCUMENTS BANNER */}
         {showDocsBanner && (
           <div style={{ background: 'linear-gradient(135deg, #FEF3C7, #FDE68A)', border: '1px solid #F59E0B', borderRadius: 14, padding: '20px 24px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
             <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -630,7 +743,375 @@ export default function TherapistDashboard() {
           })}
         </div>
 
-        {/* OVERVIEW */}
+        {/* ═══════════════════════ APPOINTMENTS TAB ═══════════════════════ */}
+        {activeTab === 'appointments' && (
+          <div>
+            {/* Hero: Next Appointment */}
+            {nextAppointment && (() => {
+              const friendly = friendlyDateLabel(nextAppointment.session_date);
+              const fullDate = formatFullDate(nextAppointment.session_date);
+              return (
+                <div style={{
+                  background: 'linear-gradient(135deg, #1a2e44 0%, #2a6fdb 100%)',
+                  borderRadius: 18,
+                  padding: '28px 32px',
+                  marginBottom: 24,
+                  color: '#fff',
+                  boxShadow: '0 8px 32px rgba(26, 46, 68, 0.2)',
+                }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <Calendar size={14} />
+                    Επόμενο Ραντεβού
+                  </div>
+
+                  {friendly && (
+                    <div style={{ fontSize: 36, fontWeight: 700, color: '#fff', marginBottom: 4, letterSpacing: '-.02em' }}>
+                      {friendly}
+                    </div>
+                  )}
+
+                  <div style={{ fontSize: 17, color: 'rgba(255,255,255,0.9)', marginBottom: 4 }}>
+                    {fullDate}
+                  </div>
+
+                  <div style={{ fontSize: 24, fontWeight: 700, color: '#fff', marginBottom: 20 }}>
+                    στις {nextAppointment.session_time?.slice(0, 5)}
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.2)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <User size={18} color="rgba(255,255,255,0.7)" />
+                      <span style={{ fontSize: 16, fontWeight: 600 }}>{nextAppointment.request?.patient_name || 'Άγνωστος'}</span>
+                    </div>
+
+                    {nextAppointment.request?.address && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <MapPin size={18} color="rgba(255,255,255,0.7)" />
+                        <span style={{ fontSize: 15 }}>
+                          {nextAppointment.request.address}
+                          {nextAppointment.request.area && `, ${nextAppointment.request.area}`}
+                          {nextAppointment.request.postal_code && `, ${nextAppointment.request.postal_code}`}
+                        </span>
+                      </div>
+                    )}
+
+                    {nextAppointment.request?.floor_info && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <Home size={18} color="rgba(255,255,255,0.7)" />
+                        <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)' }}>
+                          {nextAppointment.request.floor_info}
+                        </span>
+                      </div>
+                    )}
+
+                    {nextAppointment.request?.problem_type && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <Target size={18} color="rgba(255,255,255,0.7)" />
+                        <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)' }}>
+                          {nextAppointment.request.problem_type}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {nextAppointment.status === 'pending' && (
+                    <div style={{ marginTop: 16, padding: '10px 14px', background: 'rgba(255, 204, 0, 0.15)', borderRadius: 10, fontSize: 13, color: '#FEF3C7', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                      <Clock size={14} />
+                      Αναμένει την επιβεβαίωσή σας στα Αιτήματα
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {!nextAppointment && upcomingAppointments.length === 0 && pastAppointments.length === 0 && (
+              <div style={{ padding: 60, textAlign: 'center', color: '#94A3B8', background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0' }}>
+                <Calendar size={48} color="#cbd5e1" style={{ margin: '0 auto 16px' }} />
+                <div style={{ fontSize: 16, marginBottom: 8 }}>Δεν έχετε ραντεβού ακόμα</div>
+                <div style={{ fontSize: 13 }}>Όταν έρθουν αιτήματα από ασθενείς, θα εμφανιστούν εδώ.</div>
+              </div>
+            )}
+
+            {/* View toggle */}
+            {(upcomingAppointments.length > 0 || pastAppointments.length > 0) && (
+              <div style={{ display: 'flex', gap: 4, background: '#e2e8f0', padding: 4, borderRadius: 10, width: 'fit-content', marginBottom: 20 }}>
+                <button onClick={() => setAppointmentsView('list')}
+                  style={{ padding: '8px 16px', borderRadius: 7, border: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: appointmentsView === 'list' ? '#fff' : 'transparent', color: appointmentsView === 'list' ? '#0F172A' : '#64748B', boxShadow: appointmentsView === 'list' ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <List size={15} />
+                  Λίστα
+                </button>
+                <button onClick={() => setAppointmentsView('calendar')}
+                  style={{ padding: '8px 16px', borderRadius: 7, border: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: appointmentsView === 'calendar' ? '#fff' : 'transparent', color: appointmentsView === 'calendar' ? '#0F172A' : '#64748B', boxShadow: appointmentsView === 'calendar' ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <CalendarDays size={15} />
+                  Ημερολόγιο
+                </button>
+              </div>
+            )}
+
+            {/* LIST VIEW */}
+            {appointmentsView === 'list' && (
+              <>
+                {upcomingAppointments.length > 0 && (
+                  <div style={{ marginBottom: 28 }}>
+                    <h3 style={{ fontSize: 14, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                      <ChevronRight size={16} color="#64748b" />
+                      Επερχόμενα Ραντεβού ({upcomingAppointments.length})
+                    </h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {upcomingAppointments.map(apt => {
+                        const bSt = STATUS[apt.status] || STATUS.pending;
+                        const payStatus = apt.payment_status || 'pending';
+                        const payInfo = PAYMENT_STATUS[payStatus];
+                        const isHeld = apt.payment_status === 'held';
+                        const daysLeft = isHeld ? daysUntilAutoRelease(apt.auto_release_at) : null;
+                        const friendly = friendlyDateLabel(apt.session_date);
+                        const isPast = new Date(apt.session_date + 'T' + (apt.session_time || '00:00')) < new Date();
+                        const canMarkDone = apt.status === 'confirmed' && isPast && apt.payment_status !== 'held';
+
+                        return (
+                          <div key={apt.id} style={{
+                            background: '#fff',
+                            borderRadius: 12,
+                            border: isHeld ? '2px solid #F59E0B' : '1px solid #e2e8f0',
+                            padding: '18px 20px',
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
+                              <div style={{ minWidth: 110 }}>
+                                {friendly ? (
+                                  <div style={{ fontSize: 14, fontWeight: 700, color: '#2a6fdb', marginBottom: 2 }}>
+                                    {friendly}
+                                  </div>
+                                ) : null}
+                                <div style={{ fontSize: 15, color: '#0F172A', fontWeight: 600 }}>
+                                  {formatShortDate(apt.session_date)}
+                                </div>
+                                <div style={{ fontSize: 17, color: '#0F172A', fontWeight: 700, marginTop: 2 }}>
+                                  {apt.session_time?.slice(0, 5)}
+                                </div>
+                              </div>
+
+                              <div style={{ flex: 1, minWidth: 200 }}>
+                                <div style={{ fontSize: 16, fontWeight: 600, color: '#0F172A', marginBottom: 4, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                  <User size={15} color="#2a6fdb" />
+                                  {apt.request?.patient_name || 'Άγνωστος'}
+                                </div>
+                                {apt.request?.address && (
+                                  <div style={{ fontSize: 14, color: '#64748B', display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                                    <MapPin size={13} />
+                                    {apt.request.address}, {apt.request.area}
+                                    {apt.request.postal_code && `, ${apt.request.postal_code}`}
+                                  </div>
+                                )}
+                                {apt.request?.floor_info && (
+                                  <div style={{ fontSize: 13, color: '#94A3B8', display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                                    <Home size={12} />
+                                    {apt.request.floor_info}
+                                  </div>
+                                )}
+                                {apt.request?.problem_type && (
+                                  <div style={{ fontSize: 13, color: '#475569', background: '#f8fafc', padding: '6px 10px', borderRadius: 6, marginTop: 6, display: 'inline-block' }}>
+                                    {apt.request.problem_type}
+                                  </div>
+                                )}
+                                <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                                  <Badge label={bSt.label} bg={bSt.bg} color={bSt.color} />
+                                  {apt.status === 'completed' && payInfo && (
+                                    <Badge label={payInfo.label} bg={payInfo.bg} color={payInfo.color} icon={payInfo.icon} />
+                                  )}
+                                  {(apt.payment_status === 'held' || apt.payment_status === 'released') && apt.net_to_therapist && (
+                                    <span style={{ fontSize: 13, color: '#15803D', fontWeight: 700 }}>
+                                      +{parseFloat(apt.net_to_therapist).toFixed(2)}€
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Action buttons */}
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
+                                {canMarkDone && (
+                                  <button onClick={() => openDoneModal(apt, apt.request)}
+                                    style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: '#15803D', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
+                                    <Check size={14} strokeWidth={3} />
+                                    Ολοκληρώθηκε
+                                  </button>
+                                )}
+                                {apt.status === 'confirmed' && !isPast && (
+                                  <button onClick={() => openCancelBookingModal(apt, apt.request)}
+                                    style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid #FECDD3', background: 'transparent', color: '#BE123C', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                                    Ακύρωση
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Held bookings: countdown info */}
+                            {isHeld && (
+                              <div style={{ marginTop: 14, padding: 12, background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 10 }}>
+                                <div style={{ fontSize: 13, color: '#92400E', fontWeight: 600, marginBottom: 2, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                  <Hourglass size={13} />
+                                  Αναμονή απελευθέρωσης πληρωμής από ασθενή
+                                </div>
+                                {daysLeft !== null && (
+                                  <div style={{ fontSize: 12, color: '#78350F' }}>
+                                    {daysLeft === 0 ? 'Auto-release σήμερα' : `Auto-release σε ${daysLeft} μέρες`} · Καθαρά {parseFloat(apt.net_to_therapist || 0).toFixed(2)}€
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {pastAppointments.length > 0 && (
+                  <div>
+                    <h3 style={{ fontSize: 14, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                      <ChevronLeft size={16} color="#64748b" />
+                      Παλαιότερα Ραντεβού ({pastAppointments.length})
+                    </h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {pastAppointments.map(apt => {
+                        const bSt = STATUS[apt.status] || STATUS.pending;
+                        const payStatus = apt.payment_status || 'pending';
+                        const payInfo = PAYMENT_STATUS[payStatus];
+
+                        return (
+                          <div key={apt.id} style={{
+                            background: '#fff',
+                            borderRadius: 10,
+                            border: '1px solid #e2e8f0',
+                            padding: '14px 18px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 14,
+                            flexWrap: 'wrap',
+                          }}>
+                            <div style={{ minWidth: 100 }}>
+                              <div style={{ fontSize: 14, color: '#475569', fontWeight: 600 }}>
+                                {formatShortDate(apt.session_date)}
+                              </div>
+                              <div style={{ fontSize: 13, color: '#94A3B8' }}>
+                                στις {apt.session_time?.slice(0, 5)}
+                              </div>
+                            </div>
+
+                            <div style={{ flex: 1, minWidth: 150 }}>
+                              <div style={{ fontSize: 14, color: '#475569', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                <User size={12} color="#64748B" />
+                                {apt.request?.patient_name || 'Άγνωστος'}
+                              </div>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                              <Badge label={bSt.label} bg={bSt.bg} color={bSt.color} />
+                              {apt.status === 'completed' && payInfo && payStatus !== 'pending' && (
+                                <Badge label={payInfo.label} bg={payInfo.bg} color={payInfo.color} icon={payInfo.icon} />
+                              )}
+                              {payStatus === 'released' && apt.net_to_therapist && (
+                                <span style={{ fontSize: 12, color: '#15803D', fontWeight: 700 }}>
+                                  +{parseFloat(apt.net_to_therapist).toFixed(2)}€
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* CALENDAR VIEW */}
+            {appointmentsView === 'calendar' && (
+              <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+                  <button onClick={() => navigateMonth(-1)}
+                    style={{ padding: '10px 16px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#1a2e44', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <ChevronLeft size={16} />
+                    Προηγ.
+                  </button>
+                  <div style={{ fontSize: 19, fontWeight: 700, color: '#0F172A', textAlign: 'center' }}>
+                    {MONTHS_EL_FULL[calendarMonth.month]} {calendarMonth.year}
+                  </div>
+                  <button onClick={() => navigateMonth(1)}
+                    style={{ padding: '10px 16px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#1a2e44', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    Επόμ.
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 8 }}>
+                  {['Δευ', 'Τρι', 'Τετ', 'Πεμ', 'Παρ', 'Σαβ', 'Κυρ'].map(d => (
+                    <div key={d} style={{ textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#64748B', padding: 6 }}>
+                      {d}
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
+                  {calendarGrid.flat().map((dateStr, idx) => {
+                    if (!dateStr) return <div key={`empty-${idx}`} />;
+                    const dayApts = appointmentsByDate[dateStr] || [];
+                    const isToday = dateStr === todayStr;
+                    const isPast = dateStr < todayStr;
+                    const hasApts = dayApts.length > 0;
+                    const day = parseInt(dateStr.split('-')[2]);
+
+                    return (
+                      <div key={dateStr}
+                        onClick={() => hasApts && setSelectedDay({ date: dateStr, appointments: dayApts })}
+                        style={{
+                          minHeight: 70,
+                          padding: '6px 8px',
+                          background: isToday ? '#EFF6FF' : hasApts ? '#F0FDF4' : '#fff',
+                          border: `1px solid ${isToday ? '#2a6fdb' : hasApts ? '#86EFAC' : '#f1f5f9'}`,
+                          borderRadius: 8,
+                          cursor: hasApts ? 'pointer' : 'default',
+                          opacity: isPast && !hasApts ? 0.5 : 1,
+                          transition: 'all .15s',
+                        }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: isToday ? '#2a6fdb' : '#0F172A', marginBottom: 4 }}>
+                          {day}
+                        </div>
+                        {dayApts.slice(0, 2).map((a, i) => (
+                          <div key={i} style={{
+                            fontSize: 10,
+                            background: a.status === 'cancelled' ? '#FEE2E2' : a.status === 'completed' ? '#EDE9FE' : '#DBEAFE',
+                            color: a.status === 'cancelled' ? '#9F1239' : a.status === 'completed' ? '#5B21B6' : '#1D4ED8',
+                            padding: '2px 5px',
+                            borderRadius: 4,
+                            marginBottom: 2,
+                            fontWeight: 600,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}>
+                            {a.session_time?.slice(0, 5)}
+                          </div>
+                        ))}
+                        {dayApts.length > 2 && (
+                          <div style={{ fontSize: 10, color: '#64748b', fontWeight: 600 }}>
+                            +{dayApts.length - 2}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div style={{ marginTop: 16, display: 'flex', gap: 14, fontSize: 12, color: '#64748B', flexWrap: 'wrap' }}>
+                  <span><span style={{ display: 'inline-block', width: 12, height: 12, background: '#EFF6FF', border: '1px solid #2a6fdb', borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />Σήμερα</span>
+                  <span><span style={{ display: 'inline-block', width: 12, height: 12, background: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />Έχει ραντεβού</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ═══════════════════════ OVERVIEW TAB ═══════════════════════ */}
         {activeTab === 'overview' && (
           <div>
             <div style={{ display: 'flex', gap: 14, marginBottom: 24, flexWrap: 'wrap' }}>
@@ -647,7 +1128,6 @@ export default function TherapistDashboard() {
               ))}
             </div>
 
-            {/* NEW: Earnings cards */}
             <div style={{ display: 'flex', gap: 14, marginBottom: 24, flexWrap: 'wrap' }}>
               <div style={{ flex: 1, minWidth: 200, background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 14, padding: '20px 22px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
@@ -677,7 +1157,7 @@ export default function TherapistDashboard() {
                 Προμήθεια πλατφόρμας: <strong>{commission}€ ανά συνεδρία</strong><br />
                 Καθαρά έσοδα ανά συνεδρία (μεμονωμένη): <strong>{Math.max(0, pricePerSession - commission)}€</strong>
                 <div style={{ marginTop: 8, fontSize: 12, color: '#475569', fontStyle: 'italic' }}>
-                  💡 Σε πακέτα, τα καθαρά έσοδα μπορεί να είναι μικρότερα λόγω της έκπτωσης πακέτου.
+                  Σε πακέτα, τα καθαρά έσοδα μπορεί να είναι μικρότερα λόγω της έκπτωσης πακέτου.
                 </div>
               </div>
             </div>
@@ -703,7 +1183,7 @@ export default function TherapistDashboard() {
           </div>
         )}
 
-        {/* REQUESTS */}
+        {/* ═══════════════════════ REQUESTS TAB ═══════════════════════ */}
         {activeTab === 'requests' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {requests.length === 0
@@ -786,23 +1266,20 @@ export default function TherapistDashboard() {
                             <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: '#f8fafc', borderRadius: 8, fontSize: 13, flexWrap: 'wrap' }}>
                               <span style={{ color: '#64748B', fontWeight: 600 }}>{i + 1}.</span>
                               <span style={{ color: '#0F172A', fontWeight: 500 }}>
-                                {DAYS_EL[d.getDay()]} {d.toLocaleDateString('el-GR', { day: '2-digit', month: '2-digit' })} στις {b.session_time?.slice(0, 5)}
+                                {DAYS_EL_SHORT[d.getDay()]} {d.toLocaleDateString('el-GR', { day: '2-digit', month: '2-digit' })} στις {b.session_time?.slice(0, 5)}
                               </span>
                               <Badge label={bSt.label} bg={bSt.bg} color={bSt.color} />
 
-                              {/* Payment status badge for completed bookings */}
                               {b.status === 'completed' && payInfo && (
                                 <Badge label={payInfo.label} bg={payInfo.bg} color={payInfo.color} icon={payInfo.icon} />
                               )}
 
-                              {/* Days left countdown */}
                               {b.payment_status === 'held' && daysLeft !== null && (
                                 <span style={{ fontSize: 11, color: '#92400E', fontWeight: 600, background: '#FEF3C7', padding: '2px 8px', borderRadius: 999 }}>
                                   {daysLeft === 0 ? 'Auto-release σήμερα' : `${daysLeft} μέρ. μέχρι auto-release`}
                                 </span>
                               )}
 
-                              {/* Net amount badge for held/released */}
                               {(b.payment_status === 'held' || b.payment_status === 'released') && b.net_to_therapist && (
                                 <span style={{ fontSize: 11, color: '#15803D', fontWeight: 700 }}>
                                   +{parseFloat(b.net_to_therapist).toFixed(2)}€
@@ -810,7 +1287,6 @@ export default function TherapistDashboard() {
                               )}
 
                               <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-                                {/* "Έγινε" button — only after session time, only if confirmed and not yet completed */}
                                 {b.status === 'confirmed' && isPast && (
                                   <button onClick={() => openDoneModal(b, req)}
                                     style={{ padding: '6px 12px', borderRadius: 6, border: 'none', background: '#15803D', color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
@@ -861,7 +1337,7 @@ export default function TherapistDashboard() {
           </div>
         )}
 
-        {/* CALENDAR */}
+        {/* ═══════════════════════ CALENDAR (availability) TAB ═══════════════════════ */}
         {activeTab === 'calendar' && (
           <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: 24 }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', marginBottom: 4, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -894,7 +1370,7 @@ export default function TherapistDashboard() {
                     <th style={{ padding: '8px 10px', fontSize: 11, color: '#64748B', fontWeight: 600, textAlign: 'left', minWidth: 52 }}>Ώρα</th>
                     {currentWeek.map(d => {
                       const dateObj = new Date(d + 'T12:00:00');
-                      const dayName = DAYS_EL[dateObj.getDay()];
+                      const dayName = DAYS_EL_SHORT[dateObj.getDay()];
                       const dayNum  = dateObj.toLocaleDateString('el-GR', { day: '2-digit', month: '2-digit' });
                       const isToday = d === new Date().toISOString().split('T')[0];
                       return (
@@ -937,7 +1413,7 @@ export default function TherapistDashboard() {
           </div>
         )}
 
-        {/* AREAS */}
+        {/* ═══════════════════════ AREAS TAB ═══════════════════════ */}
         {activeTab === 'areas' && (
           <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: 24 }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', marginBottom: 4, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -1017,12 +1493,12 @@ export default function TherapistDashboard() {
           </div>
         )}
 
-        {/* CONDITIONS */}
+        {/* ═══════════════════════ CONDITIONS ═══════════════════════ */}
         {activeTab === 'conditions' && (
           <TherapistConditions userId={user?.id} specialty={profile?.specialty} />
         )}
 
-        {/* REVIEWS */}
+        {/* ═══════════════════════ REVIEWS ═══════════════════════ */}
         {activeTab === 'reviews' && (
           <div>
             <div style={{ display: 'flex', gap: 14, marginBottom: 20 }}>
@@ -1049,7 +1525,7 @@ export default function TherapistDashboard() {
           </div>
         )}
 
-        {/* PROFILE */}
+        {/* ═══════════════════════ PROFILE ═══════════════════════ */}
         {activeTab === 'profile' && (
           <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: 28 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
@@ -1136,7 +1612,6 @@ export default function TherapistDashboard() {
                   </div>
                 )}
 
-                {/* Documents section */}
                 <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid #e2e8f0' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                     <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>Δικαιολογητικά</div>
@@ -1176,7 +1651,47 @@ export default function TherapistDashboard() {
         )}
       </div>
 
-      {/* ═══ NEW: MARK AS DONE MODAL ═══ */}
+      {/* Calendar day-detail modal */}
+      {selectedDay && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}
+          onClick={e => { if (e.target === e.currentTarget) setSelectedDay(null); }}>
+          <div style={{ background: '#fff', borderRadius: 20, padding: 0, maxWidth: 480, width: '100%', maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+            <div style={{ padding: '24px 28px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: '#0F172A' }}>
+                {formatFullDate(selectedDay.date)}
+              </h2>
+              <button onClick={() => setSelectedDay(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center' }}>
+                <X size={22} />
+              </button>
+            </div>
+            <div style={{ padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {selectedDay.appointments.map(apt => {
+                const bSt = STATUS[apt.status] || STATUS.pending;
+                return (
+                  <div key={apt.id} style={{ background: '#f8fafc', borderRadius: 10, padding: 16 }}>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>
+                      στις {apt.session_time?.slice(0, 5)}
+                    </div>
+                    <div style={{ fontSize: 14, color: '#475569', marginBottom: 4, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <User size={14} color="#2a6fdb" />
+                      {apt.request?.patient_name || 'Άγνωστος'}
+                    </div>
+                    {apt.request?.address && (
+                      <div style={{ fontSize: 13, color: '#64748B', marginBottom: 8, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        <MapPin size={12} />
+                        {apt.request.address}, {apt.request.area}
+                      </div>
+                    )}
+                    <Badge label={bSt.label} bg={bSt.bg} color={bSt.color} />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MARK AS DONE MODAL */}
       {doneModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}
           onClick={e => { if (e.target === e.currentTarget) setDoneModal(null); }}>
@@ -1245,7 +1760,6 @@ export default function TherapistDashboard() {
                 <span><strong>Η Άδεια Εξασκήσεως είναι υποχρεωτική.</strong> Μόλις την ανεβάσεις, η αίτησή σου θα σταλεί στον admin για έγκριση.</span>
               </div>
 
-              {/* LICENSE */}
               <div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 8, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   <GraduationCap size={15} color="#2a6fdb" />
@@ -1279,7 +1793,6 @@ export default function TherapistDashboard() {
                 )}
               </div>
 
-              {/* CV */}
               <div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 8, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   <FileText size={15} color="#2a6fdb" />
@@ -1312,7 +1825,6 @@ export default function TherapistDashboard() {
                 )}
               </div>
 
-              {/* CERTIFICATIONS */}
               <div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 8, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   <Award size={15} color="#2a6fdb" />
@@ -1375,7 +1887,7 @@ export default function TherapistDashboard() {
               value={cancelReason}
               onChange={e => setCancelReason(e.target.value)}
               rows={3}
-              placeholder="π.χ. Έκτακτη αδυναμία εξυπηρέτησης, κατανόηση από τον ασθενή..."
+              placeholder="π.χ. Έκτακτη αδυναμία εξυπηρέτησης..."
               style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#0F172A', resize: 'vertical', boxSizing: 'border-box', marginBottom: 20 }}
             />
             <div style={{ display: 'flex', gap: 10 }}>
