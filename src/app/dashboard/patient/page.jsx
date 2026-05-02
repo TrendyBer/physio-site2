@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
-import { ClipboardList, Stethoscope, User, MapPin, Euro, Calendar, Star, Check, ArrowRight, Save, X } from 'lucide-react';
+import { ClipboardList, Stethoscope, User, MapPin, Euro, Calendar, Star, Check, ArrowRight, Save, X, Hourglass, Wallet, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 function Avatar({ name, size = 44 }) {
   return (
@@ -12,8 +12,13 @@ function Avatar({ name, size = 44 }) {
   );
 }
 
-function Badge({ label, bg, color }) {
-  return <span style={{ background: bg, color, padding: '3px 10px', borderRadius: 999, fontSize: 11, fontWeight: 700, textTransform: 'uppercase' }}>{label}</span>;
+function Badge({ label, bg, color, icon: Icon }) {
+  return (
+    <span style={{ background: bg, color, padding: '3px 10px', borderRadius: 999, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+      {Icon && <Icon size={11} strokeWidth={2.5} />}
+      {label}
+    </span>
+  );
 }
 
 function Stars({ rating, onChange, size = 24 }) {
@@ -51,7 +56,24 @@ const BOOKING_STATUS = {
   cancelled: { label: 'Ακυρώθηκε',     bg: '#F1F5F9', color: '#64748B' },
 };
 
+const PAYMENT_STATUS = {
+  pending:  { label: 'Σε αναμονή',           bg: '#F1F5F9', color: '#475569', icon: Hourglass },
+  held:     { label: 'Προς απελευθέρωση',    bg: '#FEF3C7', color: '#92400E', icon: AlertCircle },
+  released: { label: 'Πληρωμένη',            bg: '#D1FAE5', color: '#065F46', icon: CheckCircle2 },
+  refunded: { label: 'Επιστράφηκε',          bg: '#FEE2E2', color: '#991B1B', icon: X },
+};
+
 const DAYS_EL = ['Κυρ', 'Δευ', 'Τρι', 'Τετ', 'Πεμ', 'Παρ', 'Σαβ'];
+
+// Helper: how many days until auto-release
+function daysUntilAutoRelease(autoReleaseAt) {
+  if (!autoReleaseAt) return null;
+  const now = new Date();
+  const target = new Date(autoReleaseAt);
+  const diffMs = target - now;
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  return Math.max(0, diffDays);
+}
 
 export default function PatientDashboard() {
   const router = useRouter();
@@ -64,6 +86,10 @@ export default function PatientDashboard() {
   const [reviewModal, setReviewModal] = useState(null);
   const [reviewForm, setReviewForm] = useState({ rating: 0, comment: '' });
   const [submittingReview, setSubmittingReview] = useState(false);
+
+  // Release payment modal
+  const [releaseModal, setReleaseModal] = useState(null);
+  const [releasing, setReleasing] = useState(false);
 
   // Profile edit state
   const [editProfile, setEditProfile] = useState({ name: '', phone: '', area: '', address: '', city: '', postal_code: '' });
@@ -192,6 +218,31 @@ export default function PatientDashboard() {
     setSubmittingReview(false);
   }
 
+  // ═══ NEW: Release payment flow ═══
+  function openReleaseModal(booking, request) {
+    setReleaseModal({ booking, request });
+  }
+
+  async function confirmRelease() {
+    if (!releaseModal) return;
+    setReleasing(true);
+
+    const { error } = await supabase.from('session_bookings').update({
+      payment_status: 'released',
+      patient_released_at: new Date().toISOString(),
+    }).eq('id', releaseModal.booking.id);
+
+    if (error) {
+      alert('Σφάλμα: ' + error.message);
+      setReleasing(false);
+      return;
+    }
+
+    await loadRequests(user.id);
+    setReleasing(false);
+    setReleaseModal(null);
+  }
+
   async function saveProfile() {
     if (!editProfile.name.trim()) {
       setProfileMsg({ type: 'error', text: 'Το ονοματεπώνυμο είναι υποχρεωτικό' });
@@ -232,6 +283,7 @@ export default function PatientDashboard() {
   }
 
   // Stats
+  const allBookings = sessionRequests.flatMap(r => r.bookings);
   const pendingCount = sessionRequests.filter(r => r.status === 'pending').length;
   const confirmedCount = sessionRequests.filter(r => r.status === 'confirmed' || r.status === 'accepted').length;
   const completedCount = sessionRequests.filter(r =>
@@ -239,6 +291,10 @@ export default function PatientDashboard() {
     r.bookings.every(b => b.status === 'completed' || b.status === 'cancelled') &&
     r.bookings.some(b => b.status === 'completed')
   ).length;
+
+  // Bookings awaiting release
+  const heldBookings = allBookings.filter(b => b.payment_status === 'held');
+  const heldAmount = heldBookings.reduce((sum, b) => sum + parseFloat(b.session_amount || 0), 0);
 
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc' }}>
@@ -277,11 +333,30 @@ export default function PatientDashboard() {
           <p style={{ fontSize: 14, color: '#64748B', marginTop: 4 }}>Διαχειριστείτε τα αιτήματά σας και τα ραντεβού σας.</p>
         </div>
 
+        {/* ═══ NEW: Release alert banner if there are held bookings ═══ */}
+        {heldBookings.length > 0 && (
+          <div style={{ background: 'linear-gradient(135deg, #FEF3C7, #FDE68A)', border: '1px solid #F59E0B', borderRadius: 14, padding: '18px 22px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+            <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <AlertCircle size={26} color="#92400E" strokeWidth={2.2} />
+            </div>
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#92400E', marginBottom: 4 }}>
+                Έχετε {heldBookings.length} {heldBookings.length === 1 ? 'συνεδρία' : 'συνεδρίες'} προς έγκριση
+              </div>
+              <div style={{ fontSize: 13, color: '#78350F', lineHeight: 1.5 }}>
+                Ο θεραπευτής δηλώνει ότι ολοκληρώθηκαν. Επιβεβαιώστε για να απελευθερωθεί η πληρωμή ({heldAmount.toFixed(2)}€ συνολικά). Δείτε τα στα αιτήματά σας παρακάτω.
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Stats cards */}
         <div style={{ display: 'flex', gap: 14, marginBottom: 24, flexWrap: 'wrap' }}>
           {[
             { label: 'Εκκρεμή', value: pendingCount, bg: '#FEF3C7', border: '#FDE68A', text: '#B45309' },
             { label: 'Ενεργά', value: confirmedCount, bg: '#DBEAFE', border: '#BFDBFE', text: '#1D4ED8' },
             { label: 'Ολοκληρωμένα', value: completedCount, bg: '#D1FAE5', border: '#BBF7D0', text: '#15803D' },
+            ...(heldBookings.length > 0 ? [{ label: 'Προς απελευθέρωση', value: `${heldAmount.toFixed(0)}€`, bg: '#FFFBEB', border: '#FDE68A', text: '#B45309' }] : []),
           ].map(c => (
             <div key={c.label} style={{ flex: 1, minWidth: 140, background: c.bg, border: `1px solid ${c.border}`, borderRadius: 14, padding: '18px 20px' }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: c.text, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6 }}>{c.label}</div>
@@ -330,9 +405,10 @@ export default function PatientDashboard() {
               const st = STATUS_MAP[req.status] || STATUS_MAP.pending;
               const hasCompletedBooking = req.bookings.some(b => b.status === 'completed');
               const canReview = hasCompletedBooking && !req.review;
+              const reqHeldBookings = req.bookings.filter(b => b.payment_status === 'held');
 
               return (
-                <div key={req.id} style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+                <div key={req.id} style={{ background: '#fff', borderRadius: 14, border: reqHeldBookings.length > 0 ? '2px solid #F59E0B' : '1px solid #e2e8f0', overflow: 'hidden' }}>
                   <div style={{ padding: '18px 20px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
                       <span style={{ fontWeight: 700, fontSize: 15, color: '#0F172A' }}>{req.problem_type || 'Φυσιοθεραπεία'}</span>
@@ -341,6 +417,9 @@ export default function PatientDashboard() {
                         <span style={{ background: '#EDE9FE', color: '#5B21B6', padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700 }}>
                           Πακέτο {req.package_size} συνεδριών
                         </span>
+                      )}
+                      {reqHeldBookings.length > 0 && (
+                        <Badge label={`${reqHeldBookings.length} προς έγκριση`} bg="#FEF3C7" color="#92400E" icon={AlertCircle} />
                       )}
                       <span style={{ fontSize: 11, color: '#94A3B8', marginLeft: 'auto' }}>{new Date(req.created_at).toLocaleDateString('el-GR')}</span>
                     </div>
@@ -385,13 +464,69 @@ export default function PatientDashboard() {
                         {req.bookings.map((b, i) => {
                           const bSt = BOOKING_STATUS[b.status] || BOOKING_STATUS.pending;
                           const d = new Date(b.session_date + 'T12:00:00');
+                          const payStatus = b.payment_status || 'pending';
+                          const payInfo = PAYMENT_STATUS[payStatus];
+                          const daysLeft = b.payment_status === 'held' ? daysUntilAutoRelease(b.auto_release_at) : null;
+                          const isHeld = b.payment_status === 'held';
+
                           return (
-                            <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: '#f8fafc', borderRadius: 8, fontSize: 13 }}>
-                              <span style={{ color: '#64748B', fontWeight: 600 }}>{i + 1}.</span>
-                              <span style={{ color: '#0F172A', fontWeight: 500 }}>
-                                {DAYS_EL[d.getDay()]} {d.toLocaleDateString('el-GR', { day: '2-digit', month: '2-digit' })} στις {b.session_time?.slice(0, 5)}
-                              </span>
-                              <Badge label={bSt.label} bg={bSt.bg} color={bSt.color} />
+                            <div key={b.id} style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: 8,
+                              padding: '10px 14px',
+                              background: isHeld ? '#FFFBEB' : '#f8fafc',
+                              borderRadius: 8,
+                              fontSize: 13,
+                              border: isHeld ? '1px solid #FDE68A' : 'none',
+                            }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                                <span style={{ color: '#64748B', fontWeight: 600 }}>{i + 1}.</span>
+                                <span style={{ color: '#0F172A', fontWeight: 500 }}>
+                                  {DAYS_EL[d.getDay()]} {d.toLocaleDateString('el-GR', { day: '2-digit', month: '2-digit' })} στις {b.session_time?.slice(0, 5)}
+                                </span>
+                                <Badge label={bSt.label} bg={bSt.bg} color={bSt.color} />
+
+                                {/* Payment status */}
+                                {b.status === 'completed' && payInfo && (
+                                  <Badge label={payInfo.label} bg={payInfo.bg} color={payInfo.color} icon={payInfo.icon} />
+                                )}
+                              </div>
+
+                              {/* Release section — for held bookings */}
+                              {isHeld && (
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingTop: 8, borderTop: '1px solid #FDE68A', flexWrap: 'wrap' }}>
+                                  <div style={{ flex: 1, minWidth: 200 }}>
+                                    <div style={{ fontSize: 12, color: '#92400E', fontWeight: 600, marginBottom: 2 }}>
+                                      Ο θεραπευτής δηλώνει ότι ολοκληρώθηκε
+                                    </div>
+                                    {daysLeft !== null && (
+                                      <div style={{ fontSize: 11, color: '#78350F' }}>
+                                        {daysLeft === 0 ? 'Αυτόματη απελευθέρωση σήμερα' : `Αυτόματη απελευθέρωση σε ${daysLeft} μέρες`}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <button onClick={() => openReleaseModal(b, req)}
+                                    style={{
+                                      padding: '8px 18px',
+                                      borderRadius: 20,
+                                      border: 'none',
+                                      background: '#15803D',
+                                      color: '#fff',
+                                      fontSize: 13,
+                                      fontWeight: 700,
+                                      cursor: 'pointer',
+                                      whiteSpace: 'nowrap',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: 6,
+                                      fontFamily: 'inherit',
+                                    }}>
+                                    <CheckCircle2 size={14} strokeWidth={2.5} />
+                                    Απελευθέρωση {parseFloat(b.session_amount || 0).toFixed(2)}€
+                                  </button>
+                                </div>
+                              )}
                             </div>
                           );
                         })}
@@ -594,6 +729,57 @@ export default function PatientDashboard() {
           </div>
         )}
       </div>
+
+      {/* ═══ NEW: RELEASE PAYMENT MODAL ═══ */}
+      {releaseModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}
+          onClick={e => { if (e.target === e.currentTarget) setReleaseModal(null); }}>
+          <div style={{ background: '#fff', borderRadius: 20, padding: '32px', maxWidth: 480, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+            <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#D1FAE5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+              <Wallet size={28} color="#15803D" strokeWidth={2.2} />
+            </div>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', marginBottom: 12, textAlign: 'center' }}>
+              Επιβεβαίωση Πληρωμής
+            </h2>
+            <p style={{ fontSize: 14, color: '#64748B', marginBottom: 20, lineHeight: 1.6, textAlign: 'center' }}>
+              Επιβεβαιώνετε ότι έγινε η συνεδρία με τον/την <strong style={{ color: '#0F172A' }}>{releaseModal.request?.therapist?.name || 'θεραπευτή'}</strong> και θέλετε να απελευθερωθεί η πληρωμή;
+            </p>
+
+            <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 12, padding: '16px 20px', marginBottom: 16 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#15803D', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6 }}>
+                Ποσό προς απελευθέρωση
+              </div>
+              <div style={{ fontSize: 32, fontWeight: 700, color: '#15803D' }}>
+                {parseFloat(releaseModal.booking?.session_amount || 0).toFixed(2)}€
+              </div>
+              {releaseModal.booking?.session_date && (
+                <div style={{ fontSize: 12, color: '#15803D', marginTop: 6 }}>
+                  Συνεδρία: {new Date(releaseModal.booking.session_date + 'T12:00:00').toLocaleDateString('el-GR', { day: '2-digit', month: 'long', year: 'numeric' })} στις {releaseModal.booking.session_time?.slice(0, 5)}
+                </div>
+              )}
+            </div>
+
+            <div style={{ background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 10, padding: '12px 16px', marginBottom: 24, fontSize: 12, color: '#92400E', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+              <AlertCircle size={14} color="#92400E" style={{ flexShrink: 0, marginTop: 1 }} />
+              <span>
+                <strong>Προσοχή:</strong> Μετά την απελευθέρωση, η πληρωμή πηγαίνει στον θεραπευτή και δεν μπορεί να ανακληθεί. Πατήστε επιβεβαίωση μόνο εφόσον έχει πραγματοποιηθεί η συνεδρία.
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setReleaseModal(null)} disabled={releasing}
+                style={{ flex: 1, padding: '12px', borderRadius: 30, border: '1px solid #e2e8f0', background: 'transparent', color: '#64748b', fontSize: 14, fontWeight: 600, cursor: releasing ? 'not-allowed' : 'pointer' }}>
+                Ακύρωση
+              </button>
+              <button onClick={confirmRelease} disabled={releasing}
+                style={{ flex: 2, padding: '12px', borderRadius: 30, border: 'none', background: releasing ? '#94a3b8' : '#15803D', color: '#fff', fontSize: 14, fontWeight: 600, cursor: releasing ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                <CheckCircle2 size={14} strokeWidth={2.5} />
+                {releasing ? 'Απελευθέρωση...' : 'Ναι, απελευθέρωση'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Review Modal */}
       {reviewModal && (
