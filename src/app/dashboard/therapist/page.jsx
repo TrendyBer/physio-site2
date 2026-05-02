@@ -3,6 +3,13 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import TherapistConditions from '../../../components/TherapistConditions';
+import {
+  LayoutDashboard, ClipboardList, Calendar, MapPin, Target, Star, User,
+  Clock, AlertTriangle, Upload, CreditCard, Home, MessageSquare,
+  Check, X, Lock, ChevronLeft, ChevronRight, Plus, Lightbulb,
+  Camera, Pencil, CheckCircle2, Save, FileText, GraduationCap,
+  Award, Eye, Trash2, Wallet, Hourglass,
+} from 'lucide-react';
 
 function Avatar({ name, photoUrl, size = 48 }) {
   if (photoUrl) return <img src={photoUrl} alt={name} style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />;
@@ -13,8 +20,29 @@ function Avatar({ name, photoUrl, size = 48 }) {
   );
 }
 
-function Badge({ label, bg, color }) {
-  return <span style={{ background: bg, color, padding: '3px 10px', borderRadius: 999, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em' }}>{label}</span>;
+function Badge({ label, bg, color, icon: Icon }) {
+  return (
+    <span style={{ background: bg, color, padding: '3px 10px', borderRadius: 999, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+      {Icon && <Icon size={11} strokeWidth={2.5} />}
+      {label}
+    </span>
+  );
+}
+
+function ReviewStars({ rating, size = 14 }) {
+  return (
+    <span style={{ display: 'inline-flex', gap: 2 }}>
+      {[1, 2, 3, 4, 5].map(i => (
+        <Star
+          key={i}
+          size={size}
+          fill={i <= (rating || 0) ? '#F59E0B' : 'none'}
+          color={i <= (rating || 0) ? '#F59E0B' : '#E2E8F0'}
+          strokeWidth={2}
+        />
+      ))}
+    </span>
+  );
 }
 
 const STATUS = {
@@ -23,6 +51,13 @@ const STATUS = {
   completed: { label: 'Ολοκληρώθηκε',  bg: '#EDE9FE', color: '#5B21B6' },
   cancelled: { label: 'Ακυρώθηκε',     bg: '#FFE4E6', color: '#9F1239' },
   no_show:   { label: 'Δεν εμφανίστηκε', bg: '#FEE2E2', color: '#991B1B' },
+};
+
+const PAYMENT_STATUS = {
+  pending:  { label: 'Σε αναμονή',           bg: '#F1F5F9', color: '#475569', icon: Hourglass },
+  held:     { label: 'Αναμονή απελευθέρωσης', bg: '#FEF3C7', color: '#92400E', icon: Hourglass },
+  released: { label: 'Πληρώθηκε',            bg: '#D1FAE5', color: '#065F46', icon: CheckCircle2 },
+  refunded: { label: 'Επιστράφηκε',          bg: '#FEE2E2', color: '#991B1B', icon: X },
 };
 
 const DAYS_EL = ['Κυρ', 'Δευ', 'Τρι', 'Τετ', 'Πεμ', 'Παρ', 'Σαβ'];
@@ -34,7 +69,6 @@ for (let h = 9; h <= 20; h++) {
 }
 HOURS.push('21:00');
 
-// Predefined areas of Athens — V1
 const ATHENS_AREAS = [
   'Αθήνα Κέντρο', 'Παγκράτι', 'Κολωνάκι', 'Εξάρχεια', 'Κυψέλη', 'Πατήσια',
   'Αμπελόκηποι', 'Ζωγράφου', 'Καισαριανή', 'Βύρωνας', 'Ηλιούπολη', 'Νέα Σμύρνη',
@@ -77,6 +111,16 @@ function groupByWeek(dates) {
 
 const ALL_WEEKS = groupByWeek(generateDates());
 
+// Helper: how many days until auto-release
+function daysUntilAutoRelease(autoReleaseAt) {
+  if (!autoReleaseAt) return null;
+  const now = new Date();
+  const target = new Date(autoReleaseAt);
+  const diffMs = target - now;
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  return Math.max(0, diffDays);
+}
+
 export default function TherapistDashboard() {
   const router = useRouter();
   const [user, setUser] = useState(null);
@@ -84,7 +128,7 @@ export default function TherapistDashboard() {
   const [requests, setRequests] = useState([]);
   const [slots, setSlots] = useState([]);
   const [reviews, setReviews] = useState([]);
-  const [commission, setCommission] = useState(20);
+  const [commission, setCommission] = useState(3);
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
   const [editProfile, setEditProfile] = useState(false);
@@ -98,14 +142,16 @@ export default function TherapistDashboard() {
   const [cancelReason, setCancelReason] = useState('');
   const [cancelling, setCancelling] = useState(false);
 
-  // Documents upload modal
+  // Mark-as-done modal
+  const [doneModal, setDoneModal] = useState(null);
+  const [marking, setMarking] = useState(false);
+
   const [docsModal, setDocsModal] = useState(false);
-  const [uploadingDoc, setUploadingDoc] = useState(null); // 'license' | 'cv' | 'cert'
+  const [uploadingDoc, setUploadingDoc] = useState(null);
   const licenseInputRef = useRef();
   const cvInputRef = useRef();
   const certInputRef = useRef();
 
-  // Areas (service_areas)
   const [areaInput, setAreaInput] = useState('');
   const [savingAreas, setSavingAreas] = useState(false);
   const [areaSuggestions, setAreaSuggestions] = useState([]);
@@ -132,7 +178,7 @@ export default function TherapistDashboard() {
     setReviews(revs || []);
 
     const { data: comm } = await supabase.from('platform_settings').select('value').eq('key', 'commission').single();
-    if (comm) setCommission(parseInt(comm.value) || 20);
+    if (comm) setCommission(parseFloat(comm.value) || 3);
 
     setLoading(false);
   }
@@ -207,7 +253,6 @@ export default function TherapistDashboard() {
     setUploadingPhoto(false);
   }
 
-  // ============== DOCUMENT UPLOAD (license, CV, certifications) ==============
   async function uploadDocument(file, kind) {
     if (!file) return;
     const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
@@ -222,9 +267,7 @@ export default function TherapistDashboard() {
 
     setUploadingDoc(kind);
     const ext = file.name.split('.').pop().toLowerCase();
-    const filename = kind === 'cert'
-      ? `${kind}-${Date.now()}.${ext}`
-      : `${kind}.${ext}`;
+    const filename = kind === 'cert' ? `${kind}-${Date.now()}.${ext}` : `${kind}.${ext}`;
     const path = `${user.id}/${filename}`;
 
     const { error: uploadError } = await supabase.storage
@@ -240,7 +283,6 @@ export default function TherapistDashboard() {
     const updates = {};
     if (kind === 'license') {
       updates.license_url = path;
-      // When license uploaded → application becomes "pending" (visible to admin)
       updates.application_status = 'pending';
     } else if (kind === 'cv') {
       updates.cv_url = path;
@@ -300,7 +342,6 @@ export default function TherapistDashboard() {
     if (url) window.open(url, '_blank');
   }
 
-  // ============== AREAS ==============
   function handleAreaInputChange(value) {
     setAreaInput(value);
     if (value.trim().length > 0) {
@@ -364,13 +405,37 @@ export default function TherapistDashboard() {
     await loadRequests(user.id);
   }
 
-  async function markBookingCompleted(bookingId) {
-    await supabase.from('session_bookings').update({
+  // ═══ NEW: Mark booking as done (escrow flow) ═══
+  function openDoneModal(booking, request) {
+    setDoneModal({ booking, request });
+  }
+
+  async function markBookingDone() {
+    if (!doneModal) return;
+    setMarking(true);
+
+    const now = new Date();
+    const autoRelease = new Date(now);
+    autoRelease.setDate(autoRelease.getDate() + 7);
+
+    const { error } = await supabase.from('session_bookings').update({
       status: 'completed',
-      completed_at: new Date().toISOString(),
+      payment_status: 'held',
+      completed_at: now.toISOString(),
       completed_by_therapist: true,
-    }).eq('id', bookingId);
+      therapist_marked_done_at: now.toISOString(),
+      auto_release_at: autoRelease.toISOString(),
+    }).eq('id', doneModal.booking.id);
+
+    if (error) {
+      alert('Σφάλμα: ' + error.message);
+      setMarking(false);
+      return;
+    }
+
     await loadRequests(user.id);
+    setMarking(false);
+    setDoneModal(null);
   }
 
   function openCancelRequestModal(request) {
@@ -460,29 +525,33 @@ export default function TherapistDashboard() {
     router.push('/');
   }
 
+  // ═══ STATS ═══
   const allBookings = requests.flatMap(r => r.bookings);
   const pendingCount = requests.filter(r => r.status === 'pending').length;
   const confirmedCount = allBookings.filter(b => b.status === 'confirmed').length;
   const completedCount = allBookings.filter(b => b.status === 'completed').length;
   const avgRating = reviews.length > 0 ? (reviews.reduce((s, r) => s + (r.rating || 0), 0) / reviews.length).toFixed(1) : '—';
   const pricePerSession = profile?.price_per_session || 0;
-  const netPerSession = Math.max(0, pricePerSession - commission);
-  const earned = completedCount * netPerSession;
+
+  // Escrow earnings
+  const heldBookings = allBookings.filter(b => b.payment_status === 'held');
+  const releasedBookings = allBookings.filter(b => b.payment_status === 'released');
+  const heldAmount = heldBookings.reduce((sum, b) => sum + parseFloat(b.net_to_therapist || 0), 0);
+  const releasedAmount = releasedBookings.reduce((sum, b) => sum + parseFloat(b.net_to_therapist || 0), 0);
 
   function getNetAmount(request) {
-    const totalSessions = request.bookings.length || request.package_size || 1;
-    return totalSessions * netPerSession;
+    // Sum net_to_therapist for all bookings in request
+    return (request.bookings || []).reduce((sum, b) => sum + parseFloat(b.net_to_therapist || 0), 0);
   }
 
   const fmtDate = d => new Date(d + 'T12:00:00').toLocaleDateString('el-GR', { day: '2-digit', month: '2-digit' });
   const weekStart = currentWeek?.[0];
   const weekEnd   = currentWeek?.[currentWeek.length - 1];
 
-  // Documents — has license uploaded?
   const hasLicense = !!profile?.license_url;
   const hasCv = !!profile?.cv_url;
   const certCount = (profile?.certifications_urls || []).length;
-  const showDocsBanner = !hasLicense; // Banner shown when license missing
+  const showDocsBanner = !hasLicense;
 
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc' }}>
@@ -491,13 +560,13 @@ export default function TherapistDashboard() {
   );
 
   const TABS = [
-    { id: 'overview', label: '📊 Επισκόπηση' },
-    { id: 'requests', label: `📋 Αιτήματα ${pendingCount > 0 ? `(${pendingCount})` : ''}` },
-    { id: 'calendar', label: '📅 Διαθεσιμότητα' },
-    { id: 'areas',    label: '📍 Περιοχές' },
-    { id: 'conditions', label: '🎯 Παθήσεις' },
-    { id: 'reviews',  label: '⭐ Αξιολογήσεις' },
-    { id: 'profile',  label: '👤 Προφίλ' },
+    { id: 'overview', label: 'Επισκόπηση', Icon: LayoutDashboard },
+    { id: 'requests', label: `Αιτήματα ${pendingCount > 0 ? `(${pendingCount})` : ''}`, Icon: ClipboardList },
+    { id: 'calendar', label: 'Διαθεσιμότητα', Icon: Calendar },
+    { id: 'areas',    label: 'Περιοχές', Icon: MapPin },
+    { id: 'conditions', label: 'Παθήσεις', Icon: Target },
+    { id: 'reviews',  label: 'Αξιολογήσεις', Icon: Star },
+    { id: 'profile',  label: 'Προφίλ', Icon: User },
   ];
 
   return (
@@ -511,7 +580,12 @@ export default function TherapistDashboard() {
           <span style={{ fontSize: 12, fontWeight: 500, color: '#64748b', marginLeft: 8, background: '#f1f5f9', padding: '2px 10px', borderRadius: 999 }}>Θεραπευτής</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {!profile?.is_approved && hasLicense && <span style={{ background: '#FEF3C7', color: '#92400E', padding: '4px 12px', borderRadius: 999, fontSize: 12, fontWeight: 600 }}>⏳ Εκκρεμεί έγκριση admin</span>}
+          {!profile?.is_approved && hasLicense && (
+            <span style={{ background: '#FEF3C7', color: '#92400E', padding: '4px 12px', borderRadius: 999, fontSize: 12, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+              <Clock size={12} />
+              Εκκρεμεί έγκριση admin
+            </span>
+          )}
           <Avatar name={profile?.name || user?.email} photoUrl={profile?.photo_url} size={36} />
           <button onClick={signOut} style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: 'transparent', color: '#64748b', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Αποσύνδεση</button>
         </div>
@@ -519,10 +593,12 @@ export default function TherapistDashboard() {
 
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px' }}>
 
-        {/* DOCUMENTS BANNER — shown until license uploaded */}
+        {/* DOCUMENTS BANNER */}
         {showDocsBanner && (
           <div style={{ background: 'linear-gradient(135deg, #FEF3C7, #FDE68A)', border: '1px solid #F59E0B', borderRadius: 14, padding: '20px 24px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-            <div style={{ fontSize: 32 }}>⚠️</div>
+            <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <AlertTriangle size={26} color="#92400E" strokeWidth={2.2} />
+            </div>
             <div style={{ flex: 1, minWidth: 200 }}>
               <div style={{ fontSize: 15, fontWeight: 700, color: '#92400E', marginBottom: 4 }}>
                 Ολοκλήρωσε την αίτησή σου
@@ -533,19 +609,25 @@ export default function TherapistDashboard() {
               </div>
             </div>
             <button onClick={() => setDocsModal(true)}
-              style={{ background: '#92400E', color: '#fff', border: 'none', padding: '10px 22px', borderRadius: 30, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
-              📤 Ανέβασμα Δικαιολογητικών
+              style={{ background: '#92400E', color: '#fff', border: 'none', padding: '10px 22px', borderRadius: 30, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <Upload size={14} />
+              Ανέβασμα Δικαιολογητικών
             </button>
           </div>
         )}
 
         <div style={{ display: 'flex', gap: 4, background: '#e2e8f0', padding: 4, borderRadius: 12, width: 'fit-content', marginBottom: 24, flexWrap: 'wrap' }}>
-          {TABS.map(t => (
-            <button key={t.id} onClick={() => setActiveTab(t.id)}
-              style={{ padding: '8px 18px', borderRadius: 8, border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: activeTab === t.id ? '#fff' : 'transparent', color: activeTab === t.id ? '#0F172A' : '#64748B', boxShadow: activeTab === t.id ? '0 1px 4px rgba(0,0,0,0.1)' : 'none' }}>
-              {t.label}
-            </button>
-          ))}
+          {TABS.map(t => {
+            const TabIcon = t.Icon;
+            const isActive = activeTab === t.id;
+            return (
+              <button key={t.id} onClick={() => setActiveTab(t.id)}
+                style={{ padding: '8px 18px', borderRadius: 8, border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: isActive ? '#fff' : 'transparent', color: isActive ? '#0F172A' : '#64748B', boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <TabIcon size={14} />
+                {t.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* OVERVIEW */}
@@ -555,9 +637,8 @@ export default function TherapistDashboard() {
               {[
                 { label: 'Νέα Αιτήματα', value: pendingCount, bg: '#FEF3C7', border: '#FDE68A', text: '#B45309' },
                 { label: 'Επιβεβαιωμένες', value: confirmedCount, bg: '#DBEAFE', border: '#BFDBFE', text: '#1D4ED8' },
-                { label: 'Ολοκληρωμένες', value: completedCount, bg: '#D1FAE5', border: '#BBF7D0', text: '#15803D' },
+                { label: 'Ολοκληρωμένες', value: completedCount, bg: '#EDE9FE', border: '#DDD6FE', text: '#5B21B6' },
                 { label: 'Μέση Βαθμολογία', value: avgRating, bg: '#FFFBEB', border: '#FDE68A', text: '#B45309' },
-                { label: 'Καθαρά Έσοδα', value: `${earned}€`, bg: '#F0FDF4', border: '#BBF7D0', text: '#15803D' },
               ].map(c => (
                 <div key={c.label} style={{ flex: 1, minWidth: 130, background: c.bg, border: `1px solid ${c.border}`, borderRadius: 14, padding: '18px 20px' }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: c.text, textTransform: 'uppercase', marginBottom: 6 }}>{c.label}</div>
@@ -565,14 +646,42 @@ export default function TherapistDashboard() {
                 </div>
               ))}
             </div>
+
+            {/* NEW: Earnings cards */}
+            <div style={{ display: 'flex', gap: 14, marginBottom: 24, flexWrap: 'wrap' }}>
+              <div style={{ flex: 1, minWidth: 200, background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 14, padding: '20px 22px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <Hourglass size={16} color="#B45309" />
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#B45309', textTransform: 'uppercase', letterSpacing: '.05em' }}>Σε εκκρεμότητα</div>
+                </div>
+                <div style={{ fontSize: 30, fontWeight: 700, color: '#B45309' }}>{heldAmount.toFixed(2)}€</div>
+                <div style={{ fontSize: 12, color: '#92400E', marginTop: 4 }}>{heldBookings.length} συνεδρίες αναμένουν απελευθέρωση</div>
+              </div>
+              <div style={{ flex: 1, minWidth: 200, background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 14, padding: '20px 22px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <Wallet size={16} color="#15803D" />
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#15803D', textTransform: 'uppercase', letterSpacing: '.05em' }}>Πληρωμένα</div>
+                </div>
+                <div style={{ fontSize: 30, fontWeight: 700, color: '#15803D' }}>{releasedAmount.toFixed(2)}€</div>
+                <div style={{ fontSize: 12, color: '#15803D', marginTop: 4 }}>{releasedBookings.length} συνεδρίες έχουν εξοφληθεί</div>
+              </div>
+            </div>
+
             <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 14, padding: '20px 24px', marginBottom: 20 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#1D4ED8', marginBottom: 8 }}>💳 Πληροφορίες Πληρωμής</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#1D4ED8', marginBottom: 8, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <CreditCard size={16} />
+                Πληροφορίες Πληρωμής
+              </div>
               <div style={{ fontSize: 13, color: '#1E40AF', lineHeight: 1.7 }}>
                 Τιμή συνεδρίας σας: <strong>{pricePerSession}€</strong><br />
                 Προμήθεια πλατφόρμας: <strong>{commission}€ ανά συνεδρία</strong><br />
-                Καθαρά έσοδα ανά συνεδρία: <strong>{netPerSession}€</strong>
+                Καθαρά έσοδα ανά συνεδρία (μεμονωμένη): <strong>{Math.max(0, pricePerSession - commission)}€</strong>
+                <div style={{ marginTop: 8, fontSize: 12, color: '#475569', fontStyle: 'italic' }}>
+                  💡 Σε πακέτα, τα καθαρά έσοδα μπορεί να είναι μικρότερα λόγω της έκπτωσης πακέτου.
+                </div>
               </div>
             </div>
+
             <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
               <div style={{ padding: '14px 20px', borderBottom: '1px solid #f1f5f9', fontSize: 14, fontWeight: 700, color: '#0F172A' }}>Πρόσφατα Αιτήματα</div>
               {requests.slice(0, 5).length === 0
@@ -616,12 +725,14 @@ export default function TherapistDashboard() {
                             <span style={{ fontSize: 11, color: '#94A3B8', marginLeft: 'auto' }}>{new Date(req.created_at).toLocaleDateString('el-GR')}</span>
                           </div>
 
-                          <div style={{ fontSize: 13, color: '#475569', marginBottom: 4 }}>
-                            📍 {req.address}, {req.area}{req.postal_code ? `, ${req.postal_code}` : ''}
+                          <div style={{ fontSize: 13, color: '#475569', marginBottom: 4, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                            <MapPin size={13} color="#64748B" />
+                            {req.address}, {req.area}{req.postal_code ? `, ${req.postal_code}` : ''}
                           </div>
                           {req.floor_info && (
-                            <div style={{ fontSize: 12, color: '#64748B', marginBottom: 8 }}>
-                              🏠 {req.floor_info}
+                            <div style={{ fontSize: 12, color: '#64748B', marginBottom: 8, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                              <Home size={12} />
+                              {req.floor_info}
                             </div>
                           )}
 
@@ -631,8 +742,9 @@ export default function TherapistDashboard() {
                           </div>
 
                           {req.notes && (
-                            <div style={{ fontSize: 12, color: '#64748B', marginBottom: 10, fontStyle: 'italic' }}>
-                              💬 Σημειώσεις: {req.notes}
+                            <div style={{ fontSize: 12, color: '#64748B', marginBottom: 10, fontStyle: 'italic', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                              <MessageSquare size={12} />
+                              Σημειώσεις: {req.notes}
                             </div>
                           )}
 
@@ -648,8 +760,8 @@ export default function TherapistDashboard() {
                               <strong style={{ color: '#0F172A' }}>{req.bookings.length}</strong>
                             </div>
                             <div style={{ marginLeft: 'auto' }}>
-                              <span style={{ color: '#64748B' }}>Καθαρά: </span>
-                              <strong style={{ color: '#15803D', fontSize: 15 }}>{netAmount}€</strong>
+                              <span style={{ color: '#64748B' }}>Σύνολο καθαρά: </span>
+                              <strong style={{ color: '#15803D', fontSize: 15 }}>{netAmount.toFixed(2)}€</strong>
                             </div>
                           </div>
                         </div>
@@ -657,26 +769,53 @@ export default function TherapistDashboard() {
                     </div>
 
                     <div style={{ padding: '16px 20px' }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 10 }}>
-                        📅 Συνεδρίες
+                      <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 10, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        <Calendar size={12} />
+                        Συνεδρίες
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                         {req.bookings.map((b, i) => {
                           const bSt = STATUS[b.status] || STATUS.pending;
                           const d = new Date(b.session_date + 'T12:00:00');
                           const isPast = new Date(b.session_date + 'T' + (b.session_time || '00:00')) < new Date();
+                          const payStatus = b.payment_status || 'pending';
+                          const payInfo = PAYMENT_STATUS[payStatus];
+                          const daysLeft = b.payment_status === 'held' ? daysUntilAutoRelease(b.auto_release_at) : null;
+
                           return (
-                            <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: '#f8fafc', borderRadius: 8, fontSize: 13 }}>
+                            <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: '#f8fafc', borderRadius: 8, fontSize: 13, flexWrap: 'wrap' }}>
                               <span style={{ color: '#64748B', fontWeight: 600 }}>{i + 1}.</span>
                               <span style={{ color: '#0F172A', fontWeight: 500 }}>
                                 {DAYS_EL[d.getDay()]} {d.toLocaleDateString('el-GR', { day: '2-digit', month: '2-digit' })} στις {b.session_time?.slice(0, 5)}
                               </span>
                               <Badge label={bSt.label} bg={bSt.bg} color={bSt.color} />
+
+                              {/* Payment status badge for completed bookings */}
+                              {b.status === 'completed' && payInfo && (
+                                <Badge label={payInfo.label} bg={payInfo.bg} color={payInfo.color} icon={payInfo.icon} />
+                              )}
+
+                              {/* Days left countdown */}
+                              {b.payment_status === 'held' && daysLeft !== null && (
+                                <span style={{ fontSize: 11, color: '#92400E', fontWeight: 600, background: '#FEF3C7', padding: '2px 8px', borderRadius: 999 }}>
+                                  {daysLeft === 0 ? 'Auto-release σήμερα' : `${daysLeft} μέρ. μέχρι auto-release`}
+                                </span>
+                              )}
+
+                              {/* Net amount badge for held/released */}
+                              {(b.payment_status === 'held' || b.payment_status === 'released') && b.net_to_therapist && (
+                                <span style={{ fontSize: 11, color: '#15803D', fontWeight: 700 }}>
+                                  +{parseFloat(b.net_to_therapist).toFixed(2)}€
+                                </span>
+                              )}
+
                               <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+                                {/* "Έγινε" button — only after session time, only if confirmed and not yet completed */}
                                 {b.status === 'confirmed' && isPast && (
-                                  <button onClick={() => markBookingCompleted(b.id)}
-                                    style={{ padding: '5px 10px', borderRadius: 6, border: 'none', background: '#7C3AED', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
-                                    ✓ Ολοκληρώθηκε
+                                  <button onClick={() => openDoneModal(b, req)}
+                                    style={{ padding: '6px 12px', borderRadius: 6, border: 'none', background: '#15803D', color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                    <Check size={12} strokeWidth={3} />
+                                    Ολοκληρώθηκε
                                   </button>
                                 )}
                                 {b.status === 'confirmed' && !isPast && (
@@ -697,12 +836,14 @@ export default function TherapistDashboard() {
                         {isPending && (
                           <>
                             <button onClick={() => openCancelRequestModal(req)}
-                              style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #FECDD3', background: 'transparent', color: '#BE123C', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                              ✕ Απόρριψη
+                              style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #FECDD3', background: 'transparent', color: '#BE123C', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                              <X size={14} strokeWidth={2.5} />
+                              Απόρριψη
                             </button>
                             <button onClick={() => confirmRequest(req)}
-                              style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: '#15803D', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                              ✓ Αποδοχή Αιτήματος
+                              style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: '#15803D', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                              <Check size={14} strokeWidth={3} />
+                              Αποδοχή Αιτήματος
                             </button>
                           </>
                         )}
@@ -723,21 +864,26 @@ export default function TherapistDashboard() {
         {/* CALENDAR */}
         {activeTab === 'calendar' && (
           <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: 24 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', marginBottom: 4 }}>📅 Διαθεσιμότητα — έως 2 χρόνια μπροστά</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', marginBottom: 4, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <Calendar size={15} color="#2a6fdb" />
+              Διαθεσιμότητα — έως 2 χρόνια μπροστά
+            </div>
             <div style={{ fontSize: 13, color: '#64748B', marginBottom: 16 }}>Κλικάρετε για να ορίσετε/αφαιρέσετε ώρες. Ώρες ανά 30 λεπτά, 09:00–21:00.</div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
               <button onClick={() => setWeekOffset(w => Math.max(0, w - 1))} disabled={weekOffset === 0}
-                style={{ padding: '6px 16px', borderRadius: 8, border: '1px solid #e2e8f0', background: weekOffset === 0 ? '#f8fafc' : '#fff', color: weekOffset === 0 ? '#94a3b8' : '#1a2e44', fontSize: 13, fontWeight: 600, cursor: weekOffset === 0 ? 'not-allowed' : 'pointer' }}>
-                ← Προηγ.
+                style={{ padding: '6px 16px', borderRadius: 8, border: '1px solid #e2e8f0', background: weekOffset === 0 ? '#f8fafc' : '#fff', color: weekOffset === 0 ? '#94a3b8' : '#1a2e44', fontSize: 13, fontWeight: 600, cursor: weekOffset === 0 ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <ChevronLeft size={14} />
+                Προηγ.
               </button>
               <div style={{ flex: 1, textAlign: 'center', fontSize: 14, fontWeight: 700, color: '#0F172A' }}>
                 {weekStart && weekEnd ? `${fmtDate(weekStart)} – ${fmtDate(weekEnd)}` : ''}
                 <span style={{ fontSize: 12, color: '#94a3b8', marginLeft: 8 }}>Εβδομάδα {weekOffset + 1} / {ALL_WEEKS.length}</span>
               </div>
               <button onClick={() => setWeekOffset(w => Math.min(ALL_WEEKS.length - 1, w + 1))}
-                style={{ padding: '6px 16px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#1a2e44', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                Επόμ. →
+                style={{ padding: '6px 16px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#1a2e44', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                Επόμ.
+                <ChevronRight size={14} />
               </button>
             </div>
 
@@ -771,8 +917,8 @@ export default function TherapistDashboard() {
                         return (
                           <td key={day} style={{ padding: 2, textAlign: 'center' }}>
                             <div onClick={() => !isBlocked && !isPast && toggleSlot(day, hour)}
-                              style={{ width: '100%', height: 22, borderRadius: 3, cursor: isBlocked || isPast ? 'not-allowed' : 'pointer', background: isBlocked ? '#FEE2E2' : isAvail ? '#D1FAE5' : isPast ? '#F8FAFC' : '#F1F5F9', border: `1px solid ${isBlocked ? '#FECACA' : isAvail ? '#BBF7D0' : '#E2E8F0'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, opacity: isPast ? 0.35 : 1, transition: 'all .1s' }}>
-                              {isBlocked ? '🔒' : isAvail ? '✓' : ''}
+                              style={{ width: '100%', height: 22, borderRadius: 3, cursor: isBlocked || isPast ? 'not-allowed' : 'pointer', background: isBlocked ? '#FEE2E2' : isAvail ? '#D1FAE5' : isPast ? '#F8FAFC' : '#F1F5F9', border: `1px solid ${isBlocked ? '#FECACA' : isAvail ? '#BBF7D0' : '#E2E8F0'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: isPast ? 0.35 : 1, transition: 'all .1s' }}>
+                              {isBlocked ? <Lock size={10} color="#9F1239" strokeWidth={2.5} /> : isAvail ? <Check size={11} color="#15803D" strokeWidth={3} /> : null}
                             </div>
                           </td>
                         );
@@ -784,45 +930,46 @@ export default function TherapistDashboard() {
             </div>
 
             <div style={{ marginTop: 12, display: 'flex', gap: 16, fontSize: 12, color: '#64748B', flexWrap: 'wrap' }}>
-              <span><span style={{ display: 'inline-block', width: 12, height: 12, background: '#D1FAE5', border: '1px solid #BBF7D0', borderRadius: 3, marginRight: 4 }} />Διαθέσιμο</span>
-              <span><span style={{ display: 'inline-block', width: 12, height: 12, background: '#FEE2E2', border: '1px solid #FECACA', borderRadius: 3, marginRight: 4 }} />Κλειστό (κράτηση)</span>
-              <span><span style={{ display: 'inline-block', width: 12, height: 12, background: '#F1F5F9', border: '1px solid #E2E8F0', borderRadius: 3, marginRight: 4 }} />Μη διαθέσιμο</span>
+              <span><span style={{ display: 'inline-block', width: 12, height: 12, background: '#D1FAE5', border: '1px solid #BBF7D0', borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />Διαθέσιμο</span>
+              <span><span style={{ display: 'inline-block', width: 12, height: 12, background: '#FEE2E2', border: '1px solid #FECACA', borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />Κλειστό (κράτηση)</span>
+              <span><span style={{ display: 'inline-block', width: 12, height: 12, background: '#F1F5F9', border: '1px solid #E2E8F0', borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />Μη διαθέσιμο</span>
             </div>
           </div>
         )}
 
-        {/* AREAS — V1 */}
+        {/* AREAS */}
         {activeTab === 'areas' && (
           <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: 24 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', marginBottom: 4 }}>📍 Περιοχές Εξυπηρέτησης</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', marginBottom: 4, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <MapPin size={15} color="#2a6fdb" />
+              Περιοχές Εξυπηρέτησης
+            </div>
             <div style={{ fontSize: 13, color: '#64748B', marginBottom: 20 }}>
               Επιλέξτε τις περιοχές της Αθήνας που εξυπηρετείτε. Οι ασθενείς σε αυτές τις περιοχές θα σας βρίσκουν πιο εύκολα.
             </div>
 
-            {/* Coming soon banner */}
             <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '12px 16px', marginBottom: 20, fontSize: 12, color: '#1E40AF', display: 'flex', alignItems: 'center', gap: 8 }}>
-              💡 <strong>Σύντομα:</strong> Σχεδίαση περιοχών σε χάρτη για ακριβέστερο matching!
+              <Lightbulb size={14} color="#1E40AF" />
+              <strong>Σύντομα:</strong> Σχεδίαση περιοχών σε χάρτη για ακριβέστερο matching!
             </div>
 
-            {/* Selected areas */}
             <div style={{ marginBottom: 20 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 10 }}>
                 Επιλεγμένες περιοχές ({(profile?.service_areas || []).length})
               </div>
               {(profile?.service_areas || []).length === 0 ? (
                 <div style={{ padding: 20, textAlign: 'center', background: '#f8fafc', borderRadius: 10, color: '#94a3b8', fontSize: 13, fontStyle: 'italic' }}>
-                  Δεν έχετε επιλέξει ακόμα περιοχές. Ξεκινήστε γράφοντας παρακάτω 👇
+                  Δεν έχετε επιλέξει ακόμα περιοχές. Ξεκινήστε γράφοντας παρακάτω.
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                   {(profile?.service_areas || []).map(area => (
-                    <div key={area} style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 30, padding: '6px 12px 6px 14px', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#1D4ED8', fontWeight: 500 }}>
-                      📍 {area}
+                    <div key={area} style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 30, padding: '6px 8px 6px 12px', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#1D4ED8', fontWeight: 500 }}>
+                      <MapPin size={12} />
+                      {area}
                       <button onClick={() => removeArea(area)} disabled={savingAreas}
-                        style={{ background: 'transparent', border: 'none', color: '#1D4ED8', cursor: 'pointer', fontSize: 14, fontWeight: 700, padding: 0, marginLeft: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', width: 18, height: 18, borderRadius: '50%' }}
-                        onMouseEnter={e => e.target.style.background = '#DBEAFE'}
-                        onMouseLeave={e => e.target.style.background = 'transparent'}>
-                        ✕
+                        style={{ background: 'transparent', border: 'none', color: '#1D4ED8', cursor: 'pointer', padding: 0, marginLeft: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', width: 18, height: 18, borderRadius: '50%' }}>
+                        <X size={12} strokeWidth={2.5} />
                       </button>
                     </div>
                   ))}
@@ -830,7 +977,6 @@ export default function TherapistDashboard() {
               )}
             </div>
 
-            {/* Add new area */}
             <div style={{ position: 'relative' }}>
               <label style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 8, display: 'block' }}>
                 Προσθήκη περιοχής
@@ -845,33 +991,33 @@ export default function TherapistDashboard() {
                   style={{ flex: 1, padding: '12px 14px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#0F172A' }}
                 />
                 <button onClick={() => addArea(areaInput)} disabled={!areaInput.trim() || savingAreas}
-                  style={{ padding: '12px 24px', borderRadius: 10, border: 'none', background: !areaInput.trim() ? '#cbd5e1' : '#1a2e44', color: '#fff', fontSize: 13, fontWeight: 600, cursor: !areaInput.trim() ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
-                  ➕ Προσθήκη
+                  style={{ padding: '12px 24px', borderRadius: 10, border: 'none', background: !areaInput.trim() ? '#cbd5e1' : '#1a2e44', color: '#fff', fontSize: 13, fontWeight: 600, cursor: !areaInput.trim() ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <Plus size={14} strokeWidth={2.5} />
+                  Προσθήκη
                 </button>
               </div>
 
-              {/* Suggestions dropdown */}
               {areaSuggestions.length > 0 && (
                 <div style={{ position: 'absolute', top: '100%', left: 0, right: 100, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, marginTop: 4, boxShadow: '0 8px 24px rgba(0,0,0,0.08)', zIndex: 10, maxHeight: 240, overflowY: 'auto' }}>
                   {areaSuggestions.map(s => (
                     <div key={s} onClick={() => addArea(s)}
-                      style={{ padding: '10px 14px', cursor: 'pointer', fontSize: 13, color: '#0F172A', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: 8 }}
-                      onMouseEnter={e => e.target.style.background = '#f8fafc'}
-                      onMouseLeave={e => e.target.style.background = 'transparent'}>
-                      📍 {s}
+                      style={{ padding: '10px 14px', cursor: 'pointer', fontSize: 13, color: '#0F172A', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <MapPin size={12} color="#94a3b8" />
+                      {s}
                     </div>
                   ))}
                 </div>
               )}
 
-              <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 8 }}>
-                💡 Πληκτρολογήστε για να δείτε προτάσεις από περιοχές της Αθήνας. Μπορείτε επίσης να γράψετε και δικές σας.
+              <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <Lightbulb size={12} />
+                Πληκτρολογήστε για να δείτε προτάσεις από περιοχές της Αθήνας. Μπορείτε επίσης να γράψετε και δικές σας.
               </div>
             </div>
           </div>
         )}
 
-        {/* CONDITIONS — Manual condition tagging */}
+        {/* CONDITIONS */}
         {activeTab === 'conditions' && (
           <TherapistConditions userId={user?.id} specialty={profile?.specialty} />
         )}
@@ -894,7 +1040,7 @@ export default function TherapistDashboard() {
               : reviews.map(r => (
                 <div key={r.id} style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: '18px 20px', marginBottom: 10 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                    <span style={{ fontSize: 14, color: '#F59E0B' }}>{'★'.repeat(r.rating || 0)}{'☆'.repeat(5 - (r.rating || 0))}</span>
+                    <ReviewStars rating={r.rating} size={14} />
                     <span style={{ fontSize: 12, color: '#94A3B8' }}>{new Date(r.created_at).toLocaleDateString('el-GR')}</span>
                   </div>
                   {r.comment && <p style={{ fontSize: 14, color: '#475569', lineHeight: 1.6, margin: 0, background: '#f8fafc', padding: '10px 14px', borderRadius: 8, borderLeft: '3px solid #cbd5e1' }}>"{r.comment}"</p>}
@@ -910,8 +1056,8 @@ export default function TherapistDashboard() {
               <div style={{ position: 'relative' }}>
                 <Avatar name={profile?.name} photoUrl={profile?.photo_url} size={80} />
                 <button onClick={() => photoInputRef.current?.click()} disabled={uploadingPhoto}
-                  style={{ position: 'absolute', bottom: 0, right: 0, width: 26, height: 26, borderRadius: '50%', background: '#2a6fdb', border: '2px solid #fff', color: '#fff', fontSize: 12, cursor: uploadingPhoto ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {uploadingPhoto ? '⏳' : '📷'}
+                  style={{ position: 'absolute', bottom: 0, right: 0, width: 26, height: 26, borderRadius: '50%', background: '#2a6fdb', border: '2px solid #fff', color: '#fff', cursor: uploadingPhoto ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {uploadingPhoto ? <Clock size={12} /> : <Camera size={13} />}
                 </button>
                 <input ref={photoInputRef} type="file" accept="image/*" onChange={uploadPhoto} style={{ display: 'none' }} />
               </div>
@@ -920,17 +1066,19 @@ export default function TherapistDashboard() {
                 <div style={{ fontSize: 14, color: '#64748B' }}>{profile?.specialty} · {profile?.area}</div>
                 <div style={{ marginTop: 4 }}>
                   {profile?.is_approved
-                    ? <Badge label="✓ Εγκεκριμένος" bg="#D1FAE5" color="#065F46" />
+                    ? <Badge label="Εγκεκριμένος" bg="#D1FAE5" color="#065F46" icon={CheckCircle2} />
                     : !hasLicense
-                      ? <Badge label="⚠️ Δικαιολογητικά εκκρεμούν" bg="#FEF3C7" color="#92400E" />
-                      : <Badge label="⏳ Αναμένει έγκριση admin" bg="#FEF3C7" color="#92400E" />
+                      ? <Badge label="Δικαιολογητικά εκκρεμούν" bg="#FEF3C7" color="#92400E" icon={AlertTriangle} />
+                      : <Badge label="Αναμένει έγκριση admin" bg="#FEF3C7" color="#92400E" icon={Clock} />
                   }
                 </div>
-                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 6 }}>Πατήστε 📷 για αλλαγή φωτογραφίας (max 5MB)</div>
+                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 6, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  Πατήστε <Camera size={11} /> για αλλαγή φωτογραφίας (max 5MB)
+                </div>
               </div>
               <button onClick={() => setEditProfile(!editProfile)}
-                style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid #e2e8f0', background: editProfile ? '#f1f5f9' : '#fff', color: '#475569', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                {editProfile ? 'Ακύρωση' : '✏️ Επεξεργασία'}
+                style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid #e2e8f0', background: editProfile ? '#f1f5f9' : '#fff', color: '#475569', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                {editProfile ? 'Ακύρωση' : <><Pencil size={13} />Επεξεργασία</>}
               </button>
             </div>
 
@@ -962,8 +1110,9 @@ export default function TherapistDashboard() {
                     style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#0F172A', resize: 'vertical', boxSizing: 'border-box' }} />
                 </div>
                 <button onClick={saveProfile} disabled={saving}
-                  style={{ alignSelf: 'flex-start', padding: '10px 24px', borderRadius: 30, border: 'none', background: '#1a2e44', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
-                  {saving ? 'Αποθήκευση...' : '💾 Αποθήκευση'}
+                  style={{ alignSelf: 'flex-start', padding: '10px 24px', borderRadius: 30, border: 'none', background: '#1a2e44', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <Save size={14} />
+                  {saving ? 'Αποθήκευση...' : 'Αποθήκευση'}
                 </button>
               </div>
             ) : (
@@ -973,7 +1122,7 @@ export default function TherapistDashboard() {
                   ['Περιοχή Έδρας',   profile?.area],
                   ['Χρόνια Εμπειρίας', profile?.years_experience ? `${profile.years_experience} χρόνια` : '—'],
                   ['Τιμή/Συνεδρία',   profile?.price_per_session ? `${profile.price_per_session}€` : '—'],
-                  ['Καθαρά/Συνεδρία', profile?.price_per_session ? `${netPerSession}€` : '—'],
+                  ['Καθαρά/Συνεδρία', profile?.price_per_session ? `${Math.max(0, profile.price_per_session - commission)}€ (μετά την προμήθεια ${commission}€)` : '—'],
                 ].map(([label, value]) => (
                   <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f1f5f9', fontSize: 14 }}>
                     <span style={{ color: '#64748B' }}>{label}</span>
@@ -992,27 +1141,28 @@ export default function TherapistDashboard() {
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                     <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>Δικαιολογητικά</div>
                     <button onClick={() => setDocsModal(true)}
-                      style={{ background: 'transparent', border: '1px solid #e2e8f0', borderRadius: 20, padding: '6px 14px', fontSize: 12, fontWeight: 600, color: '#1a2e44', cursor: 'pointer', fontFamily: 'inherit' }}>
-                      📤 Διαχείριση
+                      style={{ background: 'transparent', border: '1px solid #e2e8f0', borderRadius: 20, padding: '6px 14px', fontSize: 12, fontWeight: 600, color: '#1a2e44', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <Upload size={12} />
+                      Διαχείριση
                     </button>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: hasLicense ? '#F0FDF4' : '#FEF3C7', border: `1px solid ${hasLicense ? '#BBF7D0' : '#FDE68A'}`, borderRadius: 8, fontSize: 13 }}>
-                      <span>{hasLicense ? '✅' : '⚠️'}</span>
+                      {hasLicense ? <CheckCircle2 size={16} color="#15803D" /> : <AlertTriangle size={16} color="#92400E" />}
                       <strong>Άδεια Εξασκήσεως</strong>
                       <span style={{ marginLeft: 'auto', color: hasLicense ? '#15803D' : '#92400E', fontWeight: 600, fontSize: 12 }}>
                         {hasLicense ? 'Ανέβηκε' : 'Λείπει (υποχρεωτικό)'}
                       </span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 13 }}>
-                      <span>{hasCv ? '✅' : '➖'}</span>
+                      {hasCv ? <CheckCircle2 size={16} color="#15803D" /> : <span style={{ width: 16, height: 16, display: 'inline-block', borderRadius: '50%', background: '#e2e8f0' }} />}
                       <span>Βιογραφικό</span>
                       <span style={{ marginLeft: 'auto', color: '#64748B', fontSize: 12 }}>
                         {hasCv ? 'Ανέβηκε' : 'Προαιρετικό'}
                       </span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 13 }}>
-                      <span>{certCount > 0 ? '✅' : '➖'}</span>
+                      {certCount > 0 ? <CheckCircle2 size={16} color="#15803D" /> : <span style={{ width: 16, height: 16, display: 'inline-block', borderRadius: '50%', background: '#e2e8f0' }} />}
                       <span>Πιστοποιητικά</span>
                       <span style={{ marginLeft: 'auto', color: '#64748B', fontSize: 12 }}>
                         {certCount > 0 ? `${certCount} αρχείο/α` : 'Προαιρετικά'}
@@ -1026,98 +1176,161 @@ export default function TherapistDashboard() {
         )}
       </div>
 
+      {/* ═══ NEW: MARK AS DONE MODAL ═══ */}
+      {doneModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}
+          onClick={e => { if (e.target === e.currentTarget) setDoneModal(null); }}>
+          <div style={{ background: '#fff', borderRadius: 20, padding: '32px', maxWidth: 480, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+            <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#D1FAE5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+              <Check size={28} color="#15803D" strokeWidth={3} />
+            </div>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', marginBottom: 12, textAlign: 'center' }}>
+              Ολοκληρώθηκε η συνεδρία;
+            </h2>
+            <p style={{ fontSize: 14, color: '#64748B', marginBottom: 20, lineHeight: 1.6, textAlign: 'center' }}>
+              Επιβεβαιώνεις ότι έγινε η συνεδρία με τον/την <strong style={{ color: '#0F172A' }}>{doneModal.request?.patient_name}</strong>;
+            </p>
+
+            <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 12, padding: '14px 18px', marginBottom: 20 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#15803D', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6 }}>
+                Ποσό προς απελευθέρωση
+              </div>
+              <div style={{ fontSize: 28, fontWeight: 700, color: '#15803D' }}>
+                {parseFloat(doneModal.booking?.net_to_therapist || 0).toFixed(2)}€
+              </div>
+              <div style={{ fontSize: 12, color: '#15803D', marginTop: 4, lineHeight: 1.5 }}>
+                Σύνολο συνεδρίας: {parseFloat(doneModal.booking?.session_amount || 0).toFixed(2)}€ − Προμήθεια: {parseFloat(doneModal.booking?.platform_fee || commission).toFixed(2)}€
+              </div>
+            </div>
+
+            <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 10, padding: '12px 16px', marginBottom: 24, fontSize: 12, color: '#92400E', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+              <Hourglass size={14} color="#92400E" style={{ flexShrink: 0, marginTop: 1 }} />
+              <span>
+                Ο ασθενής θα ειδοποιηθεί και θα έχει <strong>7 μέρες</strong> να επιβεβαιώσει & να απελευθερώσει το ποσό. Αν δεν απαντήσει, η πληρωμή απελευθερώνεται αυτόματα.
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setDoneModal(null)} disabled={marking}
+                style={{ flex: 1, padding: '12px', borderRadius: 30, border: '1px solid #e2e8f0', background: 'transparent', color: '#64748b', fontSize: 14, fontWeight: 600, cursor: marking ? 'not-allowed' : 'pointer' }}>
+                Ακύρωση
+              </button>
+              <button onClick={markBookingDone} disabled={marking}
+                style={{ flex: 2, padding: '12px', borderRadius: 30, border: 'none', background: marking ? '#94a3b8' : '#15803D', color: '#fff', fontSize: 14, fontWeight: 600, cursor: marking ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                <Check size={14} strokeWidth={3} />
+                {marking ? 'Καταχώρηση...' : 'Ναι, ολοκληρώθηκε'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* DOCUMENTS MODAL */}
       {docsModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}
           onClick={e => { if (e.target === e.currentTarget) setDocsModal(false); }}>
           <div style={{ background: '#fff', borderRadius: 20, padding: 0, maxWidth: 560, width: '100%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
             <div style={{ padding: '24px 28px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: '#0F172A' }}>📄 Δικαιολογητικά</h2>
-              <button onClick={() => setDocsModal(false)} style={{ background: 'transparent', border: 'none', fontSize: 20, cursor: 'pointer', color: '#94a3b8' }}>✕</button>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: '#0F172A', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <FileText size={18} color="#2a6fdb" />
+                Δικαιολογητικά
+              </h2>
+              <button onClick={() => setDocsModal(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center' }}>
+                <X size={20} />
+              </button>
             </div>
             <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 20 }}>
-              <div style={{ background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 10, padding: '12px 16px', fontSize: 13, color: '#92400E', lineHeight: 1.5 }}>
-                ⚠️ <strong>Η Άδεια Εξασκήσεως είναι υποχρεωτική.</strong> Μόλις την ανεβάσεις, η αίτησή σου θα σταλεί στον admin για έγκριση.
+              <div style={{ background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 10, padding: '12px 16px', fontSize: 13, color: '#92400E', lineHeight: 1.5, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                <AlertTriangle size={16} color="#92400E" style={{ flexShrink: 0, marginTop: 1 }} />
+                <span><strong>Η Άδεια Εξασκήσεως είναι υποχρεωτική.</strong> Μόλις την ανεβάσεις, η αίτησή σου θα σταλεί στον admin για έγκριση.</span>
               </div>
 
-              {/* LICENSE — required */}
+              {/* LICENSE */}
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>
-                  🎓 Άδεια Εξασκήσεως <span style={{ color: '#BE123C' }}>*</span>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 8, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <GraduationCap size={15} color="#2a6fdb" />
+                  Άδεια Εξασκήσεως <span style={{ color: '#BE123C' }}>*</span>
                 </div>
                 {hasLicense ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10 }}>
-                    <span style={{ fontSize: 18 }}>✅</span>
+                    <CheckCircle2 size={18} color="#15803D" />
                     <span style={{ fontSize: 13, color: '#15803D', fontWeight: 600, flex: 1 }}>Ανεβασμένο</span>
                     <button onClick={() => viewDocument(profile.license_url)}
-                      style={{ background: 'transparent', border: '1px solid #BBF7D0', borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 600, color: '#15803D', cursor: 'pointer' }}>
-                      👁️ Προβολή
+                      style={{ background: 'transparent', border: '1px solid #BBF7D0', borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 600, color: '#15803D', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      <Eye size={12} />
+                      Προβολή
                     </button>
                     <button onClick={() => removeDocument('license')}
-                      style={{ background: 'transparent', border: '1px solid #FECDD3', borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 600, color: '#BE123C', cursor: 'pointer' }}>
-                      🗑️ Διαγραφή
+                      style={{ background: 'transparent', border: '1px solid #FECDD3', borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 600, color: '#BE123C', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      <Trash2 size={12} />
+                      Διαγραφή
                     </button>
                   </div>
                 ) : (
                   <div style={{ border: '2px dashed #e2e8f0', borderRadius: 10, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                     <div style={{ fontSize: 12, color: '#64748B' }}>PDF, JPG, PNG · max 10 MB</div>
                     <button onClick={() => licenseInputRef.current?.click()} disabled={uploadingDoc === 'license'}
-                      style={{ background: '#1a2e44', color: '#fff', border: 'none', borderRadius: 20, padding: '8px 18px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                      {uploadingDoc === 'license' ? '⏳ Upload...' : '📤 Επιλογή Αρχείου'}
+                      style={{ background: '#1a2e44', color: '#fff', border: 'none', borderRadius: 20, padding: '8px 18px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <Upload size={12} />
+                      {uploadingDoc === 'license' ? 'Upload...' : 'Επιλογή Αρχείου'}
                     </button>
                     <input ref={licenseInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={e => uploadDocument(e.target.files[0], 'license')} style={{ display: 'none' }} />
                   </div>
                 )}
               </div>
 
-              {/* CV — optional */}
+              {/* CV */}
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>
-                  📝 Βιογραφικό <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 500 }}>(προαιρετικό)</span>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 8, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <FileText size={15} color="#2a6fdb" />
+                  Βιογραφικό <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 500 }}>(προαιρετικό)</span>
                 </div>
                 {hasCv ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10 }}>
-                    <span style={{ fontSize: 18 }}>✅</span>
+                    <CheckCircle2 size={18} color="#1D4ED8" />
                     <span style={{ fontSize: 13, color: '#1D4ED8', fontWeight: 600, flex: 1 }}>Ανεβασμένο</span>
                     <button onClick={() => viewDocument(profile.cv_url)}
-                      style={{ background: 'transparent', border: '1px solid #BFDBFE', borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 600, color: '#1D4ED8', cursor: 'pointer' }}>
-                      👁️ Προβολή
+                      style={{ background: 'transparent', border: '1px solid #BFDBFE', borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 600, color: '#1D4ED8', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      <Eye size={12} />
+                      Προβολή
                     </button>
                     <button onClick={() => removeDocument('cv')}
-                      style={{ background: 'transparent', border: '1px solid #FECDD3', borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 600, color: '#BE123C', cursor: 'pointer' }}>
-                      🗑️
+                      style={{ background: 'transparent', border: '1px solid #FECDD3', borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 600, color: '#BE123C', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}>
+                      <Trash2 size={12} />
                     </button>
                   </div>
                 ) : (
                   <div style={{ border: '2px dashed #e2e8f0', borderRadius: 10, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                     <div style={{ fontSize: 12, color: '#64748B' }}>PDF, JPG, PNG · max 10 MB</div>
                     <button onClick={() => cvInputRef.current?.click()} disabled={uploadingDoc === 'cv'}
-                      style={{ background: 'transparent', color: '#1a2e44', border: '1.5px solid #e2e8f0', borderRadius: 20, padding: '8px 18px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                      {uploadingDoc === 'cv' ? '⏳ Upload...' : '📤 Επιλογή'}
+                      style={{ background: 'transparent', color: '#1a2e44', border: '1.5px solid #e2e8f0', borderRadius: 20, padding: '8px 18px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <Upload size={12} />
+                      {uploadingDoc === 'cv' ? 'Upload...' : 'Επιλογή'}
                     </button>
                     <input ref={cvInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={e => uploadDocument(e.target.files[0], 'cv')} style={{ display: 'none' }} />
                   </div>
                 )}
               </div>
 
-              {/* CERTIFICATIONS — optional, multiple */}
+              {/* CERTIFICATIONS */}
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>
-                  🏆 Πιστοποιητικά <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 500 }}>(προαιρετικά, πολλαπλά αρχεία)</span>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 8, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <Award size={15} color="#2a6fdb" />
+                  Πιστοποιητικά <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 500 }}>(προαιρετικά, πολλαπλά αρχεία)</span>
                 </div>
                 {(profile?.certifications_urls || []).length > 0 && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
                     {(profile.certifications_urls || []).map((path, idx) => (
                       <div key={path} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10 }}>
-                        <span>📄</span>
+                        <FileText size={14} color="#64748b" />
                         <span style={{ fontSize: 12, color: '#475569', flex: 1 }}>Πιστοποιητικό {idx + 1}</span>
                         <button onClick={() => viewDocument(path)}
-                          style={{ background: 'transparent', border: '1px solid #e2e8f0', borderRadius: 20, padding: '4px 10px', fontSize: 11, fontWeight: 600, color: '#1a2e44', cursor: 'pointer' }}>
-                          👁️
+                          style={{ background: 'transparent', border: '1px solid #e2e8f0', borderRadius: 20, padding: '4px 10px', fontSize: 11, fontWeight: 600, color: '#1a2e44', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}>
+                          <Eye size={12} />
                         </button>
                         <button onClick={() => removeDocument('cert', path)}
-                          style={{ background: 'transparent', border: '1px solid #FECDD3', borderRadius: 20, padding: '4px 10px', fontSize: 11, fontWeight: 600, color: '#BE123C', cursor: 'pointer' }}>
-                          🗑️
+                          style={{ background: 'transparent', border: '1px solid #FECDD3', borderRadius: 20, padding: '4px 10px', fontSize: 11, fontWeight: 600, color: '#BE123C', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}>
+                          <Trash2 size={12} />
                         </button>
                       </div>
                     ))}
@@ -1126,8 +1339,9 @@ export default function TherapistDashboard() {
                 <div style={{ border: '2px dashed #e2e8f0', borderRadius: 10, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                   <div style={{ fontSize: 12, color: '#64748B' }}>Προσθέστε πιστοποιήσεις, σεμινάρια, εξειδικεύσεις</div>
                   <button onClick={() => certInputRef.current?.click()} disabled={uploadingDoc === 'cert'}
-                    style={{ background: 'transparent', color: '#1a2e44', border: '1.5px solid #e2e8f0', borderRadius: 20, padding: '8px 18px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                    {uploadingDoc === 'cert' ? '⏳ Upload...' : '➕ Προσθήκη'}
+                    style={{ background: 'transparent', color: '#1a2e44', border: '1.5px solid #e2e8f0', borderRadius: 20, padding: '8px 18px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <Plus size={12} strokeWidth={2.5} />
+                    {uploadingDoc === 'cert' ? 'Upload...' : 'Προσθήκη'}
                   </button>
                   <input ref={certInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={e => uploadDocument(e.target.files[0], 'cert')} style={{ display: 'none' }} />
                 </div>
