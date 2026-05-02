@@ -24,22 +24,18 @@ export default function LoginPage() {
       const isTherapistRoute = pending.startsWith('/dashboard/therapist');
 
       if (role === 'patient' && isTherapistRoute) {
-        // Patient προσπαθεί να μπει σε therapist route → στείλε στο patient dashboard
         window.location.href = defaultDest;
         return;
       }
       if (role === 'therapist' && isPatientRoute) {
-        // Therapist προσπαθεί να μπει σε patient route → στείλε στο therapist dashboard
         window.location.href = defaultDest;
         return;
       }
 
-      // Ταιριάζει → πήγαινε στο pending destination (μαζί με τα query params)
       window.location.href = pending;
       return;
     }
 
-    // Default
     window.location.href = defaultDest;
   }
 
@@ -59,10 +55,8 @@ export default function LoginPage() {
       return;
     }
 
-    // Wait a moment for session to settle
     await new Promise(r => setTimeout(r, 500));
 
-    // Try to get role
     const { data: profile, error: profileError } = await supabase
       .from('user_profiles')
       .select('role')
@@ -78,7 +72,6 @@ export default function LoginPage() {
       return;
     }
 
-    // Fallback: try with fresh session
     const { data: { session } } = await supabase.auth.getSession();
     console.log('Session:', session);
 
@@ -120,7 +113,12 @@ export default function LoginPage() {
               style={{ width: '100%', padding: '12px 14px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', color: '#1a2e44' }} />
           </div>
           <div>
-            <label style={{ fontSize: 13, fontWeight: 600, color: '#1a2e44', display: 'block', marginBottom: 6 }}>Password</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <label style={{ fontSize: 13, fontWeight: 600, color: '#1a2e44' }}>Password</label>
+              <a href="/auth/forgot-password" style={{ fontSize: 12, color: '#2a6fdb', fontWeight: 600, textDecoration: 'none' }}>
+                Ξέχασες password;
+              </a>
+            </div>
             <input type="password" required value={form.password} onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
               style={{ width: '100%', padding: '12px 14px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', color: '#1a2e44' }} />
           </div>
