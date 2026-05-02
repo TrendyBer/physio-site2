@@ -7,7 +7,7 @@ import { useState } from 'react';
 const CONTENT = {
   el: {
     title: 'Όροι Χρήσης',
-    lastUpdated: 'Τελευταία ενημέρωση: 29 Απριλίου 2026',
+    lastUpdated: 'Τελευταία ενημέρωση: 2 Μαΐου 2026',
     intro: 'Καλώς ήρθατε στο PhysioHome. Οι παρόντες Όροι Χρήσης διέπουν τη χρήση της πλατφόρμας. Με την εγγραφή και χρήση της Πλατφόρμας, αποδέχεστε τους παρόντες όρους.',
     sections: [
       {
@@ -61,7 +61,7 @@ const CONTENT = {
         h: '6. Προμήθεια Πλατφόρμας — Πολιτική Anti-Bypass',
         p: ['Σημαντικό για τους θεραπευτές:'],
         list: [
-          'Η Πλατφόρμα χρεώνει προμήθεια €20 ανά ανατεθέν περιστατικό',
+          'Η Πλατφόρμα χρεώνει προμήθεια €3 ανά συνεδρία (ενδέχεται να αναπροσαρμοστεί με προηγούμενη ειδοποίηση)',
           'Απαγορεύεται αυστηρά η εκτός πλατφόρμας συμφωνία με ασθενείς που γνωρίσατε μέσω αυτής',
           'Σε περίπτωση παραβίασης (bypass): πρόστιμο έως €500 ανά περιστατικό + αποβολή',
           'Όλες οι κρατήσεις πρέπει να γίνονται μέσω της Πλατφόρμας',
@@ -71,6 +71,8 @@ const CONTENT = {
         h: '7. Πληρωμές και Επιστροφές',
         list: [
           'Οι πληρωμές γίνονται μέσω της Πλατφόρμας με ασφαλή τρόπο',
+          'Λειτουργία escrow: το ποσό κρατείται από την Πλατφόρμα και αποδεσμεύεται στον θεραπευτή μετά την ολοκλήρωση κάθε συνεδρίας και την επιβεβαίωση από τον ασθενή',
+          'Αυτόματη απελευθέρωση: αν ο ασθενής δεν επιβεβαιώσει εντός 7 ημερών από την ολοκλήρωση της συνεδρίας, η πληρωμή απελευθερώνεται αυτόματα στον θεραπευτή',
           'Επιστροφή χρημάτων: επιτρέπεται εάν ο θεραπευτής ακυρώσει το ραντεβού',
           'Επιστροφή για παράλειψη υπηρεσίας: επικοινωνήστε στο support@physiohome.gr εντός 7 ημερών',
           'Οι αποφάσεις της Πλατφόρμας για διαφορές είναι τελικές',
@@ -134,7 +136,7 @@ const CONTENT = {
   },
   en: {
     title: 'Terms of Service',
-    lastUpdated: 'Last updated: April 29, 2026',
+    lastUpdated: 'Last updated: May 2, 2026',
     intro: 'Welcome to PhysioHome. These Terms of Service govern your use of the platform. By registering and using the Platform, you accept these terms.',
     sections: [
       {
@@ -188,7 +190,7 @@ const CONTENT = {
         h: '6. Platform Fee — Anti-Bypass Policy',
         p: ['Important for therapists:'],
         list: [
-          'The Platform charges a €20 fee per assigned case',
+          'The Platform charges a €3 fee per session (subject to adjustment with prior notice)',
           'Off-platform agreements with patients met through the Platform are strictly prohibited',
           'In case of violation (bypass): fine up to €500 per incident + removal',
           'All bookings must be made through the Platform',
@@ -198,6 +200,8 @@ const CONTENT = {
         h: '7. Payments and Refunds',
         list: [
           'Payments are made through the Platform securely',
+          'Escrow function: the amount is held by the Platform and released to the therapist after each session is completed and confirmed by the patient',
+          'Auto-release: if the patient does not confirm within 7 days of session completion, the payment is automatically released to the therapist',
           'Refunds: allowed if therapist cancels the appointment',
           'Refund for service failure: contact support@physiohome.gr within 7 days',
           'Platform decisions on disputes are final',
