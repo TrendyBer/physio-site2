@@ -3,6 +3,7 @@ import { useState } from 'react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import { useLang } from '@/context/LanguageContext';
+import { Mail, Phone, MapPin, Check, X } from 'lucide-react';
 
 const t = {
   el: {
@@ -10,9 +11,9 @@ const t = {
     titleEm: 'μαζί μας',
     desc: 'Έχετε ερωτήσεις για τις υπηρεσίες μας; Είμαστε εδώ να βοηθήσουμε. Επικοινωνήστε μαζί μας και η ομάδα μας θα σας απαντήσει το συντομότερο δυνατό.',
     contacts: [
-      { icon: '✉', label: 'Email', value: 'info@physiohome.gr', href: 'mailto:info@physiohome.gr' },
-      { icon: '📞', label: 'Τηλέφωνο', value: '+30 210 123 4567', href: 'tel:+302101234567' },
-      { icon: '📍', label: 'Περιοχή', value: 'Αθήνα & Αττική, Ελλάδα' },
+      { Icon: Mail,   label: 'Email',     value: 'info@physiohome.gr',    href: 'mailto:info@physiohome.gr' },
+      { Icon: Phone,  label: 'Τηλέφωνο',  value: '+30 210 123 4567',      href: 'tel:+302101234567' },
+      { Icon: MapPin, label: 'Περιοχή',   value: 'Αθήνα & Αττική, Ελλάδα' },
     ],
     name: 'Όνομα',
     namePh: 'π.χ. Γιώργος',
@@ -34,9 +35,9 @@ const t = {
     titleEm: 'Us',
     desc: 'Have questions about our services? We\'re here to help. Reach out and our team will respond as soon as possible.',
     contacts: [
-      { icon: '✉', label: 'Email', value: 'email@example.com', href: 'mailto:email@example.com' },
-      { icon: '📞', label: 'Phone', value: '+1 (555) 000-0000', href: 'tel:+15550000000' },
-      { icon: '📍', label: 'Location', value: '123 Sample St, Sydney NSW 2000 AU' },
+      { Icon: Mail,   label: 'Email',    value: 'info@physiohome.gr',    href: 'mailto:info@physiohome.gr' },
+      { Icon: Phone,  label: 'Phone',    value: '+30 210 123 4567',      href: 'tel:+302101234567' },
+      { Icon: MapPin, label: 'Location', value: 'Athens & Attica, Greece' },
     ],
     name: 'Name',
     namePh: 'e.g. John',
@@ -89,7 +90,7 @@ export default function ContactPage() {
         .form-input:focus { border-color: #2a6fdb; }
         .form-label { font-size: 13px; font-weight: 600; color: #1a2e44; margin-bottom: 6px; display: block; }
         .contact-info-item { display: flex; align-items: center; gap: 14px; }
-        .contact-icon { width: 44px; height: 44px; border-radius: 10px; background: #e8f1fd; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+        .contact-icon { width: 44px; height: 44px; border-radius: 10px; background: #e8f1fd; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
       `}</style>
 
       <Navbar />
@@ -106,18 +107,23 @@ export default function ContactPage() {
               <p style={{ fontSize: 15, color: '#6b7a8d', lineHeight: 1.7, marginBottom: 40 }}>{tx.desc}</p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                {tx.contacts.map((item) => (
-                  <div key={item.label} className="contact-info-item">
-                    <div className="contact-icon">{item.icon}</div>
-                    <div>
-                      <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 3, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '.06em' }}>{item.label}</div>
-                      {item.href
-                        ? <a href={item.href} style={{ fontWeight: 600, color: '#1a2e44', textDecoration: 'none', fontSize: 15 }}>{item.value}</a>
-                        : <span style={{ fontWeight: 600, color: '#1a2e44', fontSize: 15 }}>{item.value}</span>
-                      }
+                {tx.contacts.map((item) => {
+                  const ItemIcon = item.Icon;
+                  return (
+                    <div key={item.label} className="contact-info-item">
+                      <div className="contact-icon">
+                        <ItemIcon size={20} color="#2a6fdb" strokeWidth={2} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 3, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '.06em' }}>{item.label}</div>
+                        {item.href
+                          ? <a href={item.href} style={{ fontWeight: 600, color: '#1a2e44', textDecoration: 'none', fontSize: 15 }}>{item.value}</a>
+                          : <span style={{ fontWeight: 600, color: '#1a2e44', fontSize: 15 }}>{item.value}</span>
+                        }
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -150,11 +156,20 @@ export default function ContactPage() {
                   <div style={{ fontSize: 11, color: '#94a3b8', textAlign: 'right', marginTop: 4 }}>{form.message.length}/300</div>
                 </div>
 
-                {/* Terms */}
+                {/* Terms — FIXED: link goes to /terms instead of # */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <input type="checkbox" id="terms" checked={accepted} onChange={e => setAccepted(e.target.checked)} style={{ width: 18, height: 18, cursor: 'pointer', accentColor: '#2a6fdb' }} />
                   <label htmlFor="terms" style={{ fontSize: 14, color: '#1a2e44', cursor: 'pointer' }}>
-                    {tx.terms}<a href="#" style={{ color: '#2a6fdb', fontWeight: 600 }}>{tx.termsLink}</a>
+                    {tx.terms}
+                    <a
+                      href="/terms"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: '#2a6fdb', fontWeight: 600, textDecoration: 'underline' }}
+                      onClick={e => e.stopPropagation()}
+                    >
+                      {tx.termsLink}
+                    </a>
                   </label>
                 </div>
 
@@ -181,8 +196,12 @@ export default function ContactPage() {
       {submitted && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}>
           <div style={{ background: '#fff', borderRadius: 20, padding: '48px 40px', maxWidth: 480, width: '100%', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', position: 'relative' }}>
-            <button onClick={() => setSubmitted(false)} style={{ position: 'absolute', top: 16, right: 20, background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#94a3b8' }}>✕</button>
-            <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#D1FAE5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: 24, color: '#065F46' }}>✓</div>
+            <button onClick={() => setSubmitted(false)} style={{ position: 'absolute', top: 16, right: 20, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center' }}>
+              <X size={20} />
+            </button>
+            <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#D1FAE5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+              <Check size={28} color="#065F46" strokeWidth={3} />
+            </div>
             <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 22, color: '#1a2e44', marginBottom: 12 }}>{tx.successTitle}</h3>
             <p style={{ fontSize: 15, color: '#6b7a8d', lineHeight: 1.6, marginBottom: 28 }}>
               {tx.successDesc} <strong>{form.email}</strong> {tx.successEnd}
