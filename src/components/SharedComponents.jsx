@@ -2,6 +2,7 @@
 import { useLang } from '@/context/LanguageContext';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { Mail, Phone, MapPin } from 'lucide-react';
 import BookingButton from './BookingButton';
 
 // ─── Shared settings hook ─────────────────────────────────────────────────────
@@ -304,21 +305,27 @@ export function Contact() {
               <p style={{ fontSize: 16, color: '#6b7a8d', marginBottom: 32 }}>{text.desc}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 12, background: '#e8f1fd', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>✉</div>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: '#e8f1fd', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Mail size={20} color="#2a6fdb" strokeWidth={2} />
+                  </div>
                   <div>
                     <div style={{ fontSize: 12, color: '#6b7a8d', marginBottom: 2 }}>Email</div>
                     <a href={`mailto:${settings.email}`} style={{ fontWeight: 500, color: '#1a2e44', textDecoration: 'none' }}>{settings.email}</a>
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 12, background: '#e8f1fd', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>📞</div>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: '#e8f1fd', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Phone size={20} color="#2a6fdb" strokeWidth={2} />
+                  </div>
                   <div>
                     <div style={{ fontSize: 12, color: '#6b7a8d', marginBottom: 2 }}>{text.phone}</div>
                     <a href={`tel:${settings.phone}`} style={{ fontWeight: 500, color: '#1a2e44', textDecoration: 'none' }}>{settings.phone}</a>
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 12, background: '#e8f1fd', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>📍</div>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: '#e8f1fd', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <MapPin size={20} color="#2a6fdb" strokeWidth={2} />
+                  </div>
                   <div>
                     <div style={{ fontSize: 12, color: '#6b7a8d', marginBottom: 2 }}>{text.area}</div>
                     <span style={{ fontWeight: 500, color: '#1a2e44' }}>{settings.address}</span>
@@ -368,13 +375,60 @@ export function Contact() {
 }
 
 // ─── Footer ───────────────────────────────────────────────────────────────────
+// Last updated 2 May 2026 — fixed legal links from '#' to actual paths
 export function Footer() {
   const { lang } = useLang();
   const settings = usePlatformSettings();
 
   const t = {
-    el: { desc: 'Επαγγελματική, εξατομικευμένη φυσιοθεραπεία στην άνεση του σπιτιού σας.', menu: 'Μενού', legal: 'Νομικά', contact: 'Επικοινωνία', links: [['/how-it-works', 'Πώς Λειτουργεί'], ['/services', 'Υπηρεσίες'], ['/therapists', 'Θεραπευτές'], ['/blog', 'Blog'], ['/contact', 'Επικοινωνία']], legalLinks: [['#', 'Πολιτική Απορρήτου'], ['#', 'Όροι Χρήσης'], ['#', 'Πολιτική Cookies']], privLinks: [['#', 'Απόρρητο'], ['#', 'Όροι'], ['#', 'Cookies']] },
-    en: { desc: 'Professional, personalized physiotherapy in the comfort of your home.', menu: 'Menu', legal: 'Legal', contact: 'Contact', links: [['/how-it-works', 'How It Works'], ['/services', 'Services'], ['/therapists', 'Therapists'], ['/blog', 'Blog'], ['/contact', 'Contact']], legalLinks: [['#', 'Privacy Policy'], ['#', 'Terms of Use'], ['#', 'Cookie Policy']], privLinks: [['#', 'Privacy'], ['#', 'Terms'], ['#', 'Cookies']] },
+    el: {
+      desc: 'Επαγγελματική, εξατομικευμένη φυσιοθεραπεία στην άνεση του σπιτιού σας.',
+      menu: 'Μενού',
+      legal: 'Νομικά',
+      contact: 'Επικοινωνία',
+      links: [
+        ['/how-it-works', 'Πώς Λειτουργεί'],
+        ['/services', 'Υπηρεσίες'],
+        ['/therapists', 'Θεραπευτές'],
+        ['/blog', 'Blog'],
+        ['/contact', 'Επικοινωνία'],
+      ],
+      legalLinks: [
+        ['/privacy', 'Πολιτική Απορρήτου'],
+        ['/terms', 'Όροι Χρήσης'],
+        ['/cookies', 'Πολιτική Cookies'],
+        ['/become-therapist', 'Γίνε Θεραπευτής'],
+      ],
+      privLinks: [
+        ['/privacy', 'Απόρρητο'],
+        ['/terms', 'Όροι'],
+        ['/cookies', 'Cookies'],
+      ],
+    },
+    en: {
+      desc: 'Professional, personalized physiotherapy in the comfort of your home.',
+      menu: 'Menu',
+      legal: 'Legal',
+      contact: 'Contact',
+      links: [
+        ['/how-it-works', 'How It Works'],
+        ['/services', 'Services'],
+        ['/therapists', 'Therapists'],
+        ['/blog', 'Blog'],
+        ['/contact', 'Contact'],
+      ],
+      legalLinks: [
+        ['/privacy', 'Privacy Policy'],
+        ['/terms', 'Terms of Use'],
+        ['/cookies', 'Cookie Policy'],
+        ['/become-therapist', 'Become a Therapist'],
+      ],
+      privLinks: [
+        ['/privacy', 'Privacy'],
+        ['/terms', 'Terms'],
+        ['/cookies', 'Cookies'],
+      ],
+    },
   };
   const text = t[lang];
 
@@ -389,6 +443,8 @@ export function Footer() {
       <footer style={{ background: '#0f1d2c', color: 'rgba(255,255,255,0.7)', padding: '60px 24px 32px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div className="footer-grid">
+
+            {/* Brand */}
             <div>
               <div style={{ fontFamily: 'Georgia, serif', fontSize: 22, fontWeight: 700, color: '#fff', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#2a6fdb', display: 'inline-block' }} />
@@ -396,41 +452,61 @@ export function Footer() {
               </div>
               <p style={{ fontSize: 14, lineHeight: 1.6 }}>{text.desc}</p>
             </div>
+
+            {/* Menu */}
             <div>
               <h4 style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: '.08em', color: '#fff', marginBottom: 16, fontWeight: 600 }}>{text.menu}</h4>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {text.links.map(([href, label]) => (<li key={href}><a href={href} style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>{label}</a></li>))}
+                {text.links.map(([href, label]) => (
+                  <li key={href}>
+                    <a href={href} style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>{label}</a>
+                  </li>
+                ))}
               </ul>
             </div>
+
+            {/* Legal */}
             <div>
               <h4 style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: '.08em', color: '#fff', marginBottom: 16, fontWeight: 600 }}>{text.legal}</h4>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {text.legalLinks.map(([href, label]) => (<li key={label}><a href={href} style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>{label}</a></li>))}
+                {text.legalLinks.map(([href, label]) => (
+                  <li key={label}>
+                    <a href={href} style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>{label}</a>
+                  </li>
+                ))}
               </ul>
             </div>
+
+            {/* Contact */}
             <div>
               <h4 style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: '.08em', color: '#fff', marginBottom: 16, fontWeight: 600 }}>{text.contact}</h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 14 }}>
-                  <span>✉</span>
-                  <a href={`mailto:${settings.email}`} style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>{settings.email}</a>
+                  <Mail size={16} color="rgba(255,255,255,0.6)" strokeWidth={2} style={{ flexShrink: 0, marginTop: 2 }} />
+                  <a href={`mailto:${settings.email}`} style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', wordBreak: 'break-all' }}>{settings.email}</a>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 14 }}>
-                  <span>📞</span>
+                  <Phone size={16} color="rgba(255,255,255,0.6)" strokeWidth={2} style={{ flexShrink: 0, marginTop: 2 }} />
                   <a href={`tel:${settings.phone}`} style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>{settings.phone}</a>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 14 }}>
-                  <span>📍</span>
+                  <MapPin size={16} color="rgba(255,255,255,0.6)" strokeWidth={2} style={{ flexShrink: 0, marginTop: 2 }} />
                   <span>{settings.address}</span>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* Bottom bar */}
           <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 24 }}>
             <div className="footer-bottom">
-              <span style={{ fontSize: 13 }}>© {new Date().getFullYear()} {settings.platform_name}. {lang === 'el' ? 'Με επιφύλαξη παντός δικαιώματος.' : 'All rights reserved.'}</span>
+              <span style={{ fontSize: 13 }}>
+                © {new Date().getFullYear()} {settings.platform_name}. {lang === 'el' ? 'Με επιφύλαξη παντός δικαιώματος.' : 'All rights reserved.'}
+              </span>
               <div style={{ display: 'flex', gap: 24 }}>
-                {text.privLinks.map(([href, label]) => (<a key={label} href={href} style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>{label}</a>))}
+                {text.privLinks.map(([href, label]) => (
+                  <a key={label} href={href} style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>{label}</a>
+                ))}
               </div>
             </div>
           </div>
