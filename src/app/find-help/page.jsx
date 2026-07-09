@@ -56,6 +56,10 @@ const TX = {
     notSureDesc: 'Συμπληρώστε ένα αίτημα και θα σας προτείνουμε τους κατάλληλους θεραπευτές.',
     notSureBtn: 'Νέο Αίτημα',
     switchLang: 'EN',
+    resultsFor: (q) => `Αποτελέσματα για «${q}»`,
+    resultsHint: 'Επιλέξτε την πάθηση που ταιριάζει καλύτερα. Δεν παρέχουμε διάγνωση — η επιλογή μάς βοηθά να σας δείξουμε πιο σχετικούς θεραπευτές.',
+    noMatchTitle: 'Δεν βρέθηκε πάθηση που να ταιριάζει',
+    noMatchDesc: 'Δείτε όλες τις παθήσεις παρακάτω ή στείλτε αίτημα και θα σας βρούμε τον κατάλληλο θεραπευτή.',
   },
   en: {
     badge: 'Find the help you need',
@@ -72,13 +76,24 @@ const TX = {
     notSureDesc: 'Submit a request and we will recommend the right therapists for you.',
     notSureBtn: 'New Request',
     switchLang: 'ΕΛ',
+    resultsFor: (q) => `Results for “${q}”`,
+    resultsHint: 'Choose the condition that fits best. We do not provide a diagnosis — your choice helps us show more relevant therapists.',
+    noMatchTitle: 'No matching condition found',
+    noMatchDesc: 'Browse all conditions below or send a request and we will find the right therapist for you.',
   },
 };
+
+// Αφαιρεί τόνους και κάνει lowercase για σωστή αναζήτηση στα ελληνικά
+function norm(s) {
+  return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
 
 export default async function FindHelpPage({ searchParams }) {
   const params = await searchParams;
   const lang = params?.lang === 'en' ? 'en' : 'el';
   const tx = TX[lang];
+  const q = (params?.q || '').trim();
+  const qLower = q.toLowerCase();
 
   const { data: categories } = await supabase
     .from('condition_categories')
@@ -118,6 +133,24 @@ export default async function FindHelpPage({ searchParams }) {
   });
 
   const popularConditions = (conditions || []).filter((c) => c.is_popular);
+
+  // Αναζήτηση από hero (?q=) — χωρίς τόνους + ταίριασμα ρίζας λέξης
+  const qn = norm(q);
+  const qTokens = qn.split(/\s+/).filter((w) => w.length >= 3);
+  const matchedConditions = qn
+    ? (conditions || []).filter((c) => {
+        const name = (lang === 'el' ? c.name_el : c.name_en) || '';
+        const desc = (lang === 'el' ? c.description_el : c.description_en) || '';
+        const related = (c.related_specialties || []).join(' ');
+        const hay = norm(`${name} ${desc} ${related}`);
+        if (hay.includes(qn)) return true;
+        return qTokens.some((tok) => {
+          if (hay.includes(tok)) return true;
+          const stem = tok.slice(0, 5);
+          return stem.length >= 4 && hay.includes(stem);
+        });
+      })
+    : [];
 
   const langSuffix = lang === 'en' ? '?lang=en' : '';
 
@@ -176,6 +209,52 @@ export default async function FindHelpPage({ searchParams }) {
           </div>
         </section>
       </div>
+
+      {/* SEARCH RESULTS (από hero ?q=) */}
+      {q && (
+        <section style={{ background: '#fff', padding: '48px 24px 20px' }}>
+          <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+            <h2 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 'clamp(22px, 3vw, 32px)', color: '#1a2e44', marginBottom: 8 }}>
+              {tx.resultsFor(q)}
+            </h2>
+            {matchedConditions.length > 0 ? (
+              <>
+                <p style={{ fontSize: 14, color: '#6b7a8d', lineHeight: 1.6, marginBottom: 24, maxWidth: 640 }}>{tx.resultsHint}</p>
+                <div className="fh-grid">
+                  {matchedConditions.map((c) => {
+                    const name = lang === 'el' ? c.name_el : c.name_en;
+                    const desc = lang === 'el' ? c.description_el : c.description_en;
+                    const reach = reachByCondition[c.id] || 0;
+                    return (
+                      <Link key={c.id} href={`/find-help/${c.slug}${langSuffix}`} className="fh-card">
+                        <div style={{ fontSize: 16, fontWeight: 700, color: '#1a2e44', marginBottom: 6 }}>{name}</div>
+                        {desc && (
+                          <div style={{ fontSize: 13, color: '#64748b', lineHeight: 1.5, marginBottom: 10 }}>{desc}</div>
+                        )}
+                        {reach > 0 && (
+                          <div style={{ fontSize: 12, color: '#2a6fdb', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                            <Users size={12} />
+                            {reach} {reach === 1 ? tx.therapist : tx.therapists}
+                          </div>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              <div style={{ background: '#f8fafb', border: '1px dashed #dce6f0', borderRadius: 16, padding: '28px 24px', maxWidth: 640 }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#1a2e44', marginBottom: 6 }}>{tx.noMatchTitle}</div>
+                <p style={{ fontSize: 14, color: '#6b7a8d', lineHeight: 1.6, marginBottom: 18 }}>{tx.noMatchDesc}</p>
+                <a href="/dashboard/patient/new-request" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#1a2e44', color: '#fff', padding: '11px 24px', borderRadius: 30, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
+                  {tx.notSureBtn}
+                  <ArrowRight size={14} />
+                </a>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* POPULAR CONDITIONS */}
       <section style={{ background: '#fff', padding: '60px 24px' }}>
