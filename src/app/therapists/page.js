@@ -14,12 +14,10 @@ const TX = {
     badge: 'Βρείτε τον ιδανικό',
     hero: 'Οι', heroEm: 'Φυσιοθεραπευτές', heroEnd: 'μας',
     heroDesc: 'Έμπειροι, αδειοδοτημένοι επαγγελματίες, που παρέχουν εξατομικευμένη φροντίδα στο σπίτι σας.',
-    bookCta: 'Κλείστε Ραντεβού',
+    bookCta: 'Βρες φυσιοθεραπευτή',
     viewProfile: 'Δείτε Προφίλ',
-    bookSession: 'Κλείστε Ραντεβού',
     noTherapists: 'Δεν υπάρχουν ενεργοί θεραπευτές ακόμα.',
     noResults: 'Δεν βρέθηκαν θεραπευτές με αυτά τα φίλτρα.',
-    close: 'Κλείσιμο',
     filters: 'Φίλτρα',
     searchPh: 'Αναζήτηση με όνομα ή ειδικότητα...',
     allAreas: 'Όλες οι περιοχές',
@@ -34,11 +32,9 @@ const TX = {
     sortRelevance: 'Σχετικότητα',
     clearFilters: 'Καθαρισμός φίλτρων',
     resultsCount: (n) => `${n} ${n === 1 ? 'θεραπευτής' : 'θεραπευτές'}`,
-    reviewsTitle: 'Αξιολογήσεις',
-    noReviews: 'Δεν υπάρχουν αξιολογήσεις ακόμα.',
     notFoundTitle: 'Δεν βρίσκετε αυτό που ψάχνετε;',
     notFoundDesc: 'Συμπληρώστε το αίτημά σας και θα σας προτείνουμε τους κατάλληλους θεραπευτές.',
-    notFoundBtn: 'Νέο Αίτημα',
+    notFoundBtn: 'Στείλτε αίτημα',
     becomeBanner: 'Είσαι φυσιοθεραπευτής;',
     becomeBannerDesc: 'Γίνε μέλος του δικτύου μας.',
     becomeBannerBtn: 'Μάθε περισσότερα',
@@ -48,19 +44,15 @@ const TX = {
     matchedSpecialty: 'Σχετική ειδικότητα',
     crossLinkText: 'Δεν είστε σίγουροι ποιον χρειάζεστε;',
     crossLinkBtn: 'Δείτε κατά πάθηση',
-    perSession: 'συνεδρία',
-    aboutTherapist: 'Βιογραφικό',
   },
   en: {
     badge: 'Find your',
     hero: 'Our', heroEm: 'Physiotherapists', heroEnd: '',
     heroDesc: 'Experienced, licensed professionals providing personalized care at your home.',
-    bookCta: 'Book a Session',
+    bookCta: 'Find a physiotherapist',
     viewProfile: 'View Profile',
-    bookSession: 'Book a Session',
     noTherapists: 'No active therapists yet.',
     noResults: 'No therapists match these filters.',
-    close: 'Close',
     filters: 'Filters',
     searchPh: 'Search by name or specialty...',
     allAreas: 'All areas',
@@ -75,11 +67,9 @@ const TX = {
     sortRelevance: 'Relevance',
     clearFilters: 'Clear filters',
     resultsCount: (n) => `${n} ${n === 1 ? 'therapist' : 'therapists'}`,
-    reviewsTitle: 'Reviews',
-    noReviews: 'No reviews yet.',
     notFoundTitle: "Can't find what you're looking for?",
     notFoundDesc: "Submit a request and we'll recommend therapists for you.",
-    notFoundBtn: 'New Request',
+    notFoundBtn: 'Send a request',
     becomeBanner: 'Are you a physiotherapist?',
     becomeBannerDesc: 'Join our network.',
     becomeBannerBtn: 'Learn more',
@@ -89,8 +79,6 @@ const TX = {
     matchedSpecialty: 'Related specialty',
     crossLinkText: "Not sure who you need?",
     crossLinkBtn: 'Browse by condition',
-    perSession: 'session',
-    aboutTherapist: 'About',
   },
 };
 
@@ -104,118 +92,6 @@ function ImgWithSkeleton({ src, alt, style, containerStyle }) {
   );
 }
 
-function TherapistModal({ therapist, lang, tx, onClose }) {
-  const [reviews, setReviews] = useState([]);
-  const [loadingReviews, setLoadingReviews] = useState(false);
-
-  useEffect(() => {
-    if (!therapist) return;
-    setLoadingReviews(true);
-    supabase
-      .from('reviews')
-      .select('id, rating, comment, created_at')
-      .eq('therapist_id', therapist.id)
-      .eq('is_published', true)
-      .order('created_at', { ascending: false })
-      .limit(3)
-      .then(({ data }) => {
-        setReviews(data || []);
-        setLoadingReviews(false);
-      });
-  }, [therapist]);
-
-  if (!therapist) return null;
-  const bookHref = `/dashboard/patient/new-request?therapist=${encodeURIComponent(therapist.name)}`;
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 620, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
-        <div style={{ padding: '28px 28px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'flex-start', gap: 16 }}>
-          {therapist.photo_url ? (
-            <ImgWithSkeleton src={therapist.photo_url} alt={therapist.name}
-              containerStyle={{ width: 72, height: 72, borderRadius: '50%', flexShrink: 0 }}
-              style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover' }} />
-          ) : (
-            <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'linear-gradient(135deg, #c8dff9, #a0c4f4)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, color: '#2a6fdb' }}>
-              {therapist.name?.charAt(0)}
-            </div>
-          )}
-          <div style={{ flex: 1 }}>
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1a2e44', marginBottom: 4 }}>{therapist.name}</h2>
-            <div style={{ fontSize: 14, color: '#6b7a8d', marginBottom: 8 }}>{therapist.specialty}</div>
-            <RatingDisplay rating={therapist.avg_rating || 0} count={therapist.review_count || 0} lang={lang} variant="stars" size={14} />
-          </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 4 }}>
-            <X size={20} />
-          </button>
-        </div>
-        <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            {[
-              { label: lang === 'el' ? 'Περιοχή' : 'Area', value: therapist.area || '—' },
-              { label: lang === 'el' ? 'Ειδικότητα' : 'Specialty', value: therapist.specialty || '—' },
-            ].map(({ label, value }) => (
-              <div key={label} style={{ background: '#f8fafb', borderRadius: 10, padding: '12px 14px' }}>
-                <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 4 }}>{label}</div>
-                <div style={{ fontSize: 13, color: '#1a2e44', fontWeight: 600 }}>{value}</div>
-              </div>
-            ))}
-          </div>
-          {therapist.bio && (
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2e44', marginBottom: 10 }}>{tx.aboutTherapist}</div>
-              <p style={{ fontSize: 14, color: '#475569', lineHeight: 1.7, background: '#f8fafc', padding: '14px 16px', borderRadius: 10, borderLeft: '3px solid #dce6f0', margin: 0 }}>{therapist.bio}</p>
-            </div>
-          )}
-          {therapist.price_per_session && (
-            <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '12px 16px', fontSize: 14, color: '#1D4ED8', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Euro size={16} strokeWidth={2.5} />
-              {therapist.price_per_session}€ / {lang === 'el' ? 'συνεδρία' : 'session'}
-            </div>
-          )}
-
-          {/* REVIEWS */}
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2e44', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Star size={14} color="#F59E0B" fill="#F59E0B" strokeWidth={0} />
-              {tx.reviewsTitle}
-            </div>
-            {loadingReviews ? (
-              <div style={{ fontSize: 13, color: '#94a3b8', padding: '8px 0' }}>...</div>
-            ) : reviews.length === 0 ? (
-              <div style={{ fontSize: 13, color: '#94a3b8', fontStyle: 'italic', padding: '8px 0' }}>{tx.noReviews}</div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {reviews.map(rv => (
-                  <div key={rv.id} style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 10, padding: '12px 14px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                      <RatingDisplay rating={rv.rating} count={1} variant="stars-only" size={14} />
-                      <span style={{ fontSize: 11, color: '#92400E' }}>
-                        {new Date(rv.created_at).toLocaleDateString(lang === 'el' ? 'el-GR' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
-                      </span>
-                    </div>
-                    {rv.comment && (
-                      <p style={{ fontSize: 13, color: '#78350F', fontStyle: 'italic', margin: 0, lineHeight: 1.5 }}>"{rv.comment}"</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div style={{ display: 'flex', gap: 12, paddingTop: 8, borderTop: '1px solid #f1f5f9' }}>
-            <a href={bookHref} style={{ flex: 1, background: '#1a2e44', color: '#fff', padding: '13px', borderRadius: 30, fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'none', textAlign: 'center', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-              {tx.bookSession}
-              <ArrowRight size={16} />
-            </a>
-            <button onClick={onClose} style={{ flex: 1, background: 'transparent', color: '#1a2e44', padding: '13px', borderRadius: 30, fontSize: 14, fontWeight: 600, border: '1.5px solid #dce6f0', cursor: 'pointer', fontFamily: 'inherit' }}>{tx.close}</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function TherapistsPage() {
   const { lang } = useLang();
   const tx = TX[lang];
@@ -224,7 +100,6 @@ export default function TherapistsPage() {
   const [therapists, setTherapists] = useState([]);
   const [therapistConditionsMap, setTherapistConditionsMap] = useState({});
   const [loadingTherapists, setLoadingTherapists] = useState(true);
-  const [selectedTherapist, setSelectedTherapist] = useState(null);
 
   const [selectedCondition, setSelectedCondition] = useState(null);
   const [search, setSearch] = useState('');
@@ -462,7 +337,7 @@ export default function TherapistsPage() {
         .th-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
         @media (max-width: 1024px) { .th-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 640px) { .th-grid { grid-template-columns: 1fr; } }
-        .th-card { background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; padding: 24px; transition: all .3s; cursor: pointer; }
+        .th-card { background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; padding: 24px; transition: all .3s; cursor: pointer; display: block; text-decoration: none; }
         .th-card:hover { box-shadow: 0 8px 32px rgba(26,46,68,0.12); transform: translateY(-4px); }
         .filters-bar { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
         @media (max-width: 768px) { .filters-bar > select, .filters-bar > div { width: 100%; } }
@@ -620,7 +495,7 @@ export default function TherapistsPage() {
               {filteredTherapists.map(th => {
                 const matchType = getMatchType(th);
                 return (
-                  <div key={th.id} className="th-card" onClick={() => setSelectedTherapist(th)}>
+                  <a key={th.id} href={`/therapists/${th.id}`} className="th-card">
                     {/* Match badge */}
                     {matchType && (
                       <div style={{
@@ -673,7 +548,7 @@ export default function TherapistsPage() {
                       {tx.viewProfile}
                       <ArrowRight size={13} />
                     </div>
-                  </div>
+                  </a>
                 );
               })}
             </div>
@@ -712,7 +587,6 @@ export default function TherapistsPage() {
         </div>
       </section>
 
-      {selectedTherapist && <TherapistModal therapist={selectedTherapist} lang={lang} tx={tx} onClose={() => setSelectedTherapist(null)} />}
       <Footer />
     </>
   );
