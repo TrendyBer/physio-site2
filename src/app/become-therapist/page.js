@@ -4,22 +4,23 @@ import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
+import { CheckCircle2, ArrowRight } from 'lucide-react';
 
 const CACHE_KEY_CMS = 'cms_become_therapist';
 const CACHE_TTL = 5 * 60 * 1000;
 
 const DEFAULT = {
   hero: {
-    el: { badge: 'Για Φυσιοθεραπευτές', hero: 'Γίνετε μέλος του δικτύου μας', heroEm: 'Φυσιοθεραπευτών', heroDesc: 'Εφαρμόστε για να παρέχετε υπηρεσίες φυσιοθεραπείας στο σπίτι.', heroBtn: 'Γίνετε Θεραπευτής' },
-    en: { badge: 'For Physiotherapists', hero: 'Join Our Network of', heroEm: 'Physiotherapists', heroDesc: 'Apply to provide home physiotherapy services and connect with patients in your area.', heroBtn: 'Become a Therapist' },
+    el: { badge: 'Για Φυσιοθεραπευτές', hero: 'Λάβετε νέα περιστατικά φυσιοθεραπείας', heroEm: 'στην περιοχή σας', heroDesc: 'Δημιουργήστε προφίλ, δηλώστε περιοχές και διαθεσιμότητα, και συνδεθείτε με ασθενείς που χρειάζονται φυσιοθεραπεία στο σπίτι.', heroBtn: 'Γίνε συνεργάτης' },
+    en: { badge: 'For Physiotherapists', hero: 'Receive new physiotherapy cases', heroEm: 'in your area', heroDesc: 'Create a profile, set your areas and availability, and connect with patients who need physiotherapy at home.', heroBtn: 'Become a partner' },
   },
   whywork: {
     el: { title: 'Γιατί οι Θεραπευτές επιλέγουν να', titleEm: 'Συνεργαστούν μαζί μας', desc: 'Γίνετε μέλος ενός αναπτυσσόμενου δικτύου.', benefits: [{ title: 'Ευέλικτο Ωράριο', desc: 'Επιλέξτε πότε εργάζεστε.' }, { title: 'Επαγγελματική Ανάπτυξη', desc: 'Ποικιλία περιστατικών.' }, { title: 'Εστίαση στη Φροντίδα', desc: 'Περισσότερος χρόνος στη θεραπεία.' }, { title: 'Εργασία στην Περιοχή σας', desc: 'Ασθενείς βάσει τοποθεσίας.' }] },
     en: { title: 'Why Therapists Choose to', titleEm: 'Work With Us', desc: 'Join a growing network.', benefits: [{ title: 'Flexible schedule', desc: 'Choose when you work.' }, { title: 'Professional growth', desc: 'Variety of cases.' }, { title: 'Focus on care', desc: 'More time treating patients.' }, { title: 'Work locally', desc: 'Matched with nearby patients.' }] },
   },
   workflow: {
-    el: { title: 'Μια Απλή,', titleEm: 'Ευέλικτη Διαδικασία', desc: 'Πλήρης έλεγχος.', btn: 'Γίνετε Θεραπευτής', steps: [{ num: 'Βήμα 1', title: 'Εγγραφείτε στην πλατφόρμα', desc: 'Δημιουργήστε λογαριασμό σε λίγα λεπτά.' }, { num: 'Βήμα 2', title: 'Ανεβάστε δικαιολογητικά', desc: 'Άδεια, βιογραφικό, πιστοποιήσεις.' }, { num: 'Βήμα 3', title: 'Έγκριση από admin', desc: 'Ελέγχουμε τα στοιχεία σας.' }, { num: 'Βήμα 4', title: 'Ξεκινήστε να δέχεστε αιτήματα', desc: 'Ασθενείς στην περιοχή σας.' }] },
-    en: { title: 'A Simple,', titleEm: 'Flexible Workflow', desc: 'Full control.', btn: 'Become a Therapist', steps: [{ num: 'Step 1', title: 'Sign up on the platform', desc: 'Create your account in minutes.' }, { num: 'Step 2', title: 'Upload your documents', desc: 'License, CV, certifications.' }, { num: 'Step 3', title: 'Admin approval', desc: 'We verify your credentials.' }, { num: 'Step 4', title: 'Start receiving requests', desc: 'Patients in your area.' }] },
+    el: { title: 'Μια Απλή,', titleEm: 'Ευέλικτη Διαδικασία', desc: 'Πλήρης έλεγχος.', btn: 'Γίνε συνεργάτης', steps: [{ num: 'Βήμα 1', title: 'Εγγραφείτε στην πλατφόρμα', desc: 'Δημιουργήστε λογαριασμό σε λίγα λεπτά.' }, { num: 'Βήμα 2', title: 'Ανεβάστε δικαιολογητικά', desc: 'Άδεια, βιογραφικό, πιστοποιήσεις.' }, { num: 'Βήμα 3', title: 'Έγκριση από admin', desc: 'Ελέγχουμε τα στοιχεία σας.' }, { num: 'Βήμα 4', title: 'Ξεκινήστε να δέχεστε αιτήματα', desc: 'Ασθενείς στην περιοχή σας.' }] },
+    en: { title: 'A Simple,', titleEm: 'Flexible Workflow', desc: 'Full control.', btn: 'Become a partner', steps: [{ num: 'Step 1', title: 'Sign up on the platform', desc: 'Create your account in minutes.' }, { num: 'Step 2', title: 'Upload your documents', desc: 'License, CV, certifications.' }, { num: 'Step 3', title: 'Admin approval', desc: 'We verify your credentials.' }, { num: 'Step 4', title: 'Start receiving requests', desc: 'Patients in your area.' }] },
   },
   platform: {
     el: { title: 'Μια Πλατφόρμα που', titleEm: 'Μπορείτε να Εμπιστευτείτε', desc: 'Σχεδιασμένο για εσάς.', points: [{ title: 'Ασθενείς έτοιμοι να συμμετάσχουν', desc: 'Αφοσιωμένοι στην ανάρρωση.' }, { title: 'Χωρίς γραφειοκρατία', desc: 'Εστίαση στη θεραπεία.' }, { title: 'Σύγχρονη πρακτική', desc: 'Πέρα από παραδοσιακές κλινικές.' }] },
@@ -27,8 +28,23 @@ const DEFAULT = {
   },
 };
 
+// Value bullets κάτω από το hero (hardcoded, εκτός CMS)
+const HERO_POINTS = {
+  el: [
+    'Λαμβάνετε αιτήματα από ασθενείς στην περιοχή σας',
+    'Ορίζετε εσείς διαθεσιμότητα και περιοχές',
+    'Διαχειρίζεστε συνεδρίες, πληρωμές και αξιολογήσεις',
+  ],
+  en: [
+    'Receive requests from patients in your area',
+    'You set your own availability and areas',
+    'Manage sessions, payments and reviews',
+  ],
+};
+
 const TX = {
   el: {
+    heroSecondary: 'Δες πώς λειτουργεί',
     ctaTitle: 'Έτοιμοι να ξεκινήσετε;',
     ctaDesc: 'Δημιουργήστε λογαριασμό φυσιοθεραπευτή και ξεκινήστε να συνεργάζεστε μαζί μας. Η εγγραφή είναι δωρεάν.',
     ctaBtn: 'Δημιουργία Λογαριασμού',
@@ -37,6 +53,7 @@ const TX = {
     benefitsList: ['✓ Δωρεάν εγγραφή', '✓ Ευέλικτο ωράριο', '✓ Πληρωμή ανά συνεδρία'],
   },
   en: {
+    heroSecondary: 'See how it works',
     ctaTitle: 'Ready to get started?',
     ctaDesc: 'Create a physiotherapist account and start working with us. Registration is free.',
     ctaBtn: 'Create Account',
@@ -49,6 +66,7 @@ const TX = {
 export default function BecomeTherapistPage() {
   const { lang } = useLang();
   const tx = TX[lang];
+  const heroPoints = HERO_POINTS[lang];
   const [cms, setCms] = useState(DEFAULT);
 
   useEffect(() => { fetchCMS(); }, []);
@@ -92,6 +110,9 @@ export default function BecomeTherapistPage() {
         @media (max-width: 768px) { .workflow-layout { grid-template-columns: 1fr; gap: 40px; } }
         .platform-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
         @media (max-width: 768px) { .platform-layout { grid-template-columns: 1fr; gap: 40px; } }
+        .hero-cta-row { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; align-items: center; }
+        .hero-points { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-top: 32px; }
+        .hero-point { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: #475569; }
       `}</style>
 
       <Navbar />
@@ -103,10 +124,26 @@ export default function BecomeTherapistPage() {
           <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(28px, 4vw, 54px)', color: '#1a2e44', lineHeight: 1.15, marginBottom: 20 }}>
             {hero.hero} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{hero.heroEm}</em>
           </h1>
-          <p style={{ fontSize: 17, color: '#6b7a8d', maxWidth: 580, margin: '0 auto 32px' }}>{hero.heroDesc}</p>
-          <a href={registerHref} style={{ display: 'inline-block', background: '#1a2e44', color: '#fff', padding: '14px 36px', borderRadius: 30, fontSize: 15, fontWeight: 600, textDecoration: 'none' }}>
-            {hero.heroBtn} →
-          </a>
+          <p style={{ fontSize: 17, color: '#6b7a8d', maxWidth: 620, margin: '0 auto 32px' }}>{hero.heroDesc}</p>
+
+          <div className="hero-cta-row">
+            <a href={registerHref} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#1a2e44', color: '#fff', padding: '14px 36px', borderRadius: 30, fontSize: 15, fontWeight: 600, textDecoration: 'none' }}>
+              {hero.heroBtn}
+              <ArrowRight size={18} />
+            </a>
+            <a href="/how-it-works?tab=therapist" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#1a2e44', padding: '14px 28px', borderRadius: 30, fontSize: 15, fontWeight: 600, textDecoration: 'none', border: '1.5px solid #cbd8e6' }}>
+              {tx.heroSecondary}
+            </a>
+          </div>
+
+          <div className="hero-points">
+            {heroPoints.map((p, i) => (
+              <span key={i} className="hero-point">
+                <CheckCircle2 size={17} color="#2a6fdb" strokeWidth={2.2} style={{ flexShrink: 0 }} />
+                {p}
+              </span>
+            ))}
+          </div>
         </div>
       </section>
 
