@@ -81,18 +81,18 @@ export default function Navbar() {
   }
 
   const t = {
-    el: { login: 'Σύνδεση', register: 'Εγγραφή' },
-    en: { login: 'Login', register: 'Register' },
+    el: { login: 'Σύνδεση', register: 'Εγγραφή', findCta: 'Βρες φυσιοθεραπευτή' },
+    en: { login: 'Login', register: 'Register', findCta: 'Find a physiotherapist' },
   };
   const text = t[lang];
 
   const publicLinks = [
     { label: lang === 'el' ? 'Πώς Λειτουργεί' : 'How it Works', href: '/how-it-works' },
-    { label: lang === 'el' ? 'Πακέτα' : 'Packages', href: '/packages' },
     { label: lang === 'el' ? 'Παθήσεις' : 'Conditions', href: '/find-help' },
     { label: lang === 'el' ? 'Θεραπευτές' : 'Therapists', href: '/therapists' },
+    { label: lang === 'el' ? 'Πακέτα' : 'Packages', href: '/packages' },
     { label: 'Blog', href: '/blog' },
-    { label: lang === 'el' ? 'Επικοινωνία' : 'Contact', href: '/contact' },
+    { label: lang === 'el' ? 'Για φυσιοθεραπευτές' : 'For therapists', href: '/become-therapist' },
   ];
 
   const therapistLinks = [
@@ -108,7 +108,7 @@ export default function Navbar() {
     { label: lang === 'el' ? 'Αρχική' : 'Home', href: '/' },
     { label: lang === 'el' ? 'Θεραπευτές' : 'Therapists', href: '/therapists' },
     { label: lang === 'el' ? 'Παθήσεις' : 'Conditions', href: '/find-help' },
-    { label: lang === 'el' ? 'Κλείσε Συνεδρία' : 'Book Session', href: '/dashboard/patient/new-request' },
+    { label: lang === 'el' ? 'Στείλε Αίτημα' : 'Send Request', href: '/dashboard/patient/new-request' },
     { label: 'My Account', href: '/dashboard/patient' },
   ];
 
@@ -127,7 +127,7 @@ export default function Navbar() {
         .nav-links-desktop { display: flex; }
         .nav-right-desktop { display: flex; }
         .hamburger { display: none !important; }
-        @media (max-width: 768px) {
+        @media (max-width: 900px) {
           .nav-links-desktop { display: none !important; }
           .nav-right-desktop { display: none !important; }
           .hamburger { display: flex !important; }
@@ -142,16 +142,19 @@ export default function Navbar() {
             PhysioHome
           </a>
 
-          <ul className="nav-links-desktop" style={{ alignItems: 'center', gap: 24, listStyle: 'none', margin: 0, padding: 0 }}>
-            {activeLinks.map(item => (
-              <li key={item.href + item.label}>
-                <a href={item.href} style={{ fontSize: 14, fontWeight: 500, color: '#6b7a8d', textDecoration: 'none' }}
-                  onMouseEnter={e => e.target.style.color = '#1a2e44'}
-                  onMouseLeave={e => e.target.style.color = '#6b7a8d'}>
-                  {item.label}
-                </a>
-              </li>
-            ))}
+          <ul className="nav-links-desktop" style={{ alignItems: 'center', gap: 22, listStyle: 'none', margin: 0, padding: 0 }}>
+            {activeLinks.map(item => {
+              const isForTherapists = item.href === '/become-therapist';
+              return (
+                <li key={item.href + item.label}>
+                  <a href={item.href} style={{ fontSize: 14, fontWeight: isForTherapists ? 600 : 500, color: isForTherapists ? '#2a6fdb' : '#6b7a8d', textDecoration: 'none' }}
+                    onMouseEnter={e => e.target.style.color = isForTherapists ? '#1a2e44' : '#1a2e44'}
+                    onMouseLeave={e => e.target.style.color = isForTherapists ? '#2a6fdb' : '#6b7a8d'}>
+                    {item.label}
+                  </a>
+                </li>
+              );
+            })}
           </ul>
 
           <div className="nav-right-desktop" style={{ alignItems: 'center', gap: 10 }}>
@@ -192,9 +195,9 @@ export default function Navbar() {
                 <button onClick={() => setLoginModal(true)} style={{ fontSize: 14, fontWeight: 600, color: '#1a2e44', background: 'none', border: '1px solid #dce6f0', padding: '8px 18px', borderRadius: 20, cursor: 'pointer' }}>
                   {text.login}
                 </button>
-                <button onClick={() => setRoleModal(true)} style={{ background: '#1a2e44', color: '#fff', padding: '9px 20px', borderRadius: 30, fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer' }}>
-                  {text.register}
-                </button>
+                <a href="/therapists" style={{ background: '#1a2e44', color: '#fff', padding: '10px 22px', borderRadius: 30, fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                  {text.findCta}
+                </a>
               </>
             )}
           </div>
@@ -218,7 +221,7 @@ export default function Navbar() {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
               {[
-                { role: 'patient', title: 'Θέλω Φυσιοθεραπεία', desc: 'Εγγραφή ως ασθενής και κλείσιμο ραντεβού', accent: '#15803D', bg: '#F0FDF4' },
+                { role: 'patient', title: 'Θέλω Φυσιοθεραπεία', desc: 'Εγγραφή ως ασθενής και αίτημα συνεδρίας', accent: '#15803D', bg: '#F0FDF4' },
                 { role: 'therapist', title: 'Θέλω να Προσφέρω', desc: 'Εγγραφή ως θεραπευτής και αίτηση συνεργασίας', accent: '#1D4ED8', bg: '#EFF6FF' },
               ].map(r => (
                 <a key={r.role} href={`/auth/register?role=${r.role}`} onClick={() => setRoleModal(false)}
@@ -300,7 +303,7 @@ export default function Navbar() {
             ) : (
               <>
                 <button onClick={() => { setMenuOpen(false); setLoginModal(true); }} style={{ background: 'transparent', color: '#1a2e44', padding: '12px', borderRadius: 30, fontSize: 15, fontWeight: 600, border: '1.5px solid #1a2e44', cursor: 'pointer' }}>{text.login}</button>
-                <button onClick={() => { setMenuOpen(false); setRoleModal(true); }} style={{ background: '#1a2e44', color: '#fff', padding: '13px', borderRadius: 30, fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer' }}>{text.register}</button>
+                <a href="/therapists" onClick={() => setMenuOpen(false)} style={{ background: '#1a2e44', color: '#fff', padding: '13px', borderRadius: 30, fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', textDecoration: 'none', textAlign: 'center', display: 'block' }}>{text.findCta}</a>
               </>
             )}
           </div>
