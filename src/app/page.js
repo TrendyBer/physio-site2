@@ -2,6 +2,7 @@ import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import WhyUs from '@/components/WhyUs';
 import HowItWorks from '@/components/HowItWorks';
+import TrustSection from '@/components/TrustSection';
 import Benefits from '@/components/Benefits';
 import Therapists from '@/components/Therapists';
 import Services from '@/components/Services';
@@ -16,6 +17,7 @@ export default function Home() {
       <Partners />
       <WhyUs />
       <HowItWorks />
+      <TrustSection />
       <Benefits />
       <Therapists />
       <Services />
