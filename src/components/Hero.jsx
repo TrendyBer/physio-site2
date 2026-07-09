@@ -2,56 +2,57 @@
 import { useState, useEffect } from 'react';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
-import BookingButton from './BookingButton';
-import { CheckCircle2, Clock, Heart, Calendar, MapPin, Star } from 'lucide-react';
+import { CheckCircle2, Clock, Heart, Calendar, MapPin, Star, ArrowRight, Search } from 'lucide-react';
 
 const DEFAULT = {
   el: {
-    badge: 'Αξιόπιστη Φυσιοθεραπεία στην Αθήνα',
-    title1: 'Εξειδικευμένη Φυσιοθεραπεία στην',
-    title2: 'Άνεση του Σπιτιού σας',
-    desc: 'Λάβετε επαγγελματική, εξατομικευμένη φυσιοθεραπεία εκεί που νιώθετε πιο άνετα.',
-    cta: 'Κλείστε Ραντεβού', how: 'Πώς Λειτουργεί',
+    badge: 'Φυσιοθεραπεία στο σπίτι · Αθήνα & Αττική',
+    title1: 'Φυσιοθεραπεία στο σπίτι,',
+    title2: 'για αυτό που σας ταλαιπωρεί',
+    desc: 'Περιγράψτε με απλά λόγια το πρόβλημα και βρείτε φυσιοθεραπευτή που αναλαμβάνει παρόμοια περιστατικά στην περιοχή σας.',
+    cta: 'Βρες φυσιοθεραπευτή', how: 'Δες παθήσεις',
     pills: [
-      { icon: 'CheckCircle2', label: 'Πιστοποιημένοι Επαγγελματίες' },
-      { icon: 'Clock', label: 'Ευέλικτο Ωράριο' },
-      { icon: 'Heart', label: 'Εξατομικευμένη Φροντίδα' },
-      { icon: 'Calendar', label: 'Εύκολη Κράτηση' },
+      { icon: 'CheckCircle2', label: 'Ελεγμένοι φυσιοθεραπευτές' },
+      { icon: 'MapPin', label: 'Στην περιοχή σας' },
+      { icon: 'Calendar', label: 'Ευέλικτο ραντεβού' },
+      { icon: 'Heart', label: 'Υποστήριξη από την ομάδα μας' },
     ],
     image_url: '',
   },
   en: {
-    badge: 'Trusted Physiotherapy in Athens',
-    title1: 'Expert Physiotherapy in the',
-    title2: 'Comfort of Your Home',
-    desc: "Receive professional, personalized physiotherapy treatment where you're most comfortable.",
-    cta: 'Request a Session', how: 'How It Works',
+    badge: 'Home physiotherapy · Athens & Attica',
+    title1: 'Home physiotherapy,',
+    title2: 'for whatever troubles you',
+    desc: 'Describe your problem in simple words and find a physiotherapist who handles similar cases in your area.',
+    cta: 'Find a physiotherapist', how: 'Browse conditions',
     pills: [
-      { icon: 'CheckCircle2', label: 'Licensed Professionals' },
-      { icon: 'Clock', label: 'Flexible Scheduling' },
-      { icon: 'Heart', label: 'Personalized Care' },
-      { icon: 'Calendar', label: 'Easy Booking' },
+      { icon: 'CheckCircle2', label: 'Vetted physiotherapists' },
+      { icon: 'MapPin', label: 'In your area' },
+      { icon: 'Calendar', label: 'Flexible scheduling' },
+      { icon: 'Heart', label: 'Support from our team' },
     ],
     image_url: '',
   },
+};
+
+const FALLBACK_CHIPS = {
+  el: ['Πόνος στη μέση', 'Αυχενικό', 'Πόνος γόνατου', 'Μετά από χειρουργείο', 'Δυσκολία στο περπάτημα', 'Αθλητικός τραυματισμός'],
+  en: ['Back pain', 'Neck pain', 'Knee pain', 'After surgery', 'Difficulty walking', 'Sports injury'],
 };
 
 const CACHE_KEY = 'cms_homepage_hero';
 const CACHE_TTL = 5 * 60 * 1000;
 
-// Map icon names to components
 const ICON_MAP = {
   CheckCircle2: CheckCircle2,
   Clock: Clock,
   Heart: Heart,
   Calendar: Calendar,
+  MapPin: MapPin,
 };
 
-// Helper για backward compatibility — αν τα pills στο DB είναι strings (παλιά format),
-// τα μετατρέπουμε σε objects με fallback icon
 function normalizePills(pills, defaultPills) {
   if (!Array.isArray(pills) || pills.length === 0) return defaultPills;
-  // Αν είναι strings (παλιά format από DB), χρησιμοποιούμε defaults
   if (typeof pills[0] === 'string') return defaultPills;
   return pills;
 }
@@ -60,7 +61,8 @@ export default function Hero() {
   const { lang } = useLang();
   const [data, setData] = useState(DEFAULT);
   const [imgLoaded, setImgLoaded] = useState(false);
-  const [address, setAddress] = useState('');
+  const [problem, setProblem] = useState('');
+  const [conditionChips, setConditionChips] = useState([]);
 
   useEffect(() => {
     async function fetchData() {
@@ -88,22 +90,57 @@ export default function Hero() {
     fetchData();
   }, []);
 
+  // Δημοφιλείς αναζητήσεις — πραγματικές παθήσεις από τη βάση
+  useEffect(() => {
+    (async () => {
+      const { data: cds } = await supabase
+        .from('conditions')
+        .select('slug, name_el, name_en')
+        .eq('is_active', true)
+        .limit(6);
+      if (cds && cds.length > 0) setConditionChips(cds);
+    })();
+  }, []);
+
   const text = data[lang] || DEFAULT[lang];
   const pills = normalizePills(text.pills, DEFAULT[lang].pills);
 
   const bookT = {
     el: {
-      placeholder: 'Διεύθυνση (π.χ. Αθηνάς 12, Αθήνα)',
-      btn: 'Κλείσε Ραντεβού',
-      hint: 'Χωρίς δέσμευση · Πιστοποιημένοι θεραπευτές',
+      label: 'Τι σας ταλαιπωρεί;',
+      placeholder: 'π.χ. πόνος στη μέση, αυχενικό, εγχείρηση γόνατου',
+      btn: 'Βρες φυσιοθεραπευτή',
+      micro: 'Δεν χρειάζεται να γνωρίζετε ακριβή διάγνωση · Η περιοχή ζητείται στο επόμενο βήμα',
+      popular: 'Δημοφιλείς αναζητήσεις',
     },
     en: {
-      placeholder: 'Address (e.g. 12 Athens St, Athens)',
-      btn: 'Book a Session',
-      hint: 'No commitment · Certified therapists',
+      label: 'What is troubling you?',
+      placeholder: 'e.g. back pain, neck pain, knee surgery',
+      btn: 'Find a physiotherapist',
+      micro: "You don't need to know an exact diagnosis · Your area is asked in the next step",
+      popular: 'Popular searches',
     },
   };
   const bt = bookT[lang];
+
+  const buttonHref = problem.trim()
+    ? `/find-help?q=${encodeURIComponent(problem.trim())}`
+    : '/find-help';
+
+  function handleKey(e) {
+    if (e.key === 'Enter') { window.location.href = buttonHref; }
+  }
+
+  // quick chips: πραγματικές παθήσεις -> φιλτραρισμένοι θεραπευτές, αλλιώς fallback -> find-help
+  const quickChips = conditionChips.length > 0
+    ? conditionChips.map(c => ({
+        label: lang === 'el' ? c.name_el : c.name_en,
+        href: `/therapists?condition=${encodeURIComponent(c.slug)}`,
+      }))
+    : FALLBACK_CHIPS[lang].map(label => ({
+        label,
+        href: `/find-help?q=${encodeURIComponent(label)}`,
+      }));
 
   return (
     <>
@@ -114,6 +151,7 @@ export default function Hero() {
         }
         .hero-section { max-width: 1200px; margin: 0 auto; padding: 80px 24px 60px; display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
         .hero-visual { position: relative; }
+        .hero-search-label { font-size: 14px; font-weight: 700; color: #1a2e44; margin-bottom: 10px; }
         .hero-book-box {
           background: #fff;
           border-radius: 16px;
@@ -122,9 +160,9 @@ export default function Hero() {
           display: flex;
           align-items: center;
           gap: 8px;
-          max-width: 520px;
+          max-width: 540px;
           box-shadow: 0 8px 32px rgba(26,46,68,0.10);
-          margin-bottom: 14px;
+          margin-bottom: 12px;
         }
         .hero-book-input {
           flex: 1;
@@ -153,10 +191,22 @@ export default function Hero() {
           cursor: pointer;
           font-family: inherit;
           white-space: nowrap;
+          text-decoration: none;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
         }
         .hero-book-btn:hover { background: #0f1e30; }
+        .hero-chips-label { font-size: 12px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: .06em; margin: 20px 0 10px; }
+        .hero-chip {
+          display: inline-flex; align-items: center; gap: 5px;
+          background: #fff; border: 1px solid #dce6f0; color: #1a2e44;
+          padding: 7px 14px; border-radius: 20px; font-size: 13px; font-weight: 500;
+          text-decoration: none; transition: all .2s; cursor: pointer;
+        }
+        .hero-chip:hover { border-color: #2a6fdb; color: #2a6fdb; }
         .hero-title { font-family: Georgia, serif; font-size: clamp(28px, 4vw, 52px); line-height: 1.15; color: #1a2e44; margin-bottom: 20px; }
-        .hero-desc { font-size: 17px; color: #6b7a8d; line-height: 1.7; margin-bottom: 28px; max-width: 460px; }
+        .hero-desc { font-size: 17px; color: #6b7a8d; line-height: 1.7; margin-bottom: 28px; max-width: 470px; }
 
         @media (max-width: 768px) {
           .hero-section { grid-template-columns: 1fr; padding: 32px 20px; gap: 28px; }
@@ -164,7 +214,7 @@ export default function Hero() {
           .hero-book-box { flex-direction: column; align-items: stretch; padding: 12px; }
           .hero-book-input-wrapper { padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; }
           .hero-book-input { padding: 0; }
-          .hero-book-btn { width: 100%; }
+          .hero-book-btn { width: 100%; justify-content: center; }
           .hero-title { font-size: 30px; line-height: 1.2; }
           .hero-desc { font-size: 15px; max-width: 100%; }
         }
@@ -203,7 +253,6 @@ export default function Hero() {
       <div className="hero-wrapper">
         <section className="hero-section">
           <div>
-            {/* Badge — clean, with star icon */}
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#e8f1fd', color: '#2a6fdb', padding: '6px 16px', borderRadius: 20, fontSize: 13, fontWeight: 500, marginBottom: 24 }}>
               <Star size={13} fill="#2a6fdb" strokeWidth={0} />
               {text.badge}
@@ -213,27 +262,35 @@ export default function Hero() {
             </h1>
             <p className="hero-desc">{text.desc}</p>
 
-            {/* Address input + BookingButton */}
+            {/* Problem-first search */}
+            <div className="hero-search-label">{bt.label}</div>
             <div className="hero-book-box">
               <div className="hero-book-input-wrapper">
-                <MapPin size={18} color="#94a3b8" strokeWidth={2} style={{ flexShrink: 0 }} />
+                <Search size={18} color="#94a3b8" strokeWidth={2} style={{ flexShrink: 0 }} />
                 <input
-                  value={address}
-                  onChange={e => setAddress(e.target.value)}
+                  value={problem}
+                  onChange={e => setProblem(e.target.value)}
+                  onKeyDown={handleKey}
                   placeholder={bt.placeholder}
                   className="hero-book-input"
                 />
               </div>
-              <BookingButton address={address} className="hero-book-btn">
-                {bt.btn} →
-              </BookingButton>
+              <a href={buttonHref} className="hero-book-btn">
+                {bt.btn} <ArrowRight size={16} />
+              </a>
             </div>
-            <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 28 }}>
-              {bt.hint}
+            <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 4 }}>{bt.micro}</div>
+
+            {/* Δημοφιλείς αναζητήσεις */}
+            <div className="hero-chips-label">{bt.popular}</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {quickChips.map((chip, i) => (
+                <a key={i} href={chip.href} className="hero-chip">{chip.label}</a>
+              ))}
             </div>
 
-            {/* Pills with Lucide icons */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 8 }}>
+            {/* Trust pills */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 22 }}>
               {pills.map((pill, i) => {
                 const IconComp = ICON_MAP[pill.icon] || CheckCircle2;
                 return (
