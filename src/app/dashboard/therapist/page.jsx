@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import ProfileChecklist from '@/components/ProfileChecklist';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import TherapistConditions from '../../../components/TherapistConditions';
@@ -611,7 +612,6 @@ export default function TherapistDashboard() {
   const hasLicense = !!profile?.license_url;
   const hasCv = !!profile?.cv_url;
   const certCount = (profile?.certifications_urls || []).length;
-  const showDocsBanner = !hasLicense;
 
   // Calendar grid builder
   function buildMonthGrid(year, month) {
@@ -707,27 +707,11 @@ export default function TherapistDashboard() {
 
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px' }}>
 
-        {showDocsBanner && (
-          <div style={{ background: 'linear-gradient(135deg, #FEF3C7, #FDE68A)', border: '1px solid #F59E0B', borderRadius: 14, padding: '20px 24px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-            <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <AlertTriangle size={26} color="#92400E" strokeWidth={2.2} />
-            </div>
-            <div style={{ flex: 1, minWidth: 200 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#92400E', marginBottom: 4 }}>
-                Ολοκλήρωσε την αίτησή σου
-              </div>
-              <div style={{ fontSize: 13, color: '#78350F', lineHeight: 1.5 }}>
-                Ανέβασε την <strong>Άδεια Εξασκήσεως</strong> σου για να σταλεί η αίτησή σου στον admin για έγκριση.
-                CV και Πιστοποιητικά είναι προαιρετικά.
-              </div>
-            </div>
-            <button onClick={() => setDocsModal(true)}
-              style={{ background: '#92400E', color: '#fff', border: 'none', padding: '10px 22px', borderRadius: 30, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-              <Upload size={14} />
-              Ανέβασμα Δικαιολογητικών
-            </button>
-          </div>
-        )}
+        {/* Checklist πληρότητας — δείχνει ΤΙ λείπει για να εμφανιστεί δημόσια */}
+        <ProfileChecklist
+          onGoToTab={setActiveTab}
+          onOpenDocuments={() => setDocsModal(true)}
+        />
 
         <div style={{ display: 'flex', gap: 4, background: '#e2e8f0', padding: 4, borderRadius: 12, width: 'fit-content', marginBottom: 24, flexWrap: 'wrap' }}>
           {TABS.map(t => {
