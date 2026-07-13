@@ -7,7 +7,7 @@ import RatingDisplay from '../../components/RatingDisplay';
 import ConditionSearch from '../../components/ConditionSearch';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
-import { Search, MapPin, Star, Euro, SlidersHorizontal, X, Check, ArrowRight, Stethoscope, Users, ChevronDown, ChevronUp, Lightbulb } from 'lucide-react';
+import { Search, MapPin, Star, Euro, SlidersHorizontal, X, Check, ArrowRight, Stethoscope, Users, ChevronDown, ChevronUp, Lightbulb, BadgeCheck, ShieldCheck } from 'lucide-react';
 
 const TX = {
   el: {
@@ -24,6 +24,8 @@ const TX = {
     allSpecialties: 'Όλες οι ειδικότητες',
     priceRange: 'Εύρος τιμής',
     sortBy: 'Ταξινόμηση',
+    verifiedLicense: 'Ελεγμένη άδεια',
+    fullProfile: 'Πλήρες προφίλ',
     sortNewest: 'Νεότεροι πρώτα',
     sortRatingDesc: 'Υψηλότερη βαθμολογία',
     sortPriceAsc: 'Τιμή: χαμηλή → υψηλή',
@@ -59,6 +61,8 @@ const TX = {
     allSpecialties: 'All specialties',
     priceRange: 'Price range',
     sortBy: 'Sort by',
+    verifiedLicense: 'Verified license',
+    fullProfile: 'Complete profile',
     sortNewest: 'Newest first',
     sortRatingDesc: 'Highest rated',
     sortPriceAsc: 'Price: low → high',
@@ -160,6 +164,7 @@ export default function TherapistsPage() {
         .from('therapist_profiles')
         .select('*')
         .eq('is_approved', true)
+        .eq('is_profile_complete', true)
         .order('created_at', { ascending: false });
 
       clearTimeout(timeoutId);
@@ -293,6 +298,9 @@ export default function TherapistsPage() {
       });
     }
 
+    // Τα πλήρη προφίλ ανεβαίνουν: κίνητρο για τον θεραπευτή, ποιότητα για τον ασθενή
+    const fullBoost = (a, b) => (b.is_profile_full ? 1 : 0) - (a.is_profile_full ? 1 : 0);
+
     if (sortBy === 'relevance' && selectedCondition) {
       result.sort((a, b) => {
         const aType = getMatchType(a);
@@ -300,12 +308,15 @@ export default function TherapistsPage() {
         const score = (type) => (type === 'exact' ? 2 : type === 'specialty' ? 1 : 0);
         const diff = score(bType) - score(aType);
         if (diff !== 0) return diff;
+        const boost = fullBoost(a, b);
+        if (boost !== 0) return boost;
         return (b.avg_rating || 0) - (a.avg_rating || 0);
       });
     } else if (sortBy === 'rating-desc') result.sort((a, b) => (b.avg_rating || 0) - (a.avg_rating || 0));
     else if (sortBy === 'price-asc') result.sort((a, b) => (a.price_per_session || 0) - (b.price_per_session || 0));
     else if (sortBy === 'price-desc') result.sort((a, b) => (b.price_per_session || 0) - (a.price_per_session || 0));
     else if (sortBy === 'experience-desc') result.sort((a, b) => (b.years_experience || 0) - (a.years_experience || 0));
+    else result.sort((a, b) => fullBoost(a, b) || (new Date(b.created_at) - new Date(a.created_at)));
 
     return result;
   }, [therapists, therapistConditionsMap, selectedCondition, search, filterArea, filterSpecialty, filterMinPrice, filterMaxPrice, sortBy]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -527,8 +538,34 @@ export default function TherapistsPage() {
                         {th.name?.charAt(0)}
                       </div>
                     )}
-                    <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2e44', marginBottom: 4 }}>{th.name}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 4 }}>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: '#1a2e44' }}>{th.name}</span>
+                      {th.is_profile_full && <BadgeCheck size={15} color="#2a6fdb" strokeWidth={2.2} />}
+                    </div>
                     <div style={{ fontSize: 13, color: '#6b7a8d', marginBottom: 8 }}>{th.specialty}</div>
+
+                    {/* Trust chips — κάθε θεραπευτής εδώ έχει ελεγμένη άδεια, αλλιώς δεν θα εμφανιζόταν */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 8 }}>
+                      <span style={{
+                        padding: '3px 9px', borderRadius: 999, fontSize: 11, fontWeight: 500,
+                        background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0',
+                        display: 'inline-flex', alignItems: 'center', gap: 3,
+                      }}>
+                        <ShieldCheck size={11} strokeWidth={2.2} />
+                        {tx.verifiedLicense}
+                      </span>
+                      {th.is_profile_full && (
+                        <span style={{
+                          padding: '3px 9px', borderRadius: 999, fontSize: 11, fontWeight: 500,
+                          background: '#e8f1fd', color: '#2a6fdb', border: '1px solid #c8dff9',
+                          display: 'inline-flex', alignItems: 'center', gap: 3,
+                        }}>
+                          <BadgeCheck size={11} strokeWidth={2.2} />
+                          {tx.fullProfile}
+                        </span>
+                      )}
+                    </div>
+
                     <div style={{ marginBottom: 8 }}>
                       <RatingDisplay rating={th.avg_rating} count={th.review_count} lang={lang} variant="compact" size={13} />
                     </div>
