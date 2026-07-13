@@ -3,9 +3,13 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useSearchParams } from 'next/navigation';
 
-const CONTRACT_TEXT = `ΣΥΜΦΩΝΙΑ ΣΥΝΕΡΓΑΣΙΑΣ - PhysioHome
+// Η προμήθεια διαβάζεται ΔΥΝΑΜΙΚΑ από platform_settings.key = 'commission'.
+// Αν αλλάξει στη βάση, αλλάζει και εδώ — χωρίς deploy.
+const DEFAULT_COMMISSION = 3;
 
-1. ΠΡΟΜΗΘΕΙΑ: Η πλατφόρμα χρεώνει €20 ανά ανατεθέν περιστατικό.
+const buildContract = (commission) => `ΣΥΜΦΩΝΙΑ ΣΥΝΕΡΓΑΣΙΑΣ - PhysioHome
+
+1. ΠΡΟΜΗΘΕΙΑ: Η πλατφόρμα χρεώνει €${commission} ανά ανατεθέν περιστατικό.
 2. ΥΠΟΧΡΕΩΣΕΙΣ: Ο θεραπευτής δεσμεύεται να τηρεί τα ραντεβού που αποδέχεται.
 3. ANTI-BYPASS: Απαγορεύεται αυστηρά η ιδιωτική συμφωνία με ασθενείς που αποκτήθηκαν μέσω της πλατφόρμας.
 4. ΠΑΡΑΒΙΑΣΗ: Σε περίπτωση bypass, επιβάλλεται πρόστιμο και αποβολή από την πλατφόρμα.
@@ -32,6 +36,20 @@ export default function RegisterPage() {
   const [agreements, setAgreements] = useState({ gdpr: false, terms: false, contract: false });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [commission, setCommission] = useState(DEFAULT_COMMISSION);
+
+  // Φόρτωση προμήθειας από τη βάση
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from('platform_settings')
+        .select('value')
+        .eq('key', 'commission')
+        .maybeSingle();
+      const v = Number(data?.value);
+      if (Number.isFinite(v) && v > 0) setCommission(v);
+    })();
+  }, []);
 
   const upd = (k, v) => setForm(p => ({ ...p, [k]: v }));
   const updAgr = k => setAgreements(p => ({ ...p, [k]: !p[k] }));
@@ -252,11 +270,11 @@ export default function RegisterPage() {
                   <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', fontSize: 13, color: '#334155', marginBottom: 8 }}>
                     <input type="checkbox" checked={agreements.contract} onChange={() => updAgr('contract')} style={{ marginTop: 2, accentColor: '#2a6fdb' }} />
                     <span>
-                      Αποδέχομαι ηλεκτρονικά τη <strong>Σύμβαση Συνεργασίας</strong> (anti-bypass, προμήθεια €20/περιστατικό)
+                      Αποδέχομαι ηλεκτρονικά τη <strong>Σύμβαση Συνεργασίας</strong> (anti-bypass, προμήθεια €{commission}/περιστατικό)
                     </span>
                   </label>
                   <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: '10px 14px', fontSize: 11, color: '#64748b', lineHeight: 1.6, maxHeight: 100, overflowY: 'auto', whiteSpace: 'pre-line' }}>
-                    {CONTRACT_TEXT}
+                    {buildContract(commission)}
                   </div>
                 </div>
               )}
