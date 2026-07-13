@@ -6,19 +6,18 @@ import Footer from '../../../components/Footer';
 import RatingDisplay from '../../../components/RatingDisplay';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
-import { ArrowRight, MapPin } from 'lucide-react';
+import { ArrowRight, MapPin, ShieldCheck, BadgeCheck, GraduationCap, Clock } from 'lucide-react';
 
 const TX = {
   el: {
     breadcrumbHome: 'Αρχική',
     breadcrumbList: 'Θεραπευτές',
     verified: 'Ελεγμένο προφίλ από το PhysioHome',
-    trust: [
-      'Ελεγμένα στοιχεία προφίλ',
-      'Αξιολογήσεις από ολοκληρωμένες συνεδρίες',
-      'Εξυπηρέτηση στο σπίτι',
-      'Υποστήριξη από την ομάδα PhysioHome',
-    ],
+    chipLicense: 'Άδεια ασκήσεως ελεγμένη',
+    chipFullProfile: 'Πλήρες προφίλ',
+    chipReviews: (n) => `${n} ${n === 1 ? 'αξιολόγηση' : 'αξιολογήσεις'} από ασθενείς`,
+    chipResponse: (h) => `Απαντά συνήθως εντός ${h} ${h === 1 ? 'ώρας' : 'ωρών'}`,
+    trust: [],
     perSession: 'συνεδρία',
     yearsExp: 'χρόνια εμπειρίας',
     aboutTitle: 'Σχετικά με τον θεραπευτή',
@@ -30,6 +29,9 @@ const TX = {
     experienceLine: (y) => `${y} χρόνια εμπειρίας στη φυσιοθεραπεία.`,
     educationTitle: 'Εκπαίδευση & πιστοποιήσεις',
     educationEmpty: 'Δεν έχουν προστεθεί επιπλέον πιστοποιήσεις.',
+    degreeDefault: 'Πτυχίο Φυσικοθεραπείας',
+    classOf: 'Απόφοιτος',
+    licenseNote: 'Η άδεια ασκήσεως επαγγέλματος έχει ελεγχθεί από την ομάδα του PhysioHome.',
     areasTitle: 'Περιοχές εξυπηρέτησης',
     areasEmpty: 'Δεν έχουν δηλωθεί ακόμα περιοχές εξυπηρέτησης.',
     areasMicro: 'Δεν βλέπετε την περιοχή σας; Στείλτε αίτημα και θα ελέγξουμε αν μπορεί να σας εξυπηρετήσει.',
@@ -61,7 +63,11 @@ const TX = {
     breadcrumbHome: 'Home',
     breadcrumbList: 'Therapists',
     verified: 'Profile vetted by PhysioHome',
-    trust: [
+    chipLicense: 'License verified',
+    chipFullProfile: 'Complete profile',
+    chipReviews: (n) => `${n} patient ${n === 1 ? 'review' : 'reviews'}`,
+    chipResponse: (h) => `Usually replies within ${h}h`,
+    trustOld: [
       'Verified profile details',
       'Reviews from completed sessions',
       'Home-visit service',
@@ -78,6 +84,9 @@ const TX = {
     experienceLine: (y) => `${y} years of experience in physiotherapy.`,
     educationTitle: 'Education & certifications',
     educationEmpty: 'No additional certifications have been added.',
+    degreeDefault: 'Physiotherapy Degree',
+    classOf: 'Class of',
+    licenseNote: 'Professional license verified by the PhysioHome team.',
     areasTitle: 'Service areas',
     areasEmpty: 'No service areas have been listed yet.',
     areasMicro: "Don't see your area? Send a request and we'll check if the therapist can serve you.",
@@ -141,6 +150,7 @@ export default function TherapistProfilePage() {
         .select('*')
         .eq('id', id)
         .eq('is_approved', true)
+        .eq('is_profile_complete', true)
         .single();
 
       if (!th) { setTherapist(null); setLoading(false); return; }
@@ -199,7 +209,9 @@ export default function TherapistProfilePage() {
         .prof-layout { display: grid; grid-template-columns: 1.6fr 1fr; gap: 32px; align-items: start; }
         @media (max-width: 900px) { .prof-layout { grid-template-columns: 1fr; } .prof-book { position: static !important; } }
         .trust-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-        .trust-chip { background: #f0f7ff; color: #2a6fdb; border: 1px solid #d8e6fb; border-radius: 20px; padding: 6px 14px; font-size: 12px; font-weight: 600; }
+        .trust-chip { background: #f8fafb; color: #1a2e44; border: 1px solid #e2e8f0; border-radius: 20px; padding: 6px 14px; font-size: 12px; font-weight: 600; }
+        .trust-chip-green { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
+        .trust-chip-blue { background: #e8f1fd; color: #2a6fdb; border-color: #c8dff9; }
         @keyframes shimmer { 0% { background-position: -600px 0; } 100% { background-position: 600px 0; } }
       `}</style>
 
@@ -263,13 +275,32 @@ export default function TherapistProfilePage() {
                       </div>
                     </div>
 
-                    {/* Trust label + chips (no icons/emojis) */}
+                    {/* Trust chips — ΠΡΑΓΜΑΤΙΚΑ δεδομένα, όχι γενικές φράσεις */}
                     <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid #f1f5f9' }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: '#15803D', marginBottom: 12 }}>{tx.verified}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+                        <ShieldCheck size={15} color="#15803D" strokeWidth={2.2} />
+                        <span style={{ fontSize: 13, fontWeight: 700, color: '#15803D' }}>{tx.verified}</span>
+                      </div>
                       <div className="trust-chips">
-                        {tx.trust.map((label, i) => (
-                          <span key={i} className="trust-chip">{label}</span>
-                        ))}
+                        <span className="trust-chip trust-chip-green">{tx.chipLicense}</span>
+                        {therapist.education_school && (
+                          <span className="trust-chip">
+                            {therapist.education_school}
+                            {therapist.education_year ? ` · ${therapist.education_year}` : ''}
+                          </span>
+                        )}
+                        {therapist.years_experience > 0 && (
+                          <span className="trust-chip">{therapist.years_experience} {tx.yearsExp}</span>
+                        )}
+                        {therapist.review_count > 0 && (
+                          <span className="trust-chip">{tx.chipReviews(therapist.review_count)}</span>
+                        )}
+                        {therapist.is_profile_full && (
+                          <span className="trust-chip trust-chip-blue">{tx.chipFullProfile}</span>
+                        )}
+                        {therapist.response_time_hours > 0 && (
+                          <span className="trust-chip">{tx.chipResponse(therapist.response_time_hours)}</span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -301,7 +332,50 @@ export default function TherapistProfilePage() {
 
                   {/* Education & certifications (no fields yet -> empty state) */}
                   <Section title={tx.educationTitle}>
-                    <EmptyText>{tx.educationEmpty}</EmptyText>
+                    {therapist.education_school ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                        <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                          <div style={{
+                            width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+                            background: '#f0f7ff', border: '1px solid #d8e6fb',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          }}>
+                            <GraduationCap size={18} color="#2a6fdb" strokeWidth={2} />
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 15, fontWeight: 600, color: '#1a2e44' }}>
+                              {therapist.education_degree || tx.degreeDefault}
+                            </div>
+                            <div style={{ fontSize: 14, color: '#6b7a8d', marginTop: 2 }}>
+                              {therapist.education_school}
+                              {therapist.education_year ? ` · ${tx.classOf} ${therapist.education_year}` : ''}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div style={{
+                          display: 'flex', alignItems: 'center', gap: 8,
+                          padding: '12px 16px', background: '#f0fdf4',
+                          border: '1px solid #bbf7d0', borderRadius: 12,
+                        }}>
+                          <ShieldCheck size={16} color="#15803d" strokeWidth={2.2} style={{ flexShrink: 0 }} />
+                          <span style={{ fontSize: 13, color: '#15803d', fontWeight: 500, lineHeight: 1.5 }}>
+                            {tx.licenseNote}
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{
+                        display: 'flex', alignItems: 'center', gap: 8,
+                        padding: '12px 16px', background: '#f0fdf4',
+                        border: '1px solid #bbf7d0', borderRadius: 12,
+                      }}>
+                        <ShieldCheck size={16} color="#15803d" strokeWidth={2.2} style={{ flexShrink: 0 }} />
+                        <span style={{ fontSize: 13, color: '#15803d', fontWeight: 500, lineHeight: 1.5 }}>
+                          {tx.licenseNote}
+                        </span>
+                      </div>
+                    )}
                   </Section>
 
                   {/* Service areas */}
