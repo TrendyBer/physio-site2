@@ -111,10 +111,13 @@ export default async function FindHelpPage({ searchParams }) {
     .from('therapist_conditions')
     .select('condition_id, therapist_id');
 
+  // Μόνο θεραπευτές με πλήρες προφίλ μετράνε — αλλιώς οι μετρητές
+  // θα έλεγαν "5 θεραπευτές" και ο ασθενής θα έβρισκε 0 στη λίστα.
   const { data: therapists } = await supabase
     .from('therapist_profiles')
     .select('id, specialty')
-    .eq('is_approved', true);
+    .eq('is_approved', true)
+    .eq('is_profile_complete', true);
 
   const reachByCondition = {};
   (conditions || []).forEach((c) => {
