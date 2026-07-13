@@ -1,12 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import CancelBookingModal from '@/components/CancelBookingModal';
 import { useRouter } from 'next/navigation';
-import {
-  ClipboardList, Stethoscope, User, MapPin, Euro, Calendar, Star, Check,
-  ArrowRight, Save, X, Hourglass, Wallet, AlertCircle, CheckCircle2,
-  CalendarDays, List, ChevronLeft, ChevronRight, Clock,
-} from 'lucide-react';
+import { ClipboardList, Stethoscope, User, MapPin, Euro, Calendar, Star, Check, ArrowRight, Save, X, Hourglass, Wallet, AlertCircle, CheckCircle2, CalendarDays, List, ChevronLeft, ChevronRight, Clock, XCircle } from 'lucide-react';
 
 function Avatar({ name, size = 44 }) {
   return (
@@ -114,6 +111,7 @@ function daysUntilAutoRelease(autoReleaseAt) {
 
 export default function PatientDashboard() {
   const router = useRouter();
+  const [cancelBookingId, setCancelBookingId] = useState(null);
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [sessionRequests, setSessionRequests] = useState([]);
@@ -587,6 +585,30 @@ export default function PatientDashboard() {
                       Αναμονή επιβεβαίωσης από τον θεραπευτή
                     </div>
                   )}
+
+                  {/* Ακύρωση — ο ασθενής πρέπει να μπορεί μόνος του */}
+                  <div style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.2)' }}>
+                    <button
+                      onClick={() => setCancelBookingId(nextAppointment.id)}
+                      style={{
+                        background: 'rgba(255,255,255,0.12)',
+                        border: '1px solid rgba(255,255,255,0.3)',
+                        color: 'rgba(255,255,255,0.9)',
+                        padding: '9px 20px',
+                        borderRadius: 30,
+                        fontSize: 13,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                      }}
+                    >
+                      <XCircle size={14} />
+                      Ακύρωση ραντεβού
+                    </button>
+                  </div>
                 </div>
               );
             })()}
@@ -672,10 +694,35 @@ export default function PatientDashboard() {
                                     {apt.request.address}, {apt.request.area}
                                   </div>
                                 )}
-                                <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                                   <Badge label={bSt.label} bg={bSt.bg} color={bSt.color} />
                                   {apt.status === 'completed' && payInfo && (
                                     <Badge label={payInfo.label} bg={payInfo.bg} color={payInfo.color} icon={payInfo.icon} />
+                                  )}
+
+                                  {/* Ακύρωση — μόνο σε ενεργά ραντεβού */}
+                                  {apt.status !== 'completed' && !String(apt.status).startsWith('cancelled') && (
+                                    <button
+                                      onClick={() => setCancelBookingId(apt.id)}
+                                      style={{
+                                        marginLeft: 'auto',
+                                        background: 'transparent',
+                                        border: '1px solid #e2e8f0',
+                                        color: '#64748B',
+                                        padding: '5px 14px',
+                                        borderRadius: 30,
+                                        fontSize: 12.5,
+                                        fontWeight: 600,
+                                        cursor: 'pointer',
+                                        fontFamily: 'inherit',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: 5,
+                                      }}
+                                    >
+                                      <XCircle size={13} />
+                                      Ακύρωση
+                                    </button>
                                   )}
                                 </div>
                               </div>
@@ -1338,6 +1385,18 @@ export default function PatientDashboard() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── Modal ακύρωσης ── */}
+      {cancelBookingId && (
+        <CancelBookingModal
+          bookingId={cancelBookingId}
+          onClose={() => setCancelBookingId(null)}
+          onDone={() => {
+            setCancelBookingId(null);
+            init();
+          }}
+        />
       )}
     </div>
   );
