@@ -19,8 +19,10 @@ const OFFWHITE = '#faf9f6';
  *   2. Ο χρήστης γράφει λόγο (υποχρεωτικός αν είναι late/strike)
  *   3. Επιβεβαιώνει → καλεί cancel_booking()    → δείχνει αποτέλεσμα
  *
- * Props:
- *   bookingId  — το id του session_booking
+ * Props (δώσε ΕΝΑ από τα δύο):
+ *   bookingId  — ακύρωση ΜΙΑΣ συνεδρίας
+ *   requestId  — ακύρωση ΟΛΟΚΛΗΡΟΥ αιτήματος (όλες οι συνεδρίες, 1 strike)
+ *
  *   onClose()  — κλείσιμο χωρίς αλλαγή
  *   onDone()   — η ακύρωση ολοκληρώθηκε (refresh τη λίστα)
  */
@@ -48,7 +50,8 @@ function fmtSession(date, time) {
   return time ? `${day}, ${String(time).slice(0, 5)}` : day;
 }
 
-export default function CancelBookingModal({ bookingId, onClose, onDone }) {
+export default function CancelBookingModal({ bookingId, requestId, onClose, onDone }) {
+  const isRequest = !!requestId && !bookingId;
   const [loading, setLoading] = useState(true);
   const [preview, setPreview] = useState(null);
   const [reason, setReason] = useState('');
@@ -57,12 +60,12 @@ export default function CancelBookingModal({ bookingId, onClose, onDone }) {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!bookingId) return;
+    if (!bookingId && !requestId) return;
     (async () => {
       setLoading(true);
-      const { data, error } = await supabase.rpc('preview_cancellation', {
-        p_booking_id: bookingId,
-      });
+      const { data, error } = isRequest
+        ? await supabase.rpc('preview_request_cancellation', { p_request_id: requestId })
+        : await supabase.rpc('preview_cancellation', { p_booking_id: bookingId });
       if (error) {
         setError('Δεν ήταν δυνατός ο έλεγχος της ακύρωσης. Δοκιμάστε ξανά.');
       } else if (!data?.ok) {
@@ -72,19 +75,27 @@ export default function CancelBookingModal({ bookingId, onClose, onDone }) {
       }
       setLoading(false);
     })();
-  }, [bookingId]);
+  }, [bookingId, requestId]);
 
   // Ο λόγος είναι υποχρεωτικός όταν η ακύρωση επηρεάζει τον άλλον
-  const reasonRequired = preview && preview.tier !== 'free' && preview.tier !== 'admin';
+  // Ο λόγος είναι υποχρεωτικός όταν επηρεάζει τον άλλον — ή σε απόρριψη αιτήματος
+  const reasonRequired = preview && (
+    (preview.tier !== 'free' && preview.tier !== 'admin') || preview.is_rejection
+  );
   const canSubmit = preview && (!reasonRequired || reason.trim().length >= 5);
 
   async function confirm() {
     setSubmitting(true);
     setError('');
-    const { data, error } = await supabase.rpc('cancel_booking', {
-      p_booking_id: bookingId,
-      p_reason: reason.trim() || null,
-    });
+    const { data, error } = isRequest
+      ? await supabase.rpc('cancel_request', {
+          p_request_id: requestId,
+          p_reason: reason.trim() || null,
+        })
+      : await supabase.rpc('cancel_booking', {
+          p_booking_id: bookingId,
+          p_reason: reason.trim() || null,
+        });
     if (error) {
       setError('Η ακύρωση απέτυχε. Δοκιμάστε ξανά ή επικοινωνήστε μαζί μας.');
       setSubmitting(false);
@@ -141,7 +152,7 @@ export default function CancelBookingModal({ bookingId, onClose, onDone }) {
               fontFamily: "'DM Serif Display', Georgia, serif",
               fontSize: 21, color: NAVY, marginBottom: 10,
             }}>
-              Το ραντεβού ακυρώθηκε
+              {isRequest ? 'Το αίτημα ακυρώθηκε' : 'Το ραντεβού ακυρώθηκε'}
             </h2>
 
             <p style={{ fontSize: 14, color: '#5a6b7d', lineHeight: 1.6, marginBottom: struck ? 20 : 26 }}>
@@ -242,14 +253,25 @@ export default function CancelBookingModal({ bookingId, onClose, onDone }) {
               fontFamily: "'DM Serif Display', Georgia, serif",
               fontSize: 21, color: NAVY, marginBottom: 4,
             }}>
-              Ακύρωση ραντεβού
+              {preview.is_rejection
+                ? (isRequest ? 'Απόρριψη αιτήματος' : 'Απόρριψη συνεδρίας')
+                : (isRequest ? 'Ακύρωση αιτήματος' : 'Ακύρωση ραντεβού')}
             </h2>
-            <div style={{ fontSize: 13.5, color: '#5a6b7d', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ fontSize: 13.5, color: '#5a6b7d', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
               <Clock size={13} />
-              {fmtSession(preview.session_date, preview.session_time)}
-              <span style={{ color: '#c8d3de' }}>·</span>
-              σε {fmtHours(preview.hours_before)}
+              {preview.session_date
+                ? <>
+                    {fmtSession(preview.session_date, preview.session_time)}
+                    <span style={{ color: '#c8d3de' }}>·</span>
+                    σε {fmtHours(preview.hours_before)}
+                  </>
+                : 'Δεν υπάρχει προγραμματισμένη συνεδρία'}
             </div>
+            {isRequest && preview.sessions_count > 0 && (
+              <div style={{ fontSize: 12.5, color: '#be123c', marginTop: 5, fontWeight: 600 }}>
+                Θα ακυρωθούν {preview.sessions_count} {preview.sessions_count === 1 ? 'συνεδρία' : 'συνεδρίες'}
+              </div>
+            )}
           </div>
           <button
             onClick={onClose}
@@ -319,9 +341,11 @@ export default function CancelBookingModal({ bookingId, onClose, onDone }) {
             rows={3}
             disabled={submitting}
             placeholder={
-              preview.role === 'therapist'
-                ? 'π.χ. Έκτακτο περιστατικό υγείας, δεν μπορώ να παραστώ.'
-                : 'π.χ. Προέκυψε κάτι επείγον και δεν θα είμαι σπίτι.'
+              preview.is_rejection
+                ? 'π.χ. Δεν εξυπηρετώ αυτή την περιοχή / δεν έχω διαθεσιμότητα εκείνη την ώρα.'
+                : preview.role === 'therapist'
+                  ? 'π.χ. Έκτακτο περιστατικό υγείας, δεν μπορώ να παραστώ.'
+                  : 'π.χ. Προέκυψε κάτι επείγον και δεν θα είμαι σπίτι.'
             }
             style={{
               width: '100%', padding: '12px 14px',
@@ -375,7 +399,9 @@ export default function CancelBookingModal({ bookingId, onClose, onDone }) {
               fontFamily: 'inherit',
             }}
           >
-            {submitting ? 'Ακύρωση...' : 'Επιβεβαίωση ακύρωσης'}
+            {submitting
+              ? 'Επεξεργασία...'
+              : preview.is_rejection ? 'Επιβεβαίωση απόρριψης' : 'Επιβεβαίωση ακύρωσης'}
           </button>
         </div>
       </div>
