@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
+import { Search, Target, X } from 'lucide-react';
 
 /**
  * Reusable component for condition-based search.
@@ -21,16 +22,16 @@ import { supabase } from '@/lib/supabase';
 
 const TX = {
   el: {
-    placeholder: '🔍 Περιγράψτε το πρόβλημά σας... (π.χ. πόνος μέσης, αυχενικό)',
-    placeholderCompact: '🔍 Πόνος, πάθηση, σύνδρομο...',
+    placeholder: 'Περιγράψτε το πρόβλημά σας... (π.χ. πόνος μέσης, αυχενικό)',
+    placeholderCompact: 'Πόνος, πάθηση, σύνδρομο...',
     popular: 'Δημοφιλείς αναζητήσεις',
     noMatches: 'Δεν βρέθηκαν παθήσεις. Δοκιμάστε διαφορετικούς όρους.',
     clear: 'Καθαρισμός',
     selected: 'Επιλέχθηκε',
   },
   en: {
-    placeholder: '🔍 Describe your problem... (e.g. back pain, neck stiffness)',
-    placeholderCompact: '🔍 Pain, condition, syndrome...',
+    placeholder: 'Describe your problem... (e.g. back pain, neck stiffness)',
+    placeholderCompact: 'Pain, condition, syndrome...',
     popular: 'Popular searches',
     noMatches: 'No conditions found. Try different terms.',
     clear: 'Clear',
@@ -196,7 +197,7 @@ export default function ConditionSearch({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-            <span style={{ fontSize: 14 }}>🎯</span>
+            <Target size={14} color="#2a6fdb" strokeWidth={2.2} />
             <span style={{ fontWeight: 600, color: '#1D4ED8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {value.name}
             </span>
@@ -221,7 +222,7 @@ export default function ConditionSearch({
             }}
             title={tx.clear}
           >
-            ✕
+            
           </button>
         </div>
       ) : (
