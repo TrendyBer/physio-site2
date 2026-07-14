@@ -1,15 +1,13 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import ProfileChecklist from '@/components/ProfileChecklist';
+import CancelBookingModal from '@/components/CancelBookingModal';
+import { VIEW_SITE_KEY } from '@/components/TherapistGuard';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import TherapistConditions from '../../../components/TherapistConditions';
 import {
-  LayoutDashboard, ClipboardList, Calendar, MapPin, Target, Star, User,
-  Clock, AlertTriangle, Upload, CreditCard, Home, MessageSquare,
-  Check, X, Lock, ChevronLeft, ChevronRight, Plus, Lightbulb,
-  Camera, Pencil, CheckCircle2, Save, FileText, GraduationCap,
-  Award, Eye, Trash2, Wallet, Hourglass, CalendarDays, List,
+  LayoutDashboard, ClipboardList, Calendar, MapPin, Target, Star, User, Clock, AlertTriangle, Upload, CreditCard, Home, MessageSquare, Check, X, Lock, ChevronLeft, ChevronRight, Plus, Lightbulb, Camera, Pencil, CheckCircle2, Save, FileText, GraduationCap, Award, Eye, Trash2, Wallet, Hourglass, CalendarDays, List, Globe,
 } from 'lucide-react';
 
 function Avatar({ name, photoUrl, size = 48 }) {
@@ -177,9 +175,7 @@ export default function TherapistDashboard() {
   });
   const [selectedDay, setSelectedDay] = useState(null);
 
-  const [cancelModal, setCancelModal] = useState(null);
-  const [cancelReason, setCancelReason] = useState('');
-  const [cancelling, setCancelling] = useState(false);
+  const [cancelTarget, setCancelTarget] = useState(null);
 
   // Mark-as-done modal
   const [doneModal, setDoneModal] = useState(null);
@@ -476,65 +472,21 @@ export default function TherapistDashboard() {
     setDoneModal(null);
   }
 
+  // Η ακύρωση γίνεται πλέον ΑΠΟΚΛΕΙΣΤΙΚΑ μέσω των RPC functions
+  // cancel_booking() / cancel_request(). Η βάση επιβάλλει τους κανόνες:
+  // ξεμπλοκάρει slot, καταγράφει ιστορικό, δίνει strike αν είναι <24h,
+  // και παγώνει τον λογαριασμό στα 3 strikes.
   function openCancelRequestModal(request) {
-    setCancelModal({ type: 'request', data: request });
-    setCancelReason('');
+    setCancelTarget({ requestId: request.id });
   }
 
-  function openCancelBookingModal(booking, request) {
-    setCancelModal({ type: 'booking', data: booking, request });
-    setCancelReason('');
+  function openCancelBookingModal(booking) {
+    setCancelTarget({ bookingId: booking.id });
   }
 
-  async function doCancel() {
-    if (!cancelReason.trim()) {
-      alert('Παρακαλώ συμπληρώστε λόγο ακύρωσης.');
-      return;
-    }
-    setCancelling(true);
-
-    const now = new Date().toISOString();
-    const reason = `[Θεραπευτής] ${cancelReason}`;
-
-    if (cancelModal.type === 'request') {
-      const req = cancelModal.data;
-      const bookingIds = req.bookings.filter(b => b.status !== 'completed').map(b => b.id);
-
-      if (bookingIds.length > 0) {
-        await supabase.from('session_bookings').update({
-          status: 'cancelled',
-          cancelled_at: now,
-          cancelled_reason: reason,
-        }).in('id', bookingIds);
-
-        const slotIds = req.bookings.filter(b => b.status !== 'completed').map(b => b.slot_id).filter(Boolean);
-        if (slotIds.length > 0) {
-          await supabase.from('availability_slots').update({ is_blocked: false }).in('id', slotIds);
-        }
-      }
-
-      await supabase.from('session_requests').update({
-        status: 'cancelled',
-        cancelled_at: now,
-        cancelled_reason: reason,
-      }).eq('id', req.id);
-    } else {
-      const booking = cancelModal.data;
-      await supabase.from('session_bookings').update({
-        status: 'cancelled',
-        cancelled_at: now,
-        cancelled_reason: reason,
-      }).eq('id', booking.id);
-
-      if (booking.slot_id) {
-        await supabase.from('availability_slots').update({ is_blocked: false }).eq('id', booking.slot_id);
-      }
-    }
-
+  async function onCancelDone() {
+    setCancelTarget(null);
     await loadRequests(user.id);
-    setCancelling(false);
-    setCancelModal(null);
-    setCancelReason('');
   }
 
   async function toggleSlot(day, hour) {
@@ -556,6 +508,13 @@ export default function TherapistDashboard() {
       }]).select().single();
       if (data) setSlots(prev => [...prev, data]);
     }
+  }
+
+  // Ο guard στο layout πετάει τον θεραπευτή πίσω στον πίνακα.
+  // Αυτό το flag τον αφήνει να δει το site — σβήνει όταν κλείσει το tab.
+  function viewSite() {
+    sessionStorage.setItem(VIEW_SITE_KEY, '1');
+    router.push('/');
   }
 
   async function signOut() {
@@ -700,6 +659,12 @@ export default function TherapistDashboard() {
               Εκκρεμεί έγκριση admin
             </span>
           )}
+          <button onClick={viewSite}
+            title="Δες το site όπως το βλέπει ο ασθενής"
+            style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #c8dff9', background: '#eaf2fc', color: '#2a6fdb', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+            <Globe size={13} />
+            Site
+          </button>
           <Avatar name={profile?.name || user?.email} photoUrl={profile?.photo_url} size={36} />
           <button onClick={signOut} style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: 'transparent', color: '#64748b', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Αποσύνδεση</button>
         </div>
@@ -1853,39 +1818,14 @@ export default function TherapistDashboard() {
         </div>
       )}
 
-      {/* Cancel Modal */}
-      {cancelModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}
-          onClick={e => { if (e.target === e.currentTarget) setCancelModal(null); }}>
-          <div style={{ background: '#fff', borderRadius: 20, padding: '32px', maxWidth: 440, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>
-              {cancelModal.type === 'request' ? 'Ακύρωση Αιτήματος' : 'Ακύρωση Συνεδρίας'}
-            </h2>
-            <p style={{ fontSize: 14, color: '#64748B', marginBottom: 20, lineHeight: 1.6 }}>
-              {cancelModal.type === 'request'
-                ? 'Θα ακυρωθούν όλες οι ενεργές συνεδρίες του αιτήματος. Ο ασθενής θα ενημερωθεί.'
-                : 'Η συνεδρία θα ακυρωθεί. Ο ασθενής θα ενημερωθεί.'}
-            </p>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 6 }}>Λόγος ακύρωσης *</label>
-            <textarea
-              value={cancelReason}
-              onChange={e => setCancelReason(e.target.value)}
-              rows={3}
-              placeholder="π.χ. Έκτακτη αδυναμία εξυπηρέτησης..."
-              style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#0F172A', resize: 'vertical', boxSizing: 'border-box', marginBottom: 20 }}
-            />
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => setCancelModal(null)}
-                style={{ flex: 1, padding: '11px', borderRadius: 30, border: '1px solid #e2e8f0', background: 'transparent', color: '#475569', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
-                Ακύρωση
-              </button>
-              <button onClick={doCancel} disabled={cancelling}
-                style={{ flex: 1, padding: '11px', borderRadius: 30, border: 'none', background: cancelling ? '#94a3b8' : '#BE123C', color: '#fff', fontSize: 14, fontWeight: 600, cursor: cancelling ? 'not-allowed' : 'pointer' }}>
-                {cancelling ? 'Ακύρωση...' : 'Επιβεβαίωση Ακύρωσης'}
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Modal ακύρωσης — η βάση επιβάλλει τους κανόνες και τα strikes */}
+      {cancelTarget && (
+        <CancelBookingModal
+          bookingId={cancelTarget.bookingId}
+          requestId={cancelTarget.requestId}
+          onClose={() => setCancelTarget(null)}
+          onDone={onCancelDone}
+        />
       )}
     </div>
   );
