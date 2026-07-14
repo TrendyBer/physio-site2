@@ -2,6 +2,7 @@
 import { useLang } from '@/context/LanguageContext';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { X } from 'lucide-react';
 
 export default function Navbar() {
   const { lang, toggleLang } = useLang();
@@ -10,6 +11,7 @@ export default function Navbar() {
   const [loginModal, setLoginModal] = useState(false);
   const [user, setUser] = useState(null);
   const [userRole, setUserRole] = useState(null);
+  const [viewingSite, setViewingSite] = useState(false);
   const [userName, setUserName] = useState('');
   const [mounted, setMounted] = useState(false);
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
@@ -18,36 +20,66 @@ export default function Navbar() {
 
   useEffect(() => {
     setMounted(true);
-    const cached = localStorage.getItem('userRole');
+    setViewingSite(sessionStorage.getItem('physiohome_view_site') === '1');
+
+    // Cache πρώτα (χωρίς flash), βάση μετά
+    const cachedRole = localStorage.getItem('userRole');
     const cachedName = localStorage.getItem('userName');
-    if (cached) setUserRole(cached);
+    if (cachedRole) setUserRole(cachedRole);
     if (cachedName) setUserName(cachedName);
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        setUser(session.user);
-        const cached = localStorage.getItem('userRole');
-        if (cached) { setUserRole(cached); return; }
-        const { data } = await supabase.from('user_profiles').select('role').eq('id', session.user.id).single();
-        if (data?.role) { setUserRole(data.role); localStorage.setItem('userRole', data.role); }
-      } else {
-        setUser(null); setUserRole(null); setUserName('');
-        localStorage.removeItem('userRole'); localStorage.removeItem('userName');
+    // Φορτώνει ΡΟΛΟ και ΟΝΟΜΑ από τη βάση.
+    // Τρέχει πάντα, ανεξάρτητα από cache — γιατί το login μπορεί να
+    // έγινε από τη σελίδα /auth/login που δεν γράφει localStorage.
+    async function loadIdentity(u) {
+      setUser(u);
+
+      const { data: prof } = await supabase
+        .from('user_profiles')
+        .select('role')
+        .eq('id', u.id)
+        .maybeSingle();
+
+      const role = prof?.role || null;
+      if (!role) return;
+
+      setUserRole(role);
+      localStorage.setItem('userRole', role);
+
+      const table = role === 'therapist' ? 'therapist_profiles' : 'patient_profiles';
+      const { data: p } = await supabase
+        .from(table)
+        .select('name')
+        .eq('id', u.id)
+        .maybeSingle();
+
+      if (p?.name) {
+        setUserName(p.name);
+        localStorage.setItem('userName', p.name);
       }
+    }
+
+    function clearIdentity() {
+      setUser(null);
+      setUserRole(null);
+      setUserName('');
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('userName');
+    }
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) loadIdentity(session.user);
+      else clearIdentity();
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        setUser(session.user);
-        const cached = localStorage.getItem('userRole');
-        if (cached) { setUserRole(cached); return; }
-        const { data } = await supabase.from('user_profiles').select('role').eq('id', session.user.id).single();
-        if (data?.role) { setUserRole(data.role); localStorage.setItem('userRole', data.role); }
-      } else {
-        setUser(null); setUserRole(null); setUserName('');
-        localStorage.removeItem('userRole'); localStorage.removeItem('userName');
-      }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // ΜΟΝΟ στο ρητό SIGNED_OUT καθαρίζουμε.
+      // Το onAuthStateChange μπορεί να δώσει null session σε ενδιάμεσα
+      // events και θα έσβηνε το localStorage χωρίς λόγο.
+      if (event === 'SIGNED_OUT') { clearIdentity(); return; }
+      if (session?.user) loadIdentity(session.user);
     });
+
     return () => subscription.unsubscribe();
   }, []);
 
@@ -104,15 +136,19 @@ export default function Navbar() {
     { label: lang === 'el' ? 'Προφίλ' : 'Profile', href: '/dashboard/therapist?tab=profile' },
   ];
 
-  const patientLinks = [
-    { label: lang === 'el' ? 'Αρχική' : 'Home', href: '/' },
-    { label: lang === 'el' ? 'Θεραπευτές' : 'Therapists', href: '/therapists' },
-    { label: lang === 'el' ? 'Παθήσεις' : 'Conditions', href: '/find-help' },
-    { label: lang === 'el' ? 'Στείλε Αίτημα' : 'Send Request', href: '/dashboard/patient/new-request' },
-    { label: 'My Account', href: '/dashboard/patient' },
-  ];
+  // Ο ασθενής βλέπει το ΚΑΝΟΝΙΚΟ μενού — πρέπει να μπορεί να ψάξει
+  // θεραπευτή, να διαβάσει για παθήσεις, να δει πακέτα.
+  // Φεύγει μόνο το «Για φυσιοθεραπευτές» — δεν τον αφορά.
+  // Στον λογαριασμό του πάει από το όνομά του πάνω δεξιά.
+  const patientLinks = publicLinks.filter((l) => l.href !== '/become-therapist');
 
-  const activeLinks = userRole === 'therapist' ? therapistLinks : userRole === 'patient' ? patientLinks : publicLinks;
+  // Σε λειτουργία «Προβολή site» ο θεραπευτής βλέπει το ΚΑΝΟΝΙΚΟ μενού,
+  // όπως ακριβώς το βλέπει ένας ασθενής. Γι' αυτό μπήκε εδώ.
+  const activeLinks = (userRole === 'therapist' && !viewingSite)
+    ? therapistLinks
+    : userRole === 'patient'
+      ? patientLinks
+      : publicLinks;
 
   const inputStyle = { width: '100%', padding: '11px 14px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', color: '#1a2e44' };
 
@@ -164,17 +200,24 @@ export default function Navbar() {
 
             {/* Role badge — text only, no emoji */}
             {mounted && userRole && userName && (
-              <span style={{
-                background: userRole === 'therapist' ? '#EFF6FF' : '#F0FDF4',
-                color: userRole === 'therapist' ? '#1D4ED8' : '#15803D',
-                padding: '4px 12px',
-                borderRadius: 999,
-                fontSize: 12,
-                fontWeight: 600,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-              }}>
+              <a
+                href={userRole === 'therapist' ? '/dashboard/therapist' : '/dashboard/patient'}
+                title={lang === 'el' ? 'Ο λογαριασμός μου' : 'My account'}
+                style={{
+                  background: userRole === 'therapist' ? '#EFF6FF' : '#F0FDF4',
+                  color: userRole === 'therapist' ? '#1D4ED8' : '#15803D',
+                  padding: '5px 14px',
+                  borderRadius: 999,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  textDecoration: 'none',
+                  border: `1px solid ${userRole === 'therapist' ? '#BFDBFE' : '#BBF7D0'}`,
+                  whiteSpace: 'nowrap',
+                }}
+              >
                 <span style={{
                   width: 6,
                   height: 6,
@@ -183,7 +226,7 @@ export default function Navbar() {
                   display: 'inline-block',
                 }} />
                 {userName}
-              </span>
+              </a>
             )}
 
             {mounted && user ? (
@@ -266,7 +309,7 @@ export default function Navbar() {
               {loginError && <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#DC2626' }}>{loginError}</div>}
               <button type="submit" disabled={loginLoading}
                 style={{ background: '#1a2e44', color: '#fff', padding: '12px', borderRadius: 30, fontSize: 15, fontWeight: 600, border: 'none', cursor: loginLoading ? 'not-allowed' : 'pointer', opacity: loginLoading ? 0.7 : 1, fontFamily: 'inherit', marginTop: 4 }}>
-                {loginLoading ? 'Σύνδεση...' : 'Σύνδεση →'}
+                {loginLoading ? 'Σύνδεση...' : 'Σύνδεση'}
               </button>
             </form>
             <div style={{ textAlign: 'center', marginTop: 16, fontSize: 13, color: '#6b7a8d' }}>
@@ -282,7 +325,7 @@ export default function Navbar() {
         <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: '#fff', display: 'flex', flexDirection: 'column', padding: '20px 24px', overflowY: 'auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
             <span style={{ fontFamily: 'Georgia, serif', fontSize: 20, fontWeight: 700, color: '#1a2e44' }}>PhysioHome</span>
-            <button onClick={() => setMenuOpen(false)} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#1a2e44', padding: 4 }}>✕</button>
+            <button onClick={() => setMenuOpen(false)} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#1a2e44', padding: 4 }}><X size={20} /></button>
           </div>
           <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
             <button onClick={() => { if (lang !== 'en') toggleLang(); }} style={{ padding: '6px 18px', borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: '1.5px solid', borderColor: lang === 'en' ? '#1a2e44' : '#dce6f0', background: lang === 'en' ? '#1a2e44' : '#fff', color: lang === 'en' ? '#fff' : '#6b7a8d' }}>EN</button>
