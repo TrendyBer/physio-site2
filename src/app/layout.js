@@ -2,6 +2,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/context/LanguageContext";
 import CookieBanner from "@/components/CookieBanner";
+import TherapistGuard from "@/components/TherapistGuard";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,6 +39,7 @@ export default function RootLayout({ children }) {
         style={{ background: "#faf9f6", color: "#1a2e44", margin: 0, minHeight: "100vh" }}
       >
         <LanguageProvider>
+          <TherapistGuard />
           {children}
         </LanguageProvider>
         <CookieBanner />
