@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { Check } from 'lucide-react';
 
 const PROBLEM_TYPES = [
   'Μυοσκελετικό',
@@ -13,6 +14,26 @@ const PROBLEM_TYPES = [
   'Χρόνιος Πόνος',
   'Άλλο',
 ];
+
+// Ελληνικό κινητό → +30 6xxxxxxxxx (ίδια λογική με το sms.js στον server)
+function normalizeGreekMobile(raw) {
+  if (!raw) return null;
+  let s = String(raw).replace(/[\s\-().]/g, '');
+  if (s.startsWith('+')) s = '+' + s.slice(1).replace(/\D/g, '');
+  else s = s.replace(/\D/g, '');
+  if (!s) return null;
+
+  if (s.startsWith('0030')) s = '+' + s.slice(2);
+  else if (s.startsWith('+')) { /* ok */ }
+  else if (s.startsWith('30') && s.length === 12) s = '+' + s;
+  else if (s.startsWith('0')) s = '+30' + s.slice(1);
+  else if (s.length === 10) s = '+30' + s;
+  else return null;
+
+  if (/^\+306\d{9}$/.test(s)) return s;
+  if (/^\+(?!30)[1-9]\d{7,14}$/.test(s)) return s;
+  return null;
+}
 
 export default function FreeAssessmentPage() {
   const router = useRouter();
@@ -40,8 +61,22 @@ export default function FreeAssessmentPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUser(user);
-        // Prefill email αν έχει
         if (user.email) setEmail(user.email);
+
+        // Prefill από το προφίλ ασθενή, αν υπάρχει
+        const { data: prof } = await supabase
+          .from('patient_profiles')
+          .select('name, phone, address, area, postal_code')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (prof) {
+          if (prof.name) setFullName(prof.name);
+          if (prof.phone) setPhone(prof.phone);
+          if (prof.address) setAddress(prof.address);
+          if (prof.area) setArea(prof.area);
+          if (prof.postal_code) setPostalCode(prof.postal_code);
+        }
       }
       setChecking(false);
     }
@@ -52,7 +87,12 @@ export default function FreeAssessmentPage() {
     setError('');
     if (!fullName.trim()) { setError('Παρακαλώ συμπληρώστε το ονοματεπώνυμό σας.'); return false; }
     if (!phone.trim())    { setError('Παρακαλώ συμπληρώστε το τηλέφωνό σας.'); return false; }
+    if (!normalizeGreekMobile(phone)) {
+      setError('Το τηλέφωνο δεν φαίνεται έγκυρο. Δώστε κινητό, π.χ. 6912345678.');
+      return false;
+    }
     if (!email.trim())    { setError('Παρακαλώ συμπληρώστε το email σας.'); return false; }
+    if (!/^\S+@\S+\.\S+$/.test(email.trim())) { setError('Το email δεν φαίνεται έγκυρο.'); return false; }
     if (!problemType)     { setError('Παρακαλώ επιλέξτε είδος προβλήματος.'); return false; }
     if (!address.trim())  { setError('Παρακαλώ συμπληρώστε τη διεύθυνσή σας.'); return false; }
     if (!area.trim())     { setError('Παρακαλώ συμπληρώστε την περιοχή σας.'); return false; }
@@ -62,20 +102,29 @@ export default function FreeAssessmentPage() {
   async function handleSubmit() {
     if (!validate()) return;
     setSubmitting(true);
+    setError('');
+
+    const normalizedPhone = normalizeGreekMobile(phone);
 
     const payload = {
       type: 'free_assessment',
       patient_id: user?.id || null,
       therapist_id: null,
       problem_type: problemType,
-      problem_description: problemDesc
-        ? `${problemDesc}\n\n[Στοιχεία επικοινωνίας: ${fullName}, ${phone}, ${email}]`
-        : `[Στοιχεία επικοινωνίας: ${fullName}, ${phone}, ${email}]`,
-      address,
-      area,
-      postal_code: postalCode,
-      floor_info: floorInfo,
-      notes,
+      problem_description: problemDesc || null,
+
+      // ── Στοιχεία επικοινωνίας σε κανονικές στήλες ──
+      // (πριν ήταν χωμένα μέσα στο problem_description ως κείμενο,
+      //  άρα άχρηστα για ειδοποιήσεις)
+      contact_name: fullName.trim(),
+      contact_phone: normalizedPhone,
+      contact_email: email.trim().toLowerCase(),
+
+      address: address.trim(),
+      area: area.trim(),
+      postal_code: postalCode.trim() || null,
+      floor_info: floorInfo.trim() || null,
+      notes: notes.trim() || null,
       status: 'pending',
     };
 
@@ -87,6 +136,20 @@ export default function FreeAssessmentPage() {
       setError('Σφάλμα αποστολής: ' + insertErr.message);
       setSubmitting(false);
       return;
+    }
+
+    // Αν είναι συνδεδεμένος, κρατάμε τα στοιχεία στο προφίλ του
+    if (user?.id) {
+      await supabase
+        .from('patient_profiles')
+        .update({
+          name: fullName.trim(),
+          phone: normalizedPhone,
+          address: address.trim(),
+          area: area.trim(),
+          postal_code: postalCode.trim() || null,
+        })
+        .eq('id', user.id);
     }
 
     setSubmitting(false);
@@ -124,13 +187,15 @@ export default function FreeAssessmentPage() {
         <Navbar />
         <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, background: '#f8fafc' }}>
           <div style={{ background: '#fff', borderRadius: 20, padding: '48px 40px', maxWidth: 520, width: '100%', textAlign: 'center', boxShadow: '0 8px 40px rgba(0,0,0,0.08)' }}>
-            <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#D1FAE5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: 28 }}>✓</div>
+            <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#D1FAE5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+              <Check size={30} color="#15803D" strokeWidth={3} />
+            </div>
             <h2 style={{ fontSize: 24, fontWeight: 700, color: '#0F172A', marginBottom: 12 }}>Το αίτημα εστάλη!</h2>
             <p style={{ fontSize: 15, color: '#64748B', lineHeight: 1.7, marginBottom: 28 }}>
-              Λάβαμε το αίτημά σας για δωρεάν αξιολόγηση. Η ομάδα μας θα επικοινωνήσει μαζί σας εντός 24 ωρών για να προγραμματίσουμε την αξιολόγηση.
+              Λάβαμε το αίτημά σας για δωρεάν αξιολόγηση. Σας στείλαμε επιβεβαίωση στο <strong style={{ color: '#1a2e44' }}>{email}</strong>. Η ομάδα μας θα επικοινωνήσει μαζί σας εντός 24 ωρών.
             </p>
             <a href="/" style={{ display: 'inline-block', background: '#1a2e44', color: '#fff', padding: '13px 32px', borderRadius: 30, fontSize: 15, fontWeight: 600, textDecoration: 'none' }}>
-              Επιστροφή στην Αρχική →
+              Επιστροφή στην Αρχική
             </a>
           </div>
         </div>
@@ -172,12 +237,15 @@ export default function FreeAssessmentPage() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
-                  <label style={labelStyle}>Τηλέφωνο *</label>
-                  <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="π.χ. 6912345678" style={inputStyle} />
+                  <label style={labelStyle}>Κινητό *</label>
+                  <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="π.χ. 6912345678" style={inputStyle} inputMode="tel" />
+                  <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>
+                    Στέλνουμε SMS επιβεβαίωσης
+                  </div>
                 </div>
                 <div>
                   <label style={labelStyle}>Email *</label>
-                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@example.com" style={inputStyle} />
+                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@example.com" style={inputStyle} inputMode="email" />
                 </div>
               </div>
 
@@ -213,7 +281,7 @@ export default function FreeAssessmentPage() {
                 </div>
                 <div>
                   <label style={labelStyle}>Τ.Κ.</label>
-                  <input value={postalCode} onChange={e => setPostalCode(e.target.value)} placeholder="π.χ. 10674" style={inputStyle} />
+                  <input value={postalCode} onChange={e => setPostalCode(e.target.value)} placeholder="π.χ. 10674" style={inputStyle} inputMode="numeric" />
                 </div>
                 <div>
                   <label style={labelStyle}>Όροφος / Κουδούνι</label>
@@ -247,8 +315,13 @@ export default function FreeAssessmentPage() {
                   cursor: submitting ? 'not-allowed' : 'pointer',
                   fontFamily: 'inherit',
                   marginTop: 12,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
                 }}>
-                {submitting ? 'Αποστολή...' : '✓ Αποστολή Αιτήματος για Δωρεάν Αξιολόγηση'}
+                {!submitting && <Check size={16} strokeWidth={3} />}
+                {submitting ? 'Αποστολή...' : 'Αποστολή Αιτήματος για Δωρεάν Αξιολόγηση'}
               </button>
 
               <p style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center', marginTop: 4 }}>
