@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import CancelBookingModal from '@/components/CancelBookingModal';
 import { useRouter } from 'next/navigation';
-import { ClipboardList, Stethoscope, User, MapPin, Euro, Calendar, Star, Check, ArrowRight, Save, X, Hourglass, Wallet, AlertCircle, CheckCircle2, CalendarDays, List, ChevronLeft, ChevronRight, Clock, XCircle } from 'lucide-react';
+import { ClipboardList, Stethoscope, User, MapPin, Euro, Calendar, Star, Check, ArrowRight, Save, X, Hourglass, Wallet, AlertCircle, CheckCircle2, CalendarDays, List, ChevronLeft, ChevronRight, Clock, XCircle, Globe } from 'lucide-react';
 
 function Avatar({ name, size = 44 }) {
   return (
@@ -452,6 +452,12 @@ export default function PatientDashboard() {
           <span style={{ fontSize: 13, fontWeight: 500, color: '#64748b', marginLeft: 8, background: '#f1f5f9', padding: '3px 12px', borderRadius: 999 }}>Ασθενής</span>
         </a>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <a href="/"
+            title="Επιστροφή στο site"
+            style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid #c8dff9', background: '#eaf2fc', color: '#2a6fdb', fontSize: 14, fontWeight: 600, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Globe size={14} />
+            Site
+          </a>
           <Avatar name={profile?.name || user?.email} size={38} />
           <button onClick={signOut} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid #e2e8f0', background: 'transparent', color: '#64748b', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Αποσύνδεση</button>
         </div>
@@ -540,7 +546,7 @@ export default function PatientDashboard() {
                   boxShadow: '0 8px 32px rgba(26, 46, 68, 0.2)',
                 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 12 }}>
-                    📌 Επόμενο Ραντεβού
+                    Επόμενο Ραντεβού
                   </div>
 
                   {friendly && (
