@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Check, X, ChevronLeft, ChevronRight, Calendar, ArrowRight, MapPin, AlertCircle, Star } from 'lucide-react';
+import { Check, X, ChevronLeft, ChevronRight, Calendar, ArrowRight, MapPin, AlertCircle, Star, Heart } from 'lucide-react';
 import ConditionSearch from '@/components/ConditionSearch';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -72,6 +72,11 @@ export default function NewRequestPage() {
   const [profileModal, setProfileModal] = useState(null);
   const [loadingTherapists, setLoadingTherapists] = useState(false);
 
+  // Προμήθεια πλατφόρμας.
+  // Δεν υπολογίζεται ΠΟΤΕ εδώ — τη ρωτάμε από τη βάση (resolve_session_fee),
+  // ώστε site και admin να λένε πάντα το ίδιο πράγμα.
+  const [feeInfo, setFeeInfo] = useState(null);
+
   // Step 4
   const [slots, setSlots] = useState([]);
   const [selectedSlots, setSelectedSlots] = useState([]);
@@ -140,6 +145,29 @@ export default function NewRequestPage() {
   useEffect(() => {
     if (step === 4 && selectedTherapist) fetchSlots();
   }, [step, selectedTherapist, calendarWeek]);
+
+  // Μόλις επιλεγεί θεραπευτής, ρωτάμε τη βάση αν πρόκειται για πρώτη
+  // συνεργασία αυτού του ασθενή μαζί του.
+  useEffect(() => {
+    if (!user || !selectedTherapist) { setFeeInfo(null); return; }
+    let cancelled = false;
+
+    (async () => {
+      const { data, error } = await supabase.rpc('resolve_session_fee', {
+        p_patient_id: user.id,
+        p_therapist_id: selectedTherapist.id,
+      });
+      if (cancelled) return;
+      if (error) {
+        console.error('resolve_session_fee:', error.message);
+        setFeeInfo(null);
+      } else {
+        setFeeInfo(data || null);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [user, selectedTherapist]);
 
   // Κανονικοποίηση για σύγκριση περιοχών (τόνοι, πεζά/κεφαλαία)
   function normalize(str) {
@@ -219,7 +247,42 @@ export default function NewRequestPage() {
       .eq('is_approved', true)
       .eq('is_profile_complete', true);
 
-    const pool = (all || []).filter((t) => !t.is_paused);
+    let pool = (all || []).filter((t) => !t.is_paused);
+
+    // ── 2β. ΕΠΙΒΟΛΗ ΣΥΝΔΡΟΜΗΣ ──
+    // Ρυθμίζεται από το admin: 'off' | 'no_new_requests' | 'hide'.
+    // Και στις δύο αυστηρές τιμές, ο θεραπευτής χωρίς ενεργή συνδρομή
+    // δεν εμφανίζεται εδώ — δηλαδή δεν δέχεται νέα αιτήματα.
+    if (pool.length > 0) {
+      const { data: cfg } = await supabase
+        .from('platform_settings')
+        .select('key, value')
+        .in('key', ['subscription_enforcement', 'subscription_grace_days']);
+
+      const cfgMap = {};
+      (cfg || []).forEach((r) => { cfgMap[r.key] = r.value; });
+      const enforcement = cfgMap.subscription_enforcement || 'off';
+
+      if (enforcement !== 'off') {
+        const graceMs = (parseInt(cfgMap.subscription_grace_days, 10) || 0) * 86400000;
+
+        const { data: activeSubs } = await supabase
+          .from('therapist_subscriptions')
+          .select('therapist_id, current_period_end')
+          .in('therapist_id', pool.map((t) => t.id))
+          .in('status', ['trialing', 'active', 'past_due', 'exempt']);
+
+        const okIds = new Set(
+          (activeSubs || [])
+            .filter((sub) => !sub.current_period_end ||
+              new Date(sub.current_period_end).getTime() + graceMs > Date.now())
+            .map((sub) => sub.therapist_id)
+        );
+
+        pool = pool.filter((t) => t.subscription_exempt || okIds.has(t.id));
+      }
+    }
+
     if (pool.length === 0) { setTherapists([]); setLoadingTherapists(false); return; }
 
     const ids = pool.map((t) => t.id);
@@ -391,6 +454,52 @@ export default function NewRequestPage() {
     await supabase.from('availability_slots')
       .update({ is_blocked: true })
       .in('id', selectedSlots.map(s => s.id));
+
+    // ── ΠΡΟΜΗΘΕΙΑ ΠΛΑΤΦΟΡΜΑΣ ────────────────────────────────────────────
+    // Ξαναρωτάμε τη βάση τη στιγμή της υποβολής. Το ποσό που είδαμε όταν
+    // επιλέχθηκε ο θεραπευτής μπορεί να έχει παλιώσει (π.χ. ο ασθενής άφησε
+    // την καρτέλα ανοιχτή, ή έκλεισε στο μεταξύ άλλο ραντεβού μαζί του).
+    try {
+      const { data: feeNow } = await supabase.rpc('resolve_session_fee', {
+        p_patient_id: user.id,
+        p_therapist_id: selectedTherapist.id,
+      });
+
+      const resolved = feeNow || feeInfo || { fee: 0, is_first: false, reason: 'unknown' };
+      const fee = Number(resolved.fee || 0);
+      const isFirst = Boolean(resolved.is_first);
+
+      // Καταγραφή του ζεύγους ασθενή-θεραπευτή.
+      // Από εδώ και πέρα η επόμενη συνεδρία μαζί του δεν χρεώνεται.
+      const { data: linkId } = await supabase.rpc('register_session_charge', {
+        p_patient_id: user.id,
+        p_therapist_id: selectedTherapist.id,
+        p_fee: fee,
+        p_session_at: new Date().toISOString(),
+      });
+
+      // Γραμμή πληρωμής μόνο όταν υπάρχει πράγματι προμήθεια.
+      // Οι επαναλαμβανόμενες συνεδρίες δεν λερώνουν τη σελίδα Πληρωμές.
+      if (fee > 0) {
+        await supabase.from('payments').insert([{
+          request_id: req.id,
+          therapist_id: selectedTherapist.id,
+          amount: fee,
+          patient_amount: totalCost,
+          therapist_net: Math.max(0, totalCost - fee),
+          status: 'unpaid',
+          paid: false,
+          fee_type: 'first_session',
+          is_first_session: isFirst,
+          link_id: linkId || null,
+          plan_id: resolved.plan_id || null,
+        }]);
+      }
+    } catch (feeErr) {
+      // Το αίτημα έχει ήδη καταχωρηθεί — δεν το ακυρώνουμε για λόγους λογιστικής.
+      // Ο admin θα δει το κενό στη σελίδα Πληρωμές.
+      console.error('Αποτυχία καταγραφής προμήθειας:', feeErr);
+    }
 
     setSubmitting(false);
     setSubmitted(true);
@@ -956,6 +1065,16 @@ export default function NewRequestPage() {
                   </div>
                 ))}
               </div>
+
+              {feeInfo && feeInfo.is_first === false && feeInfo.reason === 'repeat_patient' && (
+                <div style={{ marginTop: 16, background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '14px 16px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                  <Heart size={15} color="#15803D" strokeWidth={2.2} style={{ marginTop: 1, flexShrink: 0 }} />
+                  <div style={{ fontSize: 13, color: '#15803D', lineHeight: 1.6 }}>
+                    Συνεχίζετε με τον/την <strong>{selectedTherapist?.name}</strong>, που σας γνωρίζει ήδη.
+                    Η θεραπεία σας συνεχίζεται από εκεί που την αφήσατε.
+                  </div>
+                </div>
+              )}
 
               <div style={{ marginTop: 16, background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '14px 16px' }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#1D4ED8', marginBottom: 8, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
