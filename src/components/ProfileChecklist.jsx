@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import {
   CheckCircle2, Circle, AlertTriangle, Eye, EyeOff, Award, ChevronDown, ChevronUp,
+  Upload, ArrowRight, ShieldCheck,
 } from "lucide-react";
 
 const NAVY = "#1a2e44";
@@ -16,23 +17,21 @@ const OFFWHITE = "#faf9f6";
  * Δείχνει στον θεραπευτή ΤΙ ΤΟΥ ΛΕΙΠΕΙ για να εμφανιστεί δημόσια.
  *
  * Χρήση στο dashboard/therapist/page.jsx:
- *   import ProfileChecklist from "@/components/ProfileChecklist";
- *   ...
- *   <ProfileChecklist onGoToTab={setActiveTab} />
+ *   <ProfileChecklist onGoToTab={setActiveTab} onOpenDocuments={() => setDocsModal(true)} />
  *
- * Το onGoToTab είναι προαιρετικό. Αν το περάσεις, τα κουμπιά
- * "Συμπλήρωσε" πάνε στο σωστό tab. Τα tab ids που χρησιμοποιεί:
- *   "profile" | "conditions" | "areas" | "availability"
- * Αν τα δικά σου έχουν άλλα ονόματα, άλλαξέ τα στο TAB_MAP παρακάτω.
+ * ΝΕΟ:
+ *  - Αν λείπει εντελώς η γραμμή προφίλ, τη δημιουργεί από τα στοιχεία
+ *    του λογαριασμού αντί να εξαφανιστεί σιωπηλά.
+ *  - Σε ολοκαίνουργιο θεραπευτή δείχνει ΕΝΑ ξεκάθαρο πρώτο βήμα,
+ *    αντί για λίστα 9 πραγμάτων που παραλύει.
  */
 
-// Τα πραγματικά tab ids του dashboard θεραπευτή
 const TAB_MAP = {
   profile:      "profile",
   conditions:   "conditions",
   areas:        "areas",
-  availability: "calendar",   // το tab "Διαθεσιμότητα" έχει id "calendar"
-  documents:    null,         // ανοίγει modal, όχι tab
+  availability: "calendar",
+  documents:    null,
 };
 
 export default function ProfileChecklist({ onGoToTab, onOpenDocuments }) {
@@ -47,13 +46,37 @@ export default function ProfileChecklist({ onGoToTab, onOpenDocuments }) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setLoading(false); return; }
 
-    const { data: p } = await supabase
+    let { data: p } = await supabase
       .from("therapist_profiles")
       .select("*")
       .eq("id", user.id)
       .maybeSingle();
 
+    // Αυτο-επιδιόρθωση: αν για οποιονδήποτε λόγο δεν δημιουργήθηκε γραμμή
+    // κατά την εγγραφή, τη φτιάχνουμε τώρα από τα στοιχεία του λογαριασμού.
+    if (!p) {
+      const { data: created } = await supabase
+        .from("therapist_profiles")
+        .upsert({
+          id: user.id,
+          name: user.user_metadata?.name || null,
+          is_approved: false,
+        }, { onConflict: "id" })
+        .select()
+        .maybeSingle();
+      p = created;
+    }
+
     if (!p) { setLoading(false); return; }
+
+    // Αν το όνομα λείπει αλλά υπάρχει στον λογαριασμό, συμπλήρωσέ το.
+    if (!p.name && user.user_metadata?.name) {
+      await supabase
+        .from("therapist_profiles")
+        .update({ name: user.user_metadata.name })
+        .eq("id", user.id);
+      p = { ...p, name: user.user_metadata.name };
+    }
 
     const { count } = await supabase
       .from("therapist_conditions")
@@ -70,8 +93,25 @@ export default function ProfileChecklist({ onGoToTab, onOpenDocuments }) {
   const has = (v) => !!(v && String(v).trim());
   const jsonCount = (v) => (Array.isArray(v) ? v.length : 0);
 
-  // ── 9 ΥΠΟΧΡΕΩΤΙΚΑ ──
+  // ── ΥΠΟΧΡΕΩΤΙΚΑ ──
+  // Η άδεια είναι ΠΡΩΤΗ: χωρίς αυτήν τίποτα άλλο δεν έχει νόημα.
   const required = [
+    {
+      key: "license",
+      label: "Άδεια ασκήσεως επαγγέλματος",
+      ok: has(profile.license_url),
+      why: "Υποχρεωτικό από τον νόμο και βάση της εμπιστοσύνης. Ξεκίνα από εδώ.",
+      tab: "documents",
+      first: true,
+    },
+    {
+      key: "license_verified",
+      label: "Έλεγχος άδειας από την ομάδα μας",
+      ok: !!profile.license_verified,
+      why: "Γίνεται από εμάς μόλις ανεβάσεις την άδεια. Συνήθως εντός 48 ωρών.",
+      tab: null,
+      waiting: has(profile.license_url) && !profile.license_verified,
+    },
     {
       key: "name",
       label: "Ονοματεπώνυμο",
@@ -85,21 +125,6 @@ export default function ProfileChecklist({ onGoToTab, onOpenDocuments }) {
       ok: has(profile.photo_url),
       why: "Θα μπεις στο σπίτι του. Χωρίς πρόσωπο, δεν σε επιλέγει.",
       tab: "profile",
-    },
-    {
-      key: "license",
-      label: "Άδεια ασκήσεως επαγγέλματος",
-      ok: has(profile.license_url),
-      why: "Υποχρεωτικό από τον νόμο και βάση της εμπιστοσύνης.",
-      tab: "documents",
-    },
-    {
-      key: "license_verified",
-      label: "Έλεγχος άδειας από την ομάδα μας",
-      ok: !!profile.license_verified,
-      why: "Γίνεται από εμάς μόλις ανεβάσεις την άδεια. Συνήθως εντός 48 ωρών.",
-      tab: null,
-      waiting: has(profile.license_url) && !profile.license_verified,
     },
     {
       key: "specialty",
@@ -140,7 +165,7 @@ export default function ProfileChecklist({ onGoToTab, onOpenDocuments }) {
     },
   ];
 
-  // ── 7 ΠΡΟΑΙΡΕΤΙΚΑ ──
+  // ── ΠΡΟΑΙΡΕΤΙΚΑ ──
   const optional = [
     { key: "education",    label: "Σπουδές (σχολή & έτος)", ok: has(profile.education_school), tab: "profile" },
     { key: "certs",        label: "Πιστοποιήσεις",           ok: jsonCount(profile.certifications_urls) >= 1, tab: "documents" },
@@ -148,7 +173,7 @@ export default function ProfileChecklist({ onGoToTab, onOpenDocuments }) {
     { key: "experience",   label: "Έτη εμπειρίας",           ok: Number(profile.years_experience) > 0, tab: "profile" },
     { key: "availability", label: "Διαθεσιμότητα",           ok: (profile.availability_slots || []).length >= 1, tab: "availability" },
     { key: "iban",         label: "IBAN για πληρωμές",       ok: has(profile.iban), tab: "profile" },
-    { key: "terms",        label: "Αποδοχή όρων συνεργασίας", ok: !!profile.terms_accepted_at, tab: "profile" },
+    { key: "terms",        label: "Αποδοχή όρων συνεργασίας", ok: !!profile.terms_accepted_at || !!profile.contract_accepted, tab: "profile" },
   ];
 
   const reqDone = required.filter((r) => r.ok).length;
@@ -157,12 +182,15 @@ export default function ProfileChecklist({ onGoToTab, onOpenDocuments }) {
   const isFull = isComplete && optDone >= 4;
   const missing = required.filter((r) => !r.ok);
 
+  // Ολοκαίνουργιος θεραπευτής: δεν έχει καν ανεβάσει άδεια.
+  // Του δείχνουμε ΕΝΑ βήμα, όχι λίστα εννιά.
+  const isBrandNew = !has(profile.license_url) && reqDone <= 3;
+
   function goTo(tab) {
     if (tab === "documents" && onOpenDocuments) { onOpenDocuments(); return; }
     if (tab && onGoToTab) onGoToTab(TAB_MAP[tab] || tab);
   }
 
-  // ── ΧΡΩΜΑΤΑ ΚΑΤΑΣΤΑΣΗΣ ──
   const state = isFull
     ? { bg: "#f0fdf4", border: "#bbf7d0", color: "#15803d" }
     : isComplete
@@ -178,6 +206,59 @@ export default function ProfileChecklist({ onGoToTab, onOpenDocuments }) {
       overflow: "hidden",
       fontFamily: "'DM Sans', sans-serif",
     }}>
+
+      {/* ── ΠΡΩΤΟ ΒΗΜΑ για νέους θεραπευτές ── */}
+      {isBrandNew && (
+        <div style={{
+          background: NAVY,
+          padding: "24px 26px",
+          display: "flex",
+          alignItems: "center",
+          gap: 20,
+          flexWrap: "wrap",
+        }}>
+          <div style={{
+            width: 52, height: 52, borderRadius: 14,
+            background: "rgba(255,255,255,0.1)",
+            border: "1px solid rgba(255,255,255,0.2)",
+            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+          }}>
+            <ShieldCheck size={26} color="#fff" strokeWidth={1.9} />
+          </div>
+
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <div style={{
+              fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.55)",
+              textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6,
+            }}>
+              Πρώτο βήμα
+            </div>
+            <div style={{
+              fontSize: 19, fontWeight: 700, color: "#fff", marginBottom: 6,
+              fontFamily: "'DM Serif Display', Georgia, serif",
+            }}>
+              Ανέβασε την άδεια ασκήσεως επαγγέλματος
+            </div>
+            <div style={{ fontSize: 13.5, color: "rgba(255,255,255,0.75)", lineHeight: 1.6 }}>
+              Είναι το μόνο που χρειάζεται για να ξεκινήσει ο έλεγχος του λογαριασμού σου.
+              Τα υπόλοιπα στοιχεία μπορείς να τα συμπληρώσεις όσο περιμένεις.
+            </div>
+          </div>
+
+          <button
+            onClick={() => goTo("documents")}
+            style={{
+              padding: "13px 26px", borderRadius: 30, border: "none",
+              background: "#fff", color: NAVY,
+              fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+              display: "inline-flex", alignItems: "center", gap: 8, flexShrink: 0,
+            }}
+          >
+            <Upload size={16} strokeWidth={2.3} />
+            Ανέβασμα άδειας
+          </button>
+        </div>
+      )}
 
       {/* ── HEADER ── */}
       <div
@@ -243,7 +324,6 @@ export default function ProfileChecklist({ onGoToTab, onOpenDocuments }) {
       {expanded && (
         <div style={{ background: "#fff", borderTop: `1px solid ${state.border}`, padding: "20px 24px" }}>
 
-          {/* Υποχρεωτικά */}
           <div style={{
             fontSize: 11, fontWeight: 700, color: "#8a9aab",
             textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12,
@@ -257,6 +337,10 @@ export default function ProfileChecklist({ onGoToTab, onOpenDocuments }) {
                 display: "flex", alignItems: "flex-start", gap: 12,
                 padding: "12px 0",
                 borderBottom: "1px solid #f1f5f9",
+                background: r.first && !r.ok ? "#fffbeb" : "transparent",
+                borderRadius: r.first && !r.ok ? 8 : 0,
+                paddingLeft: r.first && !r.ok ? 12 : 0,
+                paddingRight: r.first && !r.ok ? 12 : 0,
               }}>
                 <div style={{ paddingTop: 1, flexShrink: 0 }}>
                   {r.ok
@@ -275,6 +359,16 @@ export default function ProfileChecklist({ onGoToTab, onOpenDocuments }) {
                     marginBottom: r.ok ? 0 : 3,
                   }}>
                     {r.label}
+                    {r.first && !r.ok && (
+                      <span style={{
+                        marginLeft: 8, fontSize: 10, fontWeight: 700, color: "#b45309",
+                        background: "#fef3c7", border: "1px solid #fde68a",
+                        padding: "2px 8px", borderRadius: 30,
+                        textTransform: "uppercase", letterSpacing: "0.05em",
+                      }}>
+                        Υποχρεωτικό
+                      </span>
+                    )}
                     {r.progress && !r.ok && (
                       <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 600, color: "#b45309" }}>
                         {r.progress}
@@ -295,18 +389,22 @@ export default function ProfileChecklist({ onGoToTab, onOpenDocuments }) {
                     style={{
                       padding: "7px 16px",
                       borderRadius: 30,
-                      border: `1px solid ${ACCENT}`,
-                      background: SOFT,
-                      color: ACCENT,
+                      border: `1px solid ${r.first ? "#b45309" : ACCENT}`,
+                      background: r.first ? "#b45309" : SOFT,
+                      color: r.first ? "#fff" : ACCENT,
                       fontSize: 12.5,
                       fontWeight: 600,
                       cursor: "pointer",
                       fontFamily: "inherit",
                       flexShrink: 0,
                       whiteSpace: "nowrap",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 5,
                     }}
                   >
-                    Συμπλήρωσε
+                    {r.first ? "Ανέβασε" : "Συμπλήρωσε"}
+                    <ArrowRight size={13} strokeWidth={2.4} />
                   </button>
                 )}
               </div>
@@ -352,7 +450,6 @@ export default function ProfileChecklist({ onGoToTab, onOpenDocuments }) {
             ))}
           </div>
 
-          {/* Κλείσιμο */}
           {!isComplete && (
             <div style={{
               marginTop: 22,
