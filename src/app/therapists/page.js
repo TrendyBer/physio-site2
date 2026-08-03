@@ -7,7 +7,7 @@ import RatingDisplay from '../../components/RatingDisplay';
 import ConditionSearch from '../../components/ConditionSearch';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
-import { Search, MapPin, Star, Euro, SlidersHorizontal, X, Check, ArrowRight, Stethoscope, Users, ChevronDown, ChevronUp, Lightbulb, BadgeCheck, ShieldCheck } from 'lucide-react';
+import { Search, MapPin, Star, Euro, SlidersHorizontal, X, Check, ArrowRight, Stethoscope, Users, ChevronDown, ChevronUp, Lightbulb, BadgeCheck, ShieldCheck, Info } from 'lucide-react';
 
 const TX = {
   el: {
@@ -26,7 +26,8 @@ const TX = {
     sortBy: 'Ταξινόμηση',
     verifiedLicense: 'Ελεγμένη άδεια',
     fullProfile: 'Πλήρες προφίλ',
-    sortNewest: 'Νεότεροι πρώτα',
+    featured: 'Προτεινόμενος',
+    sortNewest: 'Προτεινόμενη σειρά',
     sortRatingDesc: 'Υψηλότερη βαθμολογία',
     sortPriceAsc: 'Τιμή: χαμηλή → υψηλή',
     sortPriceDesc: 'Τιμή: υψηλή → χαμηλή',
@@ -34,6 +35,7 @@ const TX = {
     sortRelevance: 'Σχετικότητα',
     clearFilters: 'Καθαρισμός φίλτρων',
     resultsCount: (n) => `${n} ${n === 1 ? 'θεραπευτής' : 'θεραπευτές'}`,
+    rankingNote: 'Η προτεινόμενη σειρά επηρεάζεται από το πακέτο συνεργασίας του θεραπευτή. Για καθαρά αντικειμενική κατάταξη, επιλέξτε ταξινόμηση κατά βαθμολογία.',
     notFoundTitle: 'Δεν βρίσκετε αυτό που ψάχνετε;',
     notFoundDesc: 'Συμπληρώστε το αίτημά σας και θα σας προτείνουμε τους κατάλληλους θεραπευτές.',
     notFoundBtn: 'Στείλτε αίτημα',
@@ -63,7 +65,8 @@ const TX = {
     sortBy: 'Sort by',
     verifiedLicense: 'Verified license',
     fullProfile: 'Complete profile',
-    sortNewest: 'Newest first',
+    featured: 'Featured',
+    sortNewest: 'Recommended order',
     sortRatingDesc: 'Highest rated',
     sortPriceAsc: 'Price: low → high',
     sortPriceDesc: 'Price: high → low',
@@ -71,6 +74,7 @@ const TX = {
     sortRelevance: 'Relevance',
     clearFilters: 'Clear filters',
     resultsCount: (n) => `${n} ${n === 1 ? 'therapist' : 'therapists'}`,
+    rankingNote: 'Recommended order is influenced by the therapist\'s partnership plan. For a purely objective ranking, sort by rating.',
     notFoundTitle: "Can't find what you're looking for?",
     notFoundDesc: "Submit a request and we'll recommend therapists for you.",
     notFoundBtn: 'Send a request',
@@ -179,6 +183,7 @@ export default function TherapistsPage() {
       const therapistIds = ths.map(t => t.id);
       let ratingsMap = {};
       let conditionsMap = {};
+      let rankMap = {};
 
       if (therapistIds.length > 0) {
         const { data: reviewsData } = await supabase
@@ -204,14 +209,32 @@ export default function TherapistsPage() {
             conditionsMap[tc.therapist_id].push(tc.condition_id);
           });
         }
+
+        // Βάρος κατάταξης από το πακέτο συνδρομής.
+        // Ρυθμίζεται ανά πακέτο από το admin: 0 = ουδέτερο, 200 = πάντα πρώτοι.
+        const { data: rankData } = await supabase
+          .from('v_therapist_ranking')
+          .select('therapist_id, rank_weight, featured_listing')
+          .in('therapist_id', therapistIds);
+        if (rankData) {
+          rankData.forEach(r => {
+            rankMap[r.therapist_id] = {
+              rank_weight: Number(r.rank_weight) || 0,
+              featured: !!r.featured_listing,
+            };
+          });
+        }
       }
 
       const enriched = ths.map(t => {
         const stats = ratingsMap[t.id];
+        const rank = rankMap[t.id];
         return {
           ...t,
           avg_rating: stats ? stats.sum / stats.count : 0,
           review_count: stats ? stats.count : 0,
+          rank_weight: rank ? rank.rank_weight : 0,
+          featured: rank ? rank.featured : false,
         };
       });
       setTherapists(enriched);
@@ -233,6 +256,13 @@ export default function TherapistsPage() {
     const set = new Set(therapists.map(t => t.specialty).filter(Boolean));
     return Array.from(set).sort();
   }, [therapists]);
+
+  // Αν κανένα πακέτο δεν δίνει βάρος, δεν έχει νόημα να μιλάμε
+  // για «προτεινόμενη σειρά» — η κατάταξη είναι ήδη αντικειμενική.
+  const hasPaidRanking = useMemo(
+    () => therapists.some(t => (t.rank_weight || 0) > 0),
+    [therapists]
+  );
 
   const priceRange = useMemo(() => {
     const prices = therapists.map(t => t.price_per_session).filter(p => typeof p === 'number');
@@ -301,6 +331,11 @@ export default function TherapistsPage() {
     // Τα πλήρη προφίλ ανεβαίνουν: κίνητρο για τον θεραπευτή, ποιότητα για τον ασθενή
     const fullBoost = (a, b) => (b.is_profile_full ? 1 : 0) - (a.is_profile_full ? 1 : 0);
 
+    // Το πακέτο συνδρομής. Εφαρμόζεται ΜΟΝΟ στην προτεινόμενη σειρά και
+    // στη σχετικότητα. Αν ο ασθενής ζητήσει ρητά «υψηλότερη βαθμολογία»
+    // ή «φθηνότερος», παίρνει ακριβώς αυτό — χωρίς παρέμβαση.
+    const rankBoost = (a, b) => (b.rank_weight || 0) - (a.rank_weight || 0);
+
     if (sortBy === 'relevance' && selectedCondition) {
       result.sort((a, b) => {
         const aType = getMatchType(a);
@@ -308,6 +343,8 @@ export default function TherapistsPage() {
         const score = (type) => (type === 'exact' ? 2 : type === 'specialty' ? 1 : 0);
         const diff = score(bType) - score(aType);
         if (diff !== 0) return diff;
+        const rank = rankBoost(a, b);
+        if (rank !== 0) return rank;
         const boost = fullBoost(a, b);
         if (boost !== 0) return boost;
         return (b.avg_rating || 0) - (a.avg_rating || 0);
@@ -316,7 +353,14 @@ export default function TherapistsPage() {
     else if (sortBy === 'price-asc') result.sort((a, b) => (a.price_per_session || 0) - (b.price_per_session || 0));
     else if (sortBy === 'price-desc') result.sort((a, b) => (b.price_per_session || 0) - (a.price_per_session || 0));
     else if (sortBy === 'experience-desc') result.sort((a, b) => (b.years_experience || 0) - (a.years_experience || 0));
-    else result.sort((a, b) => fullBoost(a, b) || (new Date(b.created_at) - new Date(a.created_at)));
+    else {
+      result.sort((a, b) =>
+        rankBoost(a, b) ||
+        fullBoost(a, b) ||
+        ((b.avg_rating || 0) - (a.avg_rating || 0)) ||
+        (new Date(b.created_at) - new Date(a.created_at))
+      );
+    }
 
     return result;
   }, [therapists, therapistConditionsMap, selectedCondition, search, filterArea, filterSpecialty, filterMinPrice, filterMaxPrice, sortBy]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -472,6 +516,14 @@ export default function TherapistsPage() {
                     </button>
                   )}
                 </div>
+
+                {/* Διαφάνεια κατάταξης — υποχρέωση απέναντι στον ασθενή */}
+                {hasPaidRanking && (sortBy === 'newest' || sortBy === 'relevance') && (
+                  <div style={{ marginTop: 12, display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 11.5, color: '#94a3b8', lineHeight: 1.55 }}>
+                    <Info size={13} strokeWidth={2} style={{ marginTop: 1, flexShrink: 0 }} />
+                    <span>{tx.rankingNote}</span>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -562,6 +614,16 @@ export default function TherapistsPage() {
                         }}>
                           <BadgeCheck size={11} strokeWidth={2.2} />
                           {tx.fullProfile}
+                        </span>
+                      )}
+                      {th.featured && (
+                        <span style={{
+                          padding: '3px 9px', borderRadius: 999, fontSize: 11, fontWeight: 500,
+                          background: '#f5f3ff', color: '#6d28d9', border: '1px solid #ddd6fe',
+                          display: 'inline-flex', alignItems: 'center', gap: 3,
+                        }}>
+                          <Star size={11} strokeWidth={2.2} />
+                          {tx.featured}
                         </span>
                       )}
                     </div>
