@@ -149,10 +149,17 @@ export default function RegisterPage() {
     });
     if (signInError) { setError(signInError.message); setLoading(false); return; }
 
-    await supabase.from('user_profiles').insert([{ id: userId, role }]);
+    // ΠΡΟΣΟΧΗ: upsert, ΟΧΙ insert.
+    // Αν υπάρχει trigger στη βάση που δημιουργεί ήδη τη γραμμή προφίλ,
+    // το insert θα έσκαγε σε duplicate key και τα στοιχεία θα χάνονταν
+    // σιωπηλά — ο θεραπευτής θα έβρισκε άδειο προφίλ.
+    const { error: upErr } = await supabase
+      .from('user_profiles')
+      .upsert({ id: userId, role }, { onConflict: 'id' });
+    if (upErr) { setError('Σφάλμα προφίλ: ' + upErr.message); setLoading(false); return; }
 
     if (role === 'therapist') {
-      await supabase.from('therapist_profiles').insert([{
+      const { error: thErr } = await supabase.from('therapist_profiles').upsert({
         id: userId,
         name: form.name,
         specialty: form.specialty,
@@ -161,9 +168,9 @@ export default function RegisterPage() {
         terms_accepted: agreements.terms,
         contract_accepted: agreements.contract,
         contract_accepted_at: new Date().toISOString(),
-        contract_commission: planFee,
         is_approved: false,
-      }]);
+      }, { onConflict: 'id' });
+      if (thErr) { setError('Σφάλμα προφίλ θεραπευτή: ' + thErr.message); setLoading(false); return; }
 
       // ── ΣΥΝΔΡΟΜΗ ──────────────────────────────────────────────────────
       // Οι τιμές κλειδώνονται ΤΩΡΑ. Αν αύριο ανέβει η τιμή του πακέτου,
@@ -178,21 +185,31 @@ export default function RegisterPage() {
           ? new Date(now.getTime() + trialDays * 86400000)
           : null;
 
-        await supabase.from('therapist_subscriptions').insert([{
-          therapist_id: userId,
-          plan_id: selectedPlan.id,
-          status: trialEnds ? 'trialing' : 'active',
-          billing_interval: 'monthly',
-          price_locked: planPrice,
-          first_session_fee_locked: planFee,
-          started_at: now.toISOString(),
-          trial_ends_at: trialEnds ? trialEnds.toISOString() : null,
-          current_period_start: now.toISOString(),
-          current_period_end: periodEnd.toISOString(),
-        }]);
+        // Αν υπάρχει ήδη ενεργή συνδρομή (π.χ. από trigger), μην τη διπλασιάσεις.
+        const { data: existingSub } = await supabase
+          .from('therapist_subscriptions')
+          .select('id')
+          .eq('therapist_id', userId)
+          .in('status', ['trialing', 'active', 'past_due', 'exempt'])
+          .limit(1);
+
+        if (!existingSub || existingSub.length === 0) {
+          await supabase.from('therapist_subscriptions').insert([{
+            therapist_id: userId,
+            plan_id: selectedPlan.id,
+            status: trialEnds ? 'trialing' : 'active',
+            billing_interval: 'monthly',
+            price_locked: planPrice,
+            first_session_fee_locked: planFee,
+            started_at: now.toISOString(),
+            trial_ends_at: trialEnds ? trialEnds.toISOString() : null,
+            current_period_start: now.toISOString(),
+            current_period_end: periodEnd.toISOString(),
+          }]);
+        }
       }
     } else {
-      await supabase.from('patient_profiles').insert([{
+      const { error: paErr } = await supabase.from('patient_profiles').upsert({
         id: userId,
         name: form.name,
         phone: form.phone || null,
@@ -200,7 +217,8 @@ export default function RegisterPage() {
         address: form.address || null,
         city: form.city || null,
         postal_code: form.postal_code || null,
-      }]);
+      }, { onConflict: 'id' });
+      if (paErr) { setError('Σφάλμα προφίλ: ' + paErr.message); setLoading(false); return; }
     }
 
     redirectAfterRegister(role);
