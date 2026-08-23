@@ -7,12 +7,13 @@ import { Globe, X } from 'lucide-react';
   LanguageSwitcher — στυλ Uber
   ----------------------------
   Κλειστό:  μονόχρωμο globe icon + label (EL-GR / EN-US), χωρίς πλαίσιο, χωρίς χρώμα.
-  Ανοιχτό:  full-screen overlay με τίτλο, X πάνω δεξιά και τις δύο γλώσσες.
+  Ανοιχτό:  panel που κατεβαίνει ΚΑΤΩ από το navbar — το navbar παραμένει ορατό.
 
   Props:
     color        — χρώμα κειμένου/εικονιδίου (default: #6b7a8d)
     hoverColor   — χρώμα στο hover (default: #1a2e44)
     size         — μέγεθος γραμματοσειράς label (default: 13)
+    navHeight    — ύψος του navbar σε px (default: 68) — πρέπει να ταιριάζει με το Navbar
 */
 
 const LOCALE_LABEL = { el: 'EL-GR', en: 'EN-US' };
@@ -37,6 +38,7 @@ export default function LanguageSwitcher({
   color = '#6b7a8d',
   hoverColor = '#1a2e44',
   size = 13,
+  navHeight = 68,
 }) {
   const { lang, setLanguage } = useLang();
   const [open, setOpen] = useState(false);
@@ -66,9 +68,10 @@ export default function LanguageSwitcher({
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => setOpen((v) => !v)}
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
+        aria-expanded={open}
         aria-label={TITLE[lang]}
         style={{
           display: 'inline-flex',
@@ -80,7 +83,7 @@ export default function LanguageSwitcher({
           fontSize: size,
           fontWeight: 500,
           fontFamily: 'inherit',
-          color: hover ? hoverColor : color,
+          color: hover || open ? hoverColor : color,
           cursor: 'pointer',
           transition: 'color .15s',
           whiteSpace: 'nowrap',
@@ -93,42 +96,70 @@ export default function LanguageSwitcher({
       {open && (
         <>
           <style>{`
-            .lang-overlay-options {
+            @keyframes langPanelDrop {
+              from { opacity: 0; transform: translateY(-12px); }
+              to   { opacity: 1; transform: translateY(0); }
+            }
+            .lang-panel {
+              animation: langPanelDrop .18s ease-out;
+            }
+            .lang-panel-inner {
+              max-width: 1200px;
+              margin: 0 auto;
+              padding: 56px 24px 72px;
+              position: relative;
+            }
+            .lang-panel-options {
               display: grid;
               grid-template-columns: repeat(3, minmax(0, 1fr));
               gap: 20px 32px;
               max-width: 900px;
             }
-            .lang-overlay-inner {
-              max-width: 1200px;
-              margin: 0 auto;
-              padding: 64px 24px;
-            }
             @media (max-width: 640px) {
-              .lang-overlay-options { grid-template-columns: 1fr; }
-              .lang-overlay-inner { padding: 40px 20px; }
+              .lang-panel-options { grid-template-columns: 1fr; }
+              .lang-panel-inner { padding: 32px 20px 48px; }
             }
           `}</style>
 
+          {/* Σκίαση κάτω από το panel — κλείνει με κλικ */}
           <div
+            onClick={() => setOpen(false)}
+            style={{
+              position: 'fixed',
+              top: navHeight,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 90,
+              background: 'rgba(15,29,44,0.35)',
+            }}
+          />
+
+          {/* Panel — ξεκινάει ΑΚΡΙΒΩΣ κάτω από το navbar */}
+          <div
+            className="lang-panel"
             role="dialog"
             aria-modal="true"
             style={{
               position: 'fixed',
-              inset: 0,
-              zIndex: 2000,
-              background: '#fff',
+              top: navHeight,
+              left: 0,
+              right: 0,
+              maxHeight: `calc(100vh - ${navHeight}px)`,
               overflowY: 'auto',
+              zIndex: 95,
+              background: '#fff',
+              boxShadow: '0 12px 32px rgba(15,29,44,0.16)',
             }}
           >
-            <div className="lang-overlay-inner" style={{ position: 'relative' }}>
+            <div className="lang-panel-inner">
               <button
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label={lang === 'el' ? 'Κλείσιμο' : 'Close'}
                 style={{
                   position: 'absolute',
-                  top: 24,
+                  top: 20,
                   right: 24,
                   background: 'none',
                   border: 'none',
@@ -138,16 +169,16 @@ export default function LanguageSwitcher({
                   lineHeight: 0,
                 }}
               >
-                <X size={28} strokeWidth={2.5} />
+                <X size={26} strokeWidth={2.5} />
               </button>
 
               <h2
                 style={{
                   fontFamily: 'Georgia, serif',
-                  fontSize: 'clamp(24px, 3vw, 36px)',
+                  fontSize: 'clamp(22px, 3vw, 34px)',
                   fontWeight: 700,
                   color: '#1a2e44',
-                  margin: '0 0 48px',
+                  margin: '0 0 40px',
                   maxWidth: 760,
                   lineHeight: 1.25,
                 }}
@@ -155,7 +186,7 @@ export default function LanguageSwitcher({
                 {TITLE[lang]}
               </h2>
 
-              <div className="lang-overlay-options">
+              <div className="lang-panel-options">
                 {options.map((opt) => {
                   const active = opt.code === lang;
                   return (
