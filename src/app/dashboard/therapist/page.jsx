@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { useLang } from '@/context/LanguageContext';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { searchAreas, canonicalArea, phonetic } from '@/lib/areas';
 import ConditionPicker from '@/components/ConditionPicker';
 import {
   LayoutDashboard, ClipboardList, Calendar, MapPin, Target, Star, User, Clock, AlertTriangle, Upload, CreditCard, Home, MessageSquare, Check, X, Lock, ChevronLeft, ChevronRight, Plus, Lightbulb, Camera, Pencil, CheckCircle2, Save, FileText, GraduationCap, Award, Eye, Trash2, Wallet, Hourglass, CalendarDays, List, Globe,
@@ -419,20 +420,6 @@ for (let h = 9; h <= 20; h++) {
 }
 HOURS.push('21:00');
 
-// Τοπωνύμια — παραμένουν στα ελληνικά και στις δύο γλώσσες
-const ATHENS_AREAS = [
-  'Αθήνα Κέντρο', 'Παγκράτι', 'Κολωνάκι', 'Εξάρχεια', 'Κυψέλη', 'Πατήσια',
-  'Αμπελόκηποι', 'Ζωγράφου', 'Καισαριανή', 'Βύρωνας', 'Ηλιούπολη', 'Νέα Σμύρνη',
-  'Καλλιθέα', 'Παλαιό Φάληρο', 'Άγιος Δημήτριος', 'Δάφνη', 'Νέος Κόσμος',
-  'Πετράλωνα', 'Θησείο', 'Γκάζι', 'Μεταξουργείο', 'Ομόνοια',
-  'Γαλάτσι', 'Νέα Φιλαδέλφεια', 'Νέα Ιωνία', 'Χαλάνδρι', 'Μαρούσι', 'Κηφισιά',
-  'Νέα Ερυθραία', 'Νέο Ψυχικό', 'Ψυχικό', 'Φιλοθέη', 'Παπάγου', 'Χολαργός',
-  'Αγία Παρασκευή', 'Γέρακας', 'Παλλήνη', 'Πεύκη', 'Λυκόβρυση',
-  'Άλιμος', 'Ελληνικό', 'Γλυφάδα', 'Βούλα', 'Βουλιαγμένη', 'Βάρη', 'Βάρκιζα',
-  'Πειραιάς', 'Νίκαια', 'Κορυδαλλός', 'Καμίνια', 'Κερατσίνι', 'Πέραμα', 'Δραπετσώνα',
-  'Περιστέρι', 'Αιγάλεω', 'Χαϊδάρι', 'Ίλιον', 'Πετρούπολη', 'Καματερό',
-  'Άγιοι Ανάργυροι', 'Νέα Χαλκηδόνα', 'Μοσχάτο', 'Ταύρος',
-];
 
 function generateDates() {
   const dates = [];
@@ -846,24 +833,23 @@ export default function TherapistDashboard() {
     if (url) window.open(url, '_blank');
   }
 
+  // Φωνητική αναζήτηση: «kolon», «κολον», «kolwn» -> «Κολωνάκι»
   function handleAreaInputChange(value) {
     setAreaInput(value);
     if (value.trim().length > 0) {
-      const filtered = ATHENS_AREAS.filter(a =>
-        a.toLowerCase().includes(value.toLowerCase()) &&
-        !(profile?.service_areas || []).includes(a)
-      ).slice(0, 6);
-      setAreaSuggestions(filtered);
+      setAreaSuggestions(searchAreas(value, 6, profile?.service_areas || []));
     } else {
       setAreaSuggestions([]);
     }
   }
 
   async function addArea(area) {
-    const cleaned = area.trim();
+    // Αποθηκεύουμε την ΕΠΙΣΗΜΗ γραφή. Αν ο θεραπευτής γράψει «kolonaki»
+    // ή «κολονακι», μπαίνει «Κολωνάκι» — ώστε να ταιριάζει παντού.
+    const cleaned = (canonicalArea(area) || area).trim();
     if (!cleaned) return;
     const current = profile?.service_areas || [];
-    if (current.includes(cleaned)) {
+    if (current.some(a => phonetic(a) === phonetic(cleaned))) {
       setAreaInput('');
       setAreaSuggestions([]);
       return;
