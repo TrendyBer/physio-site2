@@ -7,7 +7,9 @@ import Benefits from '@/components/Benefits';
 import Therapists from '@/components/Therapists';
 import Services from '@/components/Services';
 import Blog from '@/components/Blog';
-import { Partners, CtaBanner, Faq, Contact, Footer } from '@/components/SharedComponents';
+import Contact from '@/components/Contact';
+import Footer from '@/components/Footer';
+import { Partners, CtaBanner, Faq } from '@/components/SharedComponents';
 
 export default function Home() {
   return (
