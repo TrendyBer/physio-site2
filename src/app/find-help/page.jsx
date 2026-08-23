@@ -1,8 +1,9 @@
 import { supabase } from '@/lib/supabase';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
+import LangSync from '../../components/LangSync';
 import Link from 'next/link';
-import { Search, Star, Tag, Users, ArrowRight, Globe } from 'lucide-react';
+import { Search, Star, Tag, Users, ArrowRight } from 'lucide-react';
 
 export const revalidate = 3600;
 
@@ -55,7 +56,6 @@ const TX = {
     notSure: 'Δεν είστε σίγουροι ποια πάθηση έχετε;',
     notSureDesc: 'Συμπληρώστε ένα αίτημα και θα σας προτείνουμε τους κατάλληλους θεραπευτές.',
     notSureBtn: 'Νέο Αίτημα',
-    switchLang: 'EN',
     resultsFor: (q) => `Αποτελέσματα για «${q}»`,
     resultsHint: 'Επιλέξτε την πάθηση που ταιριάζει καλύτερα. Δεν παρέχουμε διάγνωση — η επιλογή μάς βοηθά να σας δείξουμε πιο σχετικούς θεραπευτές.',
     noMatchTitle: 'Δεν βρέθηκε πάθηση που να ταιριάζει',
@@ -75,7 +75,6 @@ const TX = {
     notSure: 'Not sure which condition you have?',
     notSureDesc: 'Submit a request and we will recommend the right therapists for you.',
     notSureBtn: 'New Request',
-    switchLang: 'ΕΛ',
     resultsFor: (q) => `Results for “${q}”`,
     resultsHint: 'Choose the condition that fits best. We do not provide a diagnosis — your choice helps us show more relevant therapists.',
     noMatchTitle: 'No matching condition found',
@@ -93,7 +92,6 @@ export default async function FindHelpPage({ searchParams }) {
   const lang = params?.lang === 'en' ? 'en' : 'el';
   const tx = TX[lang];
   const q = (params?.q || '').trim();
-  const qLower = q.toLowerCase();
 
   const { data: categories } = await supabase
     .from('condition_categories')
@@ -161,6 +159,9 @@ export default async function FindHelpPage({ searchParams }) {
     <>
       <Navbar />
 
+      {/* Ακούει τον switcher του header και ενημερώνει το ?lang= στο URL */}
+      <LangSync urlLang={lang} />
+
       <style>{`
         .fh-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
         @media (max-width: 900px) { .fh-grid { grid-template-columns: repeat(2, 1fr); } }
@@ -186,18 +187,8 @@ export default async function FindHelpPage({ searchParams }) {
       `}</style>
 
       <div style={{ background: 'linear-gradient(135deg, #e8f3ff 0%, #f0f7ff 100%)', position: 'relative' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '12px 24px 0', textAlign: 'right' }}>
-          <Link
-            href={lang === 'el' ? '/find-help?lang=en' : '/find-help'}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: '#fff', border: '1px solid #BFDBFE', borderRadius: 999, fontSize: 12, fontWeight: 600, color: '#1D4ED8', textDecoration: 'none' }}
-          >
-            <Globe size={12} />
-            {tx.switchLang}
-          </Link>
-        </div>
-
         {/* HERO */}
-        <section style={{ padding: '40px 24px 60px', textAlign: 'center' }}>
+        <section style={{ padding: '56px 24px 60px', textAlign: 'center' }}>
           <div style={{ maxWidth: 760, margin: '0 auto' }}>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: '#2a6fdb', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 16 }}>
               <Search size={14} strokeWidth={2.5} />
