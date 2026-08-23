@@ -23,9 +23,12 @@ const TX = {
     labelArea: 'Περιοχή Εξυπηρέτησης',
     firstName: 'Όνομα',
     lastName: 'Επώνυμο',
+    optional: '(προαιρετικό)',
     service: 'Υπηρεσία',
     selectService: 'Επιλέξτε Υπηρεσία',
     message: 'Μήνυμα',
+    terms: 'Αποδέχομαι τους ',
+    termsLink: 'Όρους & Πολιτική Απορρήτου',
     send: 'Αποστολή Αιτήματος',
     sending: 'Αποστολή...',
     fallbackServices: [
@@ -33,7 +36,7 @@ const TX = {
       'Μετεγχειρητική Αποκατάσταση',
       'Αποκατάσταση Αθλητικών Τραυματισμών',
     ],
-    errRequired: 'Συμπληρώστε όνομα, email και μήνυμα.',
+    errRequired: 'Συμπληρώστε όνομα, email και μήνυμα, και αποδεχτείτε τους όρους.',
     errEmail: 'Το email δεν φαίνεται σωστό. Ελέγξτε το και δοκιμάστε ξανά.',
     errRate: 'Στείλατε ήδη αρκετά μηνύματα. Δοκιμάστε ξανά σε λίγη ώρα.',
     errSend: 'Δεν ήταν δυνατή η αποστολή. Δοκιμάστε ξανά σε λίγο ή στείλτε μας email απευθείας.',
@@ -52,9 +55,12 @@ const TX = {
     labelArea: 'Service Area',
     firstName: 'First Name',
     lastName: 'Last Name',
+    optional: '(optional)',
     service: 'Service',
     selectService: 'Select Service',
     message: 'Message',
+    terms: 'I accept the ',
+    termsLink: 'Terms and Privacy Policy',
     send: 'Send Request',
     sending: 'Sending...',
     fallbackServices: [
@@ -62,7 +68,7 @@ const TX = {
       'Post-Surgery Rehabilitation',
       'Sports Injury Recovery',
     ],
-    errRequired: 'Please fill in name, email and message.',
+    errRequired: 'Please fill in name, email and message, and accept the terms.',
     errEmail: "That email doesn't look right. Please check it and try again.",
     errRate: "You've sent several messages already. Please try again later.",
     errSend: 'We could not send your message. Please try again shortly, or email us directly.',
@@ -106,6 +112,7 @@ export default function Contact() {
   const [form, setForm] = useState({
     firstName: '', lastName: '', email: '', phone: '', service: '', message: '', website: '',
   });
+  const [accepted, setAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [sent, setSent] = useState(false);
@@ -155,7 +162,8 @@ export default function Contact() {
     : tx.fallbackServices;
 
   async function handleSubmit() {
-    if (!form.firstName.trim() || !form.email.trim() || !form.message.trim()) {
+    // Το τηλέφωνο ΔΕΝ είναι υποχρεωτικό
+    if (!form.firstName.trim() || !form.email.trim() || !form.message.trim() || !accepted) {
       setError(tx.errRequired);
       return;
     }
@@ -193,6 +201,7 @@ export default function Contact() {
       setSentTo(form.email.trim());
       setSent(true);
       setForm({ firstName: '', lastName: '', email: '', phone: '', service: '', message: '', website: '' });
+      setAccepted(false);
     } catch (err) {
       console.error('[contact-section] submit failed:', err);
       setError(tx.errSend);
@@ -285,7 +294,10 @@ export default function Contact() {
                 </div>
 
                 <div>
-                  <label style={labelStyle}>{tx.labelPhone}</label>
+                  <label style={labelStyle}>
+                    {tx.labelPhone}{' '}
+                    <span style={{ fontWeight: 400, color: '#94a3b8', fontSize: 12 }}>{tx.optional}</span>
+                  </label>
                   <input type="tel" value={form.phone} onChange={(e) => upd('phone', e.target.value)} style={inputStyle} />
                 </div>
 
@@ -313,6 +325,28 @@ export default function Contact() {
                   <div style={{ fontSize: 11, color: '#94a3b8', textAlign: 'right', marginTop: 4 }}>
                     {form.message.length}/1000
                   </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <input
+                    type="checkbox"
+                    id="home-terms"
+                    checked={accepted}
+                    onChange={(e) => setAccepted(e.target.checked)}
+                    style={{ width: 18, height: 18, cursor: 'pointer', accentColor: '#2a6fdb', flexShrink: 0 }}
+                  />
+                  <label htmlFor="home-terms" style={{ fontSize: 13.5, color: '#1a2e44', cursor: 'pointer', lineHeight: 1.5 }}>
+                    {tx.terms}
+                    <a
+                      href="/terms"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: '#2a6fdb', fontWeight: 600, textDecoration: 'underline' }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {tx.termsLink}
+                    </a>
+                  </label>
                 </div>
 
                 {error && (
