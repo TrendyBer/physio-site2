@@ -3,9 +3,81 @@ import { useLang } from '@/context/LanguageContext';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { X } from 'lucide-react';
+import LanguageSwitcher from './LanguageSwitcher';
+
+/* ------------------------------------------------------------------
+   ΘΕΜΑ ΜΠΑΡΑΣ
+   Άλλαξε ΜΟΝΟ αυτή τη γραμμή για να δοκιμάσεις άλλη εμφάνιση:
+     'navy'   — σκούρο μπλε μπάρα, λευκά γράμματα  (μέγιστη διαφορά)
+     'accent' — έντονο μπλε μπάρα, λευκά γράμματα
+     'soft'   — ανοιχτό γαλάζιο μπάρα, σκούρα γράμματα (διακριτικό)
+------------------------------------------------------------------ */
+const NAV_STYLE = 'navy';
+
+const THEMES = {
+  navy: {
+    bg: '#1a2e44',
+    blur: 'none',
+    borderBottom: '1px solid rgba(255,255,255,0.10)',
+    logo: '#ffffff',
+    dot: '#4a8ff5',
+    link: 'rgba(255,255,255,0.72)',
+    linkHover: '#ffffff',
+    highlight: '#7fb2ff',
+    highlightHover: '#ffffff',
+    ctrlText: 'rgba(255,255,255,0.88)',
+    ctrlBorder: 'rgba(255,255,255,0.24)',
+    ctaBg: '#ffffff',
+    ctaText: '#1a2e44',
+    logoutBg: 'rgba(220,38,38,0.16)',
+    logoutText: '#fca5a5',
+    logoutBorder: 'rgba(252,165,165,0.38)',
+    hamburger: '#ffffff',
+  },
+  accent: {
+    bg: '#2a6fdb',
+    blur: 'none',
+    borderBottom: '1px solid rgba(255,255,255,0.14)',
+    logo: '#ffffff',
+    dot: '#ffffff',
+    link: 'rgba(255,255,255,0.80)',
+    linkHover: '#ffffff',
+    highlight: '#ffffff',
+    highlightHover: '#eaf2fc',
+    ctrlText: 'rgba(255,255,255,0.92)',
+    ctrlBorder: 'rgba(255,255,255,0.30)',
+    ctaBg: '#ffffff',
+    ctaText: '#1a2e44',
+    logoutBg: 'rgba(255,255,255,0.16)',
+    logoutText: '#ffffff',
+    logoutBorder: 'rgba(255,255,255,0.35)',
+    hamburger: '#ffffff',
+  },
+  soft: {
+    bg: '#eaf2fc',
+    blur: 'blur(12px)',
+    borderBottom: '1px solid #c9ddf5',
+    logo: '#1a2e44',
+    dot: '#2a6fdb',
+    link: '#5a6f87',
+    linkHover: '#1a2e44',
+    highlight: '#2a6fdb',
+    highlightHover: '#1a2e44',
+    ctrlText: '#5a6f87',
+    ctrlBorder: '#c9ddf5',
+    ctaBg: '#1a2e44',
+    ctaText: '#ffffff',
+    logoutBg: '#FEF2F2',
+    logoutText: '#DC2626',
+    logoutBorder: '#FECACA',
+    hamburger: '#1a2e44',
+  },
+};
+
+const TH = THEMES[NAV_STYLE] || THEMES.navy;
 
 export default function Navbar() {
-  const { lang, toggleLang } = useLang();
+  const { lang, setLanguage } = useLang();
   const [menuOpen, setMenuOpen] = useState(false);
   const [roleModal, setRoleModal] = useState(false);
   const [loginModal, setLoginModal] = useState(false);
@@ -105,13 +177,6 @@ export default function Navbar() {
     else window.location.href = '/';
   }
 
-  async function handleSignOut() {
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('userName');
-    await supabase.auth.signOut();
-    window.location.href = '/';
-  }
-
   const t = {
     el: { login: 'Σύνδεση', register: 'Εγγραφή', findCta: 'Βρες φυσιοθεραπευτή' },
     en: { login: 'Login', register: 'Register', findCta: 'Find a physiotherapist' },
@@ -139,11 +204,10 @@ export default function Navbar() {
   // Ο ασθενής βλέπει το ΚΑΝΟΝΙΚΟ μενού — πρέπει να μπορεί να ψάξει
   // θεραπευτή, να διαβάσει για παθήσεις, να δει πακέτα.
   // Φεύγει μόνο το «Για φυσιοθεραπευτές» — δεν τον αφορά.
-  // Στον λογαριασμό του πάει από το όνομά του πάνω δεξιά.
   const patientLinks = publicLinks.filter((l) => l.href !== '/become-therapist');
 
   // Σε λειτουργία «Προβολή site» ο θεραπευτής βλέπει το ΚΑΝΟΝΙΚΟ μενού,
-  // όπως ακριβώς το βλέπει ένας ασθενής. Γι' αυτό μπήκε εδώ.
+  // όπως ακριβώς το βλέπει ένας ασθενής.
   const activeLinks = (userRole === 'therapist' && !viewingSite)
     ? therapistLinks
     : userRole === 'patient'
@@ -152,40 +216,49 @@ export default function Navbar() {
 
   const inputStyle = { width: '100%', padding: '11px 14px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', color: '#1a2e44' };
 
-  // Role label — text only, no emoji
-  const roleLabel = userRole === 'therapist'
-    ? (lang === 'el' ? 'Θεραπευτής' : 'Therapist')
-    : (lang === 'el' ? 'Ασθενής' : 'Patient');
-
   return (
     <>
       <style>{`
         .nav-links-desktop { display: flex; }
         .nav-right-desktop { display: flex; }
         .hamburger { display: none !important; }
-        @media (max-width: 900px) {
+        @media (max-width: 1024px) {
           .nav-links-desktop { display: none !important; }
           .nav-right-desktop { display: none !important; }
           .hamburger { display: flex !important; }
         }
       `}</style>
 
-      <nav style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #dce6f0', padding: '0 24px' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 68 }}>
+      <nav style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 100,
+        background: TH.bg,
+        backdropFilter: TH.blur,
+        borderBottom: TH.borderBottom,
+        padding: '0 24px',
+      }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', height: 68 }}>
 
-          <a href="/" style={{ fontFamily: 'Georgia, serif', fontSize: 22, fontWeight: 700, color: '#1a2e44', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#2a6fdb', display: 'inline-block' }} />
+          {/* ΑΡΙΣΤΕΡΑ: λογότυπο + links, κολλητά μεταξύ τους */}
+          <a href="/" style={{ fontFamily: 'Georgia, serif', fontSize: 22, fontWeight: 700, color: TH.logo, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: TH.dot, display: 'inline-block' }} />
             PhysioHome
           </a>
 
-          <ul className="nav-links-desktop" style={{ alignItems: 'center', gap: 22, listStyle: 'none', margin: 0, padding: 0 }}>
+          <ul className="nav-links-desktop" style={{ alignItems: 'center', gap: 22, listStyle: 'none', margin: 0, marginLeft: 32, padding: 0 }}>
             {activeLinks.map(item => {
               const isForTherapists = item.href === '/become-therapist';
+              const base = isForTherapists ? TH.highlight : TH.link;
+              const hov = isForTherapists ? TH.highlightHover : TH.linkHover;
               return (
                 <li key={item.href + item.label}>
-                  <a href={item.href} style={{ fontSize: 14, fontWeight: isForTherapists ? 600 : 500, color: isForTherapists ? '#2a6fdb' : '#6b7a8d', textDecoration: 'none' }}
-                    onMouseEnter={e => e.target.style.color = isForTherapists ? '#1a2e44' : '#1a2e44'}
-                    onMouseLeave={e => e.target.style.color = isForTherapists ? '#2a6fdb' : '#6b7a8d'}>
+                  <a
+                    href={item.href}
+                    style={{ fontSize: 14, fontWeight: isForTherapists ? 600 : 500, color: base, textDecoration: 'none', whiteSpace: 'nowrap', transition: 'color .15s' }}
+                    onMouseEnter={e => { e.target.style.color = hov; }}
+                    onMouseLeave={e => { e.target.style.color = base; }}
+                  >
                     {item.label}
                   </a>
                 </li>
@@ -193,12 +266,13 @@ export default function Navbar() {
             })}
           </ul>
 
-          <div className="nav-right-desktop" style={{ alignItems: 'center', gap: 10 }}>
-            <button onClick={toggleLang} style={{ border: '1px solid #dce6f0', background: 'none', padding: '6px 14px', borderRadius: 20, fontSize: 13, fontWeight: 500, color: '#6b7a8d', cursor: 'pointer' }}>
-              {lang === 'el' ? 'EN' : 'ΕΛ'}
-            </button>
+          {/* Κενό που σπρώχνει τα υπόλοιπα δεξιά */}
+          <div style={{ flex: 1 }} />
 
-            {/* Role badge — text only, no emoji */}
+          {/* ΔΕΞΙΑ: γλώσσα, ρόλος, σύνδεση, CTA */}
+          <div className="nav-right-desktop" style={{ alignItems: 'center', gap: 14 }}>
+            <LanguageSwitcher color={TH.ctrlText} hoverColor={TH.linkHover} />
+
             {mounted && userRole && userName && (
               <a
                 href={userRole === 'therapist' ? '/dashboard/therapist' : '/dashboard/patient'}
@@ -230,15 +304,15 @@ export default function Navbar() {
             )}
 
             {mounted && user ? (
-              <a href="/auth/logout" style={{ background: '#FEF2F2', color: '#DC2626', padding: '8px 18px', borderRadius: 20, fontSize: 14, fontWeight: 600, border: '1px solid #FECACA', cursor: 'pointer', textDecoration: 'none' }}>
+              <a href="/auth/logout" style={{ background: TH.logoutBg, color: TH.logoutText, padding: '8px 18px', borderRadius: 20, fontSize: 14, fontWeight: 600, border: `1px solid ${TH.logoutBorder}`, cursor: 'pointer', textDecoration: 'none' }}>
                 Logout
               </a>
             ) : (
               mounted && <>
-                <button onClick={() => setLoginModal(true)} style={{ fontSize: 14, fontWeight: 600, color: '#1a2e44', background: 'none', border: '1px solid #dce6f0', padding: '8px 18px', borderRadius: 20, cursor: 'pointer' }}>
+                <button onClick={() => setLoginModal(true)} style={{ fontSize: 14, fontWeight: 600, color: TH.ctrlText, background: 'none', border: `1px solid ${TH.ctrlBorder}`, padding: '8px 18px', borderRadius: 20, cursor: 'pointer', fontFamily: 'inherit' }}>
                   {text.login}
                 </button>
-                <a href="/therapists" style={{ background: '#1a2e44', color: '#fff', padding: '10px 22px', borderRadius: 30, fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                <a href="/therapists" style={{ background: TH.ctaBg, color: TH.ctaText, padding: '10px 22px', borderRadius: 30, fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer', textDecoration: 'none', whiteSpace: 'nowrap' }}>
                   {text.findCta}
                 </a>
               </>
@@ -246,14 +320,14 @@ export default function Navbar() {
           </div>
 
           <button className="hamburger" onClick={() => setMenuOpen(true)} style={{ flexDirection: 'column', gap: 5, cursor: 'pointer', background: 'none', border: 'none', padding: 4 }}>
-            <span style={{ width: 24, height: 2, background: '#1a2e44', borderRadius: 2, display: 'block' }} />
-            <span style={{ width: 24, height: 2, background: '#1a2e44', borderRadius: 2, display: 'block' }} />
-            <span style={{ width: 24, height: 2, background: '#1a2e44', borderRadius: 2, display: 'block' }} />
+            <span style={{ width: 24, height: 2, background: TH.hamburger, borderRadius: 2, display: 'block' }} />
+            <span style={{ width: 24, height: 2, background: TH.hamburger, borderRadius: 2, display: 'block' }} />
+            <span style={{ width: 24, height: 2, background: TH.hamburger, borderRadius: 2, display: 'block' }} />
           </button>
         </div>
       </nav>
 
-      {/* Role Modal — clean, no emojis */}
+      {/* Role Modal */}
       {roleModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}
           onClick={e => { if (e.target === e.currentTarget) setRoleModal(false); }}>
@@ -271,7 +345,6 @@ export default function Navbar() {
                   style={{ padding: '24px 16px', border: '2px solid #e2e8f0', borderRadius: 16, textAlign: 'center', textDecoration: 'none', display: 'block', background: '#fff', cursor: 'pointer', transition: 'all .2s' }}
                   onMouseEnter={e => { e.currentTarget.style.borderColor = r.accent; e.currentTarget.style.background = r.bg; }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.background = '#fff'; }}>
-                  {/* Decorative accent — no emoji */}
                   <div style={{ width: 48, height: 48, borderRadius: '50%', background: r.bg, margin: '0 auto 12px', border: `2px solid ${r.accent}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <div style={{ width: 14, height: 14, borderRadius: '50%', background: r.accent }} />
                   </div>
@@ -325,11 +398,18 @@ export default function Navbar() {
         <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: '#fff', display: 'flex', flexDirection: 'column', padding: '20px 24px', overflowY: 'auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
             <span style={{ fontFamily: 'Georgia, serif', fontSize: 20, fontWeight: 700, color: '#1a2e44' }}>PhysioHome</span>
-            <button onClick={() => setMenuOpen(false)} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#1a2e44', padding: 4 }}><X size={20} /></button>
+            <button onClick={() => setMenuOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1a2e44', padding: 4, lineHeight: 0 }}><X size={22} /></button>
           </div>
           <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
-            <button onClick={() => { if (lang !== 'en') toggleLang(); }} style={{ padding: '6px 18px', borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: '1.5px solid', borderColor: lang === 'en' ? '#1a2e44' : '#dce6f0', background: lang === 'en' ? '#1a2e44' : '#fff', color: lang === 'en' ? '#fff' : '#6b7a8d' }}>EN</button>
-            <button onClick={() => { if (lang !== 'el') toggleLang(); }} style={{ padding: '6px 18px', borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: '1.5px solid', borderColor: lang === 'el' ? '#1a2e44' : '#dce6f0', background: lang === 'el' ? '#1a2e44' : '#fff', color: lang === 'el' ? '#fff' : '#6b7a8d' }}>EL</button>
+            {[{ code: 'en', label: 'EN-US' }, { code: 'el', label: 'EL-GR' }].map(o => (
+              <button
+                key={o.code}
+                onClick={() => setLanguage(o.code)}
+                style={{ padding: '6px 18px', borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: '1.5px solid', borderColor: lang === o.code ? '#1a2e44' : '#dce6f0', background: lang === o.code ? '#1a2e44' : '#fff', color: lang === o.code ? '#fff' : '#6b7a8d', fontFamily: 'inherit' }}
+              >
+                {o.label}
+              </button>
+            ))}
           </div>
           <nav style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
             {activeLinks.map(item => (
@@ -345,7 +425,7 @@ export default function Navbar() {
               </a>
             ) : (
               <>
-                <button onClick={() => { setMenuOpen(false); setLoginModal(true); }} style={{ background: 'transparent', color: '#1a2e44', padding: '12px', borderRadius: 30, fontSize: 15, fontWeight: 600, border: '1.5px solid #1a2e44', cursor: 'pointer' }}>{text.login}</button>
+                <button onClick={() => { setMenuOpen(false); setLoginModal(true); }} style={{ background: 'transparent', color: '#1a2e44', padding: '12px', borderRadius: 30, fontSize: 15, fontWeight: 600, border: '1.5px solid #1a2e44', cursor: 'pointer', fontFamily: 'inherit' }}>{text.login}</button>
                 <a href="/therapists" onClick={() => setMenuOpen(false)} style={{ background: '#1a2e44', color: '#fff', padding: '13px', borderRadius: 30, fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', textDecoration: 'none', textAlign: 'center', display: 'block' }}>{text.findCta}</a>
               </>
             )}
