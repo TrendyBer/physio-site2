@@ -1,6 +1,11 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
+import {
+  Target, Lightbulb, Sparkles, Search, Save, Check,
+  ChevronDown, ChevronUp, ChevronsDownUp, ChevronsUpDown,
+  FilePen, Tag, AlertCircle,
+} from 'lucide-react';
 
 /**
  * TherapistConditions — Component που επιτρέπει στον therapist να tagάρει
@@ -172,7 +177,10 @@ export default function TherapistConditions({ userId, specialty }) {
       }
 
       setOriginalIds(new Set(selectedIds));
-      setSavedMsg({ type: 'success', text: `✓ Αποθηκεύτηκαν ${selectedIds.size} ${selectedIds.size === 1 ? 'πάθηση' : 'παθήσεις'}` });
+      setSavedMsg({
+        type: 'success',
+        text: `Αποθηκεύτηκαν ${selectedIds.size} ${selectedIds.size === 1 ? 'πάθηση' : 'παθήσεις'}`,
+      });
       setTimeout(() => setSavedMsg(null), 3000);
     } catch (err) {
       console.error('Save error:', err);
@@ -203,24 +211,34 @@ export default function TherapistConditions({ userId, specialty }) {
 
   return (
     <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: 24 }}>
-      <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', marginBottom: 4 }}>
-        🎯 Παθήσεις που Θεραπεύω
+      <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 7 }}>
+        <Target size={15} color="#2a6fdb" strokeWidth={2.2} />
+        Παθήσεις που Θεραπεύω
       </div>
       <div style={{ fontSize: 13, color: '#64748B', marginBottom: 20 }}>
-        Επιλέξτε τις παθήσεις στις οποίες εξειδικεύεστε. Οι ασθενείς που ψάχνουν αυτές τις παθήσεις θα σας βλέπουν με σήμα <strong style={{ color: '#15803D' }}>✓ Εξειδικεύεται</strong> στα αποτελέσματα.
+        Επιλέξτε τις παθήσεις στις οποίες εξειδικεύεστε. Οι ασθενείς που ψάχνουν αυτές τις παθήσεις θα σας βλέπουν με σήμα{' '}
+        <strong style={{ color: '#15803D', display: 'inline-flex', alignItems: 'center', gap: 3, verticalAlign: 'middle' }}>
+          <Check size={12} strokeWidth={3} />
+          Εξειδικεύεται
+        </strong>{' '}
+        στα αποτελέσματα.
       </div>
 
       {/* Strategic info box */}
-      <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '12px 16px', marginBottom: 20, fontSize: 12, color: '#1E40AF', lineHeight: 1.6 }}>
-        💡 <strong>Tip:</strong> Όσο πιο συγκεκριμένος είστε, τόσο πιο σχετικά αιτήματα θα λαμβάνετε. Επιλέξτε μόνο παθήσεις στις οποίες έχετε πραγματική εμπειρία.
+      <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '12px 16px', marginBottom: 20, fontSize: 12, color: '#1E40AF', lineHeight: 1.6, display: 'flex', gap: 9, alignItems: 'flex-start' }}>
+        <Lightbulb size={14} strokeWidth={2.2} style={{ flexShrink: 0, marginTop: 2 }} />
+        <span>
+          <strong>Tip:</strong> Όσο πιο συγκεκριμένος είστε, τόσο πιο σχετικά αιτήματα θα λαμβάνετε. Επιλέξτε μόνο παθήσεις στις οποίες έχετε πραγματική εμπειρία.
+        </span>
       </div>
 
       {/* Auto-suggest banner */}
       {unsuggestedIds.length > 0 && (
         <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 10, padding: '14px 18px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: 200 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#92400E', marginBottom: 2 }}>
-              ✨ Προτάσεις βάσει της ειδικότητάς σας
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#92400E', marginBottom: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Sparkles size={13} strokeWidth={2.2} />
+              Προτάσεις βάσει της ειδικότητάς σας
             </div>
             <div style={{ fontSize: 12, color: '#78350F' }}>
               Βρήκαμε <strong>{unsuggestedIds.length}</strong> {unsuggestedIds.length === 1 ? 'πάθηση' : 'παθήσεις'} που σχετίζονται με «{specialty || 'την ειδικότητά σας'}».
@@ -228,40 +246,46 @@ export default function TherapistConditions({ userId, specialty }) {
           </div>
           <button
             onClick={selectSuggested}
-            style={{ background: '#92400E', color: '#fff', border: 'none', borderRadius: 30, padding: '8px 18px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}
+            style={{ background: '#92400E', color: '#fff', border: 'none', borderRadius: 30, padding: '8px 18px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 5 }}
           >
-            ✓ Επιλογή όλων
+            <Check size={13} strokeWidth={3} />
+            Επιλογή όλων
           </button>
         </div>
       )}
 
-      {/* Search + Stats + Expand controls */}
+      {/* Search + Expand controls */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="🔍 Αναζήτηση πάθησης..."
-          style={{ flex: 1, minWidth: 200, padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 13, fontFamily: 'inherit', outline: 'none', color: '#0F172A' }}
-        />
+        <div style={{ flex: 1, minWidth: 200, position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <Search size={15} color="#94a3b8" strokeWidth={2} style={{ position: 'absolute', left: 13, pointerEvents: 'none' }} />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Αναζήτηση πάθησης..."
+            style={{ width: '100%', padding: '10px 14px 10px 36px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 13, fontFamily: 'inherit', outline: 'none', color: '#0F172A', boxSizing: 'border-box' }}
+          />
+        </div>
         <div style={{ display: 'flex', gap: 6 }}>
           <button
             onClick={expandAll}
-            style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#475569', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+            style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#475569', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5 }}
           >
-            ⊕ Όλα
+            <ChevronsUpDown size={13} strokeWidth={2.2} />
+            Όλα
           </button>
           <button
             onClick={collapseAll}
-            style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#475569', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+            style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#475569', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5 }}
           >
-            ⊖ Σύμπτυξη
+            <ChevronsDownUp size={13} strokeWidth={2.2} />
+            Σύμπτυξη
           </button>
         </div>
       </div>
 
       {/* Counter */}
-      <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
         <span>
           <strong style={{ color: '#0F172A' }}>{selectedIds.size}</strong> παθήσεις επιλεγμένες
         </span>
@@ -300,7 +324,8 @@ export default function TherapistConditions({ userId, specialty }) {
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontSize: 18 }}>{cat.icon || '🏷️'}</span>
+                    {/* Category accent — colored bar instead of emoji */}
+                    <span style={{ width: 4, height: 20, borderRadius: 2, background: cat.color || '#2a6fdb', display: 'inline-block', flexShrink: 0 }} />
                     <span style={{ fontSize: 14, fontWeight: 700, color: cat.color || '#0F172A' }}>{cat.name_el}</span>
                     {selectedInCat > 0 && (
                       <span style={{ background: cat.color || '#1D4ED8', color: '#fff', padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700 }}>
@@ -309,7 +334,9 @@ export default function TherapistConditions({ userId, specialty }) {
                     )}
                   </div>
                   {!search && (
-                    <span style={{ fontSize: 14, color: cat.color || '#64748b' }}>{isExpanded ? '▲' : '▼'}</span>
+                    isExpanded
+                      ? <ChevronUp size={15} color={cat.color || '#64748b'} strokeWidth={2.2} />
+                      : <ChevronDown size={15} color={cat.color || '#64748b'} strokeWidth={2.2} />
                   )}
                 </button>
 
@@ -343,12 +370,14 @@ export default function TherapistConditions({ userId, specialty }) {
                             <div style={{ fontSize: 14, fontWeight: 600, color: '#0F172A', marginBottom: 2, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                               {c.name_el}
                               {isSuggested && (
-                                <span style={{ background: '#FEF3C7', color: '#92400E', padding: '1px 8px', borderRadius: 999, fontSize: 10, fontWeight: 700 }}>
-                                  ✨ Προτεινόμενο
+                                <span style={{ background: '#FEF3C7', color: '#92400E', padding: '1px 8px', borderRadius: 999, fontSize: 10, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                  <Sparkles size={10} strokeWidth={2.5} />
+                                  Προτεινόμενο
                                 </span>
                               )}
                               {c.is_popular && (
-                                <span style={{ background: '#EFF6FF', color: '#1D4ED8', padding: '1px 8px', borderRadius: 999, fontSize: 10, fontWeight: 700 }}>
+                                <span style={{ background: '#EFF6FF', color: '#1D4ED8', padding: '1px 8px', borderRadius: 999, fontSize: 10, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                  <Tag size={10} strokeWidth={2.5} />
                                   Δημοφιλές
                                 </span>
                               )}
@@ -382,13 +411,20 @@ export default function TherapistConditions({ userId, specialty }) {
                 color: savedMsg.type === 'success' ? '#15803D' : '#DC2626',
                 fontWeight: 600,
                 flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 7,
               }}
             >
+              {savedMsg.type === 'success'
+                ? <Check size={14} strokeWidth={3} style={{ flexShrink: 0 }} />
+                : <AlertCircle size={14} strokeWidth={2.5} style={{ flexShrink: 0 }} />}
               {savedMsg.text}
             </div>
           ) : (
-            <div style={{ fontSize: 13, color: '#64748B', flex: 1 }}>
-              📝 Έχετε αλλαγές χωρίς αποθήκευση
+            <div style={{ fontSize: 13, color: '#64748B', flex: 1, display: 'flex', alignItems: 'center', gap: 7 }}>
+              <FilePen size={14} strokeWidth={2} />
+              Έχετε αλλαγές χωρίς αποθήκευση
             </div>
           )}
           {hasChanges && (
@@ -407,9 +443,13 @@ export default function TherapistConditions({ userId, specialty }) {
                 fontFamily: 'inherit',
                 opacity: saving ? 0.7 : 1,
                 whiteSpace: 'nowrap',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 7,
               }}
             >
-              {saving ? 'Αποθήκευση...' : '💾 Αποθήκευση'}
+              <Save size={15} strokeWidth={2.2} />
+              {saving ? 'Αποθήκευση...' : 'Αποθήκευση'}
             </button>
           )}
         </div>
