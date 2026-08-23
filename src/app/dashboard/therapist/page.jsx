@@ -97,16 +97,24 @@ const TX = {
     statConfirmed: 'Επιβεβαιωμένες',
     statCompleted: 'Ολοκληρωμένες',
     statAvgRating: 'Μέση Βαθμολογία',
-    pendingEarnings: 'Σε εκκρεμότητα',
-    pendingEarningsSub: (n) => `${n} ${n === 1 ? 'συνεδρία αναμένει' : 'συνεδρίες αναμένουν'} απελευθέρωση`,
-    paidEarnings: 'Πληρωμένα',
-    paidEarningsSub: (n) => `${n} ${n === 1 ? 'συνεδρία έχει' : 'συνεδρίες έχουν'} εξοφληθεί`,
-    paymentInfo: 'Πληροφορίες Πληρωμής',
+    earningsUpcoming: 'Αναμενόμενα έσοδα',
+    earningsUpcomingSub: (n) => `${n} ${n === 1 ? 'επιβεβαιωμένη συνεδρία' : 'επιβεβαιωμένες συνεδρίες'}`,
+    earningsDone: 'Εισπραγμένα',
+    earningsDoneSub: (n) => `${n} ${n === 1 ? 'ολοκληρωμένη συνεδρία' : 'ολοκληρωμένες συνεδρίες'}`,
+    owedTitle: 'Οφειλές προς την πλατφόρμα',
+    owedSubscription: 'Μηνιαία συνδρομή:',
+    owedFirstSession: 'Τέλος νέου ασθενή:',
+    owedOpen: 'Ανεξόφλητα:',
+    owedNone: 'Δεν έχετε ανεξόφλητες οφειλές.',
+    paymentInfo: 'Πώς πληρώνεστε',
+    cashLine: 'Ο ασθενής σας πληρώνει',
+    cashLineB: 'απευθείας σε μετρητά',
+    cashLineC: 'μετά από κάθε συνεδρία. Η πλατφόρμα δεν κρατάει τίποτα από το ποσό της συνεδρίας.',
     yourPrice: 'Τιμή συνεδρίας σας:',
-    platformFee: 'Προμήθεια πλατφόρμας:',
-    perSessionShort: 'ανά συνεδρία',
-    netPerSession: 'Καθαρά έσοδα ανά συνεδρία (μεμονωμένη):',
-    packageNote: 'Σε πακέτα, τα καθαρά έσοδα μπορεί να είναι μικρότερα λόγω της έκπτωσης πακέτου.',
+    perMonthShort: '/μήνα',
+    perNewPatient: 'ανά νέο ασθενή',
+    feeExplain: 'Χρεώνεστε μία φορά για κάθε νέο ασθενή. Στις επόμενες συνεδρίες με τον ίδιο ασθενή δεν χρεώνεστε ξανά.',
+    noPlan: 'Χωρίς ενεργή συνδρομή',
     recentRequests: 'Πρόσφατα Αιτήματα',
     noRequestsYet: 'Δεν υπάρχουν αιτήματα ακόμα',
     sessionsWord: (n) => (n === 1 ? 'συνεδρία' : 'συνεδρίες'),
@@ -255,16 +263,24 @@ const TX = {
     statConfirmed: 'Confirmed',
     statCompleted: 'Completed',
     statAvgRating: 'Average Rating',
-    pendingEarnings: 'Pending',
-    pendingEarningsSub: (n) => `${n} ${n === 1 ? 'session is' : 'sessions are'} awaiting release`,
-    paidEarnings: 'Paid out',
-    paidEarningsSub: (n) => `${n} ${n === 1 ? 'session has' : 'sessions have'} been settled`,
-    paymentInfo: 'Payment Information',
+    earningsUpcoming: 'Expected earnings',
+    earningsUpcomingSub: (n) => `${n} confirmed ${n === 1 ? 'session' : 'sessions'}`,
+    earningsDone: 'Collected',
+    earningsDoneSub: (n) => `${n} completed ${n === 1 ? 'session' : 'sessions'}`,
+    owedTitle: 'Owed to the platform',
+    owedSubscription: 'Monthly subscription:',
+    owedFirstSession: 'New patient fee:',
+    owedOpen: 'Outstanding:',
+    owedNone: 'You have no outstanding charges.',
+    paymentInfo: 'How you get paid',
+    cashLine: 'Your patient pays you',
+    cashLineB: 'directly in cash',
+    cashLineC: 'after each session. The platform takes nothing from the session amount.',
     yourPrice: 'Your session price:',
-    platformFee: 'Platform commission:',
-    perSessionShort: 'per session',
-    netPerSession: 'Net earnings per session (single):',
-    packageNote: 'For packages, net earnings may be lower due to the package discount.',
+    perMonthShort: '/month',
+    perNewPatient: 'per new patient',
+    feeExplain: 'You are charged once per new patient. Follow-up sessions with the same patient are not charged again.',
+    noPlan: 'No active subscription',
     recentRequests: 'Recent Requests',
     noRequestsYet: 'No requests yet',
     sessionsWord: (n) => (n === 1 ? 'session' : 'sessions'),
@@ -627,6 +643,8 @@ export default function TherapistDashboard() {
   const [slots, setSlots] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [commission, setCommission] = useState(3);
+  const [subscription, setSubscription] = useState(null);
+  const [openCharges, setOpenCharges] = useState([]);
   const [activeTab, setActiveTab] = useState('appointments');
   const [loading, setLoading] = useState(true);
   const [editProfile, setEditProfile] = useState(false);
@@ -682,6 +700,25 @@ export default function TherapistDashboard() {
 
     const { data: comm } = await supabase.from('platform_settings').select('value').eq('key', 'commission').single();
     if (comm) setCommission(parseFloat(comm.value) || 3);
+
+    // Συνδρομή — για το ποσό μηνιαίας χρέωσης και το τέλος νέου ασθενή
+    const { data: sub } = await supabase
+      .from('therapist_subscriptions')
+      .select('*, subscription_plans(name_el, name_en, price_monthly, first_session_fee)')
+      .eq('therapist_id', user.id)
+      .in('status', ['trialing', 'active', 'past_due', 'exempt'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    setSubscription(sub || null);
+
+    // Ανεξόφλητες χρεώσεις προς την πλατφόρμα
+    const { data: charges } = await supabase
+      .from('payments')
+      .select('id, amount, status, paid, fee_type, created_at')
+      .eq('therapist_id', user.id)
+      .eq('paid', false);
+    setOpenCharges(charges || []);
 
     setLoading(false);
   }
@@ -984,10 +1021,36 @@ export default function TherapistDashboard() {
   const avgRating = reviews.length > 0 ? (reviews.reduce((s, r) => s + (r.rating || 0), 0) / reviews.length).toFixed(1) : '—';
   const pricePerSession = profile?.price_per_session || 0;
 
-  const heldBookings = allBookings.filter(b => b.payment_status === 'held');
-  const releasedBookings = allBookings.filter(b => b.payment_status === 'released');
-  const heldAmount = heldBookings.reduce((sum, b) => sum + parseFloat(b.net_to_therapist || 0), 0);
-  const releasedAmount = releasedBookings.reduce((sum, b) => sum + parseFloat(b.net_to_therapist || 0), 0);
+  // Το τέλος νέου ασθενή: το κλειδωμένο του θεραπευτή υπερισχύει του
+  // τρέχοντος fee του πλάνου — ό,τι συμφώνησε όταν έκανε εγγραφή.
+  const firstSessionFee = Number(
+    subscription?.first_session_fee_locked
+    ?? subscription?.subscription_plans?.first_session_fee
+    ?? 0
+  );
+
+  // ── ΕΣΟΔΑ ──────────────────────────────────────────────────────────
+  // Ο ασθενής πληρώνει ΜΕΤΡΗΤΑ απευθείας. Δεν υπάρχει escrow, άρα δεν
+  // υπάρχει «απελευθέρωση». Ο διαχωρισμός είναι χρονικός:
+  //   αναμενόμενα  = επιβεβαιωμένες συνεδρίες που δεν έγιναν ακόμα
+  //   εισπραγμένα  = ολοκληρωμένες
+  const sumAmount = (arr) =>
+    arr.reduce((s, b) => s + (parseFloat(b.net_to_therapist ?? b.session_amount ?? 0) || 0), 0);
+
+  const upcomingPaidBookings = allBookings.filter(b => {
+    if (isCancelled(b.status) || b.status === 'completed') return false;
+    return b.status === 'confirmed';
+  });
+  const completedBookings = allBookings.filter(b => b.status === 'completed');
+
+  const upcomingEarnings = sumAmount(upcomingPaidBookings);
+  const collectedEarnings = sumAmount(completedBookings);
+
+  // ── ΟΦΕΙΛΕΣ ΠΡΟΣ ΤΗΝ ΠΛΑΤΦΟΡΜΑ ────────────────────────────────────
+  // Ανεξόφλητες γραμμές στο payments: τέλη νέου ασθενή που χρωστάει
+  // ο θεραπευτής. ΔΕΝ αφαιρούνται από τα έσοδα των συνεδριών —
+  // είναι ξεχωριστή υποχρέωση.
+  const owedTotal = openCharges.reduce((s, p) => s + (parseFloat(p.amount) || 0), 0);
 
   function getNetAmount(request) {
     return (request.bookings || []).reduce((sum, b) => sum + parseFloat(b.net_to_therapist || 0), 0);
@@ -1486,37 +1549,86 @@ export default function TherapistDashboard() {
               ))}
             </div>
 
+            {/* ΕΣΟΔΑ — μετρητά απευθείας από τον ασθενή.
+                Δεν υπάρχει escrow, άρα ούτε «σε εκκρεμότητα» /
+                «απελευθέρωση». Ο διαχωρισμός είναι:
+                αναμενόμενα (επιβεβαιωμένες) vs εισπραγμένα (έγιναν). */}
             <div style={{ display: 'flex', gap: 14, marginBottom: 24, flexWrap: 'wrap' }}>
-              <div style={{ flex: 1, minWidth: 200, background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 14, padding: '20px 22px' }}>
+              <div style={{ flex: 1, minWidth: 200, background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 14, padding: '20px 22px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                  <Hourglass size={16} color="#B45309" />
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#B45309', textTransform: 'uppercase', letterSpacing: '.05em' }}>{tx.pendingEarnings}</div>
+                  <Calendar size={16} color="#1D4ED8" />
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#1D4ED8', textTransform: 'uppercase', letterSpacing: '.05em' }}>{tx.earningsUpcoming}</div>
                 </div>
-                <div style={{ fontSize: 30, fontWeight: 700, color: '#B45309' }}>{heldAmount.toFixed(2)}€</div>
-                <div style={{ fontSize: 12, color: '#92400E', marginTop: 4 }}>{tx.pendingEarningsSub(heldBookings.length)}</div>
+                <div style={{ fontSize: 30, fontWeight: 700, color: '#1D4ED8' }}>{upcomingEarnings.toFixed(2)}€</div>
+                <div style={{ fontSize: 12, color: '#1E40AF', marginTop: 4 }}>{tx.earningsUpcomingSub(upcomingPaidBookings.length)}</div>
               </div>
               <div style={{ flex: 1, minWidth: 200, background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 14, padding: '20px 22px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                   <Wallet size={16} color="#15803D" />
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#15803D', textTransform: 'uppercase', letterSpacing: '.05em' }}>{tx.paidEarnings}</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#15803D', textTransform: 'uppercase', letterSpacing: '.05em' }}>{tx.earningsDone}</div>
                 </div>
-                <div style={{ fontSize: 30, fontWeight: 700, color: '#15803D' }}>{releasedAmount.toFixed(2)}€</div>
-                <div style={{ fontSize: 12, color: '#15803D', marginTop: 4 }}>{tx.paidEarningsSub(releasedBookings.length)}</div>
+                <div style={{ fontSize: 30, fontWeight: 700, color: '#15803D' }}>{collectedEarnings.toFixed(2)}€</div>
+                <div style={{ fontSize: 12, color: '#15803D', marginTop: 4 }}>{tx.earningsDoneSub(completedBookings.length)}</div>
+              </div>
+              <div style={{ flex: 1, minWidth: 200, background: owedTotal > 0 ? '#FFFBEB' : '#F8FAFC', border: `1px solid ${owedTotal > 0 ? '#FDE68A' : '#E2E8F0'}`, borderRadius: 14, padding: '20px 22px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <CreditCard size={16} color={owedTotal > 0 ? '#B45309' : '#64748B'} />
+                  <div style={{ fontSize: 11, fontWeight: 700, color: owedTotal > 0 ? '#B45309' : '#64748B', textTransform: 'uppercase', letterSpacing: '.05em' }}>{tx.owedTitle}</div>
+                </div>
+                <div style={{ fontSize: 30, fontWeight: 700, color: owedTotal > 0 ? '#B45309' : '#64748B' }}>{owedTotal.toFixed(2)}€</div>
+                <div style={{ fontSize: 12, color: owedTotal > 0 ? '#92400E' : '#94A3B8', marginTop: 4 }}>
+                  {owedTotal > 0 ? tx.owedOpen.replace(':', '') : tx.owedNone}
+                </div>
               </div>
             </div>
 
-            <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 14, padding: '20px 24px', marginBottom: 20 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#1D4ED8', marginBottom: 8, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <CreditCard size={16} />
+            {/* ΠΩΣ ΠΛΗΡΩΝΕΣΤΕ — το παλιό πάνελ έλεγε «προμήθεια 3€ ανά
+                συνεδρία», που ΔΕΝ ισχύει. Ο ασθενής πληρώνει μετρητά,
+                ο θεραπευτής κρατάει ΟΛΟ το ποσό. Η πλατφόρμα χρεώνει
+                ξεχωριστά συνδρομή + τέλος νέου ασθενή. */}
+            <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 14, padding: '20px 24px', marginBottom: 14 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#15803D', marginBottom: 10, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                <Wallet size={16} />
                 {tx.paymentInfo}
               </div>
-              <div style={{ fontSize: 13, color: '#1E40AF', lineHeight: 1.7 }}>
-                {tx.yourPrice} <strong>{pricePerSession}€</strong><br />
-                {tx.platformFee} <strong>{commission}€ {tx.perSessionShort}</strong><br />
-                {tx.netPerSession} <strong>{Math.max(0, pricePerSession - commission)}€</strong>
-                <div style={{ marginTop: 8, fontSize: 12, color: '#475569', fontStyle: 'italic' }}>
-                  {tx.packageNote}
+              <div style={{ fontSize: 13, color: '#166534', lineHeight: 1.7 }}>
+                {tx.cashLine} <strong>{tx.cashLineB}</strong> {tx.cashLineC}
+                <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #BBF7D0' }}>
+                  {tx.yourPrice} <strong style={{ fontSize: 16 }}>{pricePerSession}€</strong>
                 </div>
+              </div>
+            </div>
+
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 14, padding: '20px 24px', marginBottom: 20 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                <CreditCard size={16} color="#64748B" />
+                {tx.owedTitle}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 9, fontSize: 13 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                  <span style={{ color: '#64748B' }}>{tx.owedSubscription}</span>
+                  <strong style={{ color: '#0F172A' }}>
+                    {subscription
+                      ? (Number(subscription.price_locked) > 0
+                          ? `${Number(subscription.price_locked).toFixed(2)}€${tx.perMonthShort}`
+                          : '0€')
+                      : tx.noPlan}
+                  </strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                  <span style={{ color: '#64748B' }}>{tx.owedFirstSession}</span>
+                  <strong style={{ color: '#0F172A' }}>
+                    {firstSessionFee.toFixed(2)}€ <span style={{ fontWeight: 400, color: '#94A3B8' }}>{tx.perNewPatient}</span>
+                  </strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, paddingTop: 9, borderTop: '1px solid #f1f5f9' }}>
+                  <span style={{ color: '#64748B' }}>{tx.owedOpen}</span>
+                  <strong style={{ color: owedTotal > 0 ? '#B45309' : '#15803D', fontSize: 15 }}>{owedTotal.toFixed(2)}€</strong>
+                </div>
+              </div>
+              <div style={{ marginTop: 12, fontSize: 11.5, color: '#94A3B8', lineHeight: 1.6, display: 'flex', gap: 7, alignItems: 'flex-start' }}>
+                <Lightbulb size={13} strokeWidth={2.2} style={{ marginTop: 1, flexShrink: 0 }} />
+                <span>{tx.feeExplain}</span>
               </div>
             </div>
 
