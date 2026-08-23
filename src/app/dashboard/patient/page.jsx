@@ -255,6 +255,12 @@ const TX = {
   },
 };
 
+// Το status ΔΕΝ έχει ποτέ σκέτο 'cancelled'. Το check constraint της βάσης
+// επιτρέπει μόνο: cancelled_by_therapist | cancelled_by_patient |
+// cancelled_by_admin. Έλεγχος με === 'cancelled' δεν ταιριάζει ΠΟΤΕ —
+// γι' αυτό ακυρωμένα ραντεβού εμφανίζονταν ως ενεργά.
+const isCancelled = (s) => String(s || '').startsWith('cancelled');
+
 function Avatar({ name, size = 44 }) {
   return (
     <div style={{ width: size, height: size, borderRadius: '50%', background: 'linear-gradient(135deg,#2a6fdb,#1a2e44)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.35, fontWeight: 700, flexShrink: 0 }}>
@@ -346,7 +352,10 @@ export default function PatientDashboard() {
   }
 
   function statusLabel(map, key, fallbackKey = 'pending') {
-    const entry = map[key] || map[fallbackKey];
+    // Χαρτογράφηση των cancelled_by_* στο ενιαίο 'cancelled' του map,
+    // αλλιώς πέφτουν στο fallback και δείχνουν «Εκκρεμές».
+    const k = isCancelled(key) ? 'cancelled' : key;
+    const entry = map[k] || map[fallbackKey];
     return { ...entry, label: entry[lang] || entry.el };
   }
 
@@ -471,7 +480,7 @@ export default function PatientDashboard() {
   const now = new Date();
 
   const upcomingAppointments = sortedAppointments.filter(a => {
-    if (a.status === 'cancelled') return false;
+    if (isCancelled(a.status)) return false;
     const d = new Date(a.session_date + 'T' + (a.session_time || '00:00'));
     return d >= now || a.payment_status === 'held';
   });
@@ -592,7 +601,7 @@ export default function PatientDashboard() {
   const confirmedCount = sessionRequests.filter(r => r.status === 'confirmed' || r.status === 'accepted').length;
   const completedCount = sessionRequests.filter(r =>
     r.bookings.length > 0 &&
-    r.bookings.every(b => b.status === 'completed' || b.status === 'cancelled') &&
+    r.bookings.every(b => b.status === 'completed' || isCancelled(b.status)) &&
     r.bookings.some(b => b.status === 'completed')
   ).length;
 
@@ -900,7 +909,7 @@ export default function PatientDashboard() {
                                     <Badge label={payInfo.label} bg={payInfo.bg} color={payInfo.color} icon={payInfo.icon} />
                                   )}
 
-                                  {apt.status !== 'completed' && !String(apt.status).startsWith('cancelled') && (
+                                  {apt.status !== 'completed' && !isCancelled(apt.status) && (
                                     <button
                                       onClick={() => setCancelBookingId(apt.id)}
                                       style={{
@@ -1036,8 +1045,8 @@ export default function PatientDashboard() {
                         {dayApts.slice(0, 2).map((a, i) => (
                           <div key={i} style={{
                             fontSize: 10,
-                            background: a.status === 'cancelled' ? '#FEE2E2' : a.status === 'completed' ? '#EDE9FE' : '#DBEAFE',
-                            color: a.status === 'cancelled' ? '#9F1239' : a.status === 'completed' ? '#5B21B6' : '#1D4ED8',
+                            background: isCancelled(a.status) ? '#FEE2E2' : a.status === 'completed' ? '#EDE9FE' : '#DBEAFE',
+                            color: isCancelled(a.status) ? '#9F1239' : a.status === 'completed' ? '#5B21B6' : '#1D4ED8',
                             padding: '2px 5px', borderRadius: 4, marginBottom: 2, fontWeight: 600,
                             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                           }}>
