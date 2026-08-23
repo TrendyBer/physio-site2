@@ -5,7 +5,8 @@ import CancelBookingModal from '@/components/CancelBookingModal';
 import { useRouter } from 'next/navigation';
 import { useLang } from '@/context/LanguageContext';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
-import { ClipboardList, Stethoscope, User, MapPin, Euro, Calendar, Star, Check, ArrowRight, Save, X, Hourglass, Wallet, AlertCircle, CheckCircle2, CalendarDays, List, ChevronLeft, ChevronRight, Clock, XCircle, Globe } from 'lucide-react';
+import RescheduleModal from '@/components/RescheduleModal';
+import { ClipboardList, Stethoscope, User, MapPin, Euro, Calendar, Star, Check, ArrowRight, Save, X, Hourglass, Wallet, AlertCircle, CheckCircle2, CalendarDays, List, ChevronLeft, ChevronRight, Clock, XCircle, Globe, CalendarClock } from 'lucide-react';
 
 // ─── Locale data ──────────────────────────────────────────────────────
 const LOCALE = { el: 'el-GR', en: 'en-US' };
@@ -89,6 +90,11 @@ const TX = {
     at: 'στις',
     awaitingTherapist: 'Αναμονή επιβεβαίωσης από τον θεραπευτή',
     cancelAppointment: 'Ακύρωση ραντεβού',
+    reschedule: 'Αλλαγή ώρας',
+    reschedulePending: 'Εκκρεμεί πρόταση αλλαγής',
+    reschedulePendingYours: 'Στείλατε πρόταση αλλαγής',
+    rescheduleReview: 'Δείτε την πρόταση',
+    rescheduleTo: (d) => `Προτεινόμενη νέα ώρα: ${d}`,
     cancel: 'Ακύρωση',
     noAppointments: 'Δεν έχετε ραντεβού ακόμα',
     bookFirst: 'Κλείστε το πρώτο σας ραντεβού',
@@ -190,6 +196,11 @@ const TX = {
     at: 'at',
     awaitingTherapist: 'Awaiting confirmation from your therapist',
     cancelAppointment: 'Cancel appointment',
+    reschedule: 'Change time',
+    reschedulePending: 'Reschedule proposal pending',
+    reschedulePendingYours: 'You sent a reschedule proposal',
+    rescheduleReview: 'Review the proposal',
+    rescheduleTo: (d) => `Proposed new time: ${d}`,
     cancel: 'Cancel',
     noAppointments: "You don't have any appointments yet",
     bookFirst: 'Book your first appointment',
@@ -372,6 +383,8 @@ export default function PatientDashboard() {
   }
 
   const [cancelBookingId, setCancelBookingId] = useState(null);
+  const [rescheduleTarget, setRescheduleTarget] = useState(null);
+  const [reschedules, setReschedules] = useState([]);
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [sessionRequests, setSessionRequests] = useState([]);
@@ -454,6 +467,19 @@ export default function PatientDashboard() {
       .order('session_date', { ascending: true });
 
     const bookingIds = (bks || []).map(b => b.id);
+
+    // Εκκρεμείς προτάσεις αλλαγής ώρας
+    let rescheduleRows = [];
+    if (bookingIds.length > 0) {
+      const { data: rs } = await supabase
+        .from('reschedule_requests')
+        .select('*')
+        .in('booking_id', bookingIds)
+        .eq('status', 'pending');
+      rescheduleRows = rs || [];
+    }
+    setReschedules(rescheduleRows);
+
     let reviews = [];
     if (bookingIds.length > 0) {
       const { data: rvs } = await supabase
@@ -478,6 +504,10 @@ export default function PatientDashboard() {
 
     setSessionRequests(combined);
   }
+
+  // Εκκρεμής πρόταση αλλαγής για συγκεκριμένο ραντεβού
+  const pendingReschedule = (bookingId) =>
+    reschedules.find(r => r.booking_id === bookingId && r.status === 'pending') || null;
 
   const allAppointments = sessionRequests.flatMap(req =>
     req.bookings.map(b => ({ ...b, request: req, therapist: req.therapist }))
@@ -832,18 +862,59 @@ export default function PatientDashboard() {
                   )}
 
                   <div style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.2)' }}>
-                    <button
-                      onClick={() => setCancelBookingId(nextAppointment.id)}
-                      style={{
-                        background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.3)',
-                        color: 'rgba(255,255,255,0.9)', padding: '9px 20px', borderRadius: 30,
-                        fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-                        display: 'inline-flex', alignItems: 'center', gap: 6,
-                      }}
-                    >
-                      <XCircle size={14} />
-                      {tx.cancelAppointment}
-                    </button>
+                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                      {(() => {
+                        const rr = pendingReschedule(nextAppointment.id);
+                        if (rr) {
+                          // Ο χρήστης απαντά μόνο σε πρόταση του άλλου
+                          const isMine = rr.requested_by_role === 'patient';
+                          return (
+                            <button
+                              onClick={() => !isMine && setRescheduleTarget({ booking: nextAppointment, reschedule: rr, mode: 'respond' })}
+                              style={{
+                                background: isMine ? 'rgba(255,255,255,0.10)' : '#fff',
+                                border: '1px solid rgba(255,255,255,0.35)',
+                                color: isMine ? 'rgba(255,255,255,0.85)' : '#1a2e44',
+                                padding: '9px 20px', borderRadius: 30,
+                                fontSize: 13, fontWeight: 600,
+                                cursor: isMine ? 'default' : 'pointer', fontFamily: 'inherit',
+                                display: 'inline-flex', alignItems: 'center', gap: 6,
+                              }}
+                            >
+                              <CalendarClock size={14} />
+                              {isMine ? tx.reschedulePendingYours : tx.rescheduleReview}
+                            </button>
+                          );
+                        }
+                        return (
+                          <button
+                            onClick={() => setRescheduleTarget({ booking: nextAppointment, mode: 'propose' })}
+                            style={{
+                              background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.3)',
+                              color: 'rgba(255,255,255,0.9)', padding: '9px 20px', borderRadius: 30,
+                              fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                              display: 'inline-flex', alignItems: 'center', gap: 6,
+                            }}
+                          >
+                            <CalendarClock size={14} />
+                            {tx.reschedule}
+                          </button>
+                        );
+                      })()}
+
+                      <button
+                        onClick={() => setCancelBookingId(nextAppointment.id)}
+                        style={{
+                          background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.3)',
+                          color: 'rgba(255,255,255,0.9)', padding: '9px 20px', borderRadius: 30,
+                          fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                        }}
+                      >
+                        <XCircle size={14} />
+                        {tx.cancelAppointment}
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
@@ -926,20 +997,55 @@ export default function PatientDashboard() {
                                     <Badge label={payInfo.label} bg={payInfo.bg} color={payInfo.color} icon={payInfo.icon} />
                                   )}
 
-                                  {apt.status !== 'completed' && !isCancelled(apt.status) && (
-                                    <button
-                                      onClick={() => setCancelBookingId(apt.id)}
-                                      style={{
-                                        marginLeft: 'auto', background: 'transparent', border: '1px solid #e2e8f0',
-                                        color: '#64748B', padding: '5px 14px', borderRadius: 30, fontSize: 12.5,
-                                        fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-                                        display: 'inline-flex', alignItems: 'center', gap: 5,
-                                      }}
-                                    >
-                                      <XCircle size={13} />
-                                      {tx.cancel}
-                                    </button>
-                                  )}
+                                  {apt.status !== 'completed' && !isCancelled(apt.status) && (() => {
+                                    const rr = pendingReschedule(apt.id);
+                                    const isMine = rr?.requested_by_role === 'patient';
+                                    return (
+                                      <div style={{ marginLeft: 'auto', display: 'flex', gap: 7 }}>
+                                        {rr ? (
+                                          <button
+                                            onClick={() => !isMine && setRescheduleTarget({ booking: apt, reschedule: rr, mode: 'respond' })}
+                                            style={{
+                                              background: isMine ? '#f8fafc' : '#EFF6FF',
+                                              border: `1px solid ${isMine ? '#e2e8f0' : '#BFDBFE'}`,
+                                              color: isMine ? '#94a3b8' : '#1D4ED8',
+                                              padding: '5px 14px', borderRadius: 30, fontSize: 12.5,
+                                              fontWeight: 600, cursor: isMine ? 'default' : 'pointer', fontFamily: 'inherit',
+                                              display: 'inline-flex', alignItems: 'center', gap: 5,
+                                            }}
+                                          >
+                                            <CalendarClock size={13} />
+                                            {isMine ? tx.reschedulePendingYours : tx.rescheduleReview}
+                                          </button>
+                                        ) : (
+                                          <button
+                                            onClick={() => setRescheduleTarget({ booking: apt, mode: 'propose' })}
+                                            style={{
+                                              background: 'transparent', border: '1px solid #e2e8f0',
+                                              color: '#64748B', padding: '5px 14px', borderRadius: 30, fontSize: 12.5,
+                                              fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                                              display: 'inline-flex', alignItems: 'center', gap: 5,
+                                            }}
+                                          >
+                                            <CalendarClock size={13} />
+                                            {tx.reschedule}
+                                          </button>
+                                        )}
+                                        <button
+                                          onClick={() => setCancelBookingId(apt.id)}
+                                          style={{
+                                            background: 'transparent', border: '1px solid #e2e8f0',
+                                            color: '#64748B', padding: '5px 14px', borderRadius: 30, fontSize: 12.5,
+                                            fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                                            display: 'inline-flex', alignItems: 'center', gap: 5,
+                                          }}
+                                        >
+                                          <XCircle size={13} />
+                                          {tx.cancel}
+                                        </button>
+                                      </div>
+                                    );
+                                  })()}
                                 </div>
                               </div>
                             </div>
@@ -1534,6 +1640,23 @@ export default function PatientDashboard() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal αλλαγής ώρας */}
+      {rescheduleTarget && (
+        <RescheduleModal
+          booking={{
+            id: rescheduleTarget.booking.id,
+            therapist_id: rescheduleTarget.booking.therapist_id || rescheduleTarget.booking.request?.therapist_id,
+            session_date: rescheduleTarget.booking.session_date,
+            session_time: rescheduleTarget.booking.session_time,
+          }}
+          reschedule={rescheduleTarget.reschedule}
+          mode={rescheduleTarget.mode}
+          lang={lang}
+          onClose={() => setRescheduleTarget(null)}
+          onDone={() => { setRescheduleTarget(null); init(); }}
+        />
       )}
 
       {/* Modal ακύρωσης */}
