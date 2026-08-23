@@ -406,44 +406,59 @@ export default function NewRequestPage() {
         .eq('id', user.id);
     }
 
-    const { data: req, error: reqErr } = await supabase
-      .from('session_requests')
-      .insert([{
-        patient_id: user.id,
-        therapist_id: selectedTherapist.id,
-        problem_type: problemType,
-        condition_id: condition?.id || null,
-        problem_description: problemDesc,
-        address, area, postal_code: postalCode,
-        floor_info: floorInfo, notes,
-        session_type: selectedPackage.isSingle ? 'single' : 'package',
-        package_size: selectedPackage.sessions,
-        total_cost: totalCost,
-        status: 'pending',
-        type: 'booking',
-      }])
-      .select().single();
+    // ── ΑΤΟΜΙΚΗ ΚΡΑΤΗΣΗ ────────────────────────────────────────────────
+    // Τα πάντα σε ΕΝΑ transaction στη βάση: κλείδωμα γραμμών, έλεγχος
+    // διαθεσιμότητας, δημιουργία αιτήματος, κρατήσεις, block slots.
+    //
+    // Δεν γίνεται από εδώ με ξεχωριστά inserts, για δύο λόγους:
+    //   1. Το RLS δεν επιτρέπει στον ασθενή να κλειδώσει slot του
+    //      θεραπευτή — το update αποτύγχανε ΣΙΩΠΗΛΑ.
+    //   2. Δύο ασθενείς που βλέπουν το ίδιο ελεύθερο slot θα το
+    //      έκλειναν και οι δύο. Το FOR UPDATE στη βάση το αποτρέπει.
+    const { data: result, error: bookErr } = await supabase.rpc('book_session_slots', {
+      p_therapist_id:        selectedTherapist.id,
+      p_slot_ids:            selectedSlots.map(s => s.id),
+      p_problem_type:        problemType,
+      p_condition_id:        condition?.id || null,
+      p_problem_description: problemDesc,
+      p_address:             address,
+      p_area:                area,
+      p_postal_code:         postalCode,
+      p_floor_info:          floorInfo,
+      p_notes:               notes,
+      p_session_type:        selectedPackage.isSingle ? 'single' : 'package',
+      p_package_size:        selectedPackage.sessions,
+      p_total_cost:          totalCost,
+    });
 
-    if (reqErr) { setError('Σφάλμα: ' + reqErr.message); setSubmitting(false); return; }
+    if (bookErr) {
+      setError('Σφάλμα: ' + bookErr.message);
+      setSubmitting(false);
+      return;
+    }
 
-    // payment_method = 'cash': ο ασθενής πληρώνει ΑΠΕΥΘΕΙΑΣ τον θεραπευτή.
-    // Η πλατφόρμα δεν κρατάει και δεν αποδίδει χρήματα συνεδριών.
-    const bookings = selectedSlots.map(slot => ({
-      request_id: req.id,
-      patient_id: user.id,
-      therapist_id: selectedTherapist.id,
-      slot_id: slot.id,
-      session_date: slot.date,
-      session_time: slot.start_time,
-      status: 'pending',
-      payment_method: 'cash',
-    }));
+    if (!result?.ok) {
+      if (result?.error === 'slots_taken') {
+        const list = (result.conflicts || []).join(', ');
+        setError(
+          list
+            ? `Οι ώρες ${list} μόλις κλείστηκαν από άλλον ασθενή. Επιλέξτε άλλες.`
+            : 'Κάποιες από τις ώρες μόλις κλείστηκαν. Επιλέξτε άλλες.'
+        );
+        // Γυρνάμε στο ημερολόγιο με φρέσκα δεδομένα
+        setSelectedSlots([]);
+        setStep(4);
+        await fetchSlots();
+      } else if (result?.error === 'not_authenticated') {
+        setError('Η σύνδεσή σας έληξε. Παρακαλώ συνδεθείτε ξανά.');
+      } else {
+        setError('Δεν ήταν δυνατή η κράτηση. Δοκιμάστε ξανά.');
+      }
+      setSubmitting(false);
+      return;
+    }
 
-    await supabase.from('session_bookings').insert(bookings);
-
-    await supabase.from('availability_slots')
-      .update({ is_blocked: true })
-      .in('id', selectedSlots.map(s => s.id));
+    const requestId = result.request_id;
 
     // ── ΠΡΟΜΗΘΕΙΑ ΠΛΑΤΦΟΡΜΑΣ ────────────────────────────────────────────
     // Ξαναρωτάμε τη βάση τη στιγμή της υποβολής. Το ποσό που είδαμε όταν
@@ -473,7 +488,7 @@ export default function NewRequestPage() {
       // της πλατφόρμας είναι το fee, που χρωστάει ο ΘΕΡΑΠΕΥΤΗΣ.
       if (fee > 0) {
         await supabase.from('payments').insert([{
-          request_id: req.id,
+          request_id: requestId,
           therapist_id: selectedTherapist.id,
           amount: fee,
           patient_amount: totalCost,
