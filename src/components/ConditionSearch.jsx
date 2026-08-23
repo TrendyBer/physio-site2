@@ -28,6 +28,7 @@ const TX = {
     noMatches: 'Δεν βρέθηκαν παθήσεις. Δοκιμάστε διαφορετικούς όρους.',
     clear: 'Καθαρισμός',
     selected: 'Επιλέχθηκε',
+    loading: 'Φόρτωση...',
   },
   en: {
     placeholder: 'Describe your problem... (e.g. back pain, neck stiffness)',
@@ -36,6 +37,7 @@ const TX = {
     noMatches: 'No conditions found. Try different terms.',
     clear: 'Clear',
     selected: 'Selected',
+    loading: 'Loading...',
   },
 };
 
@@ -205,13 +207,14 @@ export default function ConditionSearch({
           <button
             onClick={handleClear}
             type="button"
+            aria-label={tx.clear}
+            title={tx.clear}
             style={{
               background: '#fff',
               border: '1px solid #BFDBFE',
               borderRadius: 999,
               width: 26,
               height: 26,
-              fontSize: 14,
               cursor: 'pointer',
               color: '#1D4ED8',
               display: 'flex',
@@ -219,10 +222,11 @@ export default function ConditionSearch({
               justifyContent: 'center',
               flexShrink: 0,
               fontFamily: 'inherit',
+              padding: 0,
+              lineHeight: 0,
             }}
-            title={tx.clear}
           >
-            
+            <X size={14} strokeWidth={2.5} />
           </button>
         </div>
       ) : (
@@ -270,7 +274,7 @@ export default function ConditionSearch({
           }}
         >
           {loading ? (
-            <div style={{ padding: 16, fontSize: 13, color: '#94a3b8', textAlign: 'center' }}>...</div>
+            <div style={{ padding: 16, fontSize: 13, color: '#94a3b8', textAlign: 'center' }}>{tx.loading}</div>
           ) : matches.length === 0 ? (
             <div style={{ padding: 16, fontSize: 13, color: '#94a3b8', textAlign: 'center' }}>{tx.noMatches}</div>
           ) : (
@@ -302,7 +306,8 @@ export default function ConditionSearch({
       {/* Popular chips */}
       {showChips && !value && popularConditions.length > 0 && !query.trim() && (
         <div style={{ marginTop: 12 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 8 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
+            <Search size={11} strokeWidth={2.5} />
             {tx.popular}
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
