@@ -372,6 +372,12 @@ const TX = {
   },
 };
 
+// Το status ΔΕΝ έχει ποτέ σκέτο 'cancelled'. Το check constraint της βάσης
+// επιτρέπει μόνο: cancelled_by_therapist | cancelled_by_patient |
+// cancelled_by_admin. Έλεγχος με === 'cancelled' δεν ταιριάζει ΠΟΤΕ —
+// γι' αυτό ακυρωμένα ραντεβού εμφανίζονταν ως ενεργά.
+const isCancelled = (s) => String(s || '').startsWith('cancelled');
+
 function Avatar({ name, photoUrl, size = 48 }) {
   if (photoUrl) return <img src={photoUrl} alt={name} style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />;
   return (
@@ -621,7 +627,10 @@ export default function TherapistDashboard() {
   }
 
   function statusLabel(map, key, fallbackKey = 'pending') {
-    const entry = map[key] || map[fallbackKey];
+    // Χαρτογράφηση των cancelled_by_* στο ενιαίο 'cancelled' του map,
+    // αλλιώς πέφτουν στο fallback και δείχνουν «Εκκρεμές».
+    const k = isCancelled(key) ? 'cancelled' : key;
+    const entry = map[k] || map[fallbackKey];
     return { ...entry, label: entry[lang] || entry.el };
   }
 
@@ -1007,7 +1016,7 @@ export default function TherapistDashboard() {
   const now = new Date();
 
   const upcomingAppointments = sortedAppointments.filter(a => {
-    if (a.status === 'cancelled') return false;
+    if (isCancelled(a.status)) return false;
     const d = new Date(a.session_date + 'T' + (a.session_time || '00:00'));
     return d >= now || a.payment_status === 'held';
   });
@@ -1449,8 +1458,8 @@ export default function TherapistDashboard() {
                         {dayApts.slice(0, 2).map((a, i) => (
                           <div key={i} style={{
                             fontSize: 10,
-                            background: a.status === 'cancelled' ? '#FEE2E2' : a.status === 'completed' ? '#EDE9FE' : '#DBEAFE',
-                            color: a.status === 'cancelled' ? '#9F1239' : a.status === 'completed' ? '#5B21B6' : '#1D4ED8',
+                            background: isCancelled(a.status) ? '#FEE2E2' : a.status === 'completed' ? '#EDE9FE' : '#DBEAFE',
+                            color: isCancelled(a.status) ? '#9F1239' : a.status === 'completed' ? '#5B21B6' : '#1D4ED8',
                             padding: '2px 5px', borderRadius: 4, marginBottom: 2, fontWeight: 600,
                             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                           }}>
