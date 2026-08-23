@@ -1,10 +1,11 @@
 import { supabase } from '@/lib/supabase';
 import Navbar from '../../../components/Navbar';
 import Footer from '../../../components/Footer';
+import LangSync from '../../../components/LangSync';
 import RatingDisplay from '../../../components/RatingDisplay';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Globe, Lightbulb, ClipboardList, Stethoscope, Search, MapPin, Euro, Link2, Check, ArrowRight } from 'lucide-react';
+import { Lightbulb, ClipboardList, Stethoscope, Search, MapPin, Euro, Link2, Check, ArrowRight } from 'lucide-react';
 
 export const revalidate = 3600; // ISR: 1 ώρα
 
@@ -69,7 +70,7 @@ export async function generateMetadata({ params, searchParams }) {
 
 const TX = {
   el: {
-    backToHelp: '← Όλες οι παθήσεις',
+    backToHelp: 'Όλες οι παθήσεις',
     aboutTitle: 'Πώς βοηθά η φυσιοθεραπεία',
     symptomsTitle: 'Συχνά συμπτώματα',
     therapistsTitle: 'Εξειδικευμένοι Θεραπευτές',
@@ -84,11 +85,10 @@ const TX = {
     ctaDesc: 'Συμπλήρωσε ένα γρήγορο αίτημα και θα σου βρούμε τον κατάλληλο θεραπευτή.',
     ctaBtn: 'Νέο Αίτημα',
     relatedTitle: 'Σχετικές παθήσεις',
-    switchLang: 'EN',
     perSession: 'συνεδρία',
   },
   en: {
-    backToHelp: '← All conditions',
+    backToHelp: 'All conditions',
     aboutTitle: 'How physiotherapy helps',
     symptomsTitle: 'Common symptoms',
     therapistsTitle: 'Specialized Therapists',
@@ -103,7 +103,6 @@ const TX = {
     ctaDesc: 'Submit a quick request and we will match you with the right therapist.',
     ctaBtn: 'New Request',
     relatedTitle: 'Related conditions',
-    switchLang: 'ΕΛ',
     perSession: 'session',
   },
 };
@@ -141,10 +140,15 @@ export default async function ConditionDetailPage({ params, searchParams }) {
     .limit(5);
 
   // Fetch therapists
+  // ΠΡΟΣΟΧΗ: το is_profile_complete είναι ΣΚΛΗΡΗ πύλη — θεραπευτές με
+  // ημιτελές προφίλ δεν εμφανίζονται πουθενά δημόσια. Το ίδιο φίλτρο
+  // υπάρχει και στο /find-help· χωρίς αυτό οι δύο σελίδες θα έδειχναν
+  // διαφορετικούς θεραπευτές για την ίδια πάθηση.
   const { data: therapists } = await supabase
     .from('therapist_profiles')
     .select('*')
-    .eq('is_approved', true);
+    .eq('is_approved', true)
+    .eq('is_profile_complete', true);
 
   const { data: tcData } = await supabase
     .from('therapist_conditions')
@@ -223,6 +227,10 @@ export default async function ConditionDetailPage({ params, searchParams }) {
   return (
     <>
       <Navbar />
+
+      {/* Ακούει τον switcher του header και ενημερώνει το ?lang= στο URL */}
+      <LangSync urlLang={lang} />
+
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
       <style>{`
@@ -251,20 +259,14 @@ export default async function ConditionDetailPage({ params, searchParams }) {
         }}
       >
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          {/* Breadcrumbs + lang switcher */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 10 }}>
+          {/* Breadcrumb */}
+          <div style={{ marginBottom: 24 }}>
             <Link
               href={`/find-help${langSuffix}`}
-              style={{ fontSize: 13, color: '#64748b', textDecoration: 'none', fontWeight: 600 }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#64748b', textDecoration: 'none', fontWeight: 600 }}
             >
+              <ArrowRight size={13} style={{ transform: 'rotate(180deg)' }} />
               {tx.backToHelp}
-            </Link>
-            <Link
-              href={lang === 'el' ? `/find-help/${slug}?lang=en` : `/find-help/${slug}`}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: '#fff', border: '1px solid #BFDBFE', borderRadius: 999, fontSize: 12, fontWeight: 600, color: '#1D4ED8', textDecoration: 'none' }}
-            >
-              <Globe size={12} />
-              {tx.switchLang}
             </Link>
           </div>
 
@@ -322,8 +324,8 @@ export default async function ConditionDetailPage({ params, searchParams }) {
               </h2>
               <ul style={{ display: 'flex', flexDirection: 'column', gap: 8, listStyle: 'none', padding: 0, margin: 0 }}>
                 {symptoms.map((s, i) => (
-                  <li key={i} style={{ display: 'flex', gap: 10, fontSize: 15, color: '#78350F', lineHeight: 1.5 }}>
-                    <span style={{ color: '#92400E', flexShrink: 0 }}>•</span>
+                  <li key={i} style={{ display: 'flex', gap: 10, fontSize: 15, color: '#78350F', lineHeight: 1.5, alignItems: 'flex-start' }}>
+                    <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#92400E', flexShrink: 0, marginTop: 8, display: 'inline-block' }} />
                     <span>{s}</span>
                   </li>
                 ))}
