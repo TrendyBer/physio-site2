@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
 import RatingDisplay from './RatingDisplay';
-import { MapPin, BadgeCheck, ShieldCheck } from 'lucide-react';
+import { MapPin, BadgeCheck, ShieldCheck, ArrowRight } from 'lucide-react';
 
 function Avatar({ name, photoUrl, size = 60 }) {
   if (photoUrl) {
@@ -35,14 +35,14 @@ export default function Therapists() {
 
   useEffect(() => {
     async function fetchTherapists() {
-      // 1. Εγκεκριμένοι ΚΑΙ με πλήρες προφίλ
-      //    Το is_profile_complete υπολογίζεται από trigger στη βάση.
-      //    Ελλιπή προφίλ ΔΕΝ εμφανίζονται δημόσια — ζήτημα εμπιστοσύνης.
+      // ΠΗΓΗ: v_public_therapists — ΟΧΙ therapist_profiles.
+      // Το view εκθέτει ΜΟΝΟ δημόσια πεδία (χωρίς ΑΦΜ, IBAN, τηλέφωνο,
+      // άδεια) και υπολογίζει το is_publicly_visible, που λαμβάνει υπόψη
+      // και το admin_visibility_override.
       const { data: ths, error } = await supabase
-        .from('therapist_profiles')
+        .from('v_public_therapists')
         .select('*')
-        .eq('is_approved', true)
-        .eq('is_profile_complete', true)
+        .eq('is_publicly_visible', true)
         .order('is_profile_full', { ascending: false })
         .order('created_at', { ascending: false })
         .limit(6);
@@ -51,7 +51,7 @@ export default function Therapists() {
 
       const therapistIds = ths.map(t => t.id);
 
-      // 2. Reviews + παθήσεις παράλληλα
+      // Reviews + παθήσεις παράλληλα
       const [{ data: reviewsData }, { data: condLinks }] = await Promise.all([
         supabase
           .from('reviews')
@@ -78,7 +78,6 @@ export default function Therapists() {
         condMap[c.therapist_id].push(c.conditions);
       });
 
-      // 3. Συνδυασμός
       const enriched = ths.map(t => {
         const stats = ratingsMap[t.id];
         return {
@@ -179,16 +178,18 @@ export default function Therapists() {
                     </div>
                   </div>
 
-                  {/* Trust row */}
+                  {/* Trust row — το license_verified έρχεται από το view */}
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
-                    <span style={{
-                      padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 500,
-                      background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0',
-                      display: 'inline-flex', alignItems: 'center', gap: 4,
-                    }}>
-                      <ShieldCheck size={12} strokeWidth={2.2} />
-                      {text.verified}
-                    </span>
+                    {th.license_verified && (
+                      <span style={{
+                        padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 500,
+                        background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0',
+                        display: 'inline-flex', alignItems: 'center', gap: 4,
+                      }}>
+                        <ShieldCheck size={12} strokeWidth={2.2} />
+                        {text.verified}
+                      </span>
+                    )}
                     {th.is_profile_full && (
                       <span style={{
                         padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 500,
@@ -245,7 +246,10 @@ export default function Therapists() {
                     )}
                   </div>
 
-                  <div style={{ fontSize: 13, color: '#2a6fdb', fontWeight: 600 }}>{text.viewProfile} →</div>
+                  <div style={{ fontSize: 13, color: '#2a6fdb', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    {text.viewProfile}
+                    <ArrowRight size={13} />
+                  </div>
                 </a>
               );
             })}
