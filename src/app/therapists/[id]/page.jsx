@@ -6,7 +6,9 @@ import Footer from '../../../components/Footer';
 import RatingDisplay from '../../../components/RatingDisplay';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
-import { ArrowRight, MapPin, ShieldCheck, BadgeCheck, GraduationCap, Clock } from 'lucide-react';
+import { ArrowRight, MapPin, ShieldCheck, BadgeCheck, GraduationCap, ChevronRight } from 'lucide-react';
+
+const LOCALE = { el: 'el-GR', en: 'en-US' };
 
 const TX = {
   el: {
@@ -17,7 +19,6 @@ const TX = {
     chipFullProfile: 'Πλήρες προφίλ',
     chipReviews: (n) => `${n} ${n === 1 ? 'αξιολόγηση' : 'αξιολογήσεις'} από ασθενείς`,
     chipResponse: (h) => `Απαντά συνήθως εντός ${h} ${h === 1 ? 'ώρας' : 'ωρών'}`,
-    trust: [],
     perSession: 'συνεδρία',
     yearsExp: 'χρόνια εμπειρίας',
     aboutTitle: 'Σχετικά με τον θεραπευτή',
@@ -32,6 +33,7 @@ const TX = {
     degreeDefault: 'Πτυχίο Φυσικοθεραπείας',
     classOf: 'Απόφοιτος',
     licenseNote: 'Η άδεια ασκήσεως επαγγέλματος έχει ελεγχθεί από την ομάδα του PhysioHome.',
+    licensePending: 'Η άδεια ασκήσεως επαγγέλματος δεν έχει ελεγχθεί ακόμα από την ομάδα μας.',
     areasTitle: 'Περιοχές εξυπηρέτησης',
     areasEmpty: 'Δεν έχουν δηλωθεί ακόμα περιοχές εξυπηρέτησης.',
     areasMicro: 'Δεν βλέπετε την περιοχή σας; Στείλτε αίτημα και θα ελέγξουμε αν μπορεί να σας εξυπηρετήσει.',
@@ -39,7 +41,7 @@ const TX = {
     availEmpty: 'Η ώρα ορίζεται μετά την αποστολή αιτήματος. Επιλέγετε προτιμώμενη ώρα και ο θεραπευτής επιβεβαιώνει.',
     reviewsTitle: 'Αξιολογήσεις ασθενών',
     reviewsBasedOn: (n) => `Βάσει ${n} ${n === 1 ? 'αξιολόγησης' : 'αξιολογήσεων'} από ολοκληρωμένες συνεδρίες`,
-    reviewsEmpty: 'Δεν υπάρχουν ακόμα αξιολογήσεις. Οι αξιολογήσεις εμφανίζονται μετά από ολοκληρωμένες συνεδρίες. Το προφίλ έχει ελεγχθεί από την πλατφόρμα.',
+    reviewsEmpty: 'Δεν υπάρχουν ακόμα αξιολογήσεις. Οι αξιολογήσεις εμφανίζονται μετά από ολοκληρωμένες συνεδρίες.',
     faqTitle: 'Συχνές ερωτήσεις',
     faqs: [
       { q: 'Έρχεται με εξοπλισμό;', a: 'Ο φυσιοθεραπευτής φέρνει τον απαραίτητο βασικό εξοπλισμό για τη συνεδρία, ανάλογα με την περίπτωση.' },
@@ -67,12 +69,6 @@ const TX = {
     chipFullProfile: 'Complete profile',
     chipReviews: (n) => `${n} patient ${n === 1 ? 'review' : 'reviews'}`,
     chipResponse: (h) => `Usually replies within ${h}h`,
-    trustOld: [
-      'Verified profile details',
-      'Reviews from completed sessions',
-      'Home-visit service',
-      'Support from the PhysioHome team',
-    ],
     perSession: 'session',
     yearsExp: 'years of experience',
     aboutTitle: 'About the therapist',
@@ -87,6 +83,7 @@ const TX = {
     degreeDefault: 'Physiotherapy Degree',
     classOf: 'Class of',
     licenseNote: 'Professional license verified by the PhysioHome team.',
+    licensePending: 'The professional license has not been verified by our team yet.',
     areasTitle: 'Service areas',
     areasEmpty: 'No service areas have been listed yet.',
     areasMicro: "Don't see your area? Send a request and we'll check if the therapist can serve you.",
@@ -94,7 +91,7 @@ const TX = {
     availEmpty: 'The time is set after you send a request. You choose a preferred time and the therapist confirms.',
     reviewsTitle: 'Patient reviews',
     reviewsBasedOn: (n) => `Based on ${n} ${n === 1 ? 'review' : 'reviews'} from completed sessions`,
-    reviewsEmpty: 'No reviews yet. Reviews appear after completed sessions. This profile has been vetted by the platform.',
+    reviewsEmpty: 'No reviews yet. Reviews appear after completed sessions.',
     faqTitle: 'Frequently asked questions',
     faqs: [
       { q: 'Do they bring equipment?', a: 'The physiotherapist brings the necessary basic equipment for the session, depending on the case.' },
@@ -132,6 +129,7 @@ function EmptyText({ children }) {
 export default function TherapistProfilePage() {
   const { lang } = useLang();
   const tx = TX[lang];
+  const loc = LOCALE[lang] || LOCALE.el;
   const params = useParams();
   const id = params?.id;
 
@@ -145,17 +143,17 @@ export default function TherapistProfilePage() {
     (async () => {
       setLoading(true);
 
+      // ΠΗΓΗ: v_public_therapists — ΟΧΙ therapist_profiles.
+      // Ούτε το ΑΦΜ ούτε το IBAN ούτε η άδεια φτάνουν στον browser.
       const { data: th } = await supabase
-        .from('therapist_profiles')
+        .from('v_public_therapists')
         .select('*')
         .eq('id', id)
-        .eq('is_approved', true)
-        .eq('is_profile_complete', true)
+        .eq('is_publicly_visible', true)
         .single();
 
       if (!th) { setTherapist(null); setLoading(false); return; }
 
-      // Reviews
       const { data: rv } = await supabase
         .from('reviews')
         .select('id, rating, comment, created_at')
@@ -164,7 +162,6 @@ export default function TherapistProfilePage() {
         .order('created_at', { ascending: false });
       const reviewsData = rv || [];
 
-      // Conditions (via therapist_conditions -> conditions)
       let conditionNames = [];
       const { data: tc } = await supabase
         .from('therapist_conditions')
@@ -193,7 +190,6 @@ export default function TherapistProfilePage() {
   const bookHref = therapist ? `/dashboard/patient/new-request?therapist=${encodeURIComponent(therapist.name || '')}` : '/dashboard/patient/new-request';
   const areaList = therapist?.area ? String(therapist.area).split(',').map(a => a.trim()).filter(Boolean) : [];
 
-  // rating distribution
   const dist = [5, 4, 3, 2, 1].map(star => ({
     star,
     n: reviews.filter(r => Math.round(r.rating) === star).length,
@@ -212,6 +208,7 @@ export default function TherapistProfilePage() {
         .trust-chip { background: #f8fafb; color: #1a2e44; border: 1px solid #e2e8f0; border-radius: 20px; padding: 6px 14px; font-size: 12px; font-weight: 600; }
         .trust-chip-green { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
         .trust-chip-blue { background: #e8f1fd; color: #2a6fdb; border-color: #c8dff9; }
+        .breadcrumb { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: #94a3b8; flex-wrap: wrap; }
         @keyframes shimmer { 0% { background-position: -600px 0; } 100% { background-position: 600px 0; } }
       `}</style>
 
@@ -232,12 +229,14 @@ export default function TherapistProfilePage() {
         <>
           {/* Breadcrumb */}
           <div style={{ background: '#faf9f6', padding: '20px 24px 0' }}>
-            <div style={{ maxWidth: 1100, margin: '0 auto', fontSize: 13, color: '#94a3b8' }}>
-              <a href="/" style={{ color: '#94a3b8', textDecoration: 'none' }}>{tx.breadcrumbHome}</a>
-              {' › '}
-              <a href="/therapists" style={{ color: '#94a3b8', textDecoration: 'none' }}>{tx.breadcrumbList}</a>
-              {' › '}
-              <span style={{ color: '#1a2e44', fontWeight: 600 }}>{therapist.name}</span>
+            <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+              <div className="breadcrumb">
+                <a href="/" style={{ color: '#94a3b8', textDecoration: 'none' }}>{tx.breadcrumbHome}</a>
+                <ChevronRight size={13} />
+                <a href="/therapists" style={{ color: '#94a3b8', textDecoration: 'none' }}>{tx.breadcrumbList}</a>
+                <ChevronRight size={13} />
+                <span style={{ color: '#1a2e44', fontWeight: 600 }}>{therapist.name}</span>
+              </div>
             </div>
           </div>
 
@@ -275,14 +274,20 @@ export default function TherapistProfilePage() {
                       </div>
                     </div>
 
-                    {/* Trust chips — ΠΡΑΓΜΑΤΙΚΑ δεδομένα, όχι γενικές φράσεις */}
+                    {/* Trust chips — ΠΡΑΓΜΑΤΙΚΑ δεδομένα.
+                        Το "Ελεγμένο προφίλ" εμφανίζεται μόνο αν η άδεια
+                        έχει όντως ελεγχθεί — όχι επειδή φαίνεται η σελίδα. */}
                     <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid #f1f5f9' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
-                        <ShieldCheck size={15} color="#15803D" strokeWidth={2.2} />
-                        <span style={{ fontSize: 13, fontWeight: 700, color: '#15803D' }}>{tx.verified}</span>
-                      </div>
+                      {therapist.license_verified && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+                          <ShieldCheck size={15} color="#15803D" strokeWidth={2.2} />
+                          <span style={{ fontSize: 13, fontWeight: 700, color: '#15803D' }}>{tx.verified}</span>
+                        </div>
+                      )}
                       <div className="trust-chips">
-                        <span className="trust-chip trust-chip-green">{tx.chipLicense}</span>
+                        {therapist.license_verified && (
+                          <span className="trust-chip trust-chip-green">{tx.chipLicense}</span>
+                        )}
                         {therapist.education_school && (
                           <span className="trust-chip">
                             {therapist.education_school}
@@ -312,7 +317,7 @@ export default function TherapistProfilePage() {
                       : <EmptyText>{tx.aboutEmpty}</EmptyText>}
                   </Section>
 
-                  {/* Specialties / conditions */}
+                  {/* Conditions */}
                   <Section title={tx.specialtiesTitle}>
                     {conditions.length > 0 ? (
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -330,10 +335,10 @@ export default function TherapistProfilePage() {
                       : <EmptyText>{tx.experienceEmpty}</EmptyText>}
                   </Section>
 
-                  {/* Education & certifications (no fields yet -> empty state) */}
+                  {/* Education */}
                   <Section title={tx.educationTitle}>
-                    {therapist.education_school ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                      {therapist.education_school && (
                         <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                           <div style={{
                             width: 38, height: 38, borderRadius: 10, flexShrink: 0,
@@ -352,7 +357,9 @@ export default function TherapistProfilePage() {
                             </div>
                           </div>
                         </div>
+                      )}
 
+                      {therapist.license_verified ? (
                         <div style={{
                           display: 'flex', alignItems: 'center', gap: 8,
                           padding: '12px 16px', background: '#f0fdf4',
@@ -363,19 +370,14 @@ export default function TherapistProfilePage() {
                             {tx.licenseNote}
                           </span>
                         </div>
-                      </div>
-                    ) : (
-                      <div style={{
-                        display: 'flex', alignItems: 'center', gap: 8,
-                        padding: '12px 16px', background: '#f0fdf4',
-                        border: '1px solid #bbf7d0', borderRadius: 12,
-                      }}>
-                        <ShieldCheck size={16} color="#15803d" strokeWidth={2.2} style={{ flexShrink: 0 }} />
-                        <span style={{ fontSize: 13, color: '#15803d', fontWeight: 500, lineHeight: 1.5 }}>
-                          {tx.licenseNote}
-                        </span>
-                      </div>
-                    )}
+                      ) : (
+                        <EmptyText>{tx.licensePending}</EmptyText>
+                      )}
+
+                      {!therapist.education_school && !therapist.license_verified && (
+                        <EmptyText>{tx.educationEmpty}</EmptyText>
+                      )}
+                    </div>
                   </Section>
 
                   {/* Service areas */}
@@ -426,13 +428,13 @@ export default function TherapistProfilePage() {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                           {reviews.map(rv => (
                             <div key={rv.id} style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 12, padding: '14px 16px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, gap: 10 }}>
                                 <RatingDisplay rating={rv.rating} count={1} variant="stars-only" size={14} />
                                 <span style={{ fontSize: 11, color: '#92400E' }}>
-                                  {new Date(rv.created_at).toLocaleDateString(lang === 'el' ? 'el-GR' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                                  {new Date(rv.created_at).toLocaleDateString(loc, { year: 'numeric', month: 'short', day: 'numeric' })}
                                 </span>
                               </div>
-                              {rv.comment && <p style={{ fontSize: 14, color: '#78350F', fontStyle: 'italic', margin: 0, lineHeight: 1.6 }}>"{rv.comment}"</p>}
+                              {rv.comment && <p style={{ fontSize: 14, color: '#78350F', fontStyle: 'italic', margin: 0, lineHeight: 1.6 }}>{rv.comment}</p>}
                             </div>
                           ))}
                         </div>
