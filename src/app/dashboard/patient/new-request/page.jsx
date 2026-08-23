@@ -4,6 +4,8 @@ import { supabase } from '@/lib/supabase';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Check, X, ChevronLeft, ChevronRight, Calendar, ArrowRight, MapPin, AlertCircle, Star, Heart, Banknote, Info } from 'lucide-react';
 import ConditionSearch from '@/components/ConditionSearch';
+import AreaInput from '@/components/AreaInput';
+import { areasMatch } from '@/lib/areas';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 function Avatar({ name, photoUrl, size = 44 }) {
@@ -159,21 +161,15 @@ export default function NewRequestPage() {
     return () => { cancelled = true; };
   }, [user, selectedTherapist]);
 
-  function normalize(str) {
-    return (str || '')
-      .toString()
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .trim();
-  }
-
+  // ΦΩΝΗΤΙΚΟ ταίριασμα, όχι σύγκριση string.
+  // Ο θεραπευτής γράφει «Κολωνάκι», ο ασθενής «κολονακι» ή «Kolonaki».
+  // Με απλό === δεν ταίριαζε ποτέ και το site έλεγε «δεν βρέθηκε
+  // θεραπευτής» ενώ υπήρχε.
   function servesArea(t, targetArea) {
-    const target = normalize(targetArea);
-    if (!target) return true;
-    if (normalize(t.area) === target) return true;
+    if (!targetArea || !targetArea.trim()) return true;
+    if (areasMatch(t.area, targetArea)) return true;
     const areas = Array.isArray(t.service_areas) ? t.service_areas : [];
-    return areas.some((a) => normalize(a) === target);
+    return areas.some((a) => areasMatch(a, targetArea));
   }
 
   /**
@@ -740,7 +736,7 @@ export default function NewRequestPage() {
                       </div>
                       <div>
                         <label style={labelStyle}>Περιοχή *</label>
-                        <input value={area} onChange={e => setArea(e.target.value)} placeholder="π.χ. Κολωνάκι" style={inputStyle} />
+                        <AreaInput value={area} onChange={setArea} style={inputStyle} />
                       </div>
                       <div>
                         <label style={labelStyle}>Τ.Κ.</label>
