@@ -87,6 +87,8 @@ const TX = {
     awaitingRelease: 'Αναμονή απελευθέρωσης πληρωμής από ασθενή',
     autoReleaseToday: 'Auto-release σήμερα',
     autoReleaseIn: (d) => `Auto-release σε ${d} μέρες`,
+    cancelReason: 'Αιτιολογία:',
+    cancelledBy: { therapist: 'Ακυρώθηκε από εσάς', patient: 'Ακυρώθηκε από τον ασθενή', admin: 'Ακυρώθηκε από την πλατφόρμα' },
     netAmount: 'Καθαρά',
     prev: 'Προηγ.',
     next: 'Επόμ.',
@@ -253,6 +255,8 @@ const TX = {
     awaitingRelease: 'Awaiting payment release from patient',
     autoReleaseToday: 'Auto-release today',
     autoReleaseIn: (d) => `Auto-release in ${d} days`,
+    cancelReason: 'Reason:',
+    cancelledBy: { therapist: 'Cancelled by you', patient: 'Cancelled by the patient', admin: 'Cancelled by the platform' },
     netAmount: 'Net',
     prev: 'Prev',
     next: 'Next',
@@ -1451,6 +1455,14 @@ export default function TherapistDashboard() {
                                 </span>
                               )}
                             </div>
+
+                            {isCancelled(apt.status) && apt.cancelled_reason && (
+                              <div style={{ width: '100%', paddingTop: 8, marginTop: 4, borderTop: '1px solid #f1f5f9', fontSize: 12, color: '#9F1239' }}>
+                                {tx.cancelledBy[apt.cancelled_by_role] || tx.cancelledBy.admin}
+                                {' · '}
+                                <span style={{ fontStyle: 'italic', color: '#78350F' }}>{apt.cancelled_reason}</span>
+                              </div>
+                            )}
                           </div>
                         );
                       })}
