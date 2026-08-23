@@ -29,8 +29,8 @@ const TX = {
     featured: 'Προτεινόμενος',
     sortNewest: 'Προτεινόμενη σειρά',
     sortRatingDesc: 'Υψηλότερη βαθμολογία',
-    sortPriceAsc: 'Τιμή: χαμηλή → υψηλή',
-    sortPriceDesc: 'Τιμή: υψηλή → χαμηλή',
+    sortPriceAsc: 'Τιμή: χαμηλή προς υψηλή',
+    sortPriceDesc: 'Τιμή: υψηλή προς χαμηλή',
     sortExpDesc: 'Περισσότερη εμπειρία',
     sortRelevance: 'Σχετικότητα',
     clearFilters: 'Καθαρισμός φίλτρων',
@@ -48,6 +48,7 @@ const TX = {
     matchedSpecialty: 'Σχετική ειδικότητα',
     crossLinkText: 'Δεν είστε σίγουροι ποιον χρειάζεστε;',
     crossLinkBtn: 'Δείτε κατά πάθηση',
+    perSession: 'συνεδρία',
   },
   en: {
     badge: 'Find your',
@@ -68,13 +69,13 @@ const TX = {
     featured: 'Featured',
     sortNewest: 'Recommended order',
     sortRatingDesc: 'Highest rated',
-    sortPriceAsc: 'Price: low → high',
-    sortPriceDesc: 'Price: high → low',
+    sortPriceAsc: 'Price: low to high',
+    sortPriceDesc: 'Price: high to low',
     sortExpDesc: 'Most experienced',
     sortRelevance: 'Relevance',
     clearFilters: 'Clear filters',
     resultsCount: (n) => `${n} ${n === 1 ? 'therapist' : 'therapists'}`,
-    rankingNote: 'Recommended order is influenced by the therapist\'s partnership plan. For a purely objective ranking, sort by rating.',
+    rankingNote: "Recommended order is influenced by the therapist's partnership plan. For a purely objective ranking, sort by rating.",
     notFoundTitle: "Can't find what you're looking for?",
     notFoundDesc: "Submit a request and we'll recommend therapists for you.",
     notFoundBtn: 'Send a request',
@@ -85,8 +86,9 @@ const TX = {
     findHelpDesc: 'Describe your problem and we will find the right therapist for you.',
     matchedExact: 'Specialized',
     matchedSpecialty: 'Related specialty',
-    crossLinkText: "Not sure who you need?",
+    crossLinkText: 'Not sure who you need?',
     crossLinkBtn: 'Browse by condition',
+    perSession: 'session',
   },
 };
 
@@ -164,11 +166,13 @@ export default function TherapistsPage() {
   async function fetchTherapists() {
     const timeoutId = setTimeout(() => setLoadingTherapists(false), 8000);
     try {
+      // ΠΗΓΗ: v_public_therapists — ΟΧΙ therapist_profiles.
+      // Το view εκθέτει ΜΟΝΟ δημόσια πεδία και υπολογίζει το
+      // is_publicly_visible λαμβάνοντας υπόψη και το admin override.
       const { data: ths, error } = await supabase
-        .from('therapist_profiles')
+        .from('v_public_therapists')
         .select('*')
-        .eq('is_approved', true)
-        .eq('is_profile_complete', true)
+        .eq('is_publicly_visible', true)
         .order('created_at', { ascending: false });
 
       clearTimeout(timeoutId);
@@ -265,7 +269,9 @@ export default function TherapistsPage() {
   );
 
   const priceRange = useMemo(() => {
-    const prices = therapists.map(t => t.price_per_session).filter(p => typeof p === 'number');
+    const prices = therapists
+      .map(t => Number(t.price_per_session))
+      .filter(p => Number.isFinite(p) && p > 0);
     if (prices.length === 0) return { min: 25, max: 50 };
     return { min: Math.min(...prices), max: Math.max(...prices) };
   }, [therapists]);
@@ -322,8 +328,8 @@ export default function TherapistsPage() {
     if (filterSpecialty) result = result.filter(t => t.specialty === filterSpecialty);
     if (filterMinPrice !== null && filterMaxPrice !== null) {
       result = result.filter(t => {
-        const p = t.price_per_session;
-        if (typeof p !== 'number') return true;
+        const p = Number(t.price_per_session);
+        if (!Number.isFinite(p) || p <= 0) return true;
         return p >= filterMinPrice && p <= filterMaxPrice;
       });
     }
@@ -350,8 +356,8 @@ export default function TherapistsPage() {
         return (b.avg_rating || 0) - (a.avg_rating || 0);
       });
     } else if (sortBy === 'rating-desc') result.sort((a, b) => (b.avg_rating || 0) - (a.avg_rating || 0));
-    else if (sortBy === 'price-asc') result.sort((a, b) => (a.price_per_session || 0) - (b.price_per_session || 0));
-    else if (sortBy === 'price-desc') result.sort((a, b) => (b.price_per_session || 0) - (a.price_per_session || 0));
+    else if (sortBy === 'price-asc') result.sort((a, b) => (Number(a.price_per_session) || 0) - (Number(b.price_per_session) || 0));
+    else if (sortBy === 'price-desc') result.sort((a, b) => (Number(b.price_per_session) || 0) - (Number(a.price_per_session) || 0));
     else if (sortBy === 'experience-desc') result.sort((a, b) => (b.years_experience || 0) - (a.years_experience || 0));
     else {
       result.sort((a, b) =>
@@ -419,7 +425,7 @@ export default function TherapistsPage() {
         </div>
       </section>
 
-      {/* CROSS-LINK BANNER → /find-help */}
+      {/* CROSS-LINK BANNER */}
       <section style={{ background: '#FFFBEB', borderTop: '1px solid #FDE68A', borderBottom: '1px solid #FDE68A', padding: '16px 24px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, flexWrap: 'wrap', textAlign: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#92400E', fontSize: 14, fontWeight: 600 }}>
@@ -433,7 +439,7 @@ export default function TherapistsPage() {
         </div>
       </section>
 
-      {/* CONDITION-BASED SEARCH (USP) */}
+      {/* CONDITION-BASED SEARCH */}
       <section style={{ background: '#fff', padding: '40px 24px', borderBottom: '1px solid #f1f5f9' }}>
         <div style={{ maxWidth: 760, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 24 }}>
@@ -455,7 +461,6 @@ export default function TherapistsPage() {
       <section style={{ background: '#f8fafb', padding: '60px 24px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
 
-          {/* FILTERS BAR */}
           {!loadingTherapists && therapists.length > 0 && (
             <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #e2e8f0', padding: 20, marginBottom: 24 }}>
               <div style={{ position: 'relative', marginBottom: 16 }}>
@@ -559,19 +564,11 @@ export default function TherapistsPage() {
                 const matchType = getMatchType(th);
                 return (
                   <a key={th.id} href={`/therapists/${th.id}`} className="th-card">
-                    {/* Match badge */}
                     {matchType && (
                       <div style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 4,
-                        marginBottom: 12,
-                        padding: '3px 10px',
-                        borderRadius: 999,
-                        fontSize: 10,
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        letterSpacing: '.05em',
+                        display: 'inline-flex', alignItems: 'center', gap: 4, marginBottom: 12,
+                        padding: '3px 10px', borderRadius: 999, fontSize: 10, fontWeight: 700,
+                        textTransform: 'uppercase', letterSpacing: '.05em',
                         background: matchType === 'exact' ? '#DCFCE7' : '#EFF6FF',
                         color: matchType === 'exact' ? '#15803D' : '#1D4ED8',
                         border: `1px solid ${matchType === 'exact' ? '#86EFAC' : '#BFDBFE'}`,
@@ -596,16 +593,20 @@ export default function TherapistsPage() {
                     </div>
                     <div style={{ fontSize: 13, color: '#6b7a8d', marginBottom: 8 }}>{th.specialty}</div>
 
-                    {/* Trust chips — κάθε θεραπευτής εδώ έχει ελεγμένη άδεια, αλλιώς δεν θα εμφανιζόταν */}
+                    {/* Trust chips — το license_verified έρχεται από το view.
+                        ΔΕΝ το υποθέτουμε: με το admin override μπορεί να
+                        εμφανίζεται θεραπευτής χωρίς ελεγμένη άδεια. */}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 8 }}>
-                      <span style={{
-                        padding: '3px 9px', borderRadius: 999, fontSize: 11, fontWeight: 500,
-                        background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0',
-                        display: 'inline-flex', alignItems: 'center', gap: 3,
-                      }}>
-                        <ShieldCheck size={11} strokeWidth={2.2} />
-                        {tx.verifiedLicense}
-                      </span>
+                      {th.license_verified && (
+                        <span style={{
+                          padding: '3px 9px', borderRadius: 999, fontSize: 11, fontWeight: 500,
+                          background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0',
+                          display: 'inline-flex', alignItems: 'center', gap: 3,
+                        }}>
+                          <ShieldCheck size={11} strokeWidth={2.2} />
+                          {tx.verifiedLicense}
+                        </span>
+                      )}
                       {th.is_profile_full && (
                         <span style={{
                           padding: '3px 9px', borderRadius: 999, fontSize: 11, fontWeight: 500,
@@ -640,7 +641,7 @@ export default function TherapistsPage() {
                     {th.price_per_session && (
                       <div style={{ fontSize: 13, color: '#2a6fdb', fontWeight: 600, marginBottom: 10, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                         <Euro size={13} strokeWidth={2.5} />
-                        {th.price_per_session}€/{lang === 'el' ? 'συνεδρία' : 'session'}
+                        {th.price_per_session}€/{tx.perSession}
                       </div>
                     )}
                     <div style={{ fontSize: 13, color: '#2a6fdb', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
@@ -655,7 +656,7 @@ export default function TherapistsPage() {
         </div>
       </section>
 
-      {/* "Δεν βρίσκετε αυτό που ψάχνετε" */}
+      {/* NOT FOUND CTA */}
       {!loadingTherapists && (
         <section style={{ background: '#fff', padding: '60px 24px' }}>
           <div style={{ maxWidth: 760, margin: '0 auto', textAlign: 'center', background: 'linear-gradient(135deg, #f0f6ff, #e8f0fb)', border: '1px solid #dce6f0', borderRadius: 20, padding: '40px 32px' }}>
@@ -669,7 +670,7 @@ export default function TherapistsPage() {
         </section>
       )}
 
-      {/* "Become Therapist" mini-banner */}
+      {/* BECOME THERAPIST BANNER */}
       <section style={{ background: '#1a2e44', padding: '32px 24px' }}>
         <div className="become-banner" style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div>
