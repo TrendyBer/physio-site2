@@ -639,6 +639,7 @@ export default function TherapistDashboard() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [weekOffset, setWeekOffset] = useState(0);
   const photoInputRef = useRef();
+  const tabsRef = useRef();
 
   const [appointmentsView, setAppointmentsView] = useState('list');
   const [calendarMonth, setCalendarMonth] = useState(() => {
@@ -1123,12 +1124,23 @@ export default function TherapistDashboard() {
 
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px' }}>
 
+        {/* Το checklist είναι ΠΑΝΩ από τα tabs. Χωρίς scroll, ο θεραπευτής
+            πατάει «Συμπλήρωσε», το tab αλλάζει σωστά, αλλά αυτός βλέπει
+            το ίδιο checklist και νομίζει ότι δεν έγινε τίποτα. */}
         <ProfileChecklist
-          onGoToTab={setActiveTab}
+          onGoToTab={(tab) => {
+            setActiveTab(tab);
+            // Το tab «Προφίλ» ανοίγει σε read mode — αν έρχεται από το
+            // checklist, θέλει να γράψει, όχι να διαβάσει.
+            if (tab === 'profile') setEditProfile(true);
+            setTimeout(() => {
+              tabsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 60);
+          }}
           onOpenDocuments={() => setDocsModal(true)}
         />
 
-        <div style={{ display: 'flex', gap: 4, background: '#e2e8f0', padding: 4, borderRadius: 12, width: 'fit-content', marginBottom: 24, flexWrap: 'wrap' }}>
+        <div ref={tabsRef} style={{ display: 'flex', gap: 4, background: '#e2e8f0', padding: 4, borderRadius: 12, width: 'fit-content', marginBottom: 24, flexWrap: 'wrap', scrollMarginTop: 76 }}>
           {TABS.map(t => {
             const TabIcon = t.Icon;
             const isActive = activeTab === t.id;
