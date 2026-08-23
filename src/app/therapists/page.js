@@ -7,7 +7,7 @@ import RatingDisplay from '../../components/RatingDisplay';
 import ConditionSearch from '../../components/ConditionSearch';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
-import { Search, MapPin, Star, Euro, SlidersHorizontal, X, Check, ArrowRight, Stethoscope, Users, ChevronDown, ChevronUp, Lightbulb, BadgeCheck, ShieldCheck, Info } from 'lucide-react';
+import { Search, MapPin, Star, SlidersHorizontal, X, Check, ArrowRight, Stethoscope, Users, ChevronDown, ChevronUp, Lightbulb, BadgeCheck, ShieldCheck, Info } from 'lucide-react';
 
 const TX = {
   el: {
@@ -632,19 +632,25 @@ export default function TherapistsPage() {
                     <div style={{ marginBottom: 8 }}>
                       <RatingDisplay rating={th.avg_rating} count={th.review_count} lang={lang} variant="compact" size={13} />
                     </div>
-                    {th.area && (
-                      <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 6, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                        <MapPin size={12} />
-                        {th.area}
-                      </div>
-                    )}
-                    {th.price_per_session && (
-                      <div style={{ fontSize: 13, color: '#2a6fdb', fontWeight: 600, marginBottom: 10, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                        <Euro size={13} strokeWidth={2.5} />
-                        {th.price_per_session}€/{tx.perSession}
-                      </div>
-                    )}
-                    <div style={{ fontSize: 13, color: '#2a6fdb', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+
+                    {/* Κάθε στοιχείο σε δική του γραμμή — το inline-flex τα
+                        κολλούσε μεταξύ τους και το Euro icon φαινόταν σαν
+                        δεύτερο σύμβολο ευρώ δίπλα στην περιοχή. */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 12 }}>
+                      {th.area && (
+                        <div style={{ fontSize: 12, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <MapPin size={12} style={{ flexShrink: 0 }} />
+                          <span>{th.area}</span>
+                        </div>
+                      )}
+                      {th.price_per_session && (
+                        <div style={{ fontSize: 13, color: '#2a6fdb', fontWeight: 600 }}>
+                          {th.price_per_session}€ / {tx.perSession}
+                        </div>
+                      )}
+                    </div>
+
+                    <div style={{ fontSize: 13, color: '#2a6fdb', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
                       {tx.viewProfile}
                       <ArrowRight size={13} />
                     </div>
