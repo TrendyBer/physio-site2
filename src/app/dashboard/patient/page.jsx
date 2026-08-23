@@ -111,6 +111,12 @@ const TX = {
     total: 'Σύνολο',
     sessions: (n) => `Συνεδρίες (${n})`,
     yourReview: 'Η αξιολόγησή σας',
+    cancelledByTherapist: 'Ακυρώθηκε από τον θεραπευτή',
+    cancelledByYou: 'Ακυρώθηκε από εσάς',
+    cancelledByAdmin: 'Ακυρώθηκε από την πλατφόρμα',
+    cancelReason: 'Αιτιολογία:',
+    noReason: 'Δεν δόθηκε αιτιολογία',
+    reviewAfterCancel: 'Μπορείτε να αξιολογήσετε την εμπειρία σας παρόλο που το ραντεβού ακυρώθηκε.',
     howWasIt: (n) => `Πώς ήταν η εμπειρία σας με τον/την ${n};`,
     therapistFallback: 'θεραπευτή',
     leaveReview: 'Άφησε αξιολόγηση',
@@ -206,6 +212,12 @@ const TX = {
     total: 'Total',
     sessions: (n) => `Sessions (${n})`,
     yourReview: 'Your review',
+    cancelledByTherapist: 'Cancelled by the therapist',
+    cancelledByYou: 'Cancelled by you',
+    cancelledByAdmin: 'Cancelled by the platform',
+    cancelReason: 'Reason:',
+    noReason: 'No reason given',
+    reviewAfterCancel: 'You can still rate your experience even though the appointment was cancelled.',
     howWasIt: (n) => `How was your experience with ${n}?`,
     therapistFallback: 'your therapist',
     leaveReview: 'Leave a review',
@@ -495,16 +507,21 @@ export default function PatientDashboard() {
   );
 
   function openReviewModal(request) {
-    const firstCompletedBooking = request.bookings.find(b => b.status === 'completed');
-    if (!firstCompletedBooking) {
+    // Προτεραιότητα σε ολοκληρωμένη· αλλιώς ακύρωση από τον θεραπευτή.
+    const target =
+      request.bookings.find(b => b.status === 'completed') ||
+      request.bookings.find(b => b.status === 'cancelled_by_therapist');
+
+    if (!target) {
       alert(tx.errNoCompleted);
       return;
     }
     setReviewModal({
       request,
-      booking_id: firstCompletedBooking.id,
+      booking_id: target.id,
       therapist_id: request.therapist_id,
       therapist_name: request.therapist?.name || tx.therapistFallback,
+      wasCancelled: target.status === 'cancelled_by_therapist',
     });
     setReviewForm({ rating: 0, comment: '' });
   }
@@ -989,6 +1006,16 @@ export default function PatientDashboard() {
                                 <Badge label={payInfo.label} bg={payInfo.bg} color={payInfo.color} icon={payInfo.icon} />
                               )}
                             </div>
+
+                            {isCancelled(apt.status) && apt.cancelled_reason && (
+                              <div style={{ width: '100%', paddingTop: 8, marginTop: 4, borderTop: '1px solid #f1f5f9', fontSize: 12, color: '#9F1239' }}>
+                                {apt.status === 'cancelled_by_therapist' ? tx.cancelledByTherapist
+                                  : apt.status === 'cancelled_by_patient' ? tx.cancelledByYou
+                                  : tx.cancelledByAdmin}
+                                {' · '}
+                                <span style={{ fontStyle: 'italic', color: '#78350F' }}>{apt.cancelled_reason}</span>
+                              </div>
+                            )}
                           </div>
                         );
                       })}
@@ -1084,7 +1111,11 @@ export default function PatientDashboard() {
             ) : sessionRequests.map(req => {
               const st = statusLabel(STATUS_MAP, req.status);
               const hasCompletedBooking = req.bookings.some(b => b.status === 'completed');
-              const canReview = hasCompletedBooking && !req.review;
+              // Αν ο θεραπευτής ακύρωσε, ο ασθενής εξακολουθεί να έχει
+              // εμπειρία να μοιραστεί — και είναι η πιο χρήσιμη
+              // πληροφορία για τους επόμενους ασθενείς.
+              const cancelledByTherapist = req.bookings.find(b => b.status === 'cancelled_by_therapist');
+              const canReview = (hasCompletedBooking || !!cancelledByTherapist) && !req.review;
               const reqHeldBookings = req.bookings.filter(b => b.payment_status === 'held');
 
               return (
@@ -1152,8 +1183,9 @@ export default function PatientDashboard() {
                           return (
                             <div key={b.id} style={{
                               display: 'flex', flexDirection: 'column', gap: 8, padding: '10px 14px',
-                              background: isHeld ? '#FFFBEB' : '#f8fafc', borderRadius: 8, fontSize: 14,
-                              border: isHeld ? '1px solid #FDE68A' : 'none',
+                              background: isHeld ? '#FFFBEB' : isCancelled(b.status) ? '#FFF1F2' : '#f8fafc',
+                              borderRadius: 8, fontSize: 14,
+                              border: isHeld ? '1px solid #FDE68A' : isCancelled(b.status) ? '1px solid #FECDD3' : 'none',
                             }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                                 <span style={{ color: '#64748B', fontWeight: 600 }}>{i + 1}.</span>
@@ -1165,6 +1197,24 @@ export default function PatientDashboard() {
                                   <Badge label={payInfo.label} bg={payInfo.bg} color={payInfo.color} icon={payInfo.icon} />
                                 )}
                               </div>
+
+                              {/* ΛΟΓΟΣ ΑΚΥΡΩΣΗΣ — ο ασθενής δικαιούται να ξέρει
+                                  γιατί χάθηκε το ραντεβού του. */}
+                              {isCancelled(b.status) && (
+                                <div style={{ paddingTop: 8, borderTop: '1px solid #e2e8f0', fontSize: 12.5, color: '#9F1239', lineHeight: 1.6 }}>
+                                  <strong>
+                                    {b.status === 'cancelled_by_therapist' ? tx.cancelledByTherapist
+                                      : b.status === 'cancelled_by_patient' ? tx.cancelledByYou
+                                      : tx.cancelledByAdmin}
+                                  </strong>
+                                  <div style={{ marginTop: 3, color: '#78350F' }}>
+                                    {tx.cancelReason}{' '}
+                                    {b.cancelled_reason
+                                      ? <span style={{ fontStyle: 'italic' }}>{b.cancelled_reason}</span>
+                                      : <span style={{ color: '#94a3b8' }}>{tx.noReason}</span>}
+                                  </div>
+                                </div>
+                              )}
 
                               {isHeld && (
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingTop: 8, borderTop: '1px solid #FDE68A', flexWrap: 'wrap' }}>
@@ -1213,6 +1263,11 @@ export default function PatientDashboard() {
                     <div style={{ padding: '14px 20px', borderTop: '1px solid #f1f5f9', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                       <div style={{ fontSize: 14, color: '#475569' }}>
                         {tx.howWasIt(req.therapist?.name || tx.therapistFallback)}
+                        {cancelledByTherapist && (
+                          <div style={{ fontSize: 12.5, color: '#94a3b8', marginTop: 3 }}>
+                            {tx.reviewAfterCancel}
+                          </div>
+                        )}
                       </div>
                       <button onClick={() => openReviewModal(req)}
                         style={{ padding: '10px 20px', borderRadius: 30, border: 'none', background: '#F59E0B', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
