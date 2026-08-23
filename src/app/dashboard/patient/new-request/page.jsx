@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Check, X, ChevronLeft, ChevronRight, Calendar, ArrowRight, MapPin, AlertCircle, Star, Heart } from 'lucide-react';
+import { Check, X, ChevronLeft, ChevronRight, Calendar, ArrowRight, MapPin, AlertCircle, Star, Heart, Banknote, Info } from 'lucide-react';
 import ConditionSearch from '@/components/ConditionSearch';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -14,11 +14,6 @@ function Avatar({ name, photoUrl, size = 44 }) {
     </div>
   );
 }
-
-const PROBLEM_TYPES = [
-  'Μυοσκελετικό', 'Μετεγχειρητική Αποκατάσταση', 'Νευρολογική Αποκατάσταση',
-  'Αθλητικός Τραυματισμός', 'Χρόνιος Πόνος', 'Άλλο'
-];
 
 const SINGLE_SESSION = {
   id: 'single',
@@ -61,12 +56,12 @@ export default function NewRequestPage() {
   const [addressConfirmed, setAddressConfirmed] = useState(false);
   const [editingAddress, setEditingAddress] = useState(false);
 
-  // Step 2
+  // Step 3
   const [packages, setPackages] = useState([]);
   const [loadingPackages, setLoadingPackages] = useState(true);
   const [selectedPackage, setSelectedPackage] = useState(null);
 
-  // Step 3
+  // Step 2
   const [therapists, setTherapists] = useState([]);
   const [selectedTherapist, setSelectedTherapist] = useState(null);
   const [profileModal, setProfileModal] = useState(null);
@@ -88,7 +83,6 @@ export default function NewRequestPage() {
       if (!user) { router.push('/auth/login'); return; }
       setUser(user);
 
-      // Τα στοιχεία που έχει ήδη δώσει ο ασθενής στο προφίλ του
       const { data: prof } = await supabase
         .from('patient_profiles')
         .select('address, area, postal_code')
@@ -102,11 +96,9 @@ export default function NewRequestPage() {
         setPostalCode(prof.postal_code || '');
         setEditingAddress(false);
       } else {
-        // Δεν έχει διεύθυνση στο προφίλ → κανονική φόρμα
         setEditingAddress(true);
       }
 
-      // Διεύθυνση από το hero search του site (αν ήρθε από εκεί)
       try {
         const fromSite = localStorage.getItem('bookingAddress');
         if (fromSite) {
@@ -146,8 +138,6 @@ export default function NewRequestPage() {
     if (step === 4 && selectedTherapist) fetchSlots();
   }, [step, selectedTherapist, calendarWeek]);
 
-  // Μόλις επιλεγεί θεραπευτής, ρωτάμε τη βάση αν πρόκειται για πρώτη
-  // συνεργασία αυτού του ασθενή μαζί του.
   useEffect(() => {
     if (!user || !selectedTherapist) { setFeeInfo(null); return; }
     let cancelled = false;
@@ -169,7 +159,6 @@ export default function NewRequestPage() {
     return () => { cancelled = true; };
   }, [user, selectedTherapist]);
 
-  // Κανονικοποίηση για σύγκριση περιοχών (τόνοι, πεζά/κεφαλαία)
   function normalize(str) {
     return (str || '')
       .toString()
@@ -240,24 +229,31 @@ export default function NewRequestPage() {
       declaredIds = (links || []).map((l) => l.therapist_id);
     }
 
-    // ── 2. Εγκεκριμένοι + πλήρες προφίλ (ίδιο gate με το site) ──
+    // ── 2. ΠΗΓΗ: v_public_therapists ──
+    // ΟΧΙ therapist_profiles. Το view εκθέτει μόνο δημόσια πεδία και
+    // υπολογίζει το is_publicly_visible λαμβάνοντας υπόψη και το
+    // admin_visibility_override — ίδιο gate με όλο το υπόλοιπο site.
     const { data: all } = await supabase
-      .from('therapist_profiles')
+      .from('v_public_therapists')
       .select('*')
-      .eq('is_approved', true)
-      .eq('is_profile_complete', true);
+      .eq('is_publicly_visible', true);
 
-    let pool = (all || []).filter((t) => !t.is_paused);
+    let pool = all || [];
 
     // ── 2β. ΕΠΙΒΟΛΗ ΣΥΝΔΡΟΜΗΣ ──
     // Ρυθμίζεται από το admin: 'off' | 'no_new_requests' | 'hide'.
     // Και στις δύο αυστηρές τιμές, ο θεραπευτής χωρίς ενεργή συνδρομή
     // δεν εμφανίζεται εδώ — δηλαδή δεν δέχεται νέα αιτήματα.
     if (pool.length > 0) {
-      const { data: cfg } = await supabase
-        .from('platform_settings')
-        .select('key, value')
-        .in('key', ['subscription_enforcement', 'subscription_grace_days']);
+      const [{ data: cfg }, { data: exempt }] = await Promise.all([
+        supabase.from('platform_settings').select('key, value')
+          .in('key', ['subscription_enforcement', 'subscription_grace_days']),
+        // Το subscription_exempt δεν είναι στο δημόσιο view — το φέρνουμε χωριστά
+        supabase.from('therapist_subscriptions')
+          .select('therapist_id, current_period_end, status')
+          .in('therapist_id', pool.map((t) => t.id))
+          .in('status', ['trialing', 'active', 'past_due', 'exempt']),
+      ]);
 
       const cfgMap = {};
       (cfg || []).forEach((r) => { cfgMap[r.key] = r.value; });
@@ -266,20 +262,14 @@ export default function NewRequestPage() {
       if (enforcement !== 'off') {
         const graceMs = (parseInt(cfgMap.subscription_grace_days, 10) || 0) * 86400000;
 
-        const { data: activeSubs } = await supabase
-          .from('therapist_subscriptions')
-          .select('therapist_id, current_period_end')
-          .in('therapist_id', pool.map((t) => t.id))
-          .in('status', ['trialing', 'active', 'past_due', 'exempt']);
-
         const okIds = new Set(
-          (activeSubs || [])
+          (exempt || [])
             .filter((sub) => !sub.current_period_end ||
               new Date(sub.current_period_end).getTime() + graceMs > Date.now())
             .map((sub) => sub.therapist_id)
         );
 
-        pool = pool.filter((t) => t.subscription_exempt || okIds.has(t.id));
+        pool = pool.filter((t) => okIds.has(t.id));
       }
     }
 
@@ -298,9 +288,9 @@ export default function NewRequestPage() {
 
     const stats = {};
     ids.forEach((id) => { stats[id] = { sum: 0, count: 0, completed: 0, slots: 0 }; });
-    (revs || []).forEach((r) => { stats[r.therapist_id].sum += r.rating; stats[r.therapist_id].count += 1; });
-    (reqs || []).forEach((r) => { if (r.status === 'completed') stats[r.therapist_id].completed += 1; });
-    (freeSlots || []).forEach((sl) => { stats[sl.therapist_id].slots += 1; });
+    (revs || []).forEach((r) => { if (stats[r.therapist_id]) { stats[r.therapist_id].sum += r.rating; stats[r.therapist_id].count += 1; } });
+    (reqs || []).forEach((r) => { if (stats[r.therapist_id] && r.status === 'completed') stats[r.therapist_id].completed += 1; });
+    (freeSlots || []).forEach((sl) => { if (stats[sl.therapist_id]) stats[sl.therapist_id].slots += 1; });
 
     const enrich = (t) => {
       const st = stats[t.id];
@@ -368,7 +358,6 @@ export default function NewRequestPage() {
     setError('');
     if (step === 1) {
       if (!condition) { setError('Πείτε μας τι σας ταλαιπωρεί — γράψτε π.χ. «πόνος στη μέση».'); return false; }
-      // Αν δείχνουμε αποθηκευμένη διεύθυνση, πρέπει να την επιβεβαιώσει
       if (savedAddress && !editingAddress && !addressConfirmed) {
         setError('Επιβεβαιώστε τη διεύθυνση για να συνεχίσετε.');
         return false;
@@ -404,8 +393,6 @@ export default function NewRequestPage() {
 
     const totalCost = calculateTotalCost();
 
-    // Αν έδωσε νέα διεύθυνση, την κρατάμε στο προφίλ του.
-    // Έτσι την επόμενη φορά απλά την επιβεβαιώνει.
     const changed =
       !savedAddress ||
       savedAddress.address !== address ||
@@ -439,6 +426,8 @@ export default function NewRequestPage() {
 
     if (reqErr) { setError('Σφάλμα: ' + reqErr.message); setSubmitting(false); return; }
 
+    // payment_method = 'cash': ο ασθενής πληρώνει ΑΠΕΥΘΕΙΑΣ τον θεραπευτή.
+    // Η πλατφόρμα δεν κρατάει και δεν αποδίδει χρήματα συνεδριών.
     const bookings = selectedSlots.map(slot => ({
       request_id: req.id,
       patient_id: user.id,
@@ -447,6 +436,7 @@ export default function NewRequestPage() {
       session_date: slot.date,
       session_time: slot.start_time,
       status: 'pending',
+      payment_method: 'cash',
     }));
 
     await supabase.from('session_bookings').insert(bookings);
@@ -457,8 +447,7 @@ export default function NewRequestPage() {
 
     // ── ΠΡΟΜΗΘΕΙΑ ΠΛΑΤΦΟΡΜΑΣ ────────────────────────────────────────────
     // Ξαναρωτάμε τη βάση τη στιγμή της υποβολής. Το ποσό που είδαμε όταν
-    // επιλέχθηκε ο θεραπευτής μπορεί να έχει παλιώσει (π.χ. ο ασθενής άφησε
-    // την καρτέλα ανοιχτή, ή έκλεισε στο μεταξύ άλλο ραντεβού μαζί του).
+    // επιλέχθηκε ο θεραπευτής μπορεί να έχει παλιώσει.
     try {
       const { data: feeNow } = await supabase.rpc('resolve_session_fee', {
         p_patient_id: user.id,
@@ -469,8 +458,6 @@ export default function NewRequestPage() {
       const fee = Number(resolved.fee || 0);
       const isFirst = Boolean(resolved.is_first);
 
-      // Καταγραφή του ζεύγους ασθενή-θεραπευτή.
-      // Από εδώ και πέρα η επόμενη συνεδρία μαζί του δεν χρεώνεται.
       const { data: linkId } = await supabase.rpc('register_session_charge', {
         p_patient_id: user.id,
         p_therapist_id: selectedTherapist.id,
@@ -479,7 +466,11 @@ export default function NewRequestPage() {
       });
 
       // Γραμμή πληρωμής μόνο όταν υπάρχει πράγματι προμήθεια.
-      // Οι επαναλαμβανόμενες συνεδρίες δεν λερώνουν τη σελίδα Πληρωμές.
+      //
+      // ΣΗΜΕΙΩΣΗ: το patient_amount καταγράφεται ΜΟΝΟ ως πληροφορία.
+      // Ο ασθενής πληρώνει μετρητά τον θεραπευτή — η πλατφόρμα δεν
+      // εισπράττει το ποσό της συνεδρίας. Η μόνη πραγματική απαίτηση
+      // της πλατφόρμας είναι το fee, που χρωστάει ο ΘΕΡΑΠΕΥΤΗΣ.
       if (fee > 0) {
         await supabase.from('payments').insert([{
           request_id: req.id,
@@ -489,6 +480,7 @@ export default function NewRequestPage() {
           therapist_net: Math.max(0, totalCost - fee),
           status: 'unpaid',
           paid: false,
+          payment_method: 'cash',
           fee_type: 'first_session',
           is_first_session: isFirst,
           link_id: linkId || null,
@@ -496,8 +488,6 @@ export default function NewRequestPage() {
         }]);
       }
     } catch (feeErr) {
-      // Το αίτημα έχει ήδη καταχωρηθεί — δεν το ακυρώνουμε για λόγους λογιστικής.
-      // Ο admin θα δει το κενό στη σελίδα Πληρωμές.
       console.error('Αποτυχία καταγραφής προμήθειας:', feeErr);
     }
 
@@ -523,9 +513,15 @@ export default function NewRequestPage() {
           <Check size={32} color="#15803D" strokeWidth={3} />
         </div>
         <h2 style={{ fontSize: 24, fontWeight: 700, color: '#0F172A', marginBottom: 12 }}>Το αίτημά σας εστάλη!</h2>
-        <p style={{ fontSize: 15, color: '#64748B', lineHeight: 1.7, marginBottom: 28 }}>
+        <p style={{ fontSize: 15, color: '#64748B', lineHeight: 1.7, marginBottom: 20 }}>
           Ο θεραπευτής <strong>{selectedTherapist?.name}</strong> θα λάβει το αίτημά σας και θα απαντήσει σύντομα.
         </p>
+        <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 12, padding: '14px 16px', marginBottom: 26, textAlign: 'left', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+          <Banknote size={16} color="#15803D" strokeWidth={2.2} style={{ marginTop: 1, flexShrink: 0 }} />
+          <span style={{ fontSize: 13, color: '#15803D', lineHeight: 1.6 }}>
+            Η πληρωμή γίνεται <strong>απευθείας στον θεραπευτή</strong> μετά τη συνεδρία.
+          </span>
+        </div>
         <a href="/dashboard/patient" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#1a2e44', color: '#fff', padding: '13px 32px', borderRadius: 30, fontSize: 15, fontWeight: 600, textDecoration: 'none' }}>
           Επιστροφή στο Dashboard
           <ArrowRight size={16} />
@@ -581,7 +577,7 @@ export default function NewRequestPage() {
           <p style={{ fontSize: 14, color: '#64748B' }}>Συμπλήρωσε τα στοιχεία σου και επίλεξε θεραπευτή και ώρα</p>
         </div>
 
-        {/* DESKTOP Stepper (768px+) */}
+        {/* DESKTOP Stepper */}
         <div className="stepper-desktop" style={{ alignItems: 'center', justifyContent: 'center', marginBottom: 32, gap: 0 }}>
           {STEPS.map((s, i) => {
             const num = i + 1;
@@ -646,7 +642,7 @@ export default function NewRequestPage() {
                     onChange={(c) => {
                       setCondition(c);
                       setProblemType(c?.name || '');
-                      setSelectedTherapist(null);   // αλλάζει η πάθηση → ξαναδιαλέγει θεραπευτή
+                      setSelectedTherapist(null);
                     }}
                     showChips={true}
                     compact={false}
@@ -665,7 +661,6 @@ export default function NewRequestPage() {
 
                 {/* ── ΔΙΕΥΘΥΝΣΗ ── */}
                 {savedAddress && !editingAddress ? (
-                  /* Έχει ήδη διεύθυνση στο προφίλ → μόνο επιβεβαίωση */
                   <div style={{
                     background: addressConfirmed ? '#F0FDF4' : '#FFFBEB',
                     border: `1px solid ${addressConfirmed ? '#BBF7D0' : '#FDE68A'}`,
@@ -744,7 +739,6 @@ export default function NewRequestPage() {
                   </>
                 )}
 
-                {/* Ο όροφος ζητείται πάντα — αλλάζει ανά επίσκεψη */}
                 {savedAddress && !editingAddress && (
                   <div>
                     <label style={labelStyle}>Όροφος / Κουδούνι</label>
@@ -762,7 +756,7 @@ export default function NewRequestPage() {
             </div>
           )}
 
-          {/* STEP 2 — Τύπος Συνεδρίας */}
+          {/* STEP 3 — Τύπος Συνεδρίας */}
           {step === 3 && (
             <div>
               <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>Επίλεξε τύπο συνεδρίας</h2>
@@ -832,10 +826,24 @@ export default function NewRequestPage() {
                   })}
                 </div>
               )}
+
+              {/* Τρόπος πληρωμής — ενημέρωση, όχι επιλογή */}
+              <div style={{ marginTop: 20, background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 12, padding: '14px 18px', display: 'flex', gap: 11, alignItems: 'flex-start' }}>
+                <Banknote size={17} color="#15803D" strokeWidth={2.2} style={{ marginTop: 1, flexShrink: 0 }} />
+                <div>
+                  <div style={{ fontSize: 13.5, fontWeight: 700, color: '#15803D', marginBottom: 3 }}>
+                    Πληρωμή απευθείας στον θεραπευτή
+                  </div>
+                  <div style={{ fontSize: 12.5, color: '#166534', lineHeight: 1.6 }}>
+                    Πληρώνετε τον θεραπευτή μετά από κάθε συνεδρία. Η πλατφόρμα δεν εισπράττει
+                    και δεν κρατάει χρήματα — δεν χρειάζεται κάρτα.
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
-          {/* STEP 3 — Θεραπευτής */}
+          {/* STEP 2 — Θεραπευτής */}
           {step === 2 && (
             <div>
               <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>Διάλεξε θεραπευτή</h2>
@@ -929,14 +937,14 @@ export default function NewRequestPage() {
                           </div>
                           <div className="therapist-card-actions" style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
                             <button onClick={() => setProfileModal(t)}
-                              style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#475569', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                              style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#475569', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                               Δες προφίλ
                             </button>
                             <button
                               onClick={() => !noSlots && setSelectedTherapist(isSelected ? null : t)}
                               disabled={noSlots}
                               title={noSlots ? 'Δεν έχει ανοιχτές ώρες αυτή τη στιγμή' : ''}
-                              style={{ padding: '7px 14px', borderRadius: 8, border: 'none', background: noSlots ? '#cbd5e1' : (isSelected ? '#15803D' : '#1a2e44'), color: '#fff', fontSize: 12, fontWeight: 600, cursor: noSlots ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                              style={{ padding: '7px 14px', borderRadius: 8, border: 'none', background: noSlots ? '#cbd5e1' : (isSelected ? '#15803D' : '#1a2e44'), color: '#fff', fontSize: 12, fontWeight: 600, cursor: noSlots ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4, fontFamily: 'inherit' }}>
                               {isSelected && <Check size={12} strokeWidth={3} />}
                               {noSlots ? 'Μη διαθέσιμος' : isSelected ? 'Επιλεγμένος' : 'Επιλογή'}
                             </button>
@@ -965,7 +973,7 @@ export default function NewRequestPage() {
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
                 <button onClick={() => setCalendarWeek(w => Math.max(0, w - 1))} disabled={calendarWeek === 0}
-                  style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: calendarWeek === 0 ? '#f8fafc' : '#fff', color: calendarWeek === 0 ? '#94a3b8' : '#1a2e44', fontSize: 13, fontWeight: 600, cursor: calendarWeek === 0 ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: calendarWeek === 0 ? '#f8fafc' : '#fff', color: calendarWeek === 0 ? '#94a3b8' : '#1a2e44', fontSize: 13, fontWeight: 600, cursor: calendarWeek === 0 ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' }}>
                   <ChevronLeft size={14} />
                   Πριν
                 </button>
@@ -973,7 +981,7 @@ export default function NewRequestPage() {
                   {weekDates[0] && `${new Date(weekDates[0] + 'T12:00:00').toLocaleDateString('el-GR', { day: '2-digit', month: '2-digit' })} – ${new Date(weekDates[6] + 'T12:00:00').toLocaleDateString('el-GR', { day: '2-digit', month: '2-digit' })}`}
                 </div>
                 <button onClick={() => setCalendarWeek(w => w + 1)}
-                  style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#1a2e44', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#1a2e44', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' }}>
                   Μετά
                   <ChevronRight size={14} />
                 </button>
@@ -998,7 +1006,7 @@ export default function NewRequestPage() {
                             const canSelect = isSelected || selectedSlots.length < needed;
                             return (
                               <button key={slot.id} onClick={() => canSelect && toggleSlot(slot)}
-                                style={{ padding: '8px 16px', borderRadius: 8, border: `1.5px solid ${isSelected ? '#2a6fdb' : '#e2e8f0'}`, background: isSelected ? '#2a6fdb' : canSelect ? '#fff' : '#f8fafc', color: isSelected ? '#fff' : canSelect ? '#0F172A' : '#94a3b8', fontSize: 13, fontWeight: 600, cursor: canSelect ? 'pointer' : 'not-allowed', transition: 'all .15s' }}>
+                                style={{ padding: '8px 16px', borderRadius: 8, border: `1.5px solid ${isSelected ? '#2a6fdb' : '#e2e8f0'}`, background: isSelected ? '#2a6fdb' : canSelect ? '#fff' : '#f8fafc', color: isSelected ? '#fff' : canSelect ? '#0F172A' : '#94a3b8', fontSize: 13, fontWeight: 600, cursor: canSelect ? 'pointer' : 'not-allowed', transition: 'all .15s', fontFamily: 'inherit' }}>
                                 {slot.start_time?.slice(0, 5)}
                               </button>
                             );
@@ -1058,6 +1066,7 @@ export default function NewRequestPage() {
                   ['Θεραπευτής', selectedTherapist?.name],
                   ['Τιμή/Συνεδρία', `${selectedTherapist?.price_per_session}€`],
                   ['Συνολικό κόστος', `${calculateTotalCost()}€`],
+                  ['Τρόπος πληρωμής', 'Μετρητά, απευθείας στον θεραπευτή'],
                 ].map(([label, value], i) => (
                   <div key={label} style={{ display: 'flex', padding: '12px 16px', borderBottom: '1px solid #f1f5f9', background: i % 2 === 0 ? '#f8fafc' : '#fff', fontSize: 14, flexWrap: 'wrap', gap: 8 }}>
                     <span style={{ color: '#64748B', minWidth: 140, flexShrink: 0 }}>{label}</span>
@@ -1066,17 +1075,31 @@ export default function NewRequestPage() {
                 ))}
               </div>
 
+              {/* Τρόπος πληρωμής — ενημέρωση */}
+              <div style={{ marginTop: 16, background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 12, padding: '14px 18px', display: 'flex', gap: 11, alignItems: 'flex-start' }}>
+                <Banknote size={17} color="#15803D" strokeWidth={2.2} style={{ marginTop: 1, flexShrink: 0 }} />
+                <div>
+                  <div style={{ fontSize: 13.5, fontWeight: 700, color: '#15803D', marginBottom: 3 }}>
+                    Πληρώνετε απευθείας τον θεραπευτή
+                  </div>
+                  <div style={{ fontSize: 12.5, color: '#166534', lineHeight: 1.6 }}>
+                    Το ποσό των <strong>{calculateTotalCost()}€</strong> δίνεται στον θεραπευτή μετά τη συνεδρία.
+                    Η πλατφόρμα δεν εισπράττει και δεν κρατάει χρήματα — δεν χρειάζεται κάρτα.
+                  </div>
+                </div>
+              </div>
+
               {feeInfo && feeInfo.is_first === false && feeInfo.reason === 'repeat_patient' && (
-                <div style={{ marginTop: 16, background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '14px 16px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                  <Heart size={15} color="#15803D" strokeWidth={2.2} style={{ marginTop: 1, flexShrink: 0 }} />
-                  <div style={{ fontSize: 13, color: '#15803D', lineHeight: 1.6 }}>
+                <div style={{ marginTop: 12, background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '14px 16px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                  <Heart size={15} color="#1D4ED8" strokeWidth={2.2} style={{ marginTop: 1, flexShrink: 0 }} />
+                  <div style={{ fontSize: 13, color: '#1D4ED8', lineHeight: 1.6 }}>
                     Συνεχίζετε με τον/την <strong>{selectedTherapist?.name}</strong>, που σας γνωρίζει ήδη.
                     Η θεραπεία σας συνεχίζεται από εκεί που την αφήσατε.
                   </div>
                 </div>
               )}
 
-              <div style={{ marginTop: 16, background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '14px 16px' }}>
+              <div style={{ marginTop: 12, background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '14px 16px' }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#1D4ED8', marginBottom: 8, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   <Calendar size={14} />
                   Επιλεγμένες Συνεδρίες:
@@ -1143,9 +1166,9 @@ export default function NewRequestPage() {
               ['Περιοχή', profileModal.area],
               ['Τιμή/Συνεδρία', `${profileModal.price_per_session}€`],
             ].map(([label, value]) => (
-              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f1f5f9', fontSize: 14 }}>
+              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f1f5f9', fontSize: 14, gap: 12 }}>
                 <span style={{ color: '#64748B' }}>{label}</span>
-                <span style={{ fontWeight: 600, color: '#0F172A' }}>{value || '—'}</span>
+                <span style={{ fontWeight: 600, color: '#0F172A', textAlign: 'right' }}>{value || '—'}</span>
               </div>
             ))}
 
@@ -1158,12 +1181,12 @@ export default function NewRequestPage() {
 
             <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
               <button onClick={() => { setSelectedTherapist(profileModal); setProfileModal(null); }}
-                style={{ flex: 1, padding: '12px', borderRadius: 30, border: 'none', background: '#1a2e44', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                style={{ flex: 1, padding: '12px', borderRadius: 30, border: 'none', background: '#1a2e44', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'inherit' }}>
                 <Check size={14} strokeWidth={3} />
                 Επιλογή θεραπευτή
               </button>
               <button onClick={() => setProfileModal(null)}
-                style={{ padding: '12px 20px', borderRadius: 30, border: '1px solid #e2e8f0', background: 'transparent', color: '#64748b', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                style={{ padding: '12px 20px', borderRadius: 30, border: '1px solid #e2e8f0', background: 'transparent', color: '#64748b', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                 Κλείσιμο
               </button>
             </div>
