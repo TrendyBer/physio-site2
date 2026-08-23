@@ -1,20 +1,26 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import { useLang } from '@/context/LanguageContext';
-import { Mail, Phone, MapPin, Check, X } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import { Mail, Phone, MapPin, Check, X, AlertCircle } from 'lucide-react';
+
+const CACHE_KEY = 'cms_platform_settings';
+const CACHE_TTL = 5 * 60 * 1000;
+
+const DEFAULTS = {
+  email: 'info@physiohome.gr',
+  phone: '+30 210 123 4567',
+  address: 'Αθήνα & Αττική, Ελλάδα',
+};
 
 const t = {
   el: {
     title: 'Επικοινωνήστε',
     titleEm: 'μαζί μας',
     desc: 'Έχετε ερωτήσεις για τις υπηρεσίες μας; Είμαστε εδώ να βοηθήσουμε. Επικοινωνήστε μαζί μας και η ομάδα μας θα σας απαντήσει το συντομότερο δυνατό.',
-    contacts: [
-      { Icon: Mail,   label: 'Email',     value: 'info@physiohome.gr',    href: 'mailto:info@physiohome.gr' },
-      { Icon: Phone,  label: 'Τηλέφωνο',  value: '+30 210 123 4567',      href: 'tel:+302101234567' },
-      { Icon: MapPin, label: 'Περιοχή',   value: 'Αθήνα & Αττική, Ελλάδα' },
-    ],
+    labels: { email: 'Email', phone: 'Τηλέφωνο', area: 'Περιοχή' },
     name: 'Όνομα',
     namePh: 'π.χ. Γιώργος',
     email: 'Email',
@@ -24,21 +30,22 @@ const t = {
     terms: 'Αποδέχομαι τους ',
     termsLink: 'Όρους & Πολιτική Απορρήτου',
     submit: 'Αποστολή',
+    sending: 'Αποστολή...',
     required: 'Παρακαλώ συμπληρώστε όλα τα πεδία και αποδεχτείτε τους όρους.',
+    invalidEmail: 'Το email δεν φαίνεται σωστό. Ελέγξτε το και δοκιμάστε ξανά.',
+    sendFailed: 'Δεν ήταν δυνατή η αποστολή. Δοκιμάστε ξανά σε λίγο ή στείλτε μας email απευθείας.',
+    rateLimited: 'Στείλατε ήδη αρκετά μηνύματα. Δοκιμάστε ξανά σε λίγη ώρα.',
     successTitle: 'Ευχαριστούμε που επικοινωνήσατε!',
-    successDesc: 'Λάβαμε το αίτημά σας και θα το εξετάσουμε σύντομα. Θα επικοινωνήσουμε μαζί σας στο',
+    successDesc: 'Λάβαμε το μήνυμά σας και θα το εξετάσουμε σύντομα. Θα επικοινωνήσουμε μαζί σας στο',
     successEnd: 'εντός 24 ωρών.',
     successBtn: 'Εντάξει',
+    close: 'Κλείσιμο',
   },
   en: {
     title: 'Contact',
     titleEm: 'Us',
-    desc: 'Have questions about our services? We\'re here to help. Reach out and our team will respond as soon as possible.',
-    contacts: [
-      { Icon: Mail,   label: 'Email',    value: 'info@physiohome.gr',    href: 'mailto:info@physiohome.gr' },
-      { Icon: Phone,  label: 'Phone',    value: '+30 210 123 4567',      href: 'tel:+302101234567' },
-      { Icon: MapPin, label: 'Location', value: 'Athens & Attica, Greece' },
-    ],
+    desc: "Have questions about our services? We're here to help. Reach out and our team will respond as soon as possible.",
+    labels: { email: 'Email', phone: 'Phone', area: 'Location' },
     name: 'Name',
     namePh: 'e.g. John',
     email: 'Email',
@@ -48,35 +55,114 @@ const t = {
     terms: 'I accept the ',
     termsLink: 'Terms and Privacy Policy',
     submit: 'Submit',
+    sending: 'Sending...',
     required: 'Please fill in all fields and accept the terms.',
+    invalidEmail: "That email doesn't look right. Please check it and try again.",
+    sendFailed: 'We could not send your message. Please try again shortly, or email us directly.',
+    rateLimited: "You've sent several messages already. Please try again later.",
     successTitle: 'Thank you for reaching out!',
-    successDesc: 'We\'ve received your request and will review it shortly. We\'ll get back to you at',
+    successDesc: "We've received your message and will review it shortly. We'll get back to you at",
     successEnd: 'within 24 hours.',
     successBtn: 'Got it',
+    close: 'Close',
   },
 };
+
+const isEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v || '').trim());
 
 export default function ContactPage() {
   const { lang } = useLang();
   const tx = t[lang];
 
-  const [form, setForm] = useState({ name: '', email: '', message: '' });
+  const [settings, setSettings] = useState(DEFAULTS);
+  const [form, setForm] = useState({ name: '', email: '', message: '', website: '' });
   const [accepted, setAccepted] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleChange = (e) => setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  // Στοιχεία επικοινωνίας από τη βάση — αλλάζουν από το admin panel
+  useEffect(() => {
+    async function fetchSettings() {
+      try {
+        const cached = sessionStorage.getItem(CACHE_KEY);
+        if (cached) {
+          const { value, timestamp } = JSON.parse(cached);
+          if (Date.now() - timestamp < CACHE_TTL) {
+            setSettings((prev) => ({ ...prev, ...value }));
+            return;
+          }
+        }
+      } catch (_) {}
 
-  const handleSubmit = () => {
-    if (!form.name || !form.email || !form.message || !accepted) {
-      setError(true);
+      const { data } = await supabase.from('platform_settings').select('key, value');
+      if (data) {
+        const s = {};
+        data.forEach((row) => { s[row.key] = row.value; });
+        setSettings((prev) => ({ ...prev, ...s }));
+        try {
+          sessionStorage.setItem(CACHE_KEY, JSON.stringify({ value: s, timestamp: Date.now() }));
+        } catch (_) {}
+      }
+    }
+    fetchSettings();
+  }, []);
+
+  const handleChange = (e) =>
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+
+  async function handleSubmit() {
+    if (!form.name.trim() || !form.email.trim() || !form.message.trim() || !accepted) {
+      setError(tx.required);
       return;
     }
-    setError(false);
+    if (!isEmail(form.email)) {
+      setError(tx.invalidEmail);
+      return;
+    }
+
+    setError('');
     setLoading(true);
-    setTimeout(() => { setLoading(false); setSubmitted(true); }, 800);
-  };
+
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firstName: form.name.trim(),
+          lastName: '',
+          email: form.email.trim(),
+          phone: '',
+          service: '',
+          message: form.message.trim(),
+          website: form.website, // honeypot
+          lang,
+        }),
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setError(body?.error === 'rate_limited' ? tx.rateLimited : tx.sendFailed);
+        setLoading(false);
+        return;
+      }
+
+      setSubmitted(true);
+      setForm({ name: '', email: form.email, message: '', website: '' });
+      setAccepted(false);
+    } catch (err) {
+      console.error('[contact] submit failed:', err);
+      setError(tx.sendFailed);
+    }
+
+    setLoading(false);
+  }
+
+  const contactItems = [
+    { Icon: Mail, label: tx.labels.email, value: settings.email, href: `mailto:${settings.email}` },
+    { Icon: Phone, label: tx.labels.phone, value: settings.phone, href: `tel:${String(settings.phone).replace(/\s/g, '')}` },
+    { Icon: MapPin, label: tx.labels.area, value: settings.address },
+  ];
 
   return (
     <>
@@ -91,6 +177,7 @@ export default function ContactPage() {
         .form-label { font-size: 13px; font-weight: 600; color: #1a2e44; margin-bottom: 6px; display: block; }
         .contact-info-item { display: flex; align-items: center; gap: 14px; }
         .contact-icon { width: 44px; height: 44px; border-radius: 10px; background: #e8f1fd; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .hp-field { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
       `}</style>
 
       <Navbar />
@@ -107,7 +194,7 @@ export default function ContactPage() {
               <p style={{ fontSize: 15, color: '#6b7a8d', lineHeight: 1.7, marginBottom: 40 }}>{tx.desc}</p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                {tx.contacts.map((item) => {
+                {contactItems.map((item) => {
                   const ItemIcon = item.Icon;
                   return (
                     <div key={item.label} className="contact-info-item">
@@ -129,7 +216,21 @@ export default function ContactPage() {
 
             {/* ── RIGHT: Form ── */}
             <div style={{ background: '#fff', borderRadius: 20, border: '1px solid #e2e8f0', padding: '40px', boxShadow: '0 4px 24px rgba(0,0,0,0.04)' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 20, position: 'relative' }}>
+
+                {/* Honeypot — αόρατο σε ανθρώπους, μόνο bots το γεμίζουν */}
+                <div className="hp-field" aria-hidden="true">
+                  <label htmlFor="website">Website</label>
+                  <input
+                    id="website"
+                    name="website"
+                    type="text"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={form.website}
+                    onChange={handleChange}
+                  />
+                </div>
 
                 <div>
                   <label className="form-label">{tx.name}</label>
@@ -156,9 +257,8 @@ export default function ContactPage() {
                   <div style={{ fontSize: 11, color: '#94a3b8', textAlign: 'right', marginTop: 4 }}>{form.message.length}/300</div>
                 </div>
 
-                {/* Terms — FIXED: link goes to /terms instead of # */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <input type="checkbox" id="terms" checked={accepted} onChange={e => setAccepted(e.target.checked)} style={{ width: 18, height: 18, cursor: 'pointer', accentColor: '#2a6fdb' }} />
+                  <input type="checkbox" id="terms" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} style={{ width: 18, height: 18, cursor: 'pointer', accentColor: '#2a6fdb' }} />
                   <label htmlFor="terms" style={{ fontSize: 14, color: '#1a2e44', cursor: 'pointer' }}>
                     {tx.terms}
                     <a
@@ -166,7 +266,7 @@ export default function ContactPage() {
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{ color: '#2a6fdb', fontWeight: 600, textDecoration: 'underline' }}
-                      onClick={e => e.stopPropagation()}
+                      onClick={(e) => e.stopPropagation()}
                     >
                       {tx.termsLink}
                     </a>
@@ -174,8 +274,9 @@ export default function ContactPage() {
                 </div>
 
                 {error && (
-                  <div style={{ background: '#FFE4E6', color: '#9F1239', padding: '12px 16px', borderRadius: 10, fontSize: 13, fontWeight: 500 }}>
-                    {tx.required}
+                  <div style={{ background: '#FFE4E6', color: '#9F1239', padding: '12px 16px', borderRadius: 10, fontSize: 13, fontWeight: 500, display: 'flex', gap: 9, alignItems: 'flex-start', lineHeight: 1.5 }}>
+                    <AlertCircle size={15} strokeWidth={2.2} style={{ flexShrink: 0, marginTop: 1 }} />
+                    {error}
                   </div>
                 )}
 
@@ -184,7 +285,7 @@ export default function ContactPage() {
                   disabled={loading}
                   style={{ width: '100%', background: '#1a2e44', color: '#fff', padding: '14px', borderRadius: 30, fontSize: 15, fontWeight: 600, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, fontFamily: 'inherit' }}
                 >
-                  {loading ? '...' : tx.submit}
+                  {loading ? tx.sending : tx.submit}
                 </button>
               </div>
             </div>
@@ -196,7 +297,7 @@ export default function ContactPage() {
       {submitted && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}>
           <div style={{ background: '#fff', borderRadius: 20, padding: '48px 40px', maxWidth: 480, width: '100%', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', position: 'relative' }}>
-            <button onClick={() => setSubmitted(false)} style={{ position: 'absolute', top: 16, right: 20, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center' }}>
+            <button onClick={() => setSubmitted(false)} aria-label={tx.close} style={{ position: 'absolute', top: 16, right: 20, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center', padding: 4, lineHeight: 0 }}>
               <X size={20} />
             </button>
             <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#D1FAE5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
