@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { useLang } from '@/context/LanguageContext';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
-import TherapistConditions from '../../../components/TherapistConditions';
+import ConditionPicker from '@/components/ConditionPicker';
 import {
   LayoutDashboard, ClipboardList, Calendar, MapPin, Target, Star, User, Clock, AlertTriangle, Upload, CreditCard, Home, MessageSquare, Check, X, Lock, ChevronLeft, ChevronRight, Plus, Lightbulb, Camera, Pencil, CheckCircle2, Save, FileText, GraduationCap, Award, Eye, Trash2, Wallet, Hourglass, CalendarDays, List, Globe,
 } from 'lucide-react';
@@ -209,6 +209,8 @@ const TX = {
     errUpdate: 'Σφάλμα ενημέρωσης: ',
     errPrefix: 'Σφάλμα: ',
     confirmDelete: 'Διαγραφή αρχείου;',
+    condSaved: (n) => `Αποθηκεύτηκαν ${n} ${n === 1 ? 'πάθηση' : 'παθήσεις'}`,
+    condUnsaved: 'Έχετε αλλαγές χωρίς αποθήκευση',
   },
   en: {
     roleBadge: 'Therapist',
@@ -365,6 +367,8 @@ const TX = {
     errUpdate: 'Update error: ',
     errPrefix: 'Error: ',
     confirmDelete: 'Delete this file?',
+    condSaved: (n) => `Saved ${n} ${n === 1 ? 'condition' : 'conditions'}`,
+    condUnsaved: 'You have unsaved changes',
   },
 };
 
@@ -458,6 +462,117 @@ function daysUntilAutoRelease(autoReleaseAt) {
   const target = new Date(autoReleaseAt);
   const diffDays = Math.ceil((target - now) / (1000 * 60 * 60 * 24));
   return Math.max(0, diffDays);
+}
+
+// ─── TAB ΠΑΘΗΣΕΩΝ ─────────────────────────────────────────────────────
+// Ξεχωριστό component γιατί έχει δικό του state αποθήκευσης.
+// Το ConditionPicker είναι controlled και δεν γράφει μόνο του στη βάση.
+function TherapistConditionsTab({ userId, specialty, lang, tx }) {
+  const [selected, setSelected] = useState([]);
+  const [original, setOriginal] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState(null);
+
+  useEffect(() => {
+    if (!userId) return;
+    (async () => {
+      const { data } = await supabase
+        .from('therapist_conditions')
+        .select('condition_id')
+        .eq('therapist_id', userId);
+      const ids = (data || []).map(r => r.condition_id);
+      setSelected(ids);
+      setOriginal(ids);
+      setLoading(false);
+    })();
+  }, [userId]);
+
+  const changed =
+    selected.length !== original.length ||
+    selected.some(id => !original.includes(id));
+
+  async function save() {
+    if (!userId) return;
+    setSaving(true);
+    setMsg(null);
+
+    const toAdd = selected.filter(id => !original.includes(id));
+    const toRemove = original.filter(id => !selected.includes(id));
+
+    try {
+      if (toAdd.length > 0) {
+        const { error } = await supabase
+          .from('therapist_conditions')
+          .insert(toAdd.map(cid => ({ therapist_id: userId, condition_id: cid })));
+        if (error) throw error;
+      }
+      if (toRemove.length > 0) {
+        const { error } = await supabase
+          .from('therapist_conditions')
+          .delete()
+          .eq('therapist_id', userId)
+          .in('condition_id', toRemove);
+        if (error) throw error;
+      }
+      setOriginal([...selected]);
+      setMsg({ type: 'success', text: tx.condSaved(selected.length) });
+      setTimeout(() => setMsg(null), 3000);
+    } catch (err) {
+      console.error('Save conditions error:', err);
+      setMsg({ type: 'error', text: tx.errPrefix + (err.message || '') });
+    }
+    setSaving(false);
+  }
+
+  if (loading) {
+    return (
+      <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: 40, textAlign: 'center', color: '#64748B' }}>
+        {tx.loading}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: 24 }}>
+      <ConditionPicker
+        value={selected}
+        onChange={setSelected}
+        lang={lang}
+        specialty={specialty}
+        minRequired={3}
+        showDemand={true}
+      />
+
+      {(changed || msg) && (
+        <div style={{ position: 'sticky', bottom: 0, marginTop: 20, paddingTop: 16, borderTop: '1px solid #e2e8f0', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          {msg ? (
+            <div style={{
+              background: msg.type === 'success' ? '#D1FAE5' : '#FEF2F2',
+              border: `1px solid ${msg.type === 'success' ? '#86EFAC' : '#FECACA'}`,
+              borderRadius: 8, padding: '8px 14px', fontSize: 13,
+              color: msg.type === 'success' ? '#15803D' : '#DC2626',
+              fontWeight: 600, flex: 1, display: 'flex', alignItems: 'center', gap: 7,
+            }}>
+              {msg.type === 'success'
+                ? <Check size={14} strokeWidth={3} />
+                : <AlertTriangle size={14} strokeWidth={2.5} />}
+              {msg.text}
+            </div>
+          ) : (
+            <div style={{ fontSize: 13, color: '#64748B', flex: 1 }}>{tx.condUnsaved}</div>
+          )}
+          {changed && (
+            <button onClick={save} disabled={saving}
+              style={{ background: '#1a2e44', color: '#fff', border: 'none', padding: '11px 28px', borderRadius: 30, fontSize: 14, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: saving ? 0.7 : 1, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+              <Save size={15} strokeWidth={2.2} />
+              {saving ? tx.saving : tx.save}
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function TherapistDashboard() {
@@ -1733,7 +1848,12 @@ export default function TherapistDashboard() {
 
         {/* ═══ CONDITIONS ═══ */}
         {activeTab === 'conditions' && (
-          <TherapistConditions userId={user?.id} specialty={profile?.specialty} />
+          <TherapistConditionsTab
+            userId={user?.id}
+            specialty={profile?.specialty}
+            lang={lang}
+            tx={tx}
+          />
         )}
 
         {/* ═══ REVIEWS ═══ */}
