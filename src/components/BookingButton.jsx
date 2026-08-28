@@ -10,7 +10,6 @@ import { supabase } from '@/lib/supabase';
  *       booking    → /dashboard/patient/new-request
  *       assessment → /free-assessment
  *   - address: (optional) αν περαστεί, αποθηκεύεται στο localStorage
- *   - packageName: (optional) αν περαστεί, προστίθεται σαν ?package=... στο URL
  *   - disabled: αν true, το κουμπί είναι disabled
  *   - style, className, children: standard props
  *
@@ -18,6 +17,9 @@ import { supabase } from '@/lib/supabase';
  *   - Αν ο χρήστης είναι logged-in → πάει κατευθείαν στον προορισμό
  *   - Αν ΔΕΝ είναι logged-in → πάει στο /auth/login
  *     (αποθηκεύει το pendingRedirect για να γυρίσει μετά το login)
+ *
+ * ΣΗΜΕΙΩΣΗ: το prop `packageName` αφαιρέθηκε μαζί με τα πακέτα.
+ * Κάθε αίτημα αφορά ΜΙΑ συνεδρία.
  */
 export default function BookingButton({
   children,
@@ -25,7 +27,6 @@ export default function BookingButton({
   className,
   variant = 'booking',
   address = '',
-  packageName = '',
   disabled = false,
 }) {
   const [user, setUser] = useState(null);
@@ -46,16 +47,9 @@ export default function BookingButton({
     e.preventDefault();
     if (!mounted || disabled) return;
 
-    // Destination ανάλογα με το variant
-    let destination = variant === 'assessment'
+    const destination = variant === 'assessment'
       ? '/free-assessment'
       : '/dashboard/patient/new-request';
-
-    // Αν υπάρχει packageName, πρόσθεσέ το στο URL
-    if (packageName && packageName.trim()) {
-      const separator = destination.includes('?') ? '&' : '?';
-      destination += `${separator}package=${encodeURIComponent(packageName.trim())}`;
-    }
 
     // Save address αν υπάρχει
     if (address && address.trim()) {
