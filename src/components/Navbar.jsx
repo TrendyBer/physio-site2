@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { X } from 'lucide-react';
 import LanguageSwitcher from './LanguageSwitcher';
+import { VIEW_SITE_KEY } from './TherapistGuard';
 
 /* ------------------------------------------------------------------
    ΘΕΜΑ ΜΠΑΡΑΣ
@@ -92,7 +93,9 @@ export default function Navbar() {
 
   useEffect(() => {
     setMounted(true);
-    setViewingSite(sessionStorage.getItem('physiohome_view_site') === '1');
+    // Το κλειδί έρχεται από το TherapistGuard αντί για hardcoded string,
+    // ώστε να μην μπορεί ποτέ να ξεσυγχρονιστεί από τη μία πλευρά.
+    setViewingSite(sessionStorage.getItem(VIEW_SITE_KEY) === '1');
 
     // Cache πρώτα (χωρίς flash), βάση μετά
     const cachedRole = localStorage.getItem('userRole');
@@ -187,22 +190,23 @@ export default function Navbar() {
     { label: lang === 'el' ? 'Πώς Λειτουργεί' : 'How it Works', href: '/how-it-works' },
     { label: lang === 'el' ? 'Παθήσεις' : 'Conditions', href: '/find-help' },
     { label: lang === 'el' ? 'Θεραπευτές' : 'Therapists', href: '/therapists' },
-    { label: lang === 'el' ? 'Πακέτα' : 'Packages', href: '/packages' },
     { label: 'Blog', href: '/blog' },
     { label: lang === 'el' ? 'Για φυσιοθεραπευτές' : 'For therapists', href: '/become-therapist' },
   ];
 
+  // Τα deep links προς συγκεκριμένα tabs (?tab=calendar κ.λπ.) αφαιρέθηκαν:
+  // ο πίνακας δεν διαβάζει αυτή την παράμετρο, οπότε και τα τρία σε πήγαιναν
+  // απλώς στην Επισκόπηση. Ένα link που δεν κάνει αυτό που λέει είναι
+  // χειρότερο από κανένα link.
   const therapistLinks = [
     { label: lang === 'el' ? 'Αρχική' : 'Home', href: '/' },
-    { label: 'Dashboard', href: '/dashboard/therapist' },
+    { label: lang === 'el' ? 'Ο πίνακάς μου' : 'Dashboard', href: '/dashboard/therapist' },
     { label: lang === 'el' ? 'Παθήσεις' : 'Conditions', href: '/find-help' },
-    { label: lang === 'el' ? 'Διαθεσιμότητα' : 'Availability', href: '/dashboard/therapist?tab=calendar' },
-    { label: lang === 'el' ? 'Ραντεβού' : 'Appointments', href: '/dashboard/therapist?tab=requests' },
-    { label: lang === 'el' ? 'Προφίλ' : 'Profile', href: '/dashboard/therapist?tab=profile' },
+    { label: 'Blog', href: '/blog' },
   ];
 
   // Ο ασθενής βλέπει το ΚΑΝΟΝΙΚΟ μενού — πρέπει να μπορεί να ψάξει
-  // θεραπευτή, να διαβάσει για παθήσεις, να δει πακέτα.
+  // θεραπευτή και να διαβάσει για παθήσεις.
   // Φεύγει μόνο το «Για φυσιοθεραπευτές» — δεν τον αφορά.
   const patientLinks = publicLinks.filter((l) => l.href !== '/become-therapist');
 
