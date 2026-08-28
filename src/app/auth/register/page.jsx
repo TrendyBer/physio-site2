@@ -11,8 +11,8 @@ const DEFAULT_FEE = 10;
 const DEFAULT_RESET_MONTHS = 12;
 const MIN_CONDITIONS = 3;
 
-// Το συμβόλαιο χτίζεται ΔΥΝΑΜΙΚΑ από τα στοιχεία του πακέτου που επέλεξε.
-// Αν αλλάξεις τιμές στο admin, το κείμενο ακολουθεί — χωρίς deploy.
+// Το συμβόλαιο χτίζεται ΔΥΝΑΜΙΚΑ από τα στοιχεία του πακέτου συνδρομής
+// που επέλεξε. Αν αλλάξεις τιμές στο admin, το κείμενο ακολουθεί.
 const CONTRACTS = {
   el: ({ planName, price, fee, resetMonths }) => `ΣΥΜΦΩΝΙΑ ΣΥΝΕΡΓΑΣΙΑΣ - PhysioHome
 
@@ -20,7 +20,7 @@ const CONTRACTS = {
 
 2. ΠΡΟΜΗΘΕΙΑ ΠΡΩΤΗΣ ΣΥΝΕΔΡΙΑΣ: Η πλατφόρμα παρακρατεί €${fee} μία και μόνη φορά, στην πρώτη συνεδρία με κάθε νέο ασθενή.
 
-3. ΕΠΟΜΕΝΕΣ ΣΥΝΕΔΡΙΕΣ: Για όλες τις επόμενες συνεδρίες με τον ίδιο ασθενή — είτε μεμονωμένες είτε σε πακέτο — ΔΕΝ παρακρατείται καμία προμήθεια.
+3. ΕΠΟΜΕΝΕΣ ΣΥΝΕΔΡΙΕΣ: Για όλες τις επόμενες συνεδρίες με τον ίδιο ασθενή ΔΕΝ παρακρατείται καμία προμήθεια.
 
 4. ΕΠΑΝΕΝΕΡΓΟΠΟΙΗΣΗ: Αν ασθενής επιστρέψει μετά από ${resetMonths} μήνες χωρίς συνεδρία, θεωρείται νέα συνεργασία και η προμήθεια εφαρμόζεται ξανά.
 
@@ -40,7 +40,7 @@ const CONTRACTS = {
 
 2. FIRST-SESSION COMMISSION: The platform retains €${fee} once only, on the first session with each new patient.
 
-3. SUBSEQUENT SESSIONS: For all further sessions with the same patient — whether single or part of a package — NO commission is retained.
+3. SUBSEQUENT SESSIONS: For all further sessions with the same patient, NO commission is retained.
 
 4. REACTIVATION: If a patient returns after ${resetMonths} months without a session, this counts as a new partnership and the commission applies again.
 
@@ -61,7 +61,7 @@ const TX = {
     rolePatient: 'Ασθενής',
     roleTherapist: 'Θεραπευτής',
     step1Question: 'Τι θέλετε να κάνετε;',
-    cardPatientTitle: 'Θέλω Φυσιοθεραπεία',
+    cardPatientTitle: 'Θέλω Φυσικοθεραπεία',
     cardPatientDesc: 'Εγγραφή ως ασθενής',
     cardTherapistTitle: 'Θέλω να Προσφέρω',
     cardTherapistDesc: 'Εγγραφή ως θεραπευτής',
@@ -74,16 +74,9 @@ const TX = {
     specialtyPh: 'π.χ. Ορθοπαιδική',
     area: 'Περιοχή',
     areaTherapistPh: 'π.χ. Αθήνα',
-    areaPatientPh: 'π.χ. Παγκράτι',
     phone: 'Τηλέφωνο',
     phonePh: '+30 69...',
-    address: 'Διεύθυνση',
-    addressPh: 'π.χ. Λεωφ. Κηφισίας 100 (προαιρετικό)',
-    city: 'Πόλη',
-    cityPh: 'π.χ. Αθήνα',
-    postal: 'ΤΚ',
-    postalPh: '11528',
-    addressHint: 'Η διεύθυνση και ο ΤΚ μπορούν να συμπληρωθούν αργότερα από το προφίλ σας — απαιτούνται όταν κλείνετε ραντεβού.',
+    addressLater: 'Τη διεύθυνσή σας θα τη ζητήσουμε μόνο όταν κλείσετε το πρώτο σας ραντεβού — και θα αποθηκευτεί για την επόμενη φορά.',
     password: 'Password',
     confirmPassword: 'Επιβεβαίωση',
     planTitle: 'Επιλέξτε πακέτο συνεργασίας',
@@ -111,8 +104,8 @@ const TX = {
     errPasswordMatch: 'Τα passwords δεν ταιριάζουν',
     errAllTerms: 'Πρέπει να αποδεχτείτε όλους τους όρους',
     errPickPlan: 'Επιλέξτε πακέτο συνεργασίας για να συνεχίσετε',
-    errConditions: (n) => `Επιλέξτε τουλάχιστον ${n} παθήσεις που θεραπεύετε`,
-    conditionsWhy: 'Χωρίς αυτές δεν θα εμφανίζεστε στις αναζητήσεις των ασθενών.',
+    errConditions: (n) => `Επιλέξτε τουλάχιστον ${n} περιστατικά που αναλαμβάνετε`,
+    conditionsWhy: 'Χωρίς αυτά δεν θα εμφανίζεστε στις αναζητήσεις των ασθενών.',
     errPatientTerms: 'Πρέπει να αποδεχτείτε την πολιτική GDPR και τους Όρους Χρήσης',
     errUserCreate: 'Σφάλμα δημιουργίας χρήστη',
     errProfile: 'Σφάλμα προφίλ: ',
@@ -137,16 +130,9 @@ const TX = {
     specialtyPh: 'e.g. Orthopaedics',
     area: 'Area',
     areaTherapistPh: 'e.g. Athens',
-    areaPatientPh: 'e.g. Pangrati',
     phone: 'Phone',
     phonePh: '+30 69...',
-    address: 'Address',
-    addressPh: 'e.g. 100 Kifisias Ave (optional)',
-    city: 'City',
-    cityPh: 'e.g. Athens',
-    postal: 'Postcode',
-    postalPh: '11528',
-    addressHint: 'Address and postcode can be filled in later from your profile — they are required when booking an appointment.',
+    addressLater: "We'll ask for your address only when you book your first appointment — and we'll save it for next time.",
     password: 'Password',
     confirmPassword: 'Confirm',
     planTitle: 'Choose your partnership plan',
@@ -174,7 +160,7 @@ const TX = {
     errPasswordMatch: 'Passwords do not match',
     errAllTerms: 'You must accept all the terms',
     errPickPlan: 'Choose a partnership plan to continue',
-    errConditions: (n) => `Select at least ${n} conditions you treat`,
+    errConditions: (n) => `Select at least ${n} cases you take on`,
     conditionsWhy: 'Without these you will not appear in patient searches.',
     errPatientTerms: 'You must accept the GDPR policy and the Terms of Use',
     errUserCreate: 'Error creating user',
@@ -192,9 +178,13 @@ export default function RegisterPage() {
 
   const [role, setRole] = useState(preRole || '');
   const [step, setStep] = useState(preRole ? 2 : 1);
+
+  // Ο ασθενής δίνει ΜΟΝΟ όνομα, email, τηλέφωνο και password.
+  // Η διεύθυνση ζητείται στο πρώτο booking και αποθηκεύεται τότε —
+  // η εγγραφή πρέπει να είναι όσο πιο ελαφριά γίνεται.
   const [form, setForm] = useState({
     name: '', email: '', password: '', confirmPassword: '',
-    phone: '', specialty: '', area: '', address: '', city: '', postal_code: '',
+    phone: '', specialty: '', area: '',
   });
   const [agreements, setAgreements] = useState({ gdpr: false, terms: false, contract: false });
   const [selectedConditions, setSelectedConditions] = useState([]);
@@ -350,9 +340,9 @@ export default function RegisterPage() {
       }, { onConflict: 'id' });
       if (thErr) { setError(tx.errTherapistProfile + thErr.message); setLoading(false); return; }
 
-      // ── ΠΑΘΗΣΕΙΣ ──────────────────────────────────────────────────────
-      // Γράφονται ΕΔΩ, όχι στο dashboard. Είναι ένα από τα 9 υποχρεωτικά
-      // του calc_profile_completeness (>= 3), και μέχρι τώρα κανένας
+      // ── ΠΕΡΙΣΤΑΤΙΚΑ ───────────────────────────────────────────────────
+      // Γράφονται ΕΔΩ, όχι στο dashboard. Είναι από τα υποχρεωτικά του
+      // calc_profile_completeness (>= 3), και μέχρι τώρα κανένας
       // θεραπευτής δεν το συμπλήρωνε γιατί ήταν κρυμμένο σε tab.
       if (selectedConditions.length > 0) {
         const rows = selectedConditions.map(cid => ({
@@ -363,7 +353,7 @@ export default function RegisterPage() {
           .from('therapist_conditions')
           .insert(rows);
         // Δεν μπλοκάρουμε την εγγραφή αν αποτύχει — ο θεραπευτής μπορεί
-        // να τις προσθέσει από τον πίνακά του.
+        // να τα προσθέσει από τον πίνακά του.
         if (condErr) console.error('[register] conditions insert failed:', condErr);
       }
 
@@ -408,10 +398,6 @@ export default function RegisterPage() {
         id: userId,
         name: form.name,
         phone: form.phone || null,
-        area: form.area || null,
-        address: form.address || null,
-        city: form.city || null,
-        postal_code: form.postal_code || null,
       }, { onConflict: 'id' });
       if (paErr) { setError(tx.errProfile + paErr.message); setLoading(false); return; }
     }
@@ -508,36 +494,14 @@ export default function RegisterPage() {
 
             {role === 'patient' && (
               <>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <div>
-                    <label style={labelStyle}>{tx.phone} *</label>
-                    <input required value={form.phone} onChange={e => upd('phone', e.target.value)} style={inputStyle} placeholder={tx.phonePh} />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>{tx.area} *</label>
-                    <input required value={form.area} onChange={e => upd('area', e.target.value)} style={inputStyle} placeholder={tx.areaPatientPh} />
-                  </div>
-                </div>
-
                 <div>
-                  <label style={labelStyle}>{tx.address}</label>
-                  <input value={form.address} onChange={e => upd('address', e.target.value)} style={inputStyle} placeholder={tx.addressPh} />
+                  <label style={labelStyle}>{tx.phone} *</label>
+                  <input required value={form.phone} onChange={e => upd('phone', e.target.value)} style={inputStyle} placeholder={tx.phonePh} />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12 }}>
-                  <div>
-                    <label style={labelStyle}>{tx.city}</label>
-                    <input value={form.city} onChange={e => upd('city', e.target.value)} style={inputStyle} placeholder={tx.cityPh} />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>{tx.postal}</label>
-                    <input value={form.postal_code} onChange={e => upd('postal_code', e.target.value)} style={inputStyle} placeholder={tx.postalPh} />
-                  </div>
-                </div>
-
-                <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 8, padding: '9px 12px', fontSize: 11, color: '#1D4ED8', lineHeight: 1.5, display: 'flex', gap: 7, alignItems: 'flex-start' }}>
+                <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 8, padding: '9px 12px', fontSize: 11.5, color: '#1D4ED8', lineHeight: 1.5, display: 'flex', gap: 7, alignItems: 'flex-start' }}>
                   <Lightbulb size={13} strokeWidth={2.2} style={{ marginTop: 1, flexShrink: 0 }} />
-                  <span>{tx.addressHint}</span>
+                  <span>{tx.addressLater}</span>
                 </div>
               </>
             )}
@@ -553,7 +517,7 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* ══ ΕΠΙΛΟΓΗ ΠΑΚΕΤΟΥ ══════════════════════════════════════ */}
+            {/* ══ ΕΠΙΛΟΓΗ ΠΑΚΕΤΟΥ ΣΥΝΔΡΟΜΗΣ ═══════════════════════════ */}
             {role === 'therapist' && !plansLoading && plans.length > 0 && (
               <div style={{ marginTop: 6 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: '#1a2e44', marginBottom: 4 }}>
@@ -632,7 +596,7 @@ export default function RegisterPage() {
               </div>
             )}
 
-            {/* ══ ΠΑΘΗΣΕΙΣ ═════════════════════════════════════════════ */}
+            {/* ══ ΠΕΡΙΣΤΑΤΙΚΑ ══════════════════════════════════════════ */}
             {role === 'therapist' && (
               <div style={{ marginTop: 6, paddingTop: 18, borderTop: '1px solid #e2e8f0' }}>
                 <ConditionPicker
