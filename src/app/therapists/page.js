@@ -7,14 +7,19 @@ import RatingDisplay from '../../components/RatingDisplay';
 import ConditionSearch from '../../components/ConditionSearch';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
-import { Search, MapPin, Star, SlidersHorizontal, X, Check, ArrowRight, Stethoscope, Users, ChevronDown, ChevronUp, Lightbulb, BadgeCheck, ShieldCheck, Info } from 'lucide-react';
+import { Search, MapPin, Star, SlidersHorizontal, X, Check, ArrowRight, Stethoscope, Users, ChevronDown, ChevronUp, Lightbulb, BadgeCheck, ShieldCheck, Info, CalendarCheck, Briefcase } from 'lucide-react';
+
+const DAYS_SHORT = {
+  el: ['Κυρ', 'Δευ', 'Τρι', 'Τετ', 'Πεμ', 'Παρ', 'Σαβ'],
+  en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+};
 
 const TX = {
   el: {
     badge: 'Βρείτε τον ιδανικό',
     hero: 'Οι', heroEm: 'Φυσιοθεραπευτές', heroEnd: 'μας',
     heroDesc: 'Έμπειροι, αδειοδοτημένοι επαγγελματίες, που παρέχουν εξατομικευμένη φροντίδα στο σπίτι σας.',
-    bookCta: 'Βρες φυσιοθεραπευτή',
+    bookCta: 'Κλείσε ραντεβού',
     viewProfile: 'Δείτε Προφίλ',
     noTherapists: 'Δεν υπάρχουν ενεργοί θεραπευτές ακόμα.',
     noResults: 'Δεν βρέθηκαν θεραπευτές με αυτά τα φίλτρα.',
@@ -23,7 +28,6 @@ const TX = {
     allAreas: 'Όλες οι περιοχές',
     allSpecialties: 'Όλες οι ειδικότητες',
     priceRange: 'Εύρος τιμής',
-    sortBy: 'Ταξινόμηση',
     verifiedLicense: 'Ελεγμένη άδεια',
     fullProfile: 'Πλήρες προφίλ',
     featured: 'Προτεινόμενος',
@@ -32,10 +36,11 @@ const TX = {
     sortPriceAsc: 'Τιμή: χαμηλή προς υψηλή',
     sortPriceDesc: 'Τιμή: υψηλή προς χαμηλή',
     sortExpDesc: 'Περισσότερη εμπειρία',
+    sortSoonest: 'Συντομότερη διαθεσιμότητα',
     sortRelevance: 'Σχετικότητα',
     clearFilters: 'Καθαρισμός φίλτρων',
     resultsCount: (n) => `${n} ${n === 1 ? 'θεραπευτής' : 'θεραπευτές'}`,
-    rankingNote: 'Η προτεινόμενη σειρά επηρεάζεται από το πακέτο συνεργασίας του θεραπευτή. Για καθαρά αντικειμενική κατάταξη, επιλέξτε ταξινόμηση κατά βαθμολογία.',
+    rankingNote: 'Η προτεινόμενη σειρά επηρεάζεται από το συνδρομητικό πλάνο του θεραπευτή. Για καθαρά αντικειμενική κατάταξη, επιλέξτε ταξινόμηση κατά βαθμολογία.',
     notFoundTitle: 'Δεν βρίσκετε αυτό που ψάχνετε;',
     notFoundDesc: 'Συμπληρώστε το αίτημά σας και θα σας προτείνουμε τους κατάλληλους θεραπευτές.',
     notFoundBtn: 'Στείλτε αίτημα',
@@ -49,12 +54,17 @@ const TX = {
     crossLinkText: 'Δεν είστε σίγουροι ποιον χρειάζεστε;',
     crossLinkBtn: 'Δείτε κατά πάθηση',
     perSession: 'συνεδρία',
+    yearsShort: (n) => `${n} χρ. εμπειρία`,
+    nextFree: 'Πρώτη ώρα',
+    noFreeSlots: 'Χωρίς ανοιχτές ώρες',
+    today: 'Σήμερα',
+    tomorrow: 'Αύριο',
   },
   en: {
     badge: 'Find your',
     hero: 'Our', heroEm: 'Physiotherapists', heroEnd: '',
     heroDesc: 'Experienced, licensed professionals providing personalized care at your home.',
-    bookCta: 'Find a physiotherapist',
+    bookCta: 'Book an appointment',
     viewProfile: 'View Profile',
     noTherapists: 'No active therapists yet.',
     noResults: 'No therapists match these filters.',
@@ -63,7 +73,6 @@ const TX = {
     allAreas: 'All areas',
     allSpecialties: 'All specialties',
     priceRange: 'Price range',
-    sortBy: 'Sort by',
     verifiedLicense: 'Verified license',
     fullProfile: 'Complete profile',
     featured: 'Featured',
@@ -72,10 +81,11 @@ const TX = {
     sortPriceAsc: 'Price: low to high',
     sortPriceDesc: 'Price: high to low',
     sortExpDesc: 'Most experienced',
+    sortSoonest: 'Soonest available',
     sortRelevance: 'Relevance',
     clearFilters: 'Clear filters',
     resultsCount: (n) => `${n} ${n === 1 ? 'therapist' : 'therapists'}`,
-    rankingNote: "Recommended order is influenced by the therapist's partnership plan. For a purely objective ranking, sort by rating.",
+    rankingNote: "Recommended order is influenced by the therapist's subscription plan. For a purely objective ranking, sort by rating.",
     notFoundTitle: "Can't find what you're looking for?",
     notFoundDesc: "Submit a request and we'll recommend therapists for you.",
     notFoundBtn: 'Send a request',
@@ -89,6 +99,11 @@ const TX = {
     crossLinkText: 'Not sure who you need?',
     crossLinkBtn: 'Browse by condition',
     perSession: 'session',
+    yearsShort: (n) => `${n} yrs experience`,
+    nextFree: 'Next slot',
+    noFreeSlots: 'No open times',
+    today: 'Today',
+    tomorrow: 'Tomorrow',
   },
 };
 
@@ -100,6 +115,18 @@ function ImgWithSkeleton({ src, alt, style, containerStyle }) {
       <img src={src} alt={alt || ''} onLoad={() => setLoaded(true)} style={{ ...style, display: loaded ? 'block' : 'none' }} />
     </div>
   );
+}
+
+function todayISO() {
+  return new Date().toISOString().split('T')[0];
+}
+
+// Όλες οι περιοχές που δηλώνει ο θεραπευτής: το service_areas (jsonb)
+// είναι η πραγματική λίστα, το `area` μόνο η έδρα του.
+function allAreasOf(t) {
+  const declared = Array.isArray(t.service_areas) ? t.service_areas.filter(Boolean) : [];
+  if (declared.length > 0) return declared;
+  return t.area ? [t.area] : [];
 }
 
 export default function TherapistsPage() {
@@ -119,6 +146,17 @@ export default function TherapistsPage() {
   const [filterMaxPrice, setFilterMaxPrice] = useState(null);
   const [sortBy, setSortBy] = useState('newest');
   const [showFilters, setShowFilters] = useState(false);
+
+  // Το πλάτος διαβαζόταν κατευθείαν μέσα στο render με window.innerWidth.
+  // Στον server δεν υπάρχει window, οπότε το markup του server και του
+  // browser διέφεραν (hydration mismatch) και τα φίλτρα «πηδούσαν».
+  const [isDesktop, setIsDesktop] = useState(false);
+  useEffect(() => {
+    const check = () => setIsDesktop(window.innerWidth >= 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   useEffect(() => {
     const conditionSlug = searchParams.get('condition');
@@ -188,6 +226,7 @@ export default function TherapistsPage() {
       let ratingsMap = {};
       let conditionsMap = {};
       let rankMap = {};
+      let slotMap = {};
 
       if (therapistIds.length > 0) {
         const { data: reviewsData } = await supabase
@@ -214,8 +253,8 @@ export default function TherapistsPage() {
           });
         }
 
-        // Βάρος κατάταξης από το πακέτο συνδρομής.
-        // Ρυθμίζεται ανά πακέτο από το admin: 0 = ουδέτερο, 200 = πάντα πρώτοι.
+        // Βάρος κατάταξης από τη συνδρομή.
+        // Ρυθμίζεται ανά πλάνο από το admin: 0 = ουδέτερο, 200 = πάντα πρώτοι.
         const { data: rankData } = await supabase
           .from('v_therapist_ranking')
           .select('therapist_id, rank_weight, featured_listing')
@@ -228,17 +267,43 @@ export default function TherapistsPage() {
             };
           });
         }
+
+        // ΠΡΩΤΗ ΔΙΑΘΕΣΙΜΗ ΩΡΑ.
+        // Το «πότε μπορεί να με δει» είναι από τα πρώτα που ρωτάει ο
+        // ασθενής και η κάρτα δεν το έλεγε πουθενά.
+        const horizon = new Date();
+        horizon.setDate(horizon.getDate() + 21);
+        const { data: slotData } = await supabase
+          .from('availability_slots')
+          .select('therapist_id, date, start_time')
+          .eq('is_blocked', false)
+          .gte('date', todayISO())
+          .lte('date', horizon.toISOString().split('T')[0])
+          .in('therapist_id', therapistIds)
+          .order('date', { ascending: true })
+          .order('start_time', { ascending: true });
+        if (slotData) {
+          slotData.forEach(s => {
+            if (!slotMap[s.therapist_id]) {
+              slotMap[s.therapist_id] = { next: { date: s.date, start_time: s.start_time }, count: 0 };
+            }
+            slotMap[s.therapist_id].count += 1;
+          });
+        }
       }
 
       const enriched = ths.map(t => {
         const stats = ratingsMap[t.id];
         const rank = rankMap[t.id];
+        const sl = slotMap[t.id];
         return {
           ...t,
           avg_rating: stats ? stats.sum / stats.count : 0,
           review_count: stats ? stats.count : 0,
           rank_weight: rank ? rank.rank_weight : 0,
           featured: rank ? rank.featured : false,
+          next_slot: sl ? sl.next : null,
+          free_slots: sl ? sl.count : 0,
         };
       });
       setTherapists(enriched);
@@ -251,8 +316,21 @@ export default function TherapistsPage() {
     setLoadingTherapists(false);
   }
 
+  function slotLabel(slot) {
+    if (!slot) return null;
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const target = new Date(slot.date + 'T12:00:00'); target.setHours(0, 0, 0, 0);
+    const diff = Math.round((target - today) / 86400000);
+    const time = slot.start_time?.slice(0, 5);
+    if (diff === 0) return `${tx.today} ${time}`;
+    if (diff === 1) return `${tx.tomorrow} ${time}`;
+    const d = new Date(slot.date + 'T12:00:00');
+    return `${DAYS_SHORT[lang][d.getDay()]} ${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')} ${time}`;
+  }
+
   const uniqueAreas = useMemo(() => {
-    const set = new Set(therapists.map(t => t.area).filter(Boolean));
+    const set = new Set();
+    therapists.forEach(t => allAreasOf(t).forEach(a => set.add(a)));
     return Array.from(set).sort();
   }, [therapists]);
 
@@ -261,7 +339,7 @@ export default function TherapistsPage() {
     return Array.from(set).sort();
   }, [therapists]);
 
-  // Αν κανένα πακέτο δεν δίνει βάρος, δεν έχει νόημα να μιλάμε
+  // Αν κανένα πλάνο δεν δίνει βάρος, δεν έχει νόημα να μιλάμε
   // για «προτεινόμενη σειρά» — η κατάταξη είναι ήδη αντικειμενική.
   const hasPaidRanking = useMemo(
     () => therapists.some(t => (t.rank_weight || 0) > 0),
@@ -321,10 +399,13 @@ export default function TherapistsPage() {
       result = result.filter(t =>
         (t.name || '').toLowerCase().includes(q) ||
         (t.specialty || '').toLowerCase().includes(q) ||
-        (t.area || '').toLowerCase().includes(q)
+        allAreasOf(t).some(a => (a || '').toLowerCase().includes(q))
       );
     }
-    if (filterArea) result = result.filter(t => t.area === filterArea);
+    // Το φίλτρο περιοχής κοιτάει ΟΛΕΣ τις δηλωμένες περιοχές, όχι μόνο
+    // την έδρα. Αλλιώς θεραπευτής με έδρα Νέα Σμύρνη που εξυπηρετεί και
+    // Καλλιθέα δεν εμφανιζόταν ποτέ σε αναζήτηση για Καλλιθέα.
+    if (filterArea) result = result.filter(t => allAreasOf(t).includes(filterArea));
     if (filterSpecialty) result = result.filter(t => t.specialty === filterSpecialty);
     if (filterMinPrice !== null && filterMaxPrice !== null) {
       result = result.filter(t => {
@@ -337,10 +418,12 @@ export default function TherapistsPage() {
     // Τα πλήρη προφίλ ανεβαίνουν: κίνητρο για τον θεραπευτή, ποιότητα για τον ασθενή
     const fullBoost = (a, b) => (b.is_profile_full ? 1 : 0) - (a.is_profile_full ? 1 : 0);
 
-    // Το πακέτο συνδρομής. Εφαρμόζεται ΜΟΝΟ στην προτεινόμενη σειρά και
-    // στη σχετικότητα. Αν ο ασθενής ζητήσει ρητά «υψηλότερη βαθμολογία»
+    // Η συνδρομή. Εφαρμόζεται ΜΟΝΟ στην προτεινόμενη σειρά και στη
+    // σχετικότητα. Αν ο ασθενής ζητήσει ρητά «υψηλότερη βαθμολογία»
     // ή «φθηνότερος», παίρνει ακριβώς αυτό — χωρίς παρέμβαση.
     const rankBoost = (a, b) => (b.rank_weight || 0) - (a.rank_weight || 0);
+
+    const slotKey = (t) => (t.next_slot ? `${t.next_slot.date}T${t.next_slot.start_time}` : '9999');
 
     if (sortBy === 'relevance' && selectedCondition) {
       result.sort((a, b) => {
@@ -359,6 +442,7 @@ export default function TherapistsPage() {
     else if (sortBy === 'price-asc') result.sort((a, b) => (Number(a.price_per_session) || 0) - (Number(b.price_per_session) || 0));
     else if (sortBy === 'price-desc') result.sort((a, b) => (Number(b.price_per_session) || 0) - (Number(a.price_per_session) || 0));
     else if (sortBy === 'experience-desc') result.sort((a, b) => (b.years_experience || 0) - (a.years_experience || 0));
+    else if (sortBy === 'soonest') result.sort((a, b) => slotKey(a).localeCompare(slotKey(b)));
     else {
       result.sort((a, b) =>
         rankBoost(a, b) ||
@@ -387,7 +471,7 @@ export default function TherapistsPage() {
     || (sortBy !== 'newest' && sortBy !== 'relevance');
 
   const selectStyle = { padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 13, fontFamily: 'inherit', color: '#1a2e44', outline: 'none', background: '#fff', cursor: 'pointer', minWidth: 160 };
-  const filterShown = showFilters || (typeof window !== 'undefined' && window.innerWidth >= 768);
+  const filterShown = showFilters || isDesktop;
 
   return (
     <>
@@ -489,6 +573,7 @@ export default function TherapistsPage() {
                   <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={selectStyle}>
                     {selectedCondition && <option value="relevance">{tx.sortRelevance}</option>}
                     <option value="newest">{tx.sortNewest}</option>
+                    <option value="soonest">{tx.sortSoonest}</option>
                     <option value="rating-desc">{tx.sortRatingDesc}</option>
                     <option value="price-asc">{tx.sortPriceAsc}</option>
                     <option value="price-desc">{tx.sortPriceDesc}</option>
@@ -562,6 +647,8 @@ export default function TherapistsPage() {
             <div className="th-grid">
               {filteredTherapists.map(th => {
                 const matchType = getMatchType(th);
+                const areas = allAreasOf(th);
+                const nextLabel = slotLabel(th.next_slot);
                 return (
                   <a key={th.id} href={`/therapists/${th.id}`} className="th-card">
                     {matchType && (
@@ -634,17 +721,41 @@ export default function TherapistsPage() {
                     </div>
 
                     {/* Κάθε στοιχείο σε δική του γραμμή — το inline-flex τα
-                        κολλούσε μεταξύ τους και το Euro icon φαινόταν σαν
-                        δεύτερο σύμβολο ευρώ δίπλα στην περιοχή. */}
+                        κολλούσε μεταξύ τους. */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 12 }}>
-                      {th.area && (
+                      {areas.length > 0 && (
                         <div style={{ fontSize: 12, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 5 }}>
                           <MapPin size={12} style={{ flexShrink: 0 }} />
-                          <span>{th.area}</span>
+                          <span>
+                            {areas.slice(0, 2).join(', ')}
+                            {areas.length > 2 ? ` +${areas.length - 2}` : ''}
+                          </span>
                         </div>
                       )}
+                      {th.years_experience > 0 && (
+                        <div style={{ fontSize: 12, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <Briefcase size={12} style={{ flexShrink: 0 }} />
+                          <span>{tx.yearsShort(th.years_experience)}</span>
+                        </div>
+                      )}
+
+                      {/* Η πρώτη ελεύθερη ώρα. Χωρίς αυτό ο ασθενής έπρεπε
+                          να ανοίξει το προφίλ για να μάθει αν είναι καν
+                          διαθέσιμος αυτή την εβδομάδα. */}
+                      {nextLabel ? (
+                        <div style={{ fontSize: 12, color: '#15803D', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <CalendarCheck size={12} style={{ flexShrink: 0 }} />
+                          <span>{tx.nextFree}: {nextLabel}</span>
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: 12, color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <CalendarCheck size={12} style={{ flexShrink: 0 }} />
+                          <span>{tx.noFreeSlots}</span>
+                        </div>
+                      )}
+
                       {th.price_per_session && (
-                        <div style={{ fontSize: 13, color: '#2a6fdb', fontWeight: 600 }}>
+                        <div style={{ fontSize: 13, color: '#2a6fdb', fontWeight: 600, marginTop: 2 }}>
                           {th.price_per_session}€ / {tx.perSession}
                         </div>
                       )}
