@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useLang } from '@/context/LanguageContext';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import RescheduleModal from '@/components/RescheduleModal';
-import { ClipboardList, Stethoscope, User, MapPin, Euro, Calendar, Star, Check, ArrowRight, Save, X, Hourglass, Wallet, AlertCircle, CheckCircle2, CalendarDays, List, ChevronLeft, ChevronRight, Clock, XCircle, Globe, CalendarClock } from 'lucide-react';
+import { ClipboardList, Stethoscope, User, MapPin, Euro, Calendar, Star, Check, ArrowRight, Save, X, Hourglass, Wallet, AlertCircle, CheckCircle2, CalendarDays, List, ChevronLeft, ChevronRight, Clock, XCircle, Globe, CalendarClock, Home } from 'lucide-react';
 
 // ─── Locale data ──────────────────────────────────────────────────────
 const LOCALE = { el: 'el-GR', en: 'en-US' };
@@ -39,20 +39,20 @@ const RATING_WORDS = {
 
 // ─── Status maps ──────────────────────────────────────────────────────
 const STATUS_MAP = {
-  pending:   { el: 'Εκκρεμές',      en: 'Pending',   bg: '#FEF3C7', color: '#92400E' },
-  confirmed: { el: 'Επιβεβαιωμένο', en: 'Confirmed', bg: '#D1FAE5', color: '#065F46' },
-  accepted:  { el: 'Αποδεκτό',      en: 'Accepted',  bg: '#D1FAE5', color: '#065F46' },
-  declined:  { el: 'Απορρίφθηκε',   en: 'Declined',  bg: '#FFE4E6', color: '#9F1239' },
-  rejected:  { el: 'Απορρίφθηκε',   en: 'Rejected',  bg: '#FFE4E6', color: '#9F1239' },
-  completed: { el: 'Ολοκληρώθηκε',  en: 'Completed', bg: '#EDE9FE', color: '#5B21B6' },
-  cancelled: { el: 'Ακυρώθηκε',     en: 'Cancelled', bg: '#F1F5F9', color: '#64748B' },
+  pending:   { el: 'Εκκρεμεί',       en: 'Pending',   bg: '#FEF3C7', color: '#92400E' },
+  confirmed: { el: 'Επιβεβαιωμένο',  en: 'Confirmed', bg: '#D1FAE5', color: '#065F46' },
+  accepted:  { el: 'Επιβεβαιωμένο',  en: 'Confirmed', bg: '#D1FAE5', color: '#065F46' },
+  declined:  { el: 'Απορρίφθηκε',    en: 'Declined',  bg: '#FFE4E6', color: '#9F1239' },
+  rejected:  { el: 'Απορρίφθηκε',    en: 'Rejected',  bg: '#FFE4E6', color: '#9F1239' },
+  completed: { el: 'Ολοκληρώθηκε',   en: 'Completed', bg: '#EDE9FE', color: '#5B21B6' },
+  cancelled: { el: 'Ακυρώθηκε',      en: 'Cancelled', bg: '#F1F5F9', color: '#64748B' },
 };
 
 const BOOKING_STATUS = {
-  pending:   { el: 'Εκκρεμής',      en: 'Pending',   bg: '#FEF3C7', color: '#92400E' },
-  confirmed: { el: 'Επιβεβαιωμένη', en: 'Confirmed', bg: '#DBEAFE', color: '#1D4ED8' },
-  completed: { el: 'Ολοκληρώθηκε',  en: 'Completed', bg: '#D1FAE5', color: '#065F46' },
-  cancelled: { el: 'Ακυρώθηκε',     en: 'Cancelled', bg: '#F1F5F9', color: '#64748B' },
+  pending:   { el: 'Εκκρεμεί',       en: 'Pending',   bg: '#FEF3C7', color: '#92400E' },
+  confirmed: { el: 'Επιβεβαιωμένο',  en: 'Confirmed', bg: '#DBEAFE', color: '#1D4ED8' },
+  completed: { el: 'Ολοκληρώθηκε',   en: 'Completed', bg: '#D1FAE5', color: '#065F46' },
+  cancelled: { el: 'Ακυρώθηκε',      en: 'Cancelled', bg: '#F1F5F9', color: '#64748B' },
 };
 
 const PAYMENT_STATUS = {
@@ -63,6 +63,8 @@ const PAYMENT_STATUS = {
 };
 
 // ─── Translations ─────────────────────────────────────────────────────
+// ΟΡΟΛΟΓΙΑ (ίδια σε ΟΛΟ το προϊόν):
+//   Αίτημα → Επιβεβαιωμένο ραντεβού → Ολοκληρωμένη συνεδρία → Αξιολόγηση
 const TX = {
   el: {
     roleBadge: 'Ασθενής',
@@ -73,19 +75,21 @@ const TX = {
     welcome: (n) => `Καλώς ήρθατε, ${n}`,
     welcomeFallback: 'Ασθενής',
     welcomeSub: 'Διαχειριστείτε τα ραντεβού και τα αιτήματά σας.',
-    tabAppointments: 'Τα Ραντεβού μου',
-    tabRequests: 'Τα Αιτήματά μου',
+    tabAppointments: 'Ραντεβού',
+    tabRequests: 'Αιτήματα',
     tabServices: 'Υπηρεσίες',
     tabProfile: 'Προφίλ',
+    tabsHintRequests: 'Αιτήματα = περιμένουν απάντηση από τον θεραπευτή.',
+    tabsHintAppointments: 'Ραντεβού = έχουν επιβεβαιωθεί από τον θεραπευτή.',
     releaseBannerTitle: (n) => `Έχετε ${n} ${n === 1 ? 'συνεδρία' : 'συνεδρίες'} προς έγκριση`,
     releaseBannerDesc: (amt) => `Ο θεραπευτής δηλώνει ότι ολοκληρώθηκαν. Επιβεβαιώστε για να απελευθερωθεί η πληρωμή (${amt}€ συνολικά).`,
-    statPending: 'Εκκρεμή',
-    statActive: 'Ενεργά',
+    statPending: 'Εκκρεμή αιτήματα',
+    statActive: 'Επιβεβαιωμένα',
     statCompleted: 'Ολοκληρωμένα',
     statToRelease: 'Προς απελευθέρωση',
-    ctaTitle: 'Θέλετε νέο ραντεβού;',
-    ctaDesc: 'Κλείστε ραντεβού με έναν από τους θεραπευτές μας',
-    ctaBtn: 'Νέο Αίτημα',
+    ctaTitle: 'Χρειάζεστε φυσικοθεραπεία;',
+    ctaDesc: 'Βρείτε θεραπευτή και κλείστε ραντεβού στο σπίτι σας',
+    ctaBtn: 'Κλείσε ραντεβού',
     nextAppointment: 'Επόμενο Ραντεβού',
     at: 'στις',
     awaitingTherapist: 'Αναμονή επιβεβαίωσης από τον θεραπευτή',
@@ -97,7 +101,7 @@ const TX = {
     rescheduleTo: (d) => `Προτεινόμενη νέα ώρα: ${d}`,
     cancel: 'Ακύρωση',
     noAppointments: 'Δεν έχετε ραντεβού ακόμα',
-    bookFirst: 'Κλείστε το πρώτο σας ραντεβού',
+    bookFirst: 'Κλείσε το πρώτο σου ραντεβού',
     viewList: 'Λίστα',
     viewCalendar: 'Ημερολόγιο',
     upcoming: (n) => `Επερχόμενα Ραντεβού (${n})`,
@@ -110,11 +114,10 @@ const TX = {
     next: 'Επόμ.',
     today: 'Σήμερα',
     hasAppointment: 'Έχει ραντεβού',
-    noRequests: 'Δεν έχετε κάνει αίτημα ακόμα.',
-    physiotherapy: 'Φυσιοθεραπεία',
-    package: (n) => `Πακέτο ${n} συνεδριών`,
+    noRequests: 'Δεν έχετε στείλει αίτημα ακόμα.',
+    physiotherapy: 'Φυσικοθεραπεία',
     pendingApproval: (n) => `${n} προς έγκριση`,
-    total: 'Σύνολο',
+    total: 'Κόστος συνεδρίας',
     sessions: (n) => `Συνεδρίες (${n})`,
     yourReview: 'Η αξιολόγησή σας',
     cancelledByTherapist: 'Ακυρώθηκε από τον θεραπευτή',
@@ -126,13 +129,16 @@ const TX = {
     howWasIt: (n) => `Πώς ήταν η εμπειρία σας με τον/την ${n};`,
     therapistFallback: 'θεραπευτή',
     leaveReview: 'Άφησε αξιολόγηση',
-    servicesTitle: 'Υπηρεσίες Φυσιοθεραπείας',
+    servicesTitle: 'Υπηρεσίες Φυσικοθεραπείας',
     servicesDesc: 'Εξατομικευμένη φροντίδα για ένα εύρος παθήσεων.',
     noServices: 'Δεν υπάρχουν διαθέσιμες υπηρεσίες αυτή τη στιγμή.',
-    bookAppointment: 'Κλείσε Ραντεβού',
+    bookAppointment: 'Κλείσε ραντεβού',
     memberSince: 'Μέλος από',
     profileTitle: 'Στοιχεία Προφίλ',
-    profileDesc: 'Ενημερώστε τα στοιχεία σας. Η διεύθυνση και ο ΤΚ απαιτούνται όταν κλείνετε ραντεβού.',
+    profileBasics: 'Βασικά στοιχεία',
+    profileBasicsDesc: 'Πώς θα σας βρει ο θεραπευτής.',
+    profileAddress: 'Διεύθυνση για τα ραντεβού',
+    profileAddressDesc: 'Συμπληρώνεται αυτόματα όταν κλείνετε ραντεβού. Μπορείτε να την αλλάξετε εδώ οποτεδήποτε.',
     fullName: 'Ονοματεπώνυμο',
     fullNamePh: 'Γιώργος Παπαδόπουλος',
     phone: 'Τηλέφωνο',
@@ -179,19 +185,21 @@ const TX = {
     welcome: (n) => `Welcome back, ${n}`,
     welcomeFallback: 'Patient',
     welcomeSub: 'Manage your appointments and requests.',
-    tabAppointments: 'My Appointments',
-    tabRequests: 'My Requests',
+    tabAppointments: 'Appointments',
+    tabRequests: 'Requests',
     tabServices: 'Services',
     tabProfile: 'Profile',
+    tabsHintRequests: 'Requests = waiting for the therapist to respond.',
+    tabsHintAppointments: 'Appointments = confirmed by the therapist.',
     releaseBannerTitle: (n) => `You have ${n} ${n === 1 ? 'session' : 'sessions'} to approve`,
     releaseBannerDesc: (amt) => `Your therapist marked them as done. Confirm to release the payment (${amt}€ in total).`,
-    statPending: 'Pending',
-    statActive: 'Active',
+    statPending: 'Pending requests',
+    statActive: 'Confirmed',
     statCompleted: 'Completed',
     statToRelease: 'To release',
-    ctaTitle: 'Need a new appointment?',
-    ctaDesc: 'Book a session with one of our therapists',
-    ctaBtn: 'New Request',
+    ctaTitle: 'Need physiotherapy?',
+    ctaDesc: 'Find a therapist and book a session at your home',
+    ctaBtn: 'Book an appointment',
     nextAppointment: 'Next Appointment',
     at: 'at',
     awaitingTherapist: 'Awaiting confirmation from your therapist',
@@ -216,11 +224,10 @@ const TX = {
     next: 'Next',
     today: 'Today',
     hasAppointment: 'Has appointment',
-    noRequests: "You haven't made a request yet.",
+    noRequests: "You haven't sent a request yet.",
     physiotherapy: 'Physiotherapy',
-    package: (n) => `Package of ${n} sessions`,
     pendingApproval: (n) => `${n} to approve`,
-    total: 'Total',
+    total: 'Session cost',
     sessions: (n) => `Sessions (${n})`,
     yourReview: 'Your review',
     cancelledByTherapist: 'Cancelled by the therapist',
@@ -235,10 +242,13 @@ const TX = {
     servicesTitle: 'Physiotherapy Services',
     servicesDesc: 'Personalized care for a range of conditions.',
     noServices: 'No services are available at the moment.',
-    bookAppointment: 'Book Appointment',
+    bookAppointment: 'Book appointment',
     memberSince: 'Member since',
     profileTitle: 'Profile Details',
-    profileDesc: 'Update your details. Address and postcode are required when booking an appointment.',
+    profileBasics: 'Basic details',
+    profileBasicsDesc: 'How your therapist reaches you.',
+    profileAddress: 'Address for appointments',
+    profileAddressDesc: 'Filled in automatically when you book. You can change it here any time.',
     fullName: 'Full Name',
     fullNamePh: 'John Smith',
     phone: 'Phone',
@@ -376,7 +386,7 @@ export default function PatientDashboard() {
 
   function statusLabel(map, key, fallbackKey = 'pending') {
     // Χαρτογράφηση των cancelled_by_* στο ενιαίο 'cancelled' του map,
-    // αλλιώς πέφτουν στο fallback και δείχνουν «Εκκρεμές».
+    // αλλιώς πέφτουν στο fallback και δείχνουν «Εκκρεμεί».
     const k = isCancelled(key) ? 'cancelled' : key;
     const entry = map[k] || map[fallbackKey];
     return { ...entry, label: entry[lang] || entry.el };
@@ -661,14 +671,19 @@ export default function PatientDashboard() {
     </div>
   );
 
+  // Τα badges λένε στον χρήστη πού υπάρχει κάτι να δει, χωρίς να
+  // χρειαστεί να ανοίξει κάθε tab.
   const TABS = [
-    { id: 'appointments', label: tx.tabAppointments, Icon: Calendar },
-    { id: 'requests', label: tx.tabRequests, Icon: ClipboardList },
-    { id: 'services', label: tx.tabServices, Icon: Stethoscope },
-    { id: 'profile', label: tx.tabProfile, Icon: User },
+    { id: 'appointments', label: tx.tabAppointments, Icon: Calendar, count: upcomingAppointments.length },
+    { id: 'requests', label: tx.tabRequests, Icon: ClipboardList, count: pendingCount },
+    { id: 'services', label: tx.tabServices, Icon: Stethoscope, count: 0 },
+    { id: 'profile', label: tx.tabProfile, Icon: User, count: 0 },
   ];
 
   const profileInputStyle = { width: '100%', padding: '12px 14px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 15, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', color: '#0F172A' };
+  const profileLabelStyle = { fontSize: 13, fontWeight: 600, color: '#1a2e44', display: 'block', marginBottom: 5 };
+  const sectionTitleStyle = { fontSize: 15, fontWeight: 700, color: '#0F172A', marginBottom: 2 };
+  const sectionDescStyle = { fontSize: 13, color: '#64748B', marginBottom: 14 };
 
   function buildMonthGrid(year, month) {
     const firstDay = new Date(year, month, 1);
@@ -765,6 +780,20 @@ export default function PatientDashboard() {
           </div>
         )}
 
+        {/* ΚΥΡΙΟ CTA — πάνω από τα στατιστικά.
+            Ο ασθενής δεν μπαίνει για να δει αριθμούς· μπαίνει για να
+            κλείσει ραντεβού. */}
+        <div style={{ background: '#1a2e44', borderRadius: 14, padding: '22px 26px', marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 4 }}>{tx.ctaTitle}</div>
+            <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)' }}>{tx.ctaDesc}</div>
+          </div>
+          <a href="/dashboard/patient/new-request" style={{ background: '#fff', color: '#1a2e44', padding: '13px 26px', borderRadius: 30, fontSize: 15, fontWeight: 700, textDecoration: 'none', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+            {tx.ctaBtn}
+            <ArrowRight size={16} />
+          </a>
+        </div>
+
         <div style={{ display: 'flex', gap: 14, marginBottom: 24, flexWrap: 'wrap' }}>
           {[
             { label: tx.statPending, value: pendingCount, bg: '#FEF3C7', border: '#FDE68A', text: '#B45309' },
@@ -779,29 +808,40 @@ export default function PatientDashboard() {
           ))}
         </div>
 
-        <div style={{ background: '#1a2e44', borderRadius: 14, padding: '20px 24px', marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
-          <div>
-            <div style={{ fontSize: 17, fontWeight: 700, color: '#fff', marginBottom: 4 }}>{tx.ctaTitle}</div>
-            <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)' }}>{tx.ctaDesc}</div>
+        {/* TABS με badges */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', gap: 4, background: '#e2e8f0', padding: 4, borderRadius: 12, width: 'fit-content', flexWrap: 'wrap' }}>
+            {TABS.map(t => {
+              const TabIcon = t.Icon;
+              const isActive = activeTab === t.id;
+              return (
+                <button key={t.id} onClick={() => setActiveTab(t.id)}
+                  style={{ padding: '10px 18px', borderRadius: 8, border: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: isActive ? '#fff' : 'transparent', color: isActive ? '#0F172A' : '#64748B', boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <TabIcon size={15} />
+                  {t.label}
+                  {t.count > 0 && (
+                    <span style={{
+                      background: isActive ? '#2a6fdb' : '#94a3b8',
+                      color: '#fff', fontSize: 11, fontWeight: 700,
+                      minWidth: 19, height: 19, borderRadius: 999,
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                      padding: '0 6px',
+                    }}>
+                      {t.count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
-          <a href="/dashboard/patient/new-request" style={{ background: '#fff', color: '#1a2e44', padding: '12px 22px', borderRadius: 30, fontSize: 15, fontWeight: 600, textDecoration: 'none', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            {tx.ctaBtn}
-            <ArrowRight size={16} />
-          </a>
-        </div>
 
-        <div style={{ display: 'flex', gap: 4, background: '#e2e8f0', padding: 4, borderRadius: 12, width: 'fit-content', marginBottom: 20, flexWrap: 'wrap' }}>
-          {TABS.map(t => {
-            const TabIcon = t.Icon;
-            const isActive = activeTab === t.id;
-            return (
-              <button key={t.id} onClick={() => setActiveTab(t.id)}
-                style={{ padding: '10px 20px', borderRadius: 8, border: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: isActive ? '#fff' : 'transparent', color: isActive ? '#0F172A' : '#64748B', boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <TabIcon size={15} />
-                {t.label}
-              </button>
-            );
-          })}
+          {/* Εξήγηση της διαφοράς αίτημα / ραντεβού.
+              Νέος χρήστης δεν ξέρει γιατί υπάρχουν δύο λίστες. */}
+          {(activeTab === 'appointments' || activeTab === 'requests') && (
+            <div style={{ marginTop: 10, fontSize: 12.5, color: '#64748B', lineHeight: 1.5 }}>
+              {activeTab === 'requests' ? tx.tabsHintRequests : tx.tabsHintAppointments}
+            </div>
+          )}
         </div>
 
         {/* ═══ APPOINTMENTS TAB ═══ */}
@@ -1230,11 +1270,6 @@ export default function PatientDashboard() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
                       <span style={{ fontWeight: 700, fontSize: 16, color: '#0F172A' }}>{req.problem_type || tx.physiotherapy}</span>
                       <Badge label={st.label} bg={st.bg} color={st.color} />
-                      {req.session_type === 'package' && (
-                        <span style={{ background: '#EDE9FE', color: '#5B21B6', padding: '3px 10px', borderRadius: 999, fontSize: 12, fontWeight: 700 }}>
-                          {tx.package(req.package_size)}
-                        </span>
-                      )}
                       {reqHeldBookings.length > 0 && (
                         <Badge label={tx.pendingApproval(reqHeldBookings.length)} bg="#FEF3C7" color="#92400E" icon={AlertCircle} />
                       )}
@@ -1294,7 +1329,6 @@ export default function PatientDashboard() {
                               border: isHeld ? '1px solid #FDE68A' : isCancelled(b.status) ? '1px solid #FECDD3' : 'none',
                             }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                                <span style={{ color: '#64748B', fontWeight: 600 }}>{i + 1}.</span>
                                 <span style={{ color: '#0F172A', fontWeight: 500 }}>
                                   {DAYS_SHORT[lang][d.getDay()]} {d.toLocaleDateString(loc, { day: '2-digit', month: '2-digit' })} {tx.at} {b.session_time?.slice(0, 5)}
                                 </span>
@@ -1442,70 +1476,88 @@ export default function PatientDashboard() {
               </div>
             </div>
 
-            <h3 style={{ fontSize: 17, fontWeight: 700, color: '#0F172A', marginBottom: 4 }}>{tx.profileTitle}</h3>
-            <p style={{ fontSize: 14, color: '#64748B', marginBottom: 20 }}>{tx.profileDesc}</p>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div>
-                <label style={{ fontSize: 13, fontWeight: 600, color: '#1a2e44', display: 'block', marginBottom: 5 }}>{tx.fullName} *</label>
-                <input value={editProfile.name} onChange={e => setEditProfile(p => ({ ...p, name: e.target.value }))} style={profileInputStyle} placeholder={tx.fullNamePh} />
+            {/* ── ΒΑΣΙΚΑ ΣΤΟΙΧΕΙΑ ──
+                Χωρισμένα από τη διεύθυνση. Ο χρήστης δεν χρειάζεται να
+                δώσει πλήρη διεύθυνση μόλις φτιάξει λογαριασμό. */}
+            <div style={{ marginBottom: 26 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                <User size={16} color="#2a6fdb" />
+                <h3 style={sectionTitleStyle}>{tx.profileBasics}</h3>
               </div>
+              <p style={sectionDescStyle}>{tx.profileBasicsDesc}</p>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div>
-                  <label style={{ fontSize: 13, fontWeight: 600, color: '#1a2e44', display: 'block', marginBottom: 5 }}>{tx.phone}</label>
+                  <label style={profileLabelStyle}>{tx.fullName} *</label>
+                  <input value={editProfile.name} onChange={e => setEditProfile(p => ({ ...p, name: e.target.value }))} style={profileInputStyle} placeholder={tx.fullNamePh} />
+                </div>
+                <div>
+                  <label style={profileLabelStyle}>{tx.phone}</label>
                   <input value={editProfile.phone} onChange={e => setEditProfile(p => ({ ...p, phone: e.target.value }))} style={profileInputStyle} placeholder={tx.phonePh} />
                 </div>
+              </div>
+            </div>
+
+            {/* ── ΔΙΕΥΘΥΝΣΗ ── */}
+            <div style={{ paddingTop: 22, borderTop: '1px solid #f1f5f9' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                <Home size={16} color="#2a6fdb" />
+                <h3 style={sectionTitleStyle}>{tx.profileAddress}</h3>
+              </div>
+              <p style={sectionDescStyle}>{tx.profileAddressDesc}</p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div>
-                  <label style={{ fontSize: 13, fontWeight: 600, color: '#1a2e44', display: 'block', marginBottom: 5 }}>{tx.area}</label>
-                  <input value={editProfile.area} onChange={e => setEditProfile(p => ({ ...p, area: e.target.value }))} style={profileInputStyle} placeholder={tx.areaPh} />
+                  <label style={profileLabelStyle}>{tx.address}</label>
+                  <input value={editProfile.address} onChange={e => setEditProfile(p => ({ ...p, address: e.target.value }))} style={profileInputStyle} placeholder={tx.addressPh} />
                 </div>
-              </div>
 
-              <div>
-                <label style={{ fontSize: 13, fontWeight: 600, color: '#1a2e44', display: 'block', marginBottom: 5 }}>{tx.address}</label>
-                <input value={editProfile.address} onChange={e => setEditProfile(p => ({ ...p, address: e.target.value }))} style={profileInputStyle} placeholder={tx.addressPh} />
-              </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={profileLabelStyle}>{tx.area}</label>
+                    <input value={editProfile.area} onChange={e => setEditProfile(p => ({ ...p, area: e.target.value }))} style={profileInputStyle} placeholder={tx.areaPh} />
+                  </div>
+                  <div>
+                    <label style={profileLabelStyle}>{tx.postal}</label>
+                    <input value={editProfile.postal_code} onChange={e => setEditProfile(p => ({ ...p, postal_code: e.target.value }))} style={profileInputStyle} placeholder={tx.postalPh} />
+                  </div>
+                </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12 }}>
                 <div>
-                  <label style={{ fontSize: 13, fontWeight: 600, color: '#1a2e44', display: 'block', marginBottom: 5 }}>{tx.city}</label>
+                  <label style={profileLabelStyle}>{tx.city}</label>
                   <input value={editProfile.city} onChange={e => setEditProfile(p => ({ ...p, city: e.target.value }))} style={profileInputStyle} placeholder={tx.cityPh} />
                 </div>
-                <div>
-                  <label style={{ fontSize: 13, fontWeight: 600, color: '#1a2e44', display: 'block', marginBottom: 5 }}>{tx.postal}</label>
-                  <input value={editProfile.postal_code} onChange={e => setEditProfile(p => ({ ...p, postal_code: e.target.value }))} style={profileInputStyle} placeholder={tx.postalPh} />
-                </div>
               </div>
+            </div>
 
-              {profileMsg && (
-                <div style={{
-                  background: profileMsg.type === 'success' ? '#D1FAE5' : '#FEF2F2',
-                  border: `1px solid ${profileMsg.type === 'success' ? '#86EFAC' : '#FECACA'}`,
-                  borderRadius: 8, padding: '12px 16px', fontSize: 14,
-                  color: profileMsg.type === 'success' ? '#15803D' : '#DC2626',
-                  fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 6,
-                }}>
-                  {profileMsg.type === 'success' && <Check size={14} strokeWidth={3} />}
-                  {profileMsg.text}
-                </div>
-              )}
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
-                <button
-                  onClick={saveProfile}
-                  disabled={savingProfile}
-                  style={{
-                    background: '#1a2e44', color: '#fff', padding: '13px 32px', borderRadius: 30,
-                    fontSize: 15, fontWeight: 600, border: 'none',
-                    cursor: savingProfile ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
-                    opacity: savingProfile ? 0.7 : 1, display: 'inline-flex', alignItems: 'center', gap: 8,
-                  }}
-                >
-                  <Save size={16} />
-                  {savingProfile ? tx.saving : tx.save}
-                </button>
+            {profileMsg && (
+              <div style={{
+                marginTop: 18,
+                background: profileMsg.type === 'success' ? '#D1FAE5' : '#FEF2F2',
+                border: `1px solid ${profileMsg.type === 'success' ? '#86EFAC' : '#FECACA'}`,
+                borderRadius: 8, padding: '12px 16px', fontSize: 14,
+                color: profileMsg.type === 'success' ? '#15803D' : '#DC2626',
+                fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 6,
+              }}>
+                {profileMsg.type === 'success' && <Check size={14} strokeWidth={3} />}
+                {profileMsg.text}
               </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20 }}>
+              <button
+                onClick={saveProfile}
+                disabled={savingProfile}
+                style={{
+                  background: '#1a2e44', color: '#fff', padding: '13px 32px', borderRadius: 30,
+                  fontSize: 15, fontWeight: 600, border: 'none',
+                  cursor: savingProfile ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+                  opacity: savingProfile ? 0.7 : 1, display: 'inline-flex', alignItems: 'center', gap: 8,
+                }}
+              >
+                <Save size={16} />
+                {savingProfile ? tx.saving : tx.save}
+              </button>
             </div>
           </div>
         )}
