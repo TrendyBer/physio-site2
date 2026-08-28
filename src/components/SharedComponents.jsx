@@ -2,8 +2,19 @@
 import { useLang } from '@/context/LanguageContext';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Mail, Phone, MapPin } from 'lucide-react';
+import { Mail, Phone, MapPin, Check, AlertTriangle } from 'lucide-react';
 import BookingButton from './BookingButton';
+
+// ─── Footer ───────────────────────────────────────────────────────────────────
+// ΔΕΝ υπάρχει πλέον δεύτερη υλοποίηση Footer εδώ.
+// Το αρχείο αυτό είχε δικό του Footer, με διαφορετικά links από το Footer.jsx.
+// Ανάλογα με το ποιο έκανε import η κάθε σελίδα, ο χρήστης έβλεπε άλλο μενού.
+// Πλέον υπάρχει ΜΙΑ υλοποίηση, στο ./Footer.jsx, και εδώ γίνεται μόνο re-export
+// ώστε να συνεχίσουν να δουλεύουν τα υπάρχοντα imports:
+//     import { Footer } from '@/components/SharedComponents';
+//     import Footer from '@/components/Footer';
+// Και τα δύο δείχνουν πλέον στο ίδιο component.
+export { default as Footer } from './Footer';
 
 // ─── Shared settings hook ─────────────────────────────────────────────────────
 const CACHE_KEY = 'cms_platform_settings';
@@ -173,8 +184,18 @@ export function Partners() {
 export function CtaBanner() {
   const { lang } = useLang();
   const t = {
-    el: { title: 'Έτοιμοι να Ξεκινήσετε το', titleEm: 'Ταξίδι Ανάρρωσής σας', desc: 'Κλείστε την πρώτη σας συνεδρία σήμερα και ζήστε τη διαφορά της εξατομικευμένης φυσιοθεραπείας στο σπίτι.', cta: 'Κλείστε Ραντεβού →' },
-    en: { title: 'Ready to Start Your', titleEm: 'Recovery Journey', desc: 'Request your first session today and experience the difference of personalized home physiotherapy.', cta: 'Request a Session →' },
+    el: {
+      title: 'Έτοιμοι να Ξεκινήσετε το',
+      titleEm: 'Ταξίδι Ανάρρωσής σας',
+      desc: 'Στείλτε αίτημα για την πρώτη σας συνεδρία και ζήστε τη διαφορά της εξατομικευμένης φυσιοθεραπείας στο σπίτι.',
+      cta: 'Κλείσε ραντεβού',
+    },
+    en: {
+      title: 'Ready to Start Your',
+      titleEm: 'Recovery Journey',
+      desc: 'Send a request for your first session and experience the difference of personalized home physiotherapy.',
+      cta: 'Book an appointment',
+    },
   };
   const text = t[lang];
   return (
@@ -202,10 +223,12 @@ export function Faq() {
       desc: 'Δεν βρίσκετε αυτό που ψάχνετε; Είμαστε εδώ να βοηθήσουμε.',
       contact: 'Επικοινωνήστε μαζί μας',
       faqs: [
-        { q: 'Χρειάζομαι παραπομπή για να κλείσω συνεδρία;', a: 'Στις περισσότερες περιπτώσεις, μπορείτε να ζητήσετε συνεδρία φυσιοθεραπείας απευθείας χωρίς παραπομπή.' },
-        { q: 'Τι γίνεται κατά την πρώτη επίσκεψη στο σπίτι;', a: 'Ο θεραπευτής σας θα αξιολογήσει την κατάστασή σας, θα συζητήσει τους στόχους σας και θα δημιουργήσει ένα εξατομικευμένο πλάνο θεραπείας.' },
-        { q: 'Ποιες περιοχές εξυπηρετείτε;', a: 'Εξυπηρετούμε όλη την Αθήνα και την Αττική. Επικοινωνήστε μαζί μας για να επιβεβαιώσετε τη διαθεσιμότητα στην περιοχή σας.' },
-        { q: 'Πόσο κοστίζει μια συνεδρία;', a: 'Οι τιμές ξεκινούν από €20/ώρα και διαφέρουν ανάλογα με τον τύπο θεραπείας. Επικοινωνήστε για προσφορά.' },
+        { q: 'Χρειάζομαι παραπομπή για να κλείσω ραντεβού;', a: 'Όχι. Μπορείτε να στείλετε αίτημα για συνεδρία απευθείας, χωρίς παραπομπή ή διάγνωση.' },
+        { q: 'Πώς κλείνεται το ραντεβού;', a: 'Επιλέγετε θεραπευτή και ώρα και στέλνετε αίτημα. Ο θεραπευτής το επιβεβαιώνει και το ραντεβού κλειδώνει. Θα ειδοποιηθείτε μόλις απαντήσει.' },
+        { q: 'Τι γίνεται κατά την πρώτη επίσκεψη στο σπίτι;', a: 'Ο θεραπευτής θα αξιολογήσει την κατάστασή σας, θα συζητήσει τους στόχους σας και θα δημιουργήσει ένα εξατομικευμένο πλάνο θεραπείας.' },
+        { q: 'Ποιες περιοχές εξυπηρετείτε;', a: 'Εξυπηρετούμε την Αθήνα και την Αττική. Στην αναζήτηση θα δείτε ποιοι θεραπευτές καλύπτουν τη δική σας περιοχή.' },
+        { q: 'Πόσο κοστίζει μια συνεδρία;', a: 'Κάθε θεραπευτής ορίζει τη δική του τιμή, από €25 έως €50 ανά συνεδρία. Βλέπετε την ακριβή τιμή πριν στείλετε το αίτημα.' },
+        { q: 'Πώς πληρώνω;', a: 'Πληρώνετε τον θεραπευτή απευθείας σε μετρητά μετά τη συνεδρία. Δεν χρεώνεστε τίποτα από την πλατφόρμα.' },
       ],
     },
     en: {
@@ -213,10 +236,12 @@ export function Faq() {
       desc: "Can't find what you're looking for? We're here to help.",
       contact: 'Contact Us',
       faqs: [
-        { q: 'Do I need a referral to book a session?', a: 'In most cases, you can request a physiotherapy session directly without a referral.' },
+        { q: 'Do I need a referral to book an appointment?', a: 'No. You can send a session request directly, without a referral or a diagnosis.' },
+        { q: 'How does booking work?', a: 'You pick a therapist and a time and send a request. The therapist confirms it and the appointment is locked in. You are notified as soon as they reply.' },
         { q: 'What happens during the first home visit?', a: 'Your therapist will assess your condition, discuss your goals, and create a personalized treatment plan.' },
-        { q: 'Which areas do you serve?', a: 'We serve all of Athens and Attica. Contact us to confirm availability in your area.' },
-        { q: 'How much does a session cost?', a: 'Prices start from €20/hour and vary depending on the type of therapy. Contact us for a quote.' },
+        { q: 'Which areas do you serve?', a: 'We serve Athens and Attica. The search shows you which therapists cover your own area.' },
+        { q: 'How much does a session cost?', a: 'Each therapist sets their own price, between €25 and €50 per session. You see the exact price before you send the request.' },
+        { q: 'How do I pay?', a: 'You pay the therapist directly in cash after the session. The platform charges you nothing.' },
       ],
     },
   };
@@ -257,9 +282,18 @@ export function Faq() {
 }
 
 // ─── Contact ──────────────────────────────────────────────────────────────────
+// Η φόρμα ΣΤΕΛΝΕΙ πραγματικά, μέσω /api/contact (Resend).
+// Πριν έκανε μόνο alert() και το μήνυμα χανόταν — ο επισκέπτης νόμιζε
+// ότι επικοινώνησε μαζί μας και περίμενε απάντηση που δεν θα ερχόταν ποτέ.
 export function Contact() {
   const { lang } = useLang();
   const settings = usePlatformSettings();
+
+  const [form, setForm] = useState({
+    firstName: '', lastName: '', email: '', phone: '', service: '', message: '',
+  });
+  const [sending, setSending] = useState(false);
+  const [result, setResult] = useState(null);
 
   const t = {
     el: {
@@ -268,8 +302,11 @@ export function Contact() {
       phone: 'Τηλέφωνο', area: 'Περιοχή Εξυπηρέτησης',
       firstName: 'Όνομα', lastName: 'Επώνυμο', message: 'Μήνυμα',
       service: 'Υπηρεσία', selectService: 'Επιλέξτε Υπηρεσία',
-      services: ['Μυοσκελετική Φυσιοθεραπεία', 'Μετεγχειρητική Αποκατάσταση', 'Αποκατάσταση Αθλητικών Τραυματισμών'],
-      send: 'Αποστολή Αιτήματος →', successMsg: 'Ευχαριστούμε! Θα επικοινωνήσουμε μαζί σας εντός 24 ωρών.',
+      services: ['Μυοσκελετική Φυσιοθεραπεία', 'Μετεγχειρητική Αποκατάσταση', 'Αποκατάσταση Αθλητικών Τραυματισμών', 'Νευρολογική Αποκατάσταση', 'Άλλο'],
+      send: 'Αποστολή', sending: 'Αποστολή...',
+      successMsg: 'Ευχαριστούμε! Λάβαμε το μήνυμά σας και θα επικοινωνήσουμε εντός 24 ωρών.',
+      errorMsg: 'Κάτι πήγε στραβά. Δοκιμάστε ξανά ή στείλτε μας email απευθείας.',
+      required: 'Συμπληρώστε όνομα, email και μήνυμα.',
     },
     en: {
       title: 'Contact', titleEm: 'Us',
@@ -277,13 +314,45 @@ export function Contact() {
       phone: 'Phone', area: 'Service Area',
       firstName: 'First Name', lastName: 'Last Name', message: 'Message',
       service: 'Service', selectService: 'Select Service',
-      services: ['Musculoskeletal Physiotherapy', 'Post-Surgery Rehabilitation', 'Sports Injury Recovery'],
-      send: 'Send Request →', successMsg: 'Thank you! We will contact you within 24 hours.',
+      services: ['Musculoskeletal Physiotherapy', 'Post-Surgery Rehabilitation', 'Sports Injury Recovery', 'Neurological Rehabilitation', 'Other'],
+      send: 'Send', sending: 'Sending...',
+      successMsg: 'Thank you. We received your message and will get back to you within 24 hours.',
+      errorMsg: 'Something went wrong. Please try again or email us directly.',
+      required: 'Please fill in your name, email and message.',
     },
   };
   const text = t[lang];
 
   const inputStyle = { width: '100%', padding: '12px 14px', border: '1px solid #dce6f0', borderRadius: 8, fontFamily: 'inherit', fontSize: 14, color: '#1a2e44', outline: 'none', boxSizing: 'border-box', background: '#fff' };
+
+  async function submit() {
+    if (!form.firstName.trim() || !form.email.trim() || !form.message.trim()) {
+      setResult({ ok: false, text: text.required });
+      return;
+    }
+    setSending(true);
+    setResult(null);
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: `${form.firstName} ${form.lastName}`.trim(),
+          email: form.email.trim(),
+          phone: form.phone.trim(),
+          subject: form.service || '',
+          message: form.message.trim(),
+        }),
+      });
+      if (!res.ok) throw new Error('request_failed');
+      setResult({ ok: true, text: text.successMsg });
+      setForm({ firstName: '', lastName: '', email: '', phone: '', service: '', message: '' });
+    } catch (err) {
+      console.error('Contact form error:', err);
+      setResult({ ok: false, text: text.errorMsg });
+    }
+    setSending(false);
+  }
 
   return (
     <>
@@ -337,181 +406,61 @@ export function Contact() {
             <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #dce6f0', padding: 32 }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div className="form-row">
-                  {[text.firstName, text.lastName].map((label) => (
-                    <div key={label}>
-                      <label style={{ fontSize: 13, fontWeight: 500, color: '#1a2e44', display: 'block', marginBottom: 6 }}>{label}</label>
-                      <input type="text" style={inputStyle} />
-                    </div>
-                  ))}
-                </div>
-                {[{ label: 'Email', type: 'email' }, { label: text.phone, type: 'tel' }].map((field) => (
-                  <div key={field.label}>
-                    <label style={{ fontSize: 13, fontWeight: 500, color: '#1a2e44', display: 'block', marginBottom: 6 }}>{field.label}</label>
-                    <input type={field.type} style={inputStyle} />
+                  <div>
+                    <label style={{ fontSize: 13, fontWeight: 500, color: '#1a2e44', display: 'block', marginBottom: 6 }}>{text.firstName}</label>
+                    <input type="text" value={form.firstName} onChange={e => setForm(p => ({ ...p, firstName: e.target.value }))} style={inputStyle} />
                   </div>
-                ))}
+                  <div>
+                    <label style={{ fontSize: 13, fontWeight: 500, color: '#1a2e44', display: 'block', marginBottom: 6 }}>{text.lastName}</label>
+                    <input type="text" value={form.lastName} onChange={e => setForm(p => ({ ...p, lastName: e.target.value }))} style={inputStyle} />
+                  </div>
+                </div>
+                <div>
+                  <label style={{ fontSize: 13, fontWeight: 500, color: '#1a2e44', display: 'block', marginBottom: 6 }}>Email</label>
+                  <input type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 13, fontWeight: 500, color: '#1a2e44', display: 'block', marginBottom: 6 }}>{text.phone}</label>
+                  <input type="tel" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} style={inputStyle} />
+                </div>
                 <div>
                   <label style={{ fontSize: 13, fontWeight: 500, color: '#1a2e44', display: 'block', marginBottom: 6 }}>{text.service}</label>
-                  <select style={inputStyle}>
-                    <option>{text.selectService}</option>
-                    {text.services.map(s => <option key={s}>{s}</option>)}
+                  <select value={form.service} onChange={e => setForm(p => ({ ...p, service: e.target.value }))} style={inputStyle}>
+                    <option value="">{text.selectService}</option>
+                    {text.services.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
                 <div>
                   <label style={{ fontSize: 13, fontWeight: 500, color: '#1a2e44', display: 'block', marginBottom: 6 }}>{text.message}</label>
-                  <textarea rows={4} style={{ ...inputStyle, resize: 'vertical' }} />
+                  <textarea rows={4} value={form.message} onChange={e => setForm(p => ({ ...p, message: e.target.value }))} style={{ ...inputStyle, resize: 'vertical' }} />
                 </div>
-                <button style={{ width: '100%', background: '#1a2e44', color: '#fff', padding: 14, borderRadius: 30, fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
-                  onClick={() => alert(text.successMsg)}>
-                  {text.send}
+
+                {result && (
+                  <div style={{
+                    display: 'flex', alignItems: 'flex-start', gap: 8,
+                    background: result.ok ? '#F0FDF4' : '#FEF2F2',
+                    border: `1px solid ${result.ok ? '#BBF7D0' : '#FECACA'}`,
+                    borderRadius: 8, padding: '11px 14px', fontSize: 13,
+                    color: result.ok ? '#15803D' : '#DC2626', lineHeight: 1.5,
+                  }}>
+                    {result.ok
+                      ? <Check size={15} strokeWidth={3} style={{ flexShrink: 0, marginTop: 1 }} />
+                      : <AlertTriangle size={15} strokeWidth={2.4} style={{ flexShrink: 0, marginTop: 1 }} />}
+                    <span>{result.text}</span>
+                  </div>
+                )}
+
+                <button
+                  onClick={submit}
+                  disabled={sending}
+                  style={{ width: '100%', background: sending ? '#64748b' : '#1a2e44', color: '#fff', padding: 14, borderRadius: 30, fontSize: 15, fontWeight: 600, border: 'none', cursor: sending ? 'wait' : 'pointer', fontFamily: 'inherit' }}>
+                  {sending ? text.sending : text.send}
                 </button>
               </div>
             </div>
           </div>
         </div>
       </section>
-    </>
-  );
-}
-
-// ─── Footer ───────────────────────────────────────────────────────────────────
-// Last updated 2 May 2026 — fixed legal links from '#' to actual paths
-export function Footer() {
-  const { lang } = useLang();
-  const settings = usePlatformSettings();
-
-  const t = {
-    el: {
-      desc: 'Επαγγελματική, εξατομικευμένη φυσιοθεραπεία στην άνεση του σπιτιού σας.',
-      menu: 'Μενού',
-      legal: 'Νομικά',
-      contact: 'Επικοινωνία',
-      links: [
-        ['/how-it-works', 'Πώς Λειτουργεί'],
-        ['/services', 'Υπηρεσίες'],
-        ['/therapists', 'Θεραπευτές'],
-        ['/blog', 'Blog'],
-        ['/contact', 'Επικοινωνία'],
-      ],
-      legalLinks: [
-        ['/privacy', 'Πολιτική Απορρήτου'],
-        ['/terms', 'Όροι Χρήσης'],
-        ['/cookies', 'Πολιτική Cookies'],
-        ['/become-therapist', 'Γίνε Θεραπευτής'],
-      ],
-      privLinks: [
-        ['/privacy', 'Απόρρητο'],
-        ['/terms', 'Όροι'],
-        ['/cookies', 'Cookies'],
-      ],
-    },
-    en: {
-      desc: 'Professional, personalized physiotherapy in the comfort of your home.',
-      menu: 'Menu',
-      legal: 'Legal',
-      contact: 'Contact',
-      links: [
-        ['/how-it-works', 'How It Works'],
-        ['/services', 'Services'],
-        ['/therapists', 'Therapists'],
-        ['/blog', 'Blog'],
-        ['/contact', 'Contact'],
-      ],
-      legalLinks: [
-        ['/privacy', 'Privacy Policy'],
-        ['/terms', 'Terms of Use'],
-        ['/cookies', 'Cookie Policy'],
-        ['/become-therapist', 'Become a Therapist'],
-      ],
-      privLinks: [
-        ['/privacy', 'Privacy'],
-        ['/terms', 'Terms'],
-        ['/cookies', 'Cookies'],
-      ],
-    },
-  };
-  const text = t[lang];
-
-  return (
-    <>
-      <style>{`
-        .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 48px; }
-        .footer-bottom { display: flex; align-items: center; justify-content: space-between; }
-        @media (max-width: 1024px) { .footer-grid { grid-template-columns: 1fr 1fr; } }
-        @media (max-width: 640px) { .footer-grid { grid-template-columns: 1fr; gap: 32px; } .footer-bottom { flex-direction: column; gap: 16px; text-align: center; } }
-      `}</style>
-      <footer style={{ background: '#0f1d2c', color: 'rgba(255,255,255,0.7)', padding: '60px 24px 32px' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div className="footer-grid">
-
-            {/* Brand */}
-            <div>
-              <div style={{ fontFamily: 'Georgia, serif', fontSize: 22, fontWeight: 700, color: '#fff', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#2a6fdb', display: 'inline-block' }} />
-                {settings.platform_name}
-              </div>
-              <p style={{ fontSize: 14, lineHeight: 1.6 }}>{text.desc}</p>
-            </div>
-
-            {/* Menu */}
-            <div>
-              <h4 style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: '.08em', color: '#fff', marginBottom: 16, fontWeight: 600 }}>{text.menu}</h4>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {text.links.map(([href, label]) => (
-                  <li key={href}>
-                    <a href={href} style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>{label}</a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Legal */}
-            <div>
-              <h4 style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: '.08em', color: '#fff', marginBottom: 16, fontWeight: 600 }}>{text.legal}</h4>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {text.legalLinks.map(([href, label]) => (
-                  <li key={label}>
-                    <a href={href} style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>{label}</a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Contact */}
-            <div>
-              <h4 style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: '.08em', color: '#fff', marginBottom: 16, fontWeight: 600 }}>{text.contact}</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 14 }}>
-                  <Mail size={16} color="rgba(255,255,255,0.6)" strokeWidth={2} style={{ flexShrink: 0, marginTop: 2 }} />
-                  <a href={`mailto:${settings.email}`} style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', wordBreak: 'break-all' }}>{settings.email}</a>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 14 }}>
-                  <Phone size={16} color="rgba(255,255,255,0.6)" strokeWidth={2} style={{ flexShrink: 0, marginTop: 2 }} />
-                  <a href={`tel:${settings.phone}`} style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>{settings.phone}</a>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 14 }}>
-                  <MapPin size={16} color="rgba(255,255,255,0.6)" strokeWidth={2} style={{ flexShrink: 0, marginTop: 2 }} />
-                  <span>{settings.address}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom bar */}
-          <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 24 }}>
-            <div className="footer-bottom">
-              <span style={{ fontSize: 13 }}>
-                © {new Date().getFullYear()} {settings.platform_name}. {lang === 'el' ? 'Με επιφύλαξη παντός δικαιώματος.' : 'All rights reserved.'}
-              </span>
-              <div style={{ display: 'flex', gap: 24 }}>
-                {text.privLinks.map(([href, label]) => (
-                  <a key={label} href={href} style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>{label}</a>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </footer>
     </>
   );
 }
