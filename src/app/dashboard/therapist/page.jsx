@@ -11,7 +11,10 @@ import RescheduleModal from '@/components/RescheduleModal';
 import { searchAreas, canonicalArea, phonetic } from '@/lib/areas';
 import ConditionPicker from '@/components/ConditionPicker';
 import {
-  LayoutDashboard, ClipboardList, Calendar, MapPin, Target, Star, User, Clock, AlertTriangle, Upload, CreditCard, Home, MessageSquare, Check, X, Lock, CalendarClock, ChevronLeft, ChevronRight, Plus, Lightbulb, Camera, Pencil, CheckCircle2, Save, FileText, GraduationCap, Award, Eye, Trash2, Wallet, Hourglass, CalendarDays, List, Globe,
+  LayoutDashboard, ClipboardList, Calendar, MapPin, Target, Star, User, Clock, AlertTriangle,
+  Upload, Home, MessageSquare, Check, X, Lock, CalendarClock, ChevronLeft, ChevronRight,
+  Plus, Lightbulb, Camera, Pencil, CheckCircle2, Save, FileText, GraduationCap, Award, Eye, Trash2,
+  Wallet, Hourglass, CalendarDays, List, Globe, Info, Copy, Ban, Repeat, Phone,
 } from 'lucide-react';
 
 // ─── Locale data ──────────────────────────────────────────────────────
@@ -39,19 +42,21 @@ const MONTHS_FULL = {
 };
 
 // ─── Status maps ──────────────────────────────────────────────────────
+// ΟΡΟΛΟΓΙΑ (ίδια σε ΟΛΟ το προϊόν):
+//   Αίτημα → Επιβεβαιωμένο ραντεβού → Ολοκληρωμένη συνεδρία → Αξιολόγηση
 const STATUS = {
-  pending:   { el: 'Εκκρεμές',        en: 'Pending',   bg: '#FEF3C7', color: '#92400E' },
-  confirmed: { el: 'Επιβεβαιωμένη',   en: 'Confirmed', bg: '#DBEAFE', color: '#1D4ED8' },
+  pending:   { el: 'Εκκρεμεί',        en: 'Pending',   bg: '#FEF3C7', color: '#92400E' },
+  confirmed: { el: 'Επιβεβαιωμένο',   en: 'Confirmed', bg: '#DBEAFE', color: '#1D4ED8' },
   completed: { el: 'Ολοκληρώθηκε',    en: 'Completed', bg: '#EDE9FE', color: '#5B21B6' },
   cancelled: { el: 'Ακυρώθηκε',       en: 'Cancelled', bg: '#FFE4E6', color: '#9F1239' },
   no_show:   { el: 'Δεν εμφανίστηκε', en: 'No show',   bg: '#FEE2E2', color: '#991B1B' },
 };
 
 const PAYMENT_STATUS = {
-  pending:  { el: 'Σε αναμονή',            en: 'Awaiting',        bg: '#F1F5F9', color: '#475569', icon: Hourglass },
-  held:     { el: 'Αναμονή απελευθέρωσης', en: 'Awaiting release', bg: '#FEF3C7', color: '#92400E', icon: Hourglass },
-  released: { el: 'Πληρώθηκε',             en: 'Paid',            bg: '#D1FAE5', color: '#065F46', icon: CheckCircle2 },
-  refunded: { el: 'Επιστράφηκε',           en: 'Refunded',        bg: '#FEE2E2', color: '#991B1B', icon: X },
+  pending:  { el: 'Σε αναμονή',            en: 'Awaiting',         bg: '#F1F5F9', color: '#475569', icon: Hourglass },
+  held:     { el: 'Αναμονή επιβεβαίωσης',  en: 'Awaiting confirm', bg: '#FEF3C7', color: '#92400E', icon: Hourglass },
+  released: { el: 'Ολοκληρώθηκε',          en: 'Closed',           bg: '#D1FAE5', color: '#065F46', icon: CheckCircle2 },
+  refunded: { el: 'Επιστράφηκε',           en: 'Refunded',         bg: '#FEE2E2', color: '#991B1B', icon: X },
 };
 
 // ─── Translations ─────────────────────────────────────────────────────
@@ -65,106 +70,138 @@ const TX = {
     awaitingApproval: 'Εκκρεμεί έγκριση admin',
     unknown: 'Άγνωστος',
 
-    tabAppointments: 'Ραντεβού',
     tabOverview: 'Επισκόπηση',
     tabRequests: 'Αιτήματα',
+    tabAppointments: 'Ραντεβού',
     tabAvailability: 'Διαθεσιμότητα',
-    tabAreas: 'Περιοχές',
-    tabConditions: 'Παθήσεις',
-    tabReviews: 'Αξιολογήσεις',
     tabProfile: 'Προφίλ',
+
+    todayTitle: 'Σήμερα',
+    todayNewRequests: 'νέα αιτήματα',
+    todayNewRequest: 'νέο αίτημα',
+    todayReschedules: 'προτάσεις αλλαγής ώρας',
+    todayReschedule: 'πρόταση αλλαγής ώρας',
+    todayNothing: 'Δεν εκκρεμεί τίποτα σήμερα.',
+    todayNothingSub: 'Θα σε ειδοποιήσουμε μόλις έρθει νέο αίτημα.',
+    seeRequests: 'Δες τα αιτήματα',
+    todaySchedule: 'Το πρόγραμμά σου σήμερα',
+    noSessionsToday: 'Δεν έχεις ραντεβού σήμερα.',
+    financeTitle: 'Οικονομικά',
+    earningsUpcoming: 'Αναμενόμενα',
+    earningsUpcomingSub: (n) => `${n} ${n === 1 ? 'επιβεβαιωμένη συνεδρία' : 'επιβεβαιωμένες συνεδρίες'}`,
+    earningsDone: 'Εισπραγμένα',
+    earningsDoneSub: (n) => `${n} ${n === 1 ? 'ολοκληρωμένη συνεδρία' : 'ολοκληρωμένες συνεδρίες'}`,
+    owedTitle: 'Οφειλή πλατφόρμας',
+    owedNone: 'Καμία οφειλή',
+    owedOpenShort: 'Ανεξόφλητα',
+    howPaymentsWork: 'Πώς λειτουργούν οι πληρωμές',
+
+    payModalTitle: 'Πώς λειτουργούν οι πληρωμές',
+    payModalCash: 'Ο ασθενής σε πληρώνει απευθείας σε μετρητά μετά από κάθε συνεδρία. Η πλατφόρμα δεν κρατάει τίποτα από το ποσό της συνεδρίας.',
+    payModalYourPrice: 'Η τιμή σου ανά συνεδρία',
+    payModalSubscription: 'Μηνιαία συνδρομή',
+    payModalFirstFee: 'Τέλος νέου ασθενή',
+    payModalPerNewPatient: 'ανά νέο ασθενή',
+    payModalFeeExplain: 'Χρεώνεσαι μία φορά για κάθε νέο ασθενή. Στις επόμενες συνεδρίες με τον ίδιο ασθενή δεν χρεώνεσαι ξανά.',
+    payModalOpen: 'Ανεξόφλητα αυτή τη στιγμή',
+    noPlan: 'Χωρίς ενεργή συνδρομή',
+    close: 'Κλείσιμο',
+
+    requestsPending: 'Εκκρεμούν απάντηση',
+    requestsAll: 'Όλα',
+    noRequestsYet: 'Δεν υπάρχουν αιτήματα ακόμα',
+    noPendingRequests: 'Δεν εκκρεμεί κανένα αίτημα.',
+    details: 'Λεπτομέρειες',
+    hideDetails: 'Απόκρυψη',
+    noDescription: 'Χωρίς περιγραφή',
+    notes: 'Πρόσβαση:',
+    reject: 'Απόρριψη',
+    acceptRequest: 'Αποδοχή',
+    accepting: 'Αποδοχή...',
+    cancelWholeRequest: 'Ακύρωση ραντεβού',
+    youEarn: 'Εισπράττεις',
+    respondFast: 'Απάντησε γρήγορα — ο ασθενής περιμένει.',
 
     nextAppointment: 'Επόμενο Ραντεβού',
     at: 'στις',
-    awaitingYourConfirm: 'Αναμένει την επιβεβαίωσή σας στα Αιτήματα',
-    noAppointments: 'Δεν έχετε ραντεβού ακόμα',
+    awaitingYourConfirm: 'Αναμένει την επιβεβαίωσή σου στα Αιτήματα',
+    noAppointments: 'Δεν έχεις ραντεβού ακόμα',
     noAppointmentsSub: 'Όταν έρθουν αιτήματα από ασθενείς, θα εμφανιστούν εδώ.',
-    viewList: 'Λίστα',
+    viewUpcoming: 'Σήμερα & επόμενα',
+    viewPast: 'Παλαιότερα',
     viewCalendar: 'Ημερολόγιο',
-    upcoming: (n) => `Επερχόμενα Ραντεβού (${n})`,
-    past: (n) => `Παλαιότερα Ραντεβού (${n})`,
+    upcoming: (n) => `Επερχόμενα (${n})`,
+    past: (n) => `Παλαιότερα (${n})`,
+    noUpcoming: 'Δεν έχεις επερχόμενα ραντεβού.',
+    noPast: 'Δεν υπάρχουν παλαιότερα ραντεβού.',
     markDone: 'Ολοκληρώθηκε',
     cancel: 'Ακύρωση',
     reschedule: 'Αλλαγή ώρας',
     reschedulePendingYours: 'Στείλατε πρόταση',
-    rescheduleReview: 'Δείτε την πρόταση',
-    awaitingRelease: 'Αναμονή απελευθέρωσης πληρωμής από ασθενή',
-    autoReleaseToday: 'Auto-release σήμερα',
-    autoReleaseIn: (d) => `Auto-release σε ${d} μέρες`,
-    cancelReason: 'Αιτιολογία:',
+    rescheduleReview: 'Δες την πρόταση',
+    awaitingRelease: 'Αναμονή επιβεβαίωσης από τον ασθενή',
+    autoReleaseToday: 'Κλείνει αυτόματα σήμερα',
+    autoReleaseIn: (d) => `Κλείνει αυτόματα σε ${d} μέρες`,
     cancelledBy: { therapist: 'Ακυρώθηκε από εσάς', patient: 'Ακυρώθηκε από τον ασθενή', admin: 'Ακυρώθηκε από την πλατφόρμα' },
-    netAmount: 'Καθαρά',
     prev: 'Προηγ.',
     next: 'Επόμ.',
     today: 'Σήμερα',
     hasAppointment: 'Έχει ραντεβού',
 
-    statNewRequests: 'Νέα Αιτήματα',
-    statConfirmed: 'Επιβεβαιωμένες',
-    statCompleted: 'Ολοκληρωμένες',
-    statAvgRating: 'Μέση Βαθμολογία',
-    earningsUpcoming: 'Αναμενόμενα έσοδα',
-    earningsUpcomingSub: (n) => `${n} ${n === 1 ? 'επιβεβαιωμένη συνεδρία' : 'επιβεβαιωμένες συνεδρίες'}`,
-    earningsDone: 'Εισπραγμένα',
-    earningsDoneSub: (n) => `${n} ${n === 1 ? 'ολοκληρωμένη συνεδρία' : 'ολοκληρωμένες συνεδρίες'}`,
-    owedTitle: 'Οφειλές προς την πλατφόρμα',
-    owedSubscription: 'Μηνιαία συνδρομή:',
-    owedFirstSession: 'Τέλος νέου ασθενή:',
-    owedOpen: 'Ανεξόφλητα:',
-    owedNone: 'Δεν έχετε ανεξόφλητες οφειλές.',
-    paymentInfo: 'Πώς πληρώνεστε',
-    cashLine: 'Ο ασθενής σας πληρώνει',
-    cashLineB: 'απευθείας σε μετρητά',
-    cashLineC: 'μετά από κάθε συνεδρία. Η πλατφόρμα δεν κρατάει τίποτα από το ποσό της συνεδρίας.',
-    yourPrice: 'Τιμή συνεδρίας σας:',
-    perMonthShort: '/μήνα',
-    perNewPatient: 'ανά νέο ασθενή',
-    feeExplain: 'Χρεώνεστε μία φορά για κάθε νέο ασθενή. Στις επόμενες συνεδρίες με τον ίδιο ασθενή δεν χρεώνεστε ξανά.',
-    noPlan: 'Χωρίς ενεργή συνδρομή',
-    recentRequests: 'Πρόσφατα Αιτήματα',
-    noRequestsYet: 'Δεν υπάρχουν αιτήματα ακόμα',
-    sessionsWord: (n) => (n === 1 ? 'συνεδρία' : 'συνεδρίες'),
-
-    noDescription: 'Χωρίς περιγραφή',
-    notes: 'Σημειώσεις:',
-    type: 'Τύπος:',
-    single: 'Μεμονωμένη',
-    packageOf: (n) => `Πακέτο ${n} συνεδριών`,
-    sessionsLabel: 'Συνεδρίες:',
-    totalNet: 'Σύνολο καθαρά:',
-    sessionsHeading: 'Συνεδρίες',
-    reject: 'Απόρριψη',
-    acceptRequest: 'Αποδοχή Αιτήματος',
-    cancelWholeRequest: 'Ακύρωση Όλου του Αιτήματος',
-    daysUntilRelease: (d) => `${d} μέρ. μέχρι auto-release`,
-
-    availabilityTitle: 'Διαθεσιμότητα — έως 2 χρόνια μπροστά',
-    availabilityDesc: 'Κλικάρετε για να ορίσετε/αφαιρέσετε ώρες. Ώρες ανά 30 λεπτά, 09:00–21:00.',
+    availTitle: 'Διαθεσιμότητα',
+    availDesc: 'Δήλωσε μία φορά το εβδομαδιαίο σου πρόγραμμα και δημιούργησε ώρες για όσες εβδομάδες θέλεις.',
+    modeWeekly: 'Εβδομαδιαίο πρόγραμμα',
+    modeGrid: 'Λεπτομερής ρύθμιση',
+    weeklyTitle: 'Το εβδομαδιαίο σου πρόγραμμα',
+    weeklyDesc: 'Πρόσθεσε ένα μπλοκ ανά ημέρα. Μπορείς να έχεις πρωί και απόγευμα ξεχωριστά.',
+    noBlocks: 'Δεν έχεις δηλώσει ώρες ακόμα. Πρόσθεσε το πρώτο σου μπλοκ.',
+    day: 'Ημέρα',
+    from: 'Από',
+    to: 'Έως',
+    duration: 'Διάρκεια',
+    minutesShort: 'λεπτά',
+    addBlock: 'Προσθήκη',
+    removeBlock: 'Αφαίρεση',
+    errBlockTime: 'Η ώρα λήξης πρέπει να είναι μετά την ώρα έναρξης.',
+    generateTitle: 'Δημιουργία ωρών',
+    generateDesc: 'Γεμίζει το ημερολόγιό σου από το εβδομαδιαίο πρόγραμμα. Δεν πειράζει ώρες που έχουν ήδη κλειστεί.',
+    weeksAhead: 'Για πόσες εβδομάδες;',
+    weeks: 'εβδομάδες',
+    generateBtn: 'Δημιουργία ωρών',
+    generating: 'Δημιουργία...',
+    generatedOk: (n) => `Δημιουργήθηκαν ${n} νέες ώρες.`,
+    generatedNone: 'Δεν χρειάστηκε καμία νέα ώρα — το ημερολόγιο ήταν ήδη γεμάτο.',
+    copyWeekTitle: 'Αντιγραφή εβδομάδας',
+    copyWeekDesc: 'Παίρνει τις ελεύθερες ώρες αυτής της εβδομάδας και τις επαναλαμβάνει στις επόμενες.',
+    copyWeekBtn: 'Αντιγραφή',
+    copying: 'Αντιγραφή...',
+    copiedOk: (n) => `Αντιγράφηκαν ${n} ώρες.`,
+    exceptionsTitle: 'Ημέρες που δεν δουλεύεις',
+    exceptionsDesc: 'Διακοπές, αργίες, προσωπικές υποχρεώσεις. Οι ελεύθερες ώρες της ημέρας αφαιρούνται.',
+    noExceptions: 'Δεν έχεις δηλώσει εξαιρέσεις.',
+    exceptionNote: 'Σημείωση (προαιρετικό)',
+    exceptionNotePh: 'π.χ. διακοπές',
+    addException: 'Προσθήκη ημέρας',
+    gridDesc: 'Κλικάρετε για να ορίσετε ή να αφαιρέσετε μεμονωμένες ώρες. Ώρες ανά 30 λεπτά, 09:00–21:00.',
     week: 'Εβδομάδα',
     hour: 'Ώρα',
     legendAvailable: 'Διαθέσιμο',
     legendBooked: 'Κλειστό (κράτηση)',
     legendUnavailable: 'Μη διαθέσιμο',
+    errAuth: 'Η σύνδεσή σου έληξε. Συνδέσου ξανά.',
+    errRange: 'Το διάστημα είναι πολύ μεγάλο.',
 
-    areasTitle: 'Περιοχές Εξυπηρέτησης',
-    areasDesc: 'Επιλέξτε τις περιοχές της Αθήνας που εξυπηρετείτε. Οι ασθενείς σε αυτές τις περιοχές θα σας βρίσκουν πιο εύκολα.',
-    areasSoonLabel: 'Σύντομα:',
-    areasSoon: 'Σχεδίαση περιοχών σε χάρτη για ακριβέστερο matching!',
-    areasSelected: (n) => `Επιλεγμένες περιοχές (${n})`,
-    areasEmpty: 'Δεν έχετε επιλέξει ακόμα περιοχές. Ξεκινήστε γράφοντας παρακάτω.',
-    addArea: 'Προσθήκη περιοχής',
-    areaPh: 'π.χ. Παγκράτι, Κολωνάκι...',
-    add: 'Προσθήκη',
-    areaHint: 'Πληκτρολογήστε για να δείτε προτάσεις από περιοχές της Αθήνας. Μπορείτε επίσης να γράψετε και δικές σας.',
+    secBasics: 'Βασικά στοιχεία',
+    secAreas: 'Περιοχές',
+    secConditions: 'Περιστατικά',
+    secDocuments: 'Δικαιολογητικά',
+    secReviews: 'Αξιολογήσεις',
 
-    avgRating: 'Μέση Βαθμολογία',
-    totalReviews: 'Συνολικά Reviews',
-    noReviews: 'Δεν υπάρχουν αξιολογήσεις ακόμα',
-
-    approved: 'Εγκεκριμένος',
+    approvedShort: 'Επαληθευμένος',
     docsPending: 'Δικαιολογητικά εκκρεμούν',
     awaitingAdmin: 'Αναμένει έγκριση admin',
-    photoHintA: 'Πατήστε',
+    verifiedMeaning: 'Το σήμα σημαίνει ότι η επαγγελματική σου άδεια έχει επαληθευτεί από την ομάδα μας.',
+    photoHintA: 'Πάτησε',
     photoHintB: 'για αλλαγή φωτογραφίας (max 5MB)',
     editProfile: 'Επεξεργασία',
     cancelEdit: 'Ακύρωση',
@@ -172,14 +209,30 @@ const TX = {
     specialty: 'Ειδικότητα',
     baseArea: 'Περιοχή Έδρας',
     pricePerSession: 'Τιμή/Συνεδρία (€25–€50)',
+    priceShort: 'Τιμή συνεδρίας',
     yearsExperience: 'Χρόνια Εμπειρίας',
     yearsPh: 'π.χ. 5',
     bio: 'Βιογραφικό',
     save: 'Αποθήκευση',
     saving: 'Αποθήκευση...',
     yearsUnit: (n) => `${n} χρόνια`,
-    netPerSessionLabel: 'Καθαρά/Συνεδρία',
-    afterCommission: (c) => `(μετά την προμήθεια ${c}€)`,
+    keepsAll: 'Κρατάς ολόκληρο το ποσό — ο ασθενής πληρώνει μετρητά.',
+
+    areasTitle: 'Περιοχές Εξυπηρέτησης',
+    areasDesc: 'Επίλεξε τις περιοχές που εξυπηρετείς. Οι ασθενείς σε αυτές τις περιοχές θα σε βρίσκουν.',
+    areasSoonLabel: 'Σύντομα:',
+    areasSoon: 'Ορισμός ακτίνας εξυπηρέτησης σε χάρτη (π.χ. 8 km από τη Νέα Σμύρνη).',
+    areasSelected: (n) => `Επιλεγμένες περιοχές (${n})`,
+    areasEmpty: 'Δεν έχεις επιλέξει ακόμα περιοχές. Ξεκίνα γράφοντας παρακάτω.',
+    addArea: 'Προσθήκη περιοχής',
+    areaPh: 'π.χ. Παγκράτι, Κολωνάκι...',
+    add: 'Προσθήκη',
+    areaHint: 'Πληκτρολόγησε για προτάσεις. Μπορείς να γράψεις και δικές σου περιοχές.',
+
+    reviewsCount: (n) => `${n} ${n === 1 ? 'αξιολόγηση' : 'αξιολογήσεις'}`,
+    noReviews: 'Δεν έχεις αξιολογήσεις ακόμη.',
+    noReviewsSub: 'Θα εμφανιστούν εδώ μόλις οι ασθενείς σου αφήσουν την πρώτη.',
+
     documents: 'Δικαιολογητικά',
     manage: 'Διαχείριση',
     license: 'Άδεια Εξασκήσεως',
@@ -193,17 +246,15 @@ const TX = {
 
     doneModalTitle: 'Ολοκληρώθηκε η συνεδρία;',
     doneModalDesc: (n) => `Επιβεβαιώνεις ότι έγινε η συνεδρία με τον/την ${n};`,
-    releaseAmount: 'Ποσό προς απελευθέρωση',
-    sessionTotal: 'Σύνολο συνεδρίας:',
-    commissionLabel: 'Προμήθεια:',
+    sessionAmount: 'Ποσό συνεδρίας',
     doneModalWarn: 'Ο ασθενής θα ειδοποιηθεί και θα έχει',
     doneModalWarnDays: '7 μέρες',
-    doneModalWarnEnd: 'να επιβεβαιώσει & να απελευθερώσει το ποσό. Αν δεν απαντήσει, η πληρωμή απελευθερώνεται αυτόματα.',
+    doneModalWarnEnd: 'να επιβεβαιώσει. Αν δεν απαντήσει, η συνεδρία κλείνει αυτόματα.',
     marking: 'Καταχώρηση...',
     confirmDone: 'Ναι, ολοκληρώθηκε',
 
     docsModalWarnA: 'Η Άδεια Εξασκήσεως είναι υποχρεωτική.',
-    docsModalWarnB: 'Μόλις την ανεβάσεις, η αίτησή σου θα σταλεί στον admin για έγκριση.',
+    docsModalWarnB: 'Μόλις την ανεβάσεις, η αίτησή σου στέλνεται στον admin για έγκριση.',
     fileHint: 'PDF, JPG, PNG · max 10 MB',
     chooseFile: 'Επιλογή Αρχείου',
     choose: 'Επιλογή',
@@ -213,10 +264,9 @@ const TX = {
     optionalParen: '(προαιρετικό)',
     optionalMulti: '(προαιρετικά, πολλαπλά αρχεία)',
     certLabel: (i) => `Πιστοποιητικό ${i}`,
-    certHint: 'Προσθέστε πιστοποιήσεις, σεμινάρια, εξειδικεύσεις',
-    close: 'Κλείσιμο',
+    certHint: 'Πρόσθεσε πιστοποιήσεις, σεμινάρια, εξειδικεύσεις',
 
-    errImageType: 'Παρακαλώ επιλέξτε εικόνα (JPG, PNG, WEBP).',
+    errImageType: 'Παρακαλώ επίλεξε εικόνα (JPG, PNG, WEBP).',
     errImageSize: 'Η εικόνα είναι πολύ μεγάλη. Μέγιστο μέγεθος: 5 MB.',
     errFileType: 'Επιτρέπονται μόνο: PDF, JPG, PNG',
     errFileSize: 'Το αρχείο είναι πολύ μεγάλο. Μέγιστο μέγεθος: 10 MB.',
@@ -224,8 +274,8 @@ const TX = {
     errUpdate: 'Σφάλμα ενημέρωσης: ',
     errPrefix: 'Σφάλμα: ',
     confirmDelete: 'Διαγραφή αρχείου;',
-    condSaved: (n) => `Αποθηκεύτηκαν ${n} ${n === 1 ? 'πάθηση' : 'παθήσεις'}`,
-    condUnsaved: 'Έχετε αλλαγές χωρίς αποθήκευση',
+    condSaved: (n) => `Αποθηκεύτηκαν ${n} ${n === 1 ? 'περιστατικό' : 'περιστατικά'}`,
+    condUnsaved: 'Έχεις αλλαγές χωρίς αποθήκευση',
   },
   en: {
     roleBadge: 'Therapist',
@@ -236,105 +286,137 @@ const TX = {
     awaitingApproval: 'Awaiting admin approval',
     unknown: 'Unknown',
 
-    tabAppointments: 'Appointments',
     tabOverview: 'Overview',
     tabRequests: 'Requests',
+    tabAppointments: 'Appointments',
     tabAvailability: 'Availability',
-    tabAreas: 'Areas',
-    tabConditions: 'Conditions',
-    tabReviews: 'Reviews',
     tabProfile: 'Profile',
+
+    todayTitle: 'Today',
+    todayNewRequests: 'new requests',
+    todayNewRequest: 'new request',
+    todayReschedules: 'reschedule proposals',
+    todayReschedule: 'reschedule proposal',
+    todayNothing: 'Nothing pending today.',
+    todayNothingSub: "We'll let you know as soon as a request comes in.",
+    seeRequests: 'See requests',
+    todaySchedule: 'Your schedule today',
+    noSessionsToday: 'No appointments today.',
+    financeTitle: 'Finances',
+    earningsUpcoming: 'Expected',
+    earningsUpcomingSub: (n) => `${n} confirmed ${n === 1 ? 'session' : 'sessions'}`,
+    earningsDone: 'Collected',
+    earningsDoneSub: (n) => `${n} completed ${n === 1 ? 'session' : 'sessions'}`,
+    owedTitle: 'Owed to platform',
+    owedNone: 'Nothing owed',
+    owedOpenShort: 'Outstanding',
+    howPaymentsWork: 'How payments work',
+
+    payModalTitle: 'How payments work',
+    payModalCash: 'Your patient pays you directly in cash after each session. The platform takes nothing from the session amount.',
+    payModalYourPrice: 'Your price per session',
+    payModalSubscription: 'Monthly subscription',
+    payModalFirstFee: 'New patient fee',
+    payModalPerNewPatient: 'per new patient',
+    payModalFeeExplain: 'You are charged once per new patient. Follow-up sessions with the same patient are not charged again.',
+    payModalOpen: 'Currently outstanding',
+    noPlan: 'No active subscription',
+    close: 'Close',
+
+    requestsPending: 'Awaiting your reply',
+    requestsAll: 'All',
+    noRequestsYet: 'No requests yet',
+    noPendingRequests: 'No requests are waiting for you.',
+    details: 'Details',
+    hideDetails: 'Hide',
+    noDescription: 'No description',
+    notes: 'Access:',
+    reject: 'Decline',
+    acceptRequest: 'Accept',
+    accepting: 'Accepting...',
+    cancelWholeRequest: 'Cancel appointment',
+    youEarn: 'You earn',
+    respondFast: 'Reply quickly — the patient is waiting.',
 
     nextAppointment: 'Next Appointment',
     at: 'at',
     awaitingYourConfirm: 'Awaiting your confirmation under Requests',
     noAppointments: "You don't have any appointments yet",
     noAppointmentsSub: 'When patient requests come in, they will appear here.',
-    viewList: 'List',
+    viewUpcoming: 'Today & upcoming',
+    viewPast: 'Past',
     viewCalendar: 'Calendar',
-    upcoming: (n) => `Upcoming Appointments (${n})`,
-    past: (n) => `Past Appointments (${n})`,
+    upcoming: (n) => `Upcoming (${n})`,
+    past: (n) => `Past (${n})`,
+    noUpcoming: 'No upcoming appointments.',
+    noPast: 'No past appointments.',
     markDone: 'Mark as done',
     cancel: 'Cancel',
     reschedule: 'Change time',
     reschedulePendingYours: 'Proposal sent',
     rescheduleReview: 'Review proposal',
-    awaitingRelease: 'Awaiting payment release from patient',
-    autoReleaseToday: 'Auto-release today',
-    autoReleaseIn: (d) => `Auto-release in ${d} days`,
-    cancelReason: 'Reason:',
+    awaitingRelease: 'Awaiting confirmation from the patient',
+    autoReleaseToday: 'Closes automatically today',
+    autoReleaseIn: (d) => `Closes automatically in ${d} days`,
     cancelledBy: { therapist: 'Cancelled by you', patient: 'Cancelled by the patient', admin: 'Cancelled by the platform' },
-    netAmount: 'Net',
     prev: 'Prev',
     next: 'Next',
     today: 'Today',
     hasAppointment: 'Has appointment',
 
-    statNewRequests: 'New Requests',
-    statConfirmed: 'Confirmed',
-    statCompleted: 'Completed',
-    statAvgRating: 'Average Rating',
-    earningsUpcoming: 'Expected earnings',
-    earningsUpcomingSub: (n) => `${n} confirmed ${n === 1 ? 'session' : 'sessions'}`,
-    earningsDone: 'Collected',
-    earningsDoneSub: (n) => `${n} completed ${n === 1 ? 'session' : 'sessions'}`,
-    owedTitle: 'Owed to the platform',
-    owedSubscription: 'Monthly subscription:',
-    owedFirstSession: 'New patient fee:',
-    owedOpen: 'Outstanding:',
-    owedNone: 'You have no outstanding charges.',
-    paymentInfo: 'How you get paid',
-    cashLine: 'Your patient pays you',
-    cashLineB: 'directly in cash',
-    cashLineC: 'after each session. The platform takes nothing from the session amount.',
-    yourPrice: 'Your session price:',
-    perMonthShort: '/month',
-    perNewPatient: 'per new patient',
-    feeExplain: 'You are charged once per new patient. Follow-up sessions with the same patient are not charged again.',
-    noPlan: 'No active subscription',
-    recentRequests: 'Recent Requests',
-    noRequestsYet: 'No requests yet',
-    sessionsWord: (n) => (n === 1 ? 'session' : 'sessions'),
-
-    noDescription: 'No description',
-    notes: 'Notes:',
-    type: 'Type:',
-    single: 'Single session',
-    packageOf: (n) => `Package of ${n} sessions`,
-    sessionsLabel: 'Sessions:',
-    totalNet: 'Total net:',
-    sessionsHeading: 'Sessions',
-    reject: 'Decline',
-    acceptRequest: 'Accept Request',
-    cancelWholeRequest: 'Cancel Entire Request',
-    daysUntilRelease: (d) => `${d} days until auto-release`,
-
-    availabilityTitle: 'Availability — up to 2 years ahead',
-    availabilityDesc: 'Click to set or remove hours. 30-minute slots, 09:00–21:00.',
+    availTitle: 'Availability',
+    availDesc: 'Declare your weekly schedule once, then generate hours for as many weeks as you like.',
+    modeWeekly: 'Weekly schedule',
+    modeGrid: 'Fine tuning',
+    weeklyTitle: 'Your weekly schedule',
+    weeklyDesc: 'Add one block per day. You can have morning and afternoon separately.',
+    noBlocks: "You haven't declared any hours yet. Add your first block.",
+    day: 'Day',
+    from: 'From',
+    to: 'To',
+    duration: 'Duration',
+    minutesShort: 'min',
+    addBlock: 'Add',
+    removeBlock: 'Remove',
+    errBlockTime: 'The end time must be after the start time.',
+    generateTitle: 'Generate hours',
+    generateDesc: 'Fills your calendar from the weekly schedule. It never touches hours that are already booked.',
+    weeksAhead: 'For how many weeks?',
+    weeks: 'weeks',
+    generateBtn: 'Generate hours',
+    generating: 'Generating...',
+    generatedOk: (n) => `Created ${n} new hours.`,
+    generatedNone: 'No new hours were needed — your calendar was already full.',
+    copyWeekTitle: 'Copy week',
+    copyWeekDesc: "Takes this week's free hours and repeats them in the following weeks.",
+    copyWeekBtn: 'Copy',
+    copying: 'Copying...',
+    copiedOk: (n) => `Copied ${n} hours.`,
+    exceptionsTitle: "Days you don't work",
+    exceptionsDesc: 'Holidays, time off, personal commitments. Free hours on that day are removed.',
+    noExceptions: 'No exceptions declared.',
+    exceptionNote: 'Note (optional)',
+    exceptionNotePh: 'e.g. holiday',
+    addException: 'Add day',
+    gridDesc: 'Click to set or remove individual hours. 30-minute slots, 09:00–21:00.',
     week: 'Week',
     hour: 'Time',
     legendAvailable: 'Available',
     legendBooked: 'Blocked (booked)',
     legendUnavailable: 'Unavailable',
+    errAuth: 'Your session expired. Please sign in again.',
+    errRange: 'That range is too large.',
 
-    areasTitle: 'Service Areas',
-    areasDesc: 'Choose the Athens areas you cover. Patients in those areas will find you more easily.',
-    areasSoonLabel: 'Coming soon:',
-    areasSoon: 'Draw your areas on a map for more precise matching.',
-    areasSelected: (n) => `Selected areas (${n})`,
-    areasEmpty: "You haven't selected any areas yet. Start typing below.",
-    addArea: 'Add an area',
-    areaPh: 'e.g. Pangrati, Kolonaki...',
-    add: 'Add',
-    areaHint: 'Type to see suggestions from Athens areas. You can also enter your own.',
+    secBasics: 'Basic details',
+    secAreas: 'Areas',
+    secConditions: 'Cases',
+    secDocuments: 'Documents',
+    secReviews: 'Reviews',
 
-    avgRating: 'Average Rating',
-    totalReviews: 'Total Reviews',
-    noReviews: 'No reviews yet',
-
-    approved: 'Approved',
+    approvedShort: 'Verified',
     docsPending: 'Documents pending',
     awaitingAdmin: 'Awaiting admin approval',
+    verifiedMeaning: 'The badge means your professional licence has been verified by our team.',
     photoHintA: 'Click',
     photoHintB: 'to change your photo (max 5MB)',
     editProfile: 'Edit',
@@ -343,14 +425,30 @@ const TX = {
     specialty: 'Specialty',
     baseArea: 'Base Area',
     pricePerSession: 'Price/Session (€25–€50)',
+    priceShort: 'Session price',
     yearsExperience: 'Years of Experience',
     yearsPh: 'e.g. 5',
     bio: 'Bio',
     save: 'Save',
     saving: 'Saving...',
     yearsUnit: (n) => `${n} years`,
-    netPerSessionLabel: 'Net/Session',
-    afterCommission: (c) => `(after the €${c} commission)`,
+    keepsAll: 'You keep the full amount — the patient pays cash.',
+
+    areasTitle: 'Service Areas',
+    areasDesc: 'Choose the areas you cover. Patients in those areas will find you.',
+    areasSoonLabel: 'Coming soon:',
+    areasSoon: 'Set a service radius on a map (e.g. 8 km from Nea Smyrni).',
+    areasSelected: (n) => `Selected areas (${n})`,
+    areasEmpty: "You haven't selected any areas yet. Start typing below.",
+    addArea: 'Add an area',
+    areaPh: 'e.g. Pangrati, Kolonaki...',
+    add: 'Add',
+    areaHint: 'Type to see suggestions. You can also enter your own areas.',
+
+    reviewsCount: (n) => `${n} ${n === 1 ? 'review' : 'reviews'}`,
+    noReviews: "You don't have any reviews yet.",
+    noReviewsSub: 'They will appear here once your patients leave the first one.',
+
     documents: 'Documents',
     manage: 'Manage',
     license: 'Practising Licence',
@@ -364,12 +462,10 @@ const TX = {
 
     doneModalTitle: 'Session completed?',
     doneModalDesc: (n) => `Do you confirm the session with ${n} took place?`,
-    releaseAmount: 'Amount to be released',
-    sessionTotal: 'Session total:',
-    commissionLabel: 'Commission:',
+    sessionAmount: 'Session amount',
     doneModalWarn: 'The patient will be notified and will have',
     doneModalWarnDays: '7 days',
-    doneModalWarnEnd: 'to confirm and release the amount. If they do not respond, the payment is released automatically.',
+    doneModalWarnEnd: 'to confirm. If they do not respond, the session closes automatically.',
     marking: 'Saving...',
     confirmDone: 'Yes, it is done',
 
@@ -385,7 +481,6 @@ const TX = {
     optionalMulti: '(optional, multiple files)',
     certLabel: (i) => `Certificate ${i}`,
     certHint: 'Add certifications, seminars, specializations',
-    close: 'Close',
 
     errImageType: 'Please choose an image (JPG, PNG, WEBP).',
     errImageSize: 'That image is too large. Maximum size: 5 MB.',
@@ -395,15 +490,14 @@ const TX = {
     errUpdate: 'Update error: ',
     errPrefix: 'Error: ',
     confirmDelete: 'Delete this file?',
-    condSaved: (n) => `Saved ${n} ${n === 1 ? 'condition' : 'conditions'}`,
+    condSaved: (n) => `Saved ${n} ${n === 1 ? 'case' : 'cases'}`,
     condUnsaved: 'You have unsaved changes',
   },
 };
 
 // Το status ΔΕΝ έχει ποτέ σκέτο 'cancelled'. Το check constraint της βάσης
 // επιτρέπει μόνο: cancelled_by_therapist | cancelled_by_patient |
-// cancelled_by_admin. Έλεγχος με === 'cancelled' δεν ταιριάζει ΠΟΤΕ —
-// γι' αυτό ακυρωμένα ραντεβού εμφανίζονταν ως ενεργά.
+// cancelled_by_admin. Έλεγχος με === 'cancelled' δεν ταιριάζει ΠΟΤΕ.
 const isCancelled = (s) => String(s || '').startsWith('cancelled');
 
 function Avatar({ name, photoUrl, size = 48 }) {
@@ -428,13 +522,7 @@ function ReviewStars({ rating, size = 14 }) {
   return (
     <span style={{ display: 'inline-flex', gap: 2 }}>
       {[1, 2, 3, 4, 5].map(i => (
-        <Star
-          key={i}
-          size={size}
-          fill={i <= (rating || 0) ? '#F59E0B' : 'none'}
-          color={i <= (rating || 0) ? '#F59E0B' : '#E2E8F0'}
-          strokeWidth={2}
-        />
+        <Star key={i} size={size} fill={i <= (rating || 0) ? '#F59E0B' : 'none'} color={i <= (rating || 0) ? '#F59E0B' : '#E2E8F0'} strokeWidth={2} />
       ))}
     </span>
   );
@@ -446,7 +534,6 @@ for (let h = 9; h <= 20; h++) {
   HOURS.push(`${String(h).padStart(2, '0')}:30`);
 }
 HOURS.push('21:00');
-
 
 function generateDates() {
   const dates = [];
@@ -484,10 +571,21 @@ function daysUntilAutoRelease(autoReleaseAt) {
   return Math.max(0, diffDays);
 }
 
-// ─── TAB ΠΑΘΗΣΕΩΝ ─────────────────────────────────────────────────────
+function todayISO() {
+  return new Date().toISOString().split('T')[0];
+}
+
+// Το ποσό που εισπράττει ο θεραπευτής. Ο ασθενής πληρώνει μετρητά και η
+// πλατφόρμα δεν κρατάει τίποτα από τη συνεδρία, οπότε το net_to_therapist
+// είναι συχνά κενό — τότε ισχύει ολόκληρο το session_amount.
+function bookingAmount(b) {
+  return parseFloat(b?.net_to_therapist ?? b?.session_amount ?? 0) || 0;
+}
+
+// ─── ΠΕΡΙΣΤΑΤΙΚΑ ──────────────────────────────────────────────────────
 // Ξεχωριστό component γιατί έχει δικό του state αποθήκευσης.
 // Το ConditionPicker είναι controlled και δεν γράφει μόνο του στη βάση.
-function TherapistConditionsTab({ userId, specialty, lang, tx }) {
+function TherapistConditionsSection({ userId, specialty, lang, tx }) {
   const [selected, setSelected] = useState([]);
   const [original, setOriginal] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -546,15 +644,11 @@ function TherapistConditionsTab({ userId, specialty, lang, tx }) {
   }
 
   if (loading) {
-    return (
-      <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: 40, textAlign: 'center', color: '#64748B' }}>
-        {tx.loading}
-      </div>
-    );
+    return <div style={{ padding: 40, textAlign: 'center', color: '#64748B' }}>{tx.loading}</div>;
   }
 
   return (
-    <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: 24 }}>
+    <div>
       <ConditionPicker
         value={selected}
         onChange={setSelected}
@@ -574,9 +668,7 @@ function TherapistConditionsTab({ userId, specialty, lang, tx }) {
               color: msg.type === 'success' ? '#15803D' : '#DC2626',
               fontWeight: 600, flex: 1, display: 'flex', alignItems: 'center', gap: 7,
             }}>
-              {msg.type === 'success'
-                ? <Check size={14} strokeWidth={3} />
-                : <AlertTriangle size={14} strokeWidth={2.5} />}
+              {msg.type === 'success' ? <Check size={14} strokeWidth={3} /> : <AlertTriangle size={14} strokeWidth={2.5} />}
               {msg.text}
             </div>
           ) : (
@@ -595,6 +687,422 @@ function TherapistConditionsTab({ userId, specialty, lang, tx }) {
   );
 }
 
+// ─── ΔΙΑΘΕΣΙΜΟΤΗΤΑ ────────────────────────────────────────────────────
+// Εβδομαδιαίο πρόγραμμα + εξαιρέσεις, πάνω στις functions της βάσης:
+// generate_availability_slots / clear_free_slots / copy_week_availability.
+//
+// Το availability_slots παραμένει η ΜΟΝΗ πηγή αλήθειας για το τι είναι
+// κρατήσιμο. Το εβδομαδιαίο πρόγραμμα είναι απλώς η συνταγή που το γεμίζει,
+// οπότε booking, reschedule και σελίδα ασθενή δουλεύουν αμετάβλητα.
+function AvailabilityManager({ userId, lang, tx, loc, slots, onSlotsChanged, weekOffset, setWeekOffset, currentWeek }) {
+  const [mode, setMode] = useState('weekly');
+  const [blocks, setBlocks] = useState([]);
+  const [exceptions, setExceptions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [msg, setMsg] = useState(null);
+  const [busy, setBusy] = useState(null);
+
+  const [form, setForm] = useState({ weekday: 1, start_time: '09:00', end_time: '14:00', slot_minutes: 60 });
+  const [weeksAhead, setWeeksAhead] = useState(4);
+  const [copyWeeks, setCopyWeeks] = useState(3);
+  const [excForm, setExcForm] = useState({ date: '', note: '' });
+
+  useEffect(() => { if (userId) load(); }, [userId]);
+
+  function flash(type, text) {
+    setMsg({ type, text });
+    setTimeout(() => setMsg(null), 5000);
+  }
+
+  async function load() {
+    const [{ data: b }, { data: e }] = await Promise.all([
+      supabase.from('therapist_weekly_schedule').select('*').eq('therapist_id', userId).order('weekday').order('start_time'),
+      supabase.from('therapist_schedule_exceptions').select('*').eq('therapist_id', userId).gte('date', todayISO()).order('date'),
+    ]);
+    setBlocks(b || []);
+    setExceptions(e || []);
+    setLoading(false);
+  }
+
+  async function addBlock() {
+    if (form.end_time <= form.start_time) { flash('error', tx.errBlockTime); return; }
+    setBusy('block');
+    const { data, error } = await supabase.from('therapist_weekly_schedule').insert([{
+      therapist_id: userId,
+      weekday: Number(form.weekday),
+      start_time: form.start_time,
+      end_time: form.end_time,
+      slot_minutes: Number(form.slot_minutes),
+      is_active: true,
+    }]).select().single();
+    setBusy(null);
+    if (error) { flash('error', tx.errPrefix + error.message); return; }
+    setBlocks(prev => [...prev, data].sort((a, b) => a.weekday - b.weekday || a.start_time.localeCompare(b.start_time)));
+  }
+
+  async function removeBlock(id) {
+    const { error } = await supabase.from('therapist_weekly_schedule').delete().eq('id', id);
+    if (error) { flash('error', tx.errPrefix + error.message); return; }
+    setBlocks(prev => prev.filter(b => b.id !== id));
+  }
+
+  async function generate() {
+    setBusy('generate');
+    const from = todayISO();
+    const to = new Date();
+    to.setDate(to.getDate() + weeksAhead * 7);
+    const { data, error } = await supabase.rpc('generate_availability_slots', {
+      p_therapist_id: userId,
+      p_from: from,
+      p_to: to.toISOString().split('T')[0],
+    });
+    setBusy(null);
+    if (error) {
+      const m = error.message || '';
+      flash('error', m.includes('not_authorised') ? tx.errAuth : m.includes('range_too_large') ? tx.errRange : tx.errPrefix + m);
+      return;
+    }
+    const n = Number(data || 0);
+    flash('success', n > 0 ? tx.generatedOk(n) : tx.generatedNone);
+    await onSlotsChanged();
+  }
+
+  async function copyWeek() {
+    setBusy('copy');
+    const source = currentWeek?.[0] || todayISO();
+    const { data, error } = await supabase.rpc('copy_week_availability', {
+      p_therapist_id: userId,
+      p_source_start: source,
+      p_weeks_ahead: copyWeeks,
+    });
+    setBusy(null);
+    if (error) { flash('error', tx.errPrefix + error.message); return; }
+    flash('success', tx.copiedOk(Number(data || 0)));
+    await onSlotsChanged();
+  }
+
+  async function addException() {
+    if (!excForm.date) return;
+    setBusy('exception');
+
+    const { data, error } = await supabase.from('therapist_schedule_exceptions').upsert({
+      therapist_id: userId,
+      date: excForm.date,
+      is_unavailable: true,
+      note: excForm.note || null,
+    }, { onConflict: 'therapist_id,date' }).select().single();
+
+    if (error) { setBusy(null); flash('error', tx.errPrefix + error.message); return; }
+
+    // Καθαρίζουμε ΜΟΝΟ τις ελεύθερες ώρες εκείνης της ημέρας.
+    // Κλεισμένα ραντεβού δεν αγγίζονται — ο θεραπευτής πρέπει να τα
+    // ακυρώσει ρητά, ώστε να ειδοποιηθεί ο ασθενής.
+    await supabase.rpc('clear_free_slots', {
+      p_therapist_id: userId,
+      p_from: excForm.date,
+      p_to: excForm.date,
+    });
+
+    setBusy(null);
+    setExceptions(prev => [...prev.filter(x => x.date !== data.date), data].sort((a, b) => a.date.localeCompare(b.date)));
+    setExcForm({ date: '', note: '' });
+    await onSlotsChanged();
+  }
+
+  async function removeException(id) {
+    const { error } = await supabase.from('therapist_schedule_exceptions').delete().eq('id', id);
+    if (error) { flash('error', tx.errPrefix + error.message); return; }
+    setExceptions(prev => prev.filter(e => e.id !== id));
+  }
+
+  async function toggleSlot(day, hour) {
+    const existing = slots.find(s => s.date === day && s.start_time === hour + ':00');
+    if (existing) {
+      if (existing.is_blocked) return;
+      await supabase.from('availability_slots').delete().eq('id', existing.id);
+    } else {
+      const [h, m] = hour.split(':').map(Number);
+      const totalMin = h * 60 + m + 30;
+      const endH = String(Math.floor(totalMin / 60)).padStart(2, '0');
+      const endM = String(totalMin % 60).padStart(2, '0');
+      await supabase.from('availability_slots').insert([{
+        therapist_id: userId, date: day,
+        start_time: hour + ':00',
+        end_time: `${endH}:${endM}:00`,
+        is_blocked: false,
+      }]);
+    }
+    await onSlotsChanged();
+  }
+
+  const inputStyle = { padding: '9px 12px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', outline: 'none', color: '#0F172A', boxSizing: 'border-box' };
+  const labelStyle = { fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.05em', display: 'block', marginBottom: 5 };
+
+  const fmtDate = d => new Date(d + 'T12:00:00').toLocaleDateString(loc, { day: '2-digit', month: '2-digit' });
+  const weekStart = currentWeek?.[0];
+  const weekEnd = currentWeek?.[currentWeek.length - 1];
+
+  if (loading) {
+    return <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: 40, textAlign: 'center', color: '#64748B' }}>{tx.loading}</div>;
+  }
+
+  return (
+    <div>
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 18, fontWeight: 700, color: '#0F172A', marginBottom: 3 }}>{tx.availTitle}</div>
+        <div style={{ fontSize: 13, color: '#64748B', lineHeight: 1.5 }}>{tx.availDesc}</div>
+      </div>
+
+      <div style={{ display: 'flex', gap: 4, background: '#e2e8f0', padding: 4, borderRadius: 10, width: 'fit-content', marginBottom: 18 }}>
+        {[['weekly', tx.modeWeekly, Repeat], ['grid', tx.modeGrid, CalendarDays]].map(([id, label, Icon]) => (
+          <button key={id} onClick={() => setMode(id)}
+            style={{ padding: '8px 16px', borderRadius: 7, border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: mode === id ? '#fff' : 'transparent', color: mode === id ? '#0F172A' : '#64748B', boxShadow: mode === id ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Icon size={14} />
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {msg && (
+        <div style={{
+          background: msg.type === 'success' ? '#D1FAE5' : '#FEF2F2',
+          border: `1px solid ${msg.type === 'success' ? '#86EFAC' : '#FECACA'}`,
+          borderRadius: 10, padding: '11px 16px', fontSize: 13, marginBottom: 16,
+          color: msg.type === 'success' ? '#15803D' : '#DC2626', fontWeight: 600,
+          display: 'flex', alignItems: 'center', gap: 8,
+        }}>
+          {msg.type === 'success' ? <Check size={15} strokeWidth={3} /> : <AlertTriangle size={15} strokeWidth={2.4} />}
+          {msg.text}
+        </div>
+      )}
+
+      {mode === 'weekly' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+          <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: 22 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', marginBottom: 3, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+              <Repeat size={15} color="#2a6fdb" />
+              {tx.weeklyTitle}
+            </div>
+            <div style={{ fontSize: 12.5, color: '#64748B', marginBottom: 16 }}>{tx.weeklyDesc}</div>
+
+            {blocks.length === 0 ? (
+              <div style={{ padding: 20, textAlign: 'center', background: '#f8fafc', borderRadius: 10, color: '#94a3b8', fontSize: 13, fontStyle: 'italic', marginBottom: 16 }}>
+                {tx.noBlocks}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 16 }}>
+                {blocks.map(b => (
+                  <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#15803D', minWidth: 78 }}>{DAYS[lang][b.weekday]}</span>
+                    <span style={{ fontSize: 13.5, color: '#166534', fontWeight: 600 }}>
+                      {b.start_time?.slice(0, 5)} – {b.end_time?.slice(0, 5)}
+                    </span>
+                    <span style={{ fontSize: 12, color: '#15803D', background: '#fff', border: '1px solid #BBF7D0', padding: '2px 9px', borderRadius: 999 }}>
+                      {b.slot_minutes} {tx.minutesShort}
+                    </span>
+                    <button onClick={() => removeBlock(b.id)}
+                      style={{ marginLeft: 'auto', background: 'transparent', border: '1px solid #FECDD3', color: '#BE123C', borderRadius: 20, padding: '5px 12px', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                      <Trash2 size={12} />
+                      {tx.removeBlock}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap', paddingTop: 16, borderTop: '1px solid #f1f5f9' }}>
+              <div style={{ minWidth: 120 }}>
+                <label style={labelStyle}>{tx.day}</label>
+                <select value={form.weekday} onChange={e => setForm(f => ({ ...f, weekday: e.target.value }))} style={{ ...inputStyle, width: '100%' }}>
+                  {[1, 2, 3, 4, 5, 6, 0].map(d => <option key={d} value={d}>{DAYS[lang][d]}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>{tx.from}</label>
+                <input type="time" value={form.start_time} onChange={e => setForm(f => ({ ...f, start_time: e.target.value }))} style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>{tx.to}</label>
+                <input type="time" value={form.end_time} onChange={e => setForm(f => ({ ...f, end_time: e.target.value }))} style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>{tx.duration}</label>
+                <select value={form.slot_minutes} onChange={e => setForm(f => ({ ...f, slot_minutes: e.target.value }))} style={inputStyle}>
+                  {[30, 45, 60, 90].map(m => <option key={m} value={m}>{m} {tx.minutesShort}</option>)}
+                </select>
+              </div>
+              <button onClick={addBlock} disabled={busy === 'block'}
+                style={{ padding: '10px 20px', borderRadius: 8, border: 'none', background: '#1a2e44', color: '#fff', fontSize: 13, fontWeight: 600, cursor: busy === 'block' ? 'wait' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <Plus size={14} strokeWidth={2.5} />
+                {tx.addBlock}
+              </button>
+            </div>
+          </div>
+
+          <div style={{ background: '#EFF6FF', borderRadius: 14, border: '1px solid #BFDBFE', padding: 22 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#1D4ED8', marginBottom: 3, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+              <CalendarDays size={15} />
+              {tx.generateTitle}
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1E40AF', marginBottom: 16, lineHeight: 1.5 }}>{tx.generateDesc}</div>
+
+            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+              <div>
+                <label style={{ ...labelStyle, color: '#1D4ED8' }}>{tx.weeksAhead}</label>
+                <select value={weeksAhead} onChange={e => setWeeksAhead(Number(e.target.value))} style={{ ...inputStyle, background: '#fff' }}>
+                  {[2, 4, 8, 12, 24].map(w => <option key={w} value={w}>{w} {tx.weeks}</option>)}
+                </select>
+              </div>
+              <button onClick={generate} disabled={busy === 'generate' || blocks.length === 0}
+                style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: blocks.length === 0 ? '#cbd5e1' : '#1D4ED8', color: '#fff', fontSize: 13, fontWeight: 700, cursor: blocks.length === 0 ? 'not-allowed' : busy === 'generate' ? 'wait' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                <Check size={14} strokeWidth={3} />
+                {busy === 'generate' ? tx.generating : tx.generateBtn}
+              </button>
+            </div>
+          </div>
+
+          <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: 22 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', marginBottom: 3, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+              <Ban size={15} color="#BE123C" />
+              {tx.exceptionsTitle}
+            </div>
+            <div style={{ fontSize: 12.5, color: '#64748B', marginBottom: 16 }}>{tx.exceptionsDesc}</div>
+
+            {exceptions.length === 0 ? (
+              <div style={{ padding: 16, textAlign: 'center', background: '#f8fafc', borderRadius: 10, color: '#94a3b8', fontSize: 13, fontStyle: 'italic', marginBottom: 16 }}>
+                {tx.noExceptions}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+                {exceptions.map(e => (
+                  <div key={e.id} style={{ background: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: 30, padding: '6px 8px 6px 14px', display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#9F1239', fontWeight: 500 }}>
+                    <span style={{ fontWeight: 700 }}>
+                      {new Date(e.date + 'T12:00:00').toLocaleDateString(loc, { day: '2-digit', month: 'short' })}
+                    </span>
+                    {e.note && <span style={{ fontSize: 12, opacity: 0.8 }}>{e.note}</span>}
+                    <button onClick={() => removeException(e.id)}
+                      style={{ background: 'transparent', border: 'none', color: '#9F1239', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', width: 18, height: 18 }}>
+                      <X size={13} strokeWidth={2.5} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap', paddingTop: 16, borderTop: '1px solid #f1f5f9' }}>
+              <div>
+                <label style={labelStyle}>{tx.day}</label>
+                <input type="date" min={todayISO()} value={excForm.date} onChange={e => setExcForm(f => ({ ...f, date: e.target.value }))} style={inputStyle} />
+              </div>
+              <div style={{ flex: 1, minWidth: 160 }}>
+                <label style={labelStyle}>{tx.exceptionNote}</label>
+                <input value={excForm.note} onChange={e => setExcForm(f => ({ ...f, note: e.target.value }))} placeholder={tx.exceptionNotePh} style={{ ...inputStyle, width: '100%' }} />
+              </div>
+              <button onClick={addException} disabled={!excForm.date || busy === 'exception'}
+                style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #FECDD3', background: !excForm.date ? '#f8fafc' : '#fff', color: !excForm.date ? '#94a3b8' : '#BE123C', fontSize: 13, fontWeight: 600, cursor: !excForm.date ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <Plus size={14} strokeWidth={2.5} />
+                {tx.addException}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {mode === 'grid' && (
+        <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: 22 }}>
+          <div style={{ fontSize: 12.5, color: '#64748B', marginBottom: 16 }}>{tx.gridDesc}</div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
+            <button onClick={() => setWeekOffset(w => Math.max(0, w - 1))} disabled={weekOffset === 0}
+              style={{ padding: '6px 16px', borderRadius: 8, border: '1px solid #e2e8f0', background: weekOffset === 0 ? '#f8fafc' : '#fff', color: weekOffset === 0 ? '#94a3b8' : '#1a2e44', fontSize: 13, fontWeight: 600, cursor: weekOffset === 0 ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' }}>
+              <ChevronLeft size={14} />
+              {tx.prev}
+            </button>
+            <div style={{ flex: 1, textAlign: 'center', fontSize: 14, fontWeight: 700, color: '#0F172A', minWidth: 140 }}>
+              {weekStart && weekEnd ? `${fmtDate(weekStart)} – ${fmtDate(weekEnd)}` : ''}
+              <span style={{ fontSize: 12, color: '#94a3b8', marginLeft: 8 }}>{tx.week} {weekOffset + 1}</span>
+            </div>
+            <button onClick={() => setWeekOffset(w => Math.min(ALL_WEEKS.length - 1, w + 1))}
+              style={{ padding: '6px 16px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#1a2e44', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' }}>
+              {tx.next}
+              <ChevronRight size={14} />
+            </button>
+          </div>
+
+          <div style={{ background: '#F5F3FF', border: '1px solid #DDD6FE', borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: 180 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: '#6D28D9', marginBottom: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Copy size={13} strokeWidth={2.2} />
+                {tx.copyWeekTitle}
+              </div>
+              <div style={{ fontSize: 11.5, color: '#7C3AED', lineHeight: 1.5 }}>{tx.copyWeekDesc}</div>
+            </div>
+            <select value={copyWeeks} onChange={e => setCopyWeeks(Number(e.target.value))} style={{ ...inputStyle, background: '#fff' }}>
+              {[1, 2, 3, 4, 8, 12].map(w => <option key={w} value={w}>{w} {tx.weeks}</option>)}
+            </select>
+            <button onClick={copyWeek} disabled={busy === 'copy'}
+              style={{ padding: '9px 18px', borderRadius: 8, border: 'none', background: '#6D28D9', color: '#fff', fontSize: 12.5, fontWeight: 600, cursor: busy === 'copy' ? 'wait' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
+              <Copy size={13} />
+              {busy === 'copy' ? tx.copying : tx.copyWeekBtn}
+            </button>
+          </div>
+
+          <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: '60vh' }}>
+            <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 480 }}>
+              <thead style={{ position: 'sticky', top: 0, background: '#fff', zIndex: 10 }}>
+                <tr>
+                  <th style={{ padding: '8px 10px', fontSize: 11, color: '#64748B', fontWeight: 600, textAlign: 'left', minWidth: 52 }}>{tx.hour}</th>
+                  {(currentWeek || []).map(d => {
+                    const dateObj = new Date(d + 'T12:00:00');
+                    const dayName = DAYS_SHORT[lang][dateObj.getDay()];
+                    const dayNum = dateObj.toLocaleDateString(loc, { day: '2-digit', month: '2-digit' });
+                    const isToday = d === todayISO();
+                    const isExc = exceptions.some(e => e.date === d);
+                    return (
+                      <th key={d} style={{ padding: '8px 4px', fontSize: 11, color: isExc ? '#BE123C' : isToday ? '#2a6fdb' : '#64748B', fontWeight: 700, textAlign: 'center', minWidth: 50, background: isExc ? '#FFF1F2' : isToday ? '#EFF6FF' : 'transparent', borderRadius: 6 }}>
+                        {dayName}<br /><span style={{ fontWeight: 400, fontSize: 10 }}>{dayNum}</span>
+                      </th>
+                    );
+                  })}
+                </tr>
+              </thead>
+              <tbody>
+                {HOURS.map(hour => (
+                  <tr key={hour} style={{ borderTop: hour.endsWith(':00') ? '1px solid #f1f5f9' : 'none' }}>
+                    <td style={{ padding: '2px 8px', fontSize: 10, color: hour.endsWith(':00') ? '#475569' : '#94a3b8', fontWeight: hour.endsWith(':00') ? 600 : 400, whiteSpace: 'nowrap' }}>{hour}</td>
+                    {(currentWeek || []).map(day => {
+                      const slot = slots.find(s => s.date === day && s.start_time === hour + ':00');
+                      const isBlocked = slot?.is_blocked;
+                      const isAvail = slot && !isBlocked;
+                      const isPast = new Date(day + 'T' + hour + ':00') < new Date();
+                      return (
+                        <td key={day} style={{ padding: 2, textAlign: 'center' }}>
+                          <div onClick={() => !isBlocked && !isPast && toggleSlot(day, hour)}
+                            style={{ width: '100%', height: 22, borderRadius: 3, cursor: isBlocked || isPast ? 'not-allowed' : 'pointer', background: isBlocked ? '#FEE2E2' : isAvail ? '#D1FAE5' : isPast ? '#F8FAFC' : '#F1F5F9', border: `1px solid ${isBlocked ? '#FECACA' : isAvail ? '#BBF7D0' : '#E2E8F0'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: isPast ? 0.35 : 1, transition: 'all .1s' }}>
+                            {isBlocked ? <Lock size={10} color="#9F1239" strokeWidth={2.5} /> : isAvail ? <Check size={11} color="#15803D" strokeWidth={3} /> : null}
+                          </div>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div style={{ marginTop: 12, display: 'flex', gap: 16, fontSize: 12, color: '#64748B', flexWrap: 'wrap' }}>
+            <span><span style={{ display: 'inline-block', width: 12, height: 12, background: '#D1FAE5', border: '1px solid #BBF7D0', borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />{tx.legendAvailable}</span>
+            <span><span style={{ display: 'inline-block', width: 12, height: 12, background: '#FEE2E2', border: '1px solid #FECACA', borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />{tx.legendBooked}</span>
+            <span><span style={{ display: 'inline-block', width: 12, height: 12, background: '#F1F5F9', border: '1px solid #E2E8F0', borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />{tx.legendUnavailable}</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 export default function TherapistDashboard() {
   const router = useRouter();
   const { lang } = useLang();
@@ -642,7 +1150,7 @@ export default function TherapistDashboard() {
 
   function statusLabel(map, key, fallbackKey = 'pending') {
     // Χαρτογράφηση των cancelled_by_* στο ενιαίο 'cancelled' του map,
-    // αλλιώς πέφτουν στο fallback και δείχνουν «Εκκρεμές».
+    // αλλιώς πέφτουν στο fallback και δείχνουν «Εκκρεμεί».
     const k = isCancelled(key) ? 'cancelled' : key;
     const entry = map[k] || map[fallbackKey];
     return { ...entry, label: entry[lang] || entry.el };
@@ -653,10 +1161,10 @@ export default function TherapistDashboard() {
   const [requests, setRequests] = useState([]);
   const [slots, setSlots] = useState([]);
   const [reviews, setReviews] = useState([]);
-  const [commission, setCommission] = useState(3);
   const [subscription, setSubscription] = useState(null);
   const [openCharges, setOpenCharges] = useState([]);
-  const [activeTab, setActiveTab] = useState('appointments');
+  const [activeTab, setActiveTab] = useState('overview');
+  const [profileSection, setProfileSection] = useState('basics');
   const [loading, setLoading] = useState(true);
   const [editProfile, setEditProfile] = useState(false);
   const [profileForm, setProfileForm] = useState({});
@@ -666,12 +1174,16 @@ export default function TherapistDashboard() {
   const photoInputRef = useRef();
   const tabsRef = useRef();
 
-  const [appointmentsView, setAppointmentsView] = useState('list');
+  const [appointmentsView, setAppointmentsView] = useState('upcoming');
   const [calendarMonth, setCalendarMonth] = useState(() => {
     const d = new Date();
     return { year: d.getFullYear(), month: d.getMonth() };
   });
   const [selectedDay, setSelectedDay] = useState(null);
+
+  const [requestFilter, setRequestFilter] = useState('pending');
+  const [expandedRequest, setExpandedRequest] = useState(null);
+  const [accepting, setAccepting] = useState(null);
 
   const [cancelTarget, setCancelTarget] = useState(null);
   const [rescheduleTarget, setRescheduleTarget] = useState(null);
@@ -679,6 +1191,7 @@ export default function TherapistDashboard() {
 
   const [doneModal, setDoneModal] = useState(null);
   const [marking, setMarking] = useState(false);
+  const [payModal, setPayModal] = useState(false);
 
   const [docsModal, setDocsModal] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState(null);
@@ -704,15 +1217,12 @@ export default function TherapistDashboard() {
     setProfileForm(prof || {});
 
     await loadRequests(user.id);
+    await reloadSlots(user.id);
 
-    const { data: slts } = await supabase.from('availability_slots').select('*').eq('therapist_id', user.id);
-    setSlots(slts || []);
-
-    const { data: revs } = await supabase.from('reviews').select('*').eq('therapist_id', user.id).eq('is_published', true);
+    const { data: revs } = await supabase.from('reviews').select('*')
+      .eq('therapist_id', user.id).eq('is_published', true)
+      .order('created_at', { ascending: false });
     setReviews(revs || []);
-
-    const { data: comm } = await supabase.from('platform_settings').select('value').eq('key', 'commission').single();
-    if (comm) setCommission(parseFloat(comm.value) || 3);
 
     // Συνδρομή — για το ποσό μηνιαίας χρέωσης και το τέλος νέου ασθενή
     const { data: sub } = await supabase
@@ -725,7 +1235,6 @@ export default function TherapistDashboard() {
       .maybeSingle();
     setSubscription(sub || null);
 
-    // Ανεξόφλητες χρεώσεις προς την πλατφόρμα
     const { data: charges } = await supabase
       .from('payments')
       .select('id, amount, status, paid, fee_type, created_at')
@@ -734,6 +1243,13 @@ export default function TherapistDashboard() {
     setOpenCharges(charges || []);
 
     setLoading(false);
+  }
+
+  async function reloadSlots(uid) {
+    const id = uid || user?.id;
+    if (!id) return;
+    const { data } = await supabase.from('availability_slots').select('*').eq('therapist_id', id);
+    setSlots(data || []);
   }
 
   async function loadRequests(therapistId) {
@@ -756,10 +1272,9 @@ export default function TherapistDashboard() {
     const patientIds = [...new Set(reqs.map(r => r.patient_id).filter(Boolean))];
     const { data: patients } = await supabase
       .from('patient_profiles')
-      .select('id, name')
+      .select('id, name, phone')
       .in('id', patientIds);
 
-    // Εκκρεμείς προτάσεις αλλαγής ώρας
     const bookingIds = (bks || []).map(b => b.id);
     if (bookingIds.length > 0) {
       const { data: rs } = await supabase
@@ -779,6 +1294,7 @@ export default function TherapistDashboard() {
         ...req,
         bookings: reqBookings,
         patient_name: patient?.name || null,
+        patient_phone: patient?.phone || null,
       };
     });
 
@@ -951,11 +1467,21 @@ export default function TherapistDashboard() {
     setSaving(false);
   }
 
+  // Κάθε αίτημα αφορά ΜΙΑ συνεδρία. Η αποδοχή επιβεβαιώνει και το
+  // ραντεβού — ο θεραπευτής δεν χρειάζεται δεύτερη οθόνη για να
+  // διαλέξει ώρα, γιατί η ώρα είναι ήδη μία.
   async function confirmRequest(request) {
+    setAccepting(request.id);
     const bookingIds = request.bookings.map(b => b.id);
-    await supabase.from('session_bookings').update({ status: 'confirmed' }).in('id', bookingIds);
-    await supabase.from('session_requests').update({ status: 'confirmed' }).eq('id', request.id);
+    if (bookingIds.length > 0) {
+      await supabase.from('session_bookings').update({ status: 'confirmed' }).in('id', bookingIds);
+    }
+    await supabase.from('session_requests').update({
+      status: 'confirmed',
+      responded_at: new Date().toISOString(),
+    }).eq('id', request.id);
     await loadRequests(user.id);
+    setAccepting(null);
   }
 
   function openDoneModal(booking, request) {
@@ -990,10 +1516,9 @@ export default function TherapistDashboard() {
     setDoneModal(null);
   }
 
-  // Η ακύρωση γίνεται πλέον ΑΠΟΚΛΕΙΣΤΙΚΑ μέσω των RPC functions
-  // cancel_booking() / cancel_request(). Η βάση επιβάλλει τους κανόνες:
-  // ξεμπλοκάρει slot, καταγράφει ιστορικό, δίνει strike αν είναι <24h,
-  // και παγώνει τον λογαριασμό στα 3 strikes.
+  // Η ακύρωση γίνεται ΑΠΟΚΛΕΙΣΤΙΚΑ μέσω των RPC cancel_booking() /
+  // cancel_request(). Η βάση επιβάλλει τους κανόνες: ξεμπλοκάρει slot,
+  // καταγράφει ιστορικό, δίνει strike αν είναι <24h.
   function openCancelRequestModal(request) {
     setCancelTarget({ requestId: request.id });
   }
@@ -1005,27 +1530,7 @@ export default function TherapistDashboard() {
   async function onCancelDone() {
     setCancelTarget(null);
     await loadRequests(user.id);
-  }
-
-  async function toggleSlot(day, hour) {
-    const existing = slots.find(s => s.date === day && s.start_time === hour + ':00');
-    if (existing) {
-      if (existing.is_blocked) return;
-      await supabase.from('availability_slots').delete().eq('id', existing.id);
-      setSlots(prev => prev.filter(s => s.id !== existing.id));
-    } else {
-      const [h, m] = hour.split(':').map(Number);
-      const totalMin = h * 60 + m + 30;
-      const endH = String(Math.floor(totalMin / 60)).padStart(2, '0');
-      const endM = String(totalMin % 60).padStart(2, '0');
-      const { data } = await supabase.from('availability_slots').insert([{
-        therapist_id: user.id, date: day,
-        start_time: hour + ':00',
-        end_time: `${endH}:${endM}:00`,
-        is_blocked: false,
-      }]).select().single();
-      if (data) setSlots(prev => [...prev, data]);
-    }
+    await reloadSlots();
   }
 
   // Ο guard στο layout πετάει τον θεραπευτή πίσω στον πίνακα.
@@ -1044,9 +1549,8 @@ export default function TherapistDashboard() {
     reschedules.find(r => r.booking_id === bookingId && r.status === 'pending') || null;
 
   const allBookings = requests.flatMap(r => r.bookings.map(b => ({ ...b, request: r })));
-  const pendingCount = requests.filter(r => r.status === 'pending').length;
-  const confirmedCount = allBookings.filter(b => b.status === 'confirmed').length;
-  const completedCount = allBookings.filter(b => b.status === 'completed').length;
+  const pendingRequests = requests.filter(r => r.status === 'pending');
+  const pendingCount = pendingRequests.length;
   const avgRating = reviews.length > 0 ? (reviews.reduce((s, r) => s + (r.rating || 0), 0) / reviews.length).toFixed(1) : '—';
   const pricePerSession = profile?.price_per_session || 0;
 
@@ -1059,31 +1563,21 @@ export default function TherapistDashboard() {
   );
 
   // ── ΕΣΟΔΑ ──────────────────────────────────────────────────────────
-  // Ο ασθενής πληρώνει ΜΕΤΡΗΤΑ απευθείας. Δεν υπάρχει escrow, άρα δεν
-  // υπάρχει «απελευθέρωση». Ο διαχωρισμός είναι χρονικός:
-  //   αναμενόμενα  = επιβεβαιωμένες συνεδρίες που δεν έγιναν ακόμα
-  //   εισπραγμένα  = ολοκληρωμένες
-  const sumAmount = (arr) =>
-    arr.reduce((s, b) => s + (parseFloat(b.net_to_therapist ?? b.session_amount ?? 0) || 0), 0);
+  // Ο ασθενής πληρώνει ΜΕΤΡΗΤΑ απευθείας. Δεν υπάρχει escrow.
+  //   αναμενόμενα = επιβεβαιωμένες συνεδρίες που δεν έγιναν ακόμα
+  //   εισπραγμένα = ολοκληρωμένες
+  const sumAmount = (arr) => arr.reduce((s, b) => s + bookingAmount(b), 0);
 
-  const upcomingPaidBookings = allBookings.filter(b => {
-    if (isCancelled(b.status) || b.status === 'completed') return false;
-    return b.status === 'confirmed';
-  });
+  const upcomingPaidBookings = allBookings.filter(b => b.status === 'confirmed');
   const completedBookings = allBookings.filter(b => b.status === 'completed');
 
   const upcomingEarnings = sumAmount(upcomingPaidBookings);
   const collectedEarnings = sumAmount(completedBookings);
 
   // ── ΟΦΕΙΛΕΣ ΠΡΟΣ ΤΗΝ ΠΛΑΤΦΟΡΜΑ ────────────────────────────────────
-  // Ανεξόφλητες γραμμές στο payments: τέλη νέου ασθενή που χρωστάει
-  // ο θεραπευτής. ΔΕΝ αφαιρούνται από τα έσοδα των συνεδριών —
-  // είναι ξεχωριστή υποχρέωση.
+  // Ανεξόφλητες γραμμές στο payments: τέλη νέου ασθενή. ΔΕΝ αφαιρούνται
+  // από τα έσοδα των συνεδριών — είναι ξεχωριστή υποχρέωση.
   const owedTotal = openCharges.reduce((s, p) => s + (parseFloat(p.amount) || 0), 0);
-
-  function getNetAmount(request) {
-    return (request.bookings || []).reduce((sum, b) => sum + parseFloat(b.net_to_therapist || 0), 0);
-  }
 
   const sortedAppointments = [...allBookings].sort((a, b) => {
     const aDate = a.session_date + 'T' + (a.session_time || '00:00');
@@ -1104,13 +1598,16 @@ export default function TherapistDashboard() {
     return d < now && a.payment_status !== 'held' && a.status !== 'pending' && !(a.status === 'confirmed' && d >= now);
   }).reverse();
 
-  const nextAppointment = upcomingAppointments.find(a =>
-    a.status === 'confirmed' || a.status === 'pending'
+  const nextAppointment = upcomingAppointments.find(a => a.status === 'confirmed' || a.status === 'pending');
+
+  const todayStr = todayISO();
+
+  const todaysAppointments = sortedAppointments.filter(a =>
+    a.session_date === todayStr && !isCancelled(a.status) && a.status !== 'completed'
   );
 
-  const fmtDate = d => new Date(d + 'T12:00:00').toLocaleDateString(loc, { day: '2-digit', month: '2-digit' });
-  const weekStart = currentWeek?.[0];
-  const weekEnd   = currentWeek?.[currentWeek.length - 1];
+  // Προτάσεις αλλαγής ώρας που περιμένουν ΕΜΕΝΑ, όχι όσες έστειλα εγώ
+  const incomingReschedules = reschedules.filter(r => r.requested_by_role !== 'therapist');
 
   const hasLicense = !!profile?.license_url;
   const hasCv = !!profile?.cv_url;
@@ -1142,7 +1639,6 @@ export default function TherapistDashboard() {
   }
 
   const calendarGrid = buildMonthGrid(calendarMonth.year, calendarMonth.month);
-  const todayStr = new Date().toISOString().split('T')[0];
 
   const appointmentsByDate = {};
   upcomingAppointments.forEach(a => {
@@ -1169,20 +1665,47 @@ export default function TherapistDashboard() {
     </div>
   );
 
+  // ΠΕΝΤΕ tabs, όχι οκτώ. Περιοχές, περιστατικά, δικαιολογητικά και
+  // αξιολογήσεις ζουν πλέον μέσα στο Προφίλ — είναι ρυθμίσεις, όχι
+  // καθημερινή δουλειά.
   const TABS = [
-    { id: 'appointments', label: tx.tabAppointments, Icon: Calendar },
-    { id: 'overview', label: tx.tabOverview, Icon: LayoutDashboard },
-    { id: 'requests', label: `${tx.tabRequests}${pendingCount > 0 ? ` (${pendingCount})` : ''}`, Icon: ClipboardList },
-    { id: 'calendar', label: tx.tabAvailability, Icon: CalendarDays },
-    { id: 'areas', label: tx.tabAreas, Icon: MapPin },
-    { id: 'conditions', label: tx.tabConditions, Icon: Target },
-    { id: 'reviews', label: tx.tabReviews, Icon: Star },
-    { id: 'profile', label: tx.tabProfile, Icon: User },
+    { id: 'overview', label: tx.tabOverview, Icon: LayoutDashboard, count: 0 },
+    { id: 'requests', label: tx.tabRequests, Icon: ClipboardList, count: pendingCount },
+    { id: 'appointments', label: tx.tabAppointments, Icon: Calendar, count: 0 },
+    { id: 'availability', label: tx.tabAvailability, Icon: CalendarDays, count: 0 },
+    { id: 'profile', label: tx.tabProfile, Icon: User, count: 0 },
   ];
+
+  const PROFILE_SECTIONS = [
+    { id: 'basics', label: tx.secBasics, Icon: User },
+    { id: 'areas', label: tx.secAreas, Icon: MapPin },
+    { id: 'conditions', label: tx.secConditions, Icon: Target },
+    { id: 'documents', label: tx.secDocuments, Icon: FileText },
+    { id: 'reviews', label: tx.secReviews, Icon: Star },
+  ];
+
+  // Το checklist στέλνει keys που πρέπει να μεταφραστούν στη νέα δομή.
+  function goToChecklistTarget(key) {
+    if (key === 'availability' || key === 'calendar') { setActiveTab('availability'); return; }
+    if (key === 'areas' || key === 'conditions') { setActiveTab('profile'); setProfileSection(key); return; }
+    setActiveTab('profile');
+    setProfileSection('basics');
+    setEditProfile(true);
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: "'DM Sans', sans-serif" }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap'); * { box-sizing: border-box; margin: 0; padding: 0; }`}</style>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        .tabs-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .tabs-scroll::-webkit-scrollbar { display: none; }
+        @media (max-width: 720px) {
+          .req-actions { flex-direction: column !important; align-items: stretch !important; }
+          .req-actions button { width: 100%; }
+          .req-actions .req-hint { margin-right: 0 !important; margin-bottom: 4px; }
+        }
+      `}</style>
 
       <nav style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', padding: '0 24px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'Georgia, serif', fontSize: 18, fontWeight: 700, color: '#1a2e44' }}>
@@ -1198,8 +1721,7 @@ export default function TherapistDashboard() {
             </span>
           )}
           <LanguageSwitcher color="#64748b" hoverColor="#1a2e44" navHeight={60} />
-          <button onClick={viewSite}
-            title={tx.viewSiteTitle}
+          <button onClick={viewSite} title={tx.viewSiteTitle}
             style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #c8dff9', background: '#eaf2fc', color: '#2a6fdb', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, fontFamily: 'inherit' }}>
             <Globe size={13} />
             {tx.site}
@@ -1209,17 +1731,14 @@ export default function TherapistDashboard() {
         </div>
       </nav>
 
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px' }}>
 
         {/* Το checklist είναι ΠΑΝΩ από τα tabs. Χωρίς scroll, ο θεραπευτής
             πατάει «Συμπλήρωσε», το tab αλλάζει σωστά, αλλά αυτός βλέπει
             το ίδιο checklist και νομίζει ότι δεν έγινε τίποτα. */}
         <ProfileChecklist
           onGoToTab={(tab) => {
-            setActiveTab(tab);
-            // Το tab «Προφίλ» ανοίγει σε read mode — αν έρχεται από το
-            // checklist, θέλει να γράψει, όχι να διαβάσει.
-            if (tab === 'profile') setEditProfile(true);
+            goToChecklistTarget(tab);
             setTimeout(() => {
               tabsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 60);
@@ -1227,30 +1746,305 @@ export default function TherapistDashboard() {
           onOpenDocuments={() => setDocsModal(true)}
         />
 
-        <div ref={tabsRef} style={{ display: 'flex', gap: 4, background: '#e2e8f0', padding: 4, borderRadius: 12, width: 'fit-content', marginBottom: 24, flexWrap: 'wrap', scrollMarginTop: 76 }}>
-          {TABS.map(t => {
-            const TabIcon = t.Icon;
-            const isActive = activeTab === t.id;
-            return (
-              <button key={t.id} onClick={() => setActiveTab(t.id)}
-                style={{ padding: '8px 18px', borderRadius: 8, border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: isActive ? '#fff' : 'transparent', color: isActive ? '#0F172A' : '#64748B', boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <TabIcon size={14} />
-                {t.label}
-              </button>
-            );
-          })}
+        <div ref={tabsRef} className="tabs-scroll" style={{ marginBottom: 24, scrollMarginTop: 76 }}>
+          <div style={{ display: 'flex', gap: 4, background: '#e2e8f0', padding: 4, borderRadius: 12, width: 'fit-content', minWidth: 'min-content' }}>
+            {TABS.map(t => {
+              const TabIcon = t.Icon;
+              const isActive = activeTab === t.id;
+              return (
+                <button key={t.id} onClick={() => setActiveTab(t.id)}
+                  style={{ padding: '9px 18px', borderRadius: 8, border: 'none', fontSize: 13.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: isActive ? '#fff' : 'transparent', color: isActive ? '#0F172A' : '#64748B', boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
+                  <TabIcon size={14} />
+                  {t.label}
+                  {t.count > 0 && (
+                    <span style={{ background: isActive ? '#2a6fdb' : '#94a3b8', color: '#fff', fontSize: 11, fontWeight: 700, minWidth: 19, height: 19, borderRadius: 999, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 6px' }}>
+                      {t.count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* ═══ APPOINTMENTS TAB ═══ */}
+        {/* ═══ ΕΠΙΣΚΟΠΗΣΗ ═══ */}
+        {activeTab === 'overview' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+            {/* Μόνο ό,τι χρειάζεται ΣΗΜΕΡΑ. Τα υπόλοιπα ζουν στα tabs. */}
+            <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+              <div style={{ padding: '18px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
+                <Clock size={17} color="#2a6fdb" />
+                <span style={{ fontSize: 16, fontWeight: 700, color: '#0F172A' }}>{tx.todayTitle}</span>
+                <span style={{ fontSize: 13, color: '#94a3b8', marginLeft: 'auto' }}>{formatFullDate(todayStr)}</span>
+              </div>
+
+              {pendingCount === 0 && todaysAppointments.length === 0 && incomingReschedules.length === 0 ? (
+                <div style={{ padding: '32px 24px', textAlign: 'center' }}>
+                  <CheckCircle2 size={34} color="#BBF7D0" style={{ margin: '0 auto 10px' }} />
+                  <div style={{ fontSize: 15, fontWeight: 600, color: '#475569', marginBottom: 4 }}>{tx.todayNothing}</div>
+                  <div style={{ fontSize: 13, color: '#94a3b8' }}>{tx.todayNothingSub}</div>
+                </div>
+              ) : (
+                <div style={{ padding: '18px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {pendingCount > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 12, flexWrap: 'wrap' }}>
+                      <ClipboardList size={18} color="#B45309" />
+                      <span style={{ fontSize: 15, fontWeight: 700, color: '#92400E' }}>
+                        {pendingCount} {pendingCount === 1 ? tx.todayNewRequest : tx.todayNewRequests}
+                      </span>
+                      <button onClick={() => setActiveTab('requests')}
+                        style={{ marginLeft: 'auto', padding: '8px 18px', borderRadius: 30, border: 'none', background: '#B45309', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        {tx.seeRequests}
+                        <ChevronRight size={14} />
+                      </button>
+                    </div>
+                  )}
+
+                  {incomingReschedules.length > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 12, flexWrap: 'wrap' }}>
+                      <CalendarClock size={18} color="#1D4ED8" />
+                      <span style={{ fontSize: 15, fontWeight: 700, color: '#1D4ED8' }}>
+                        {incomingReschedules.length} {incomingReschedules.length === 1 ? tx.todayReschedule : tx.todayReschedules}
+                      </span>
+                      <button onClick={() => setActiveTab('appointments')}
+                        style={{ marginLeft: 'auto', padding: '8px 18px', borderRadius: 30, border: 'none', background: '#1D4ED8', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        {tx.tabAppointments}
+                        <ChevronRight size={14} />
+                      </button>
+                    </div>
+                  )}
+
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 9 }}>
+                      {tx.todaySchedule}
+                    </div>
+                    {todaysAppointments.length === 0 ? (
+                      <div style={{ fontSize: 13.5, color: '#94a3b8', fontStyle: 'italic', padding: '10px 0' }}>{tx.noSessionsToday}</div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                        {todaysAppointments.map(apt => {
+                          const st = statusLabel(STATUS, apt.status);
+                          return (
+                            <div key={apt.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', background: '#f8fafc', borderRadius: 10, flexWrap: 'wrap' }}>
+                              <span style={{ fontSize: 16, fontWeight: 700, color: '#0F172A', minWidth: 52 }}>
+                                {apt.session_time?.slice(0, 5)}
+                              </span>
+                              <span style={{ fontSize: 14, color: '#0F172A', fontWeight: 600 }}>
+                                {apt.request?.patient_name || tx.unknown}
+                              </span>
+                              <span style={{ fontSize: 13, color: '#64748B', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                                <MapPin size={12} />
+                                {apt.request?.area}
+                              </span>
+                              <span style={{ marginLeft: 'auto' }}>
+                                <Badge label={st.label} bg={st.bg} color={st.color} />
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>{tx.financeTitle}</span>
+                {/* Το μακροσκελές κείμενο για τις πληρωμές έγινε modal.
+                    Μετά από δύο-τρεις χρήσεις είναι θόρυβος. */}
+                <button onClick={() => setPayModal(true)}
+                  style={{ background: 'transparent', border: 'none', color: '#2a6fdb', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5, padding: 0 }}>
+                  <Info size={13} />
+                  {tx.howPaymentsWork}
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, minWidth: 190, background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 14, padding: '18px 20px' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#1D4ED8', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6 }}>{tx.earningsUpcoming}</div>
+                  <div style={{ fontSize: 28, fontWeight: 700, color: '#1D4ED8' }}>{upcomingEarnings.toFixed(2)}€</div>
+                  <div style={{ fontSize: 12, color: '#1E40AF', marginTop: 4 }}>{tx.earningsUpcomingSub(upcomingPaidBookings.length)}</div>
+                </div>
+                <div style={{ flex: 1, minWidth: 190, background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 14, padding: '18px 20px' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#15803D', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6 }}>{tx.earningsDone}</div>
+                  <div style={{ fontSize: 28, fontWeight: 700, color: '#15803D' }}>{collectedEarnings.toFixed(2)}€</div>
+                  <div style={{ fontSize: 12, color: '#15803D', marginTop: 4 }}>{tx.earningsDoneSub(completedBookings.length)}</div>
+                </div>
+                <div style={{ flex: 1, minWidth: 190, background: owedTotal > 0 ? '#FFFBEB' : '#F8FAFC', border: `1px solid ${owedTotal > 0 ? '#FDE68A' : '#E2E8F0'}`, borderRadius: 14, padding: '18px 20px' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: owedTotal > 0 ? '#B45309' : '#64748B', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6 }}>{tx.owedTitle}</div>
+                  <div style={{ fontSize: 28, fontWeight: 700, color: owedTotal > 0 ? '#B45309' : '#64748B' }}>{owedTotal.toFixed(2)}€</div>
+                  <div style={{ fontSize: 12, color: owedTotal > 0 ? '#92400E' : '#94A3B8', marginTop: 4 }}>
+                    {owedTotal > 0 ? tx.owedOpenShort : tx.owedNone}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ═══ ΑΙΤΗΜΑΤΑ ═══ */}
+        {activeTab === 'requests' && (
+          <div>
+            <div style={{ display: 'flex', gap: 4, background: '#e2e8f0', padding: 4, borderRadius: 10, width: 'fit-content', marginBottom: 18 }}>
+              {[['pending', tx.requestsPending, pendingCount], ['all', tx.requestsAll, 0]].map(([id, label, count]) => (
+                <button key={id} onClick={() => setRequestFilter(id)}
+                  style={{ padding: '8px 16px', borderRadius: 7, border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: requestFilter === id ? '#fff' : 'transparent', color: requestFilter === id ? '#0F172A' : '#64748B', boxShadow: requestFilter === id ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  {label}
+                  {count > 0 && (
+                    <span style={{ background: '#B45309', color: '#fff', fontSize: 11, fontWeight: 700, minWidth: 18, height: 18, borderRadius: 999, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 5px' }}>{count}</span>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {(() => {
+                const list = requestFilter === 'pending' ? pendingRequests : requests;
+                if (list.length === 0) {
+                  return (
+                    <div style={{ padding: 40, textAlign: 'center', color: '#94A3B8', background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', fontSize: 14 }}>
+                      {requestFilter === 'pending' ? tx.noPendingRequests : tx.noRequestsYet}
+                    </div>
+                  );
+                }
+
+                return list.map(req => {
+                  const st = statusLabel(STATUS, req.status);
+                  const isPending = req.status === 'pending';
+                  const hasActiveBookings = req.bookings.some(b => b.status === 'confirmed' || b.status === 'pending');
+                  const name = req.patient_name || tx.unknown;
+                  const booking = req.bookings[0];
+                  const amount = req.bookings.reduce((s, b) => s + bookingAmount(b), 0) || Number(req.total_cost || 0);
+                  const isOpen = expandedRequest === req.id;
+
+                  return (
+                    <div key={req.id} style={{
+                      background: '#fff', borderRadius: 14,
+                      border: isPending ? '2px solid #FDE68A' : '1px solid #e2e8f0',
+                      overflow: 'hidden',
+                    }}>
+                      {/* ΤΑ ΠΑΝΤΑ ΓΙΑ ΤΗΝ ΑΠΟΦΑΣΗ, ΣΕ ΜΙΑ ΟΘΟΝΗ.
+                          Ο θεραπευτής δεν πρέπει να ανοίγει τρεις σελίδες
+                          για να καταλάβει αν θέλει το περιστατικό. */}
+                      <div style={{ padding: '18px 20px' }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, flexWrap: 'wrap' }}>
+                          <Avatar name={name} size={46} />
+                          <div style={{ flex: 1, minWidth: 200 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 5, flexWrap: 'wrap' }}>
+                              <span style={{ fontWeight: 700, fontSize: 16, color: '#0F172A' }}>{name}</span>
+                              <Badge label={st.label} bg={st.bg} color={st.color} />
+                              <span style={{ fontSize: 11.5, color: '#94A3B8', marginLeft: 'auto' }}>
+                                {new Date(req.created_at).toLocaleDateString(loc)}
+                              </span>
+                            </div>
+
+                            {req.problem_type && (
+                              <div style={{ fontSize: 14, fontWeight: 600, color: '#1a2e44', marginBottom: 6 }}>
+                                {req.problem_type}
+                              </div>
+                            )}
+
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px 16px', fontSize: 13, color: '#64748B', marginBottom: 10 }}>
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                                <MapPin size={13} />
+                                {req.area}{req.postal_code ? `, ${req.postal_code}` : ''}
+                              </span>
+                              {booking && (
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#1a2e44', fontWeight: 600 }}>
+                                  <Calendar size={13} />
+                                  {formatShortDate(booking.session_date)} {tx.at} {booking.session_time?.slice(0, 5)}
+                                </span>
+                              )}
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#15803D', fontWeight: 700 }}>
+                                <Wallet size={13} />
+                                {tx.youEarn} {amount.toFixed(0)}€
+                              </span>
+                            </div>
+
+                            <button onClick={() => setExpandedRequest(isOpen ? null : req.id)}
+                              style={{ background: 'transparent', border: 'none', color: '#2a6fdb', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', padding: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                              {isOpen ? tx.hideDetails : tx.details}
+                              <ChevronRight size={13} style={{ transform: isOpen ? 'rotate(90deg)' : 'none', transition: 'transform .15s' }} />
+                            </button>
+                          </div>
+                        </div>
+
+                        {isOpen && (
+                          <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', gap: 9, fontSize: 13, color: '#475569' }}>
+                            <div style={{ display: 'inline-flex', alignItems: 'flex-start', gap: 7 }}>
+                              <Home size={14} color="#64748B" style={{ marginTop: 1, flexShrink: 0 }} />
+                              <span>
+                                {req.address}, {req.area}{req.postal_code ? `, ${req.postal_code}` : ''}
+                                {req.floor_info && <span style={{ color: '#94a3b8' }}> · {req.floor_info}</span>}
+                              </span>
+                            </div>
+                            {/* Το τηλέφωνο εμφανίζεται ΜΟΝΟ αφού αποδεχτεί.
+                                Πριν από αυτό δεν έχει λόγο να το ξέρει. */}
+                            {req.patient_phone && !isPending && (
+                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                                <Phone size={14} color="#64748B" />
+                                <a href={`tel:${req.patient_phone}`} style={{ color: '#2a6fdb', fontWeight: 600, textDecoration: 'none' }}>{req.patient_phone}</a>
+                              </div>
+                            )}
+                            <div style={{ background: '#f8fafc', padding: '10px 14px', borderRadius: 8, borderLeft: '3px solid #cbd5e1', lineHeight: 1.6 }}>
+                              {req.problem_description || tx.noDescription}
+                            </div>
+                            {req.notes && (
+                              <div style={{ fontSize: 12.5, color: '#64748B', display: 'inline-flex', alignItems: 'flex-start', gap: 7 }}>
+                                <MessageSquare size={13} style={{ marginTop: 1, flexShrink: 0 }} />
+                                <span>{tx.notes} {req.notes}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {(isPending || hasActiveBookings) && (
+                        <div className="req-actions" style={{ padding: '14px 20px', borderTop: '1px solid #f1f5f9', background: isPending ? '#FFFBEB' : '#f8fafc', display: 'flex', gap: 10, alignItems: 'center', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                          {isPending && (
+                            <>
+                              <span className="req-hint" style={{ fontSize: 12.5, color: '#92400E', marginRight: 'auto' }}>{tx.respondFast}</span>
+                              <button onClick={() => openCancelRequestModal(req)}
+                                style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #FECDD3', background: '#fff', color: '#BE123C', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'inherit' }}>
+                                <X size={14} strokeWidth={2.5} />
+                                {tx.reject}
+                              </button>
+                              <button onClick={() => confirmRequest(req)} disabled={accepting === req.id}
+                                style={{ padding: '10px 26px', borderRadius: 8, border: 'none', background: accepting === req.id ? '#94a3b8' : '#15803D', color: '#fff', fontSize: 13, fontWeight: 700, cursor: accepting === req.id ? 'wait' : 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'inherit' }}>
+                                <Check size={14} strokeWidth={3} />
+                                {accepting === req.id ? tx.accepting : tx.acceptRequest}
+                              </button>
+                            </>
+                          )}
+                          {!isPending && hasActiveBookings && (
+                            <button onClick={() => openCancelRequestModal(req)}
+                              style={{ padding: '9px 18px', borderRadius: 8, border: '1px solid #FECDD3', background: 'transparent', color: '#BE123C', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                              {tx.cancelWholeRequest}
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          </div>
+        )}
+
+        {/* ═══ ΡΑΝΤΕΒΟΥ ═══ */}
         {activeTab === 'appointments' && (
           <div>
-            {nextAppointment && (() => {
+            {nextAppointment && appointmentsView === 'upcoming' && (() => {
               const friendly = friendlyDateLabel(nextAppointment.session_date);
               const fullDate = formatFullDate(nextAppointment.session_date);
               return (
                 <div style={{
                   background: 'linear-gradient(135deg, #1a2e44 0%, #2a6fdb 100%)',
-                  borderRadius: 18, padding: '28px 32px', marginBottom: 24, color: '#fff',
+                  borderRadius: 18, padding: '28px 32px', marginBottom: 20, color: '#fff',
                   boxShadow: '0 8px 32px rgba(26, 46, 68, 0.2)',
                 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -1298,6 +2092,15 @@ export default function TherapistDashboard() {
                         <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)' }}>{nextAppointment.request.problem_type}</span>
                       </div>
                     )}
+
+                    {nextAppointment.request?.patient_phone && nextAppointment.status === 'confirmed' && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <Phone size={18} color="rgba(255,255,255,0.7)" />
+                        <a href={`tel:${nextAppointment.request.patient_phone}`} style={{ fontSize: 15, color: '#fff', fontWeight: 600, textDecoration: 'none' }}>
+                          {nextAppointment.request.patient_phone}
+                        </a>
+                      </div>
+                    )}
                   </div>
 
                   {nextAppointment.status === 'pending' && (
@@ -1310,902 +2113,656 @@ export default function TherapistDashboard() {
               );
             })()}
 
-            {!nextAppointment && upcomingAppointments.length === 0 && pastAppointments.length === 0 && (
+            {!nextAppointment && upcomingAppointments.length === 0 && pastAppointments.length === 0 ? (
               <div style={{ padding: 60, textAlign: 'center', color: '#94A3B8', background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0' }}>
                 <Calendar size={48} color="#cbd5e1" style={{ margin: '0 auto 16px' }} />
                 <div style={{ fontSize: 16, marginBottom: 8 }}>{tx.noAppointments}</div>
                 <div style={{ fontSize: 13 }}>{tx.noAppointmentsSub}</div>
               </div>
-            )}
-
-            {(upcomingAppointments.length > 0 || pastAppointments.length > 0) && (
-              <div style={{ display: 'flex', gap: 4, background: '#e2e8f0', padding: 4, borderRadius: 10, width: 'fit-content', marginBottom: 20 }}>
-                <button onClick={() => setAppointmentsView('list')}
-                  style={{ padding: '8px 16px', borderRadius: 7, border: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: appointmentsView === 'list' ? '#fff' : 'transparent', color: appointmentsView === 'list' ? '#0F172A' : '#64748B', boxShadow: appointmentsView === 'list' ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                  <List size={15} />
-                  {tx.viewList}
-                </button>
-                <button onClick={() => setAppointmentsView('calendar')}
-                  style={{ padding: '8px 16px', borderRadius: 7, border: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: appointmentsView === 'calendar' ? '#fff' : 'transparent', color: appointmentsView === 'calendar' ? '#0F172A' : '#64748B', boxShadow: appointmentsView === 'calendar' ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                  <CalendarDays size={15} />
-                  {tx.viewCalendar}
-                </button>
-              </div>
-            )}
-
-            {appointmentsView === 'list' && (
+            ) : (
               <>
-                {upcomingAppointments.length > 0 && (
-                  <div style={{ marginBottom: 28 }}>
-                    <h3 style={{ fontSize: 14, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                      <ChevronRight size={16} color="#64748b" />
+                {/* Το προεπιλεγμένο view είναι «Σήμερα & επόμενα».
+                    Ο θεραπευτής ρωτάει «ποιον έχω σήμερα», όχι «τι έγινε
+                    τον Μάρτιο». Το μηνιαίο ημερολόγιο είναι δευτερεύον. */}
+                <div className="tabs-scroll" style={{ marginBottom: 20 }}>
+                  <div style={{ display: 'flex', gap: 4, background: '#e2e8f0', padding: 4, borderRadius: 10, width: 'fit-content' }}>
+                    {[['upcoming', tx.viewUpcoming, List], ['past', tx.viewPast, Clock], ['calendar', tx.viewCalendar, CalendarDays]].map(([id, label, Icon]) => (
+                      <button key={id} onClick={() => setAppointmentsView(id)}
+                        style={{ padding: '8px 16px', borderRadius: 7, border: 'none', fontSize: 13.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: appointmentsView === id ? '#fff' : 'transparent', color: appointmentsView === id ? '#0F172A' : '#64748B', boxShadow: appointmentsView === id ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
+                        <Icon size={14} />
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {appointmentsView === 'upcoming' && (
+                  <div>
+                    <h3 style={{ fontSize: 13, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12 }}>
                       {tx.upcoming(upcomingAppointments.length)}
                     </h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                      {upcomingAppointments.map(apt => {
-                        const bSt = statusLabel(STATUS, apt.status);
-                        const payStatus = apt.payment_status || 'pending';
-                        const payInfo = statusLabel(PAYMENT_STATUS, payStatus);
-                        const isHeld = apt.payment_status === 'held';
-                        const daysLeft = isHeld ? daysUntilAutoRelease(apt.auto_release_at) : null;
-                        const friendly = friendlyDateLabel(apt.session_date);
-                        const isPast = new Date(apt.session_date + 'T' + (apt.session_time || '00:00')) < new Date();
-                        const canMarkDone = apt.status === 'confirmed' && isPast && apt.payment_status !== 'held';
+                    {upcomingAppointments.length === 0 ? (
+                      <div style={{ padding: 32, textAlign: 'center', color: '#94A3B8', background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 14 }}>
+                        {tx.noUpcoming}
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        {upcomingAppointments.map(apt => {
+                          const bSt = statusLabel(STATUS, apt.status);
+                          const payStatus = apt.payment_status || 'pending';
+                          const payInfo = statusLabel(PAYMENT_STATUS, payStatus);
+                          const isHeld = apt.payment_status === 'held';
+                          const daysLeft = isHeld ? daysUntilAutoRelease(apt.auto_release_at) : null;
+                          const friendly = friendlyDateLabel(apt.session_date);
+                          const isPast = new Date(apt.session_date + 'T' + (apt.session_time || '00:00')) < new Date();
+                          const canMarkDone = apt.status === 'confirmed' && isPast && apt.payment_status !== 'held';
 
-                        return (
-                          <div key={apt.id} style={{
-                            background: '#fff', borderRadius: 12,
-                            border: isHeld ? '2px solid #F59E0B' : '1px solid #e2e8f0',
-                            padding: '18px 20px',
-                          }}>
-                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
-                              <div style={{ minWidth: 110 }}>
-                                {friendly ? (
-                                  <div style={{ fontSize: 14, fontWeight: 700, color: '#2a6fdb', marginBottom: 2 }}>{friendly}</div>
-                                ) : null}
-                                <div style={{ fontSize: 15, color: '#0F172A', fontWeight: 600 }}>{formatShortDate(apt.session_date)}</div>
-                                <div style={{ fontSize: 17, color: '#0F172A', fontWeight: 700, marginTop: 2 }}>{apt.session_time?.slice(0, 5)}</div>
+                          return (
+                            <div key={apt.id} style={{
+                              background: '#fff', borderRadius: 12,
+                              border: isHeld ? '2px solid #F59E0B' : '1px solid #e2e8f0',
+                              padding: '18px 20px',
+                            }}>
+                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
+                                <div style={{ minWidth: 110 }}>
+                                  {friendly ? (
+                                    <div style={{ fontSize: 14, fontWeight: 700, color: '#2a6fdb', marginBottom: 2 }}>{friendly}</div>
+                                  ) : null}
+                                  <div style={{ fontSize: 15, color: '#0F172A', fontWeight: 600 }}>{formatShortDate(apt.session_date)}</div>
+                                  <div style={{ fontSize: 17, color: '#0F172A', fontWeight: 700, marginTop: 2 }}>{apt.session_time?.slice(0, 5)}</div>
+                                </div>
+
+                                <div style={{ flex: 1, minWidth: 200 }}>
+                                  <div style={{ fontSize: 16, fontWeight: 600, color: '#0F172A', marginBottom: 4, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                    <User size={15} color="#2a6fdb" />
+                                    {apt.request?.patient_name || tx.unknown}
+                                  </div>
+                                  {apt.request?.address && (
+                                    <div style={{ fontSize: 14, color: '#64748B', display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                                      <MapPin size={13} />
+                                      {apt.request.address}, {apt.request.area}
+                                      {apt.request.postal_code && `, ${apt.request.postal_code}`}
+                                    </div>
+                                  )}
+                                  {apt.request?.floor_info && (
+                                    <div style={{ fontSize: 13, color: '#94A3B8', display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                                      <Home size={12} />
+                                      {apt.request.floor_info}
+                                    </div>
+                                  )}
+                                  {apt.request?.patient_phone && apt.status === 'confirmed' && (
+                                    <div style={{ fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                                      <Phone size={12} color="#64748B" />
+                                      <a href={`tel:${apt.request.patient_phone}`} style={{ color: '#2a6fdb', fontWeight: 600, textDecoration: 'none' }}>{apt.request.patient_phone}</a>
+                                    </div>
+                                  )}
+                                  {apt.request?.problem_type && (
+                                    <div style={{ fontSize: 13, color: '#475569', background: '#f8fafc', padding: '6px 10px', borderRadius: 6, marginTop: 6, display: 'inline-block' }}>
+                                      {apt.request.problem_type}
+                                    </div>
+                                  )}
+                                  <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                                    <Badge label={bSt.label} bg={bSt.bg} color={bSt.color} />
+                                    {apt.status === 'completed' && (
+                                      <Badge label={payInfo.label} bg={payInfo.bg} color={payInfo.color} icon={payInfo.icon} />
+                                    )}
+                                    <span style={{ fontSize: 13, color: '#15803D', fontWeight: 700 }}>
+                                      {bookingAmount(apt).toFixed(0)}€
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
+                                  {canMarkDone && (
+                                    <button onClick={() => openDoneModal(apt, apt.request)}
+                                      style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: '#15803D', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
+                                      <Check size={14} strokeWidth={3} />
+                                      {tx.markDone}
+                                    </button>
+                                  )}
+                                  {apt.status === 'confirmed' && !isPast && (() => {
+                                    const rr = pendingReschedule(apt.id);
+                                    const isMine = rr?.requested_by_role === 'therapist';
+                                    return (
+                                      <>
+                                        {rr ? (
+                                          <button
+                                            onClick={() => !isMine && setRescheduleTarget({ booking: apt, reschedule: rr, mode: 'respond' })}
+                                            style={{ padding: '7px 12px', borderRadius: 8, border: `1px solid ${isMine ? '#e2e8f0' : '#BFDBFE'}`, background: isMine ? '#f8fafc' : '#EFF6FF', color: isMine ? '#94a3b8' : '#1D4ED8', fontSize: 12, fontWeight: 600, cursor: isMine ? 'default' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
+                                            <CalendarClock size={13} />
+                                            {isMine ? tx.reschedulePendingYours : tx.rescheduleReview}
+                                          </button>
+                                        ) : (
+                                          <button
+                                            onClick={() => setRescheduleTarget({ booking: apt, mode: 'propose' })}
+                                            style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid #e2e8f0', background: 'transparent', color: '#64748B', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
+                                            <CalendarClock size={13} />
+                                            {tx.reschedule}
+                                          </button>
+                                        )}
+                                        <button onClick={() => openCancelBookingModal(apt)}
+                                          style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid #FECDD3', background: 'transparent', color: '#BE123C', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                                          {tx.cancel}
+                                        </button>
+                                      </>
+                                    );
+                                  })()}
+                                </div>
                               </div>
 
-                              <div style={{ flex: 1, minWidth: 200 }}>
-                                <div style={{ fontSize: 16, fontWeight: 600, color: '#0F172A', marginBottom: 4, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                                  <User size={15} color="#2a6fdb" />
+                              {isHeld && (
+                                <div style={{ marginTop: 14, padding: 12, background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 10 }}>
+                                  <div style={{ fontSize: 13, color: '#92400E', fontWeight: 600, marginBottom: 2, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                    <Hourglass size={13} />
+                                    {tx.awaitingRelease}
+                                  </div>
+                                  {daysLeft !== null && (
+                                    <div style={{ fontSize: 12, color: '#78350F' }}>
+                                      {daysLeft === 0 ? tx.autoReleaseToday : tx.autoReleaseIn(daysLeft)}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {appointmentsView === 'past' && (
+                  <div>
+                    <h3 style={{ fontSize: 13, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12 }}>
+                      {tx.past(pastAppointments.length)}
+                    </h3>
+                    {pastAppointments.length === 0 ? (
+                      <div style={{ padding: 32, textAlign: 'center', color: '#94A3B8', background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 14 }}>
+                        {tx.noPast}
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {pastAppointments.map(apt => {
+                          const bSt = statusLabel(STATUS, apt.status);
+                          const payStatus = apt.payment_status || 'pending';
+                          const payInfo = statusLabel(PAYMENT_STATUS, payStatus);
+
+                          return (
+                            <div key={apt.id} style={{
+                              background: '#fff', borderRadius: 10, border: '1px solid #e2e8f0',
+                              padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
+                            }}>
+                              <div style={{ minWidth: 100 }}>
+                                <div style={{ fontSize: 14, color: '#475569', fontWeight: 600 }}>{formatShortDate(apt.session_date)}</div>
+                                <div style={{ fontSize: 13, color: '#94A3B8' }}>{tx.at} {apt.session_time?.slice(0, 5)}</div>
+                              </div>
+
+                              <div style={{ flex: 1, minWidth: 150 }}>
+                                <div style={{ fontSize: 14, color: '#475569', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                  <User size={12} color="#64748B" />
                                   {apt.request?.patient_name || tx.unknown}
                                 </div>
-                                {apt.request?.address && (
-                                  <div style={{ fontSize: 14, color: '#64748B', display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                                    <MapPin size={13} />
-                                    {apt.request.address}, {apt.request.area}
-                                    {apt.request.postal_code && `, ${apt.request.postal_code}`}
-                                  </div>
-                                )}
-                                {apt.request?.floor_info && (
-                                  <div style={{ fontSize: 13, color: '#94A3B8', display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                                    <Home size={12} />
-                                    {apt.request.floor_info}
-                                  </div>
-                                )}
-                                {apt.request?.problem_type && (
-                                  <div style={{ fontSize: 13, color: '#475569', background: '#f8fafc', padding: '6px 10px', borderRadius: 6, marginTop: 6, display: 'inline-block' }}>
-                                    {apt.request.problem_type}
-                                  </div>
-                                )}
-                                <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-                                  <Badge label={bSt.label} bg={bSt.bg} color={bSt.color} />
-                                  {apt.status === 'completed' && (
-                                    <Badge label={payInfo.label} bg={payInfo.bg} color={payInfo.color} icon={payInfo.icon} />
-                                  )}
-                                  {(apt.payment_status === 'held' || apt.payment_status === 'released') && apt.net_to_therapist && (
-                                    <span style={{ fontSize: 13, color: '#15803D', fontWeight: 700 }}>
-                                      +{parseFloat(apt.net_to_therapist).toFixed(2)}€
-                                    </span>
-                                  )}
-                                </div>
                               </div>
 
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
-                                {canMarkDone && (
-                                  <button onClick={() => openDoneModal(apt, apt.request)}
-                                    style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: '#15803D', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
-                                    <Check size={14} strokeWidth={3} />
-                                    {tx.markDone}
-                                  </button>
+                              <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                                <Badge label={bSt.label} bg={bSt.bg} color={bSt.color} />
+                                {apt.status === 'completed' && payStatus !== 'pending' && (
+                                  <Badge label={payInfo.label} bg={payInfo.bg} color={payInfo.color} icon={payInfo.icon} />
                                 )}
-                                {apt.status === 'confirmed' && !isPast && (() => {
-                                  const rr = pendingReschedule(apt.id);
-                                  const isMine = rr?.requested_by_role === 'therapist';
-                                  return (
-                                    <>
-                                      {rr ? (
-                                        <button
-                                          onClick={() => !isMine && setRescheduleTarget({ booking: apt, reschedule: rr, mode: 'respond' })}
-                                          style={{ padding: '7px 12px', borderRadius: 8, border: `1px solid ${isMine ? '#e2e8f0' : '#BFDBFE'}`, background: isMine ? '#f8fafc' : '#EFF6FF', color: isMine ? '#94a3b8' : '#1D4ED8', fontSize: 12, fontWeight: 600, cursor: isMine ? 'default' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
-                                          <CalendarClock size={13} />
-                                          {isMine ? tx.reschedulePendingYours : tx.rescheduleReview}
-                                        </button>
-                                      ) : (
-                                        <button
-                                          onClick={() => setRescheduleTarget({ booking: apt, mode: 'propose' })}
-                                          style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid #e2e8f0', background: 'transparent', color: '#64748B', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
-                                          <CalendarClock size={13} />
-                                          {tx.reschedule}
-                                        </button>
-                                      )}
-                                      <button onClick={() => openCancelBookingModal(apt, apt.request)}
-                                        style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid #FECDD3', background: 'transparent', color: '#BE123C', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                                        {tx.cancel}
-                                      </button>
-                                    </>
-                                  );
-                                })()}
+                                {apt.status === 'completed' && (
+                                  <span style={{ fontSize: 12, color: '#15803D', fontWeight: 700 }}>
+                                    +{bookingAmount(apt).toFixed(2)}€
+                                  </span>
+                                )}
                               </div>
+
+                              {isCancelled(apt.status) && apt.cancelled_reason && (
+                                <div style={{ width: '100%', paddingTop: 8, marginTop: 4, borderTop: '1px solid #f1f5f9', fontSize: 12, color: '#9F1239' }}>
+                                  {tx.cancelledBy[apt.cancelled_by_role] || tx.cancelledBy.admin}
+                                  {' · '}
+                                  <span style={{ fontStyle: 'italic', color: '#78350F' }}>{apt.cancelled_reason}</span>
+                                </div>
+                              )}
                             </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
 
-                            {isHeld && (
-                              <div style={{ marginTop: 14, padding: 12, background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 10 }}>
-                                <div style={{ fontSize: 13, color: '#92400E', fontWeight: 600, marginBottom: 2, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                                  <Hourglass size={13} />
-                                  {tx.awaitingRelease}
-                                </div>
-                                {daysLeft !== null && (
-                                  <div style={{ fontSize: 12, color: '#78350F' }}>
-                                    {daysLeft === 0 ? tx.autoReleaseToday : tx.autoReleaseIn(daysLeft)} · {tx.netAmount} {parseFloat(apt.net_to_therapist || 0).toFixed(2)}€
-                                  </div>
-                                )}
+                {appointmentsView === 'calendar' && (
+                  <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: 20 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, gap: 10, flexWrap: 'wrap' }}>
+                      <button onClick={() => navigateMonth(-1)}
+                        style={{ padding: '10px 16px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#1a2e44', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
+                        <ChevronLeft size={16} />
+                        {tx.prev}
+                      </button>
+                      <div style={{ fontSize: 19, fontWeight: 700, color: '#0F172A', textAlign: 'center' }}>
+                        {MONTHS_FULL[lang][calendarMonth.month]} {calendarMonth.year}
+                      </div>
+                      <button onClick={() => navigateMonth(1)}
+                        style={{ padding: '10px 16px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#1a2e44', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
+                        {tx.next}
+                        <ChevronRight size={16} />
+                      </button>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 8 }}>
+                      {DAYS_GRID[lang].map(d => (
+                        <div key={d} style={{ textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#64748B', padding: 6 }}>{d}</div>
+                      ))}
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
+                      {calendarGrid.flat().map((dateStr, idx) => {
+                        if (!dateStr) return <div key={`empty-${idx}`} />;
+                        const dayApts = appointmentsByDate[dateStr] || [];
+                        const isToday = dateStr === todayStr;
+                        const isPast = dateStr < todayStr;
+                        const hasApts = dayApts.length > 0;
+                        const day = parseInt(dateStr.split('-')[2]);
+
+                        return (
+                          <div key={dateStr}
+                            onClick={() => hasApts && setSelectedDay({ date: dateStr, appointments: dayApts })}
+                            style={{
+                              minHeight: 70, padding: '6px 8px',
+                              background: isToday ? '#EFF6FF' : hasApts ? '#F0FDF4' : '#fff',
+                              border: `1px solid ${isToday ? '#2a6fdb' : hasApts ? '#86EFAC' : '#f1f5f9'}`,
+                              borderRadius: 8, cursor: hasApts ? 'pointer' : 'default',
+                              opacity: isPast && !hasApts ? 0.5 : 1, transition: 'all .15s',
+                            }}>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: isToday ? '#2a6fdb' : '#0F172A', marginBottom: 4 }}>{day}</div>
+                            {dayApts.slice(0, 2).map((a, i) => (
+                              <div key={i} style={{
+                                fontSize: 10,
+                                background: isCancelled(a.status) ? '#FEE2E2' : a.status === 'completed' ? '#EDE9FE' : '#DBEAFE',
+                                color: isCancelled(a.status) ? '#9F1239' : a.status === 'completed' ? '#5B21B6' : '#1D4ED8',
+                                padding: '2px 5px', borderRadius: 4, marginBottom: 2, fontWeight: 600,
+                                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                              }}>
+                                {a.session_time?.slice(0, 5)}
                               </div>
+                            ))}
+                            {dayApts.length > 2 && (
+                              <div style={{ fontSize: 10, color: '#64748b', fontWeight: 600 }}>+{dayApts.length - 2}</div>
                             )}
                           </div>
                         );
                       })}
                     </div>
-                  </div>
-                )}
 
-                {pastAppointments.length > 0 && (
-                  <div>
-                    <h3 style={{ fontSize: 14, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                      <ChevronLeft size={16} color="#64748b" />
-                      {tx.past(pastAppointments.length)}
-                    </h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {pastAppointments.map(apt => {
-                        const bSt = statusLabel(STATUS, apt.status);
-                        const payStatus = apt.payment_status || 'pending';
-                        const payInfo = statusLabel(PAYMENT_STATUS, payStatus);
-
-                        return (
-                          <div key={apt.id} style={{
-                            background: '#fff', borderRadius: 10, border: '1px solid #e2e8f0',
-                            padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
-                          }}>
-                            <div style={{ minWidth: 100 }}>
-                              <div style={{ fontSize: 14, color: '#475569', fontWeight: 600 }}>{formatShortDate(apt.session_date)}</div>
-                              <div style={{ fontSize: 13, color: '#94A3B8' }}>{tx.at} {apt.session_time?.slice(0, 5)}</div>
-                            </div>
-
-                            <div style={{ flex: 1, minWidth: 150 }}>
-                              <div style={{ fontSize: 14, color: '#475569', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                                <User size={12} color="#64748B" />
-                                {apt.request?.patient_name || tx.unknown}
-                              </div>
-                            </div>
-
-                            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                              <Badge label={bSt.label} bg={bSt.bg} color={bSt.color} />
-                              {apt.status === 'completed' && payStatus !== 'pending' && (
-                                <Badge label={payInfo.label} bg={payInfo.bg} color={payInfo.color} icon={payInfo.icon} />
-                              )}
-                              {payStatus === 'released' && apt.net_to_therapist && (
-                                <span style={{ fontSize: 12, color: '#15803D', fontWeight: 700 }}>
-                                  +{parseFloat(apt.net_to_therapist).toFixed(2)}€
-                                </span>
-                              )}
-                            </div>
-
-                            {isCancelled(apt.status) && apt.cancelled_reason && (
-                              <div style={{ width: '100%', paddingTop: 8, marginTop: 4, borderTop: '1px solid #f1f5f9', fontSize: 12, color: '#9F1239' }}>
-                                {tx.cancelledBy[apt.cancelled_by_role] || tx.cancelledBy.admin}
-                                {' · '}
-                                <span style={{ fontStyle: 'italic', color: '#78350F' }}>{apt.cancelled_reason}</span>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
+                    <div style={{ marginTop: 16, display: 'flex', gap: 14, fontSize: 12, color: '#64748B', flexWrap: 'wrap' }}>
+                      <span><span style={{ display: 'inline-block', width: 12, height: 12, background: '#EFF6FF', border: '1px solid #2a6fdb', borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />{tx.today}</span>
+                      <span><span style={{ display: 'inline-block', width: 12, height: 12, background: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />{tx.hasAppointment}</span>
                     </div>
                   </div>
                 )}
               </>
             )}
-
-            {appointmentsView === 'calendar' && (
-              <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: 20 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-                  <button onClick={() => navigateMonth(-1)}
-                    style={{ padding: '10px 16px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#1a2e44', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
-                    <ChevronLeft size={16} />
-                    {tx.prev}
-                  </button>
-                  <div style={{ fontSize: 19, fontWeight: 700, color: '#0F172A', textAlign: 'center' }}>
-                    {MONTHS_FULL[lang][calendarMonth.month]} {calendarMonth.year}
-                  </div>
-                  <button onClick={() => navigateMonth(1)}
-                    style={{ padding: '10px 16px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#1a2e44', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
-                    {tx.next}
-                    <ChevronRight size={16} />
-                  </button>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 8 }}>
-                  {DAYS_GRID[lang].map(d => (
-                    <div key={d} style={{ textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#64748B', padding: 6 }}>{d}</div>
-                  ))}
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
-                  {calendarGrid.flat().map((dateStr, idx) => {
-                    if (!dateStr) return <div key={`empty-${idx}`} />;
-                    const dayApts = appointmentsByDate[dateStr] || [];
-                    const isToday = dateStr === todayStr;
-                    const isPast = dateStr < todayStr;
-                    const hasApts = dayApts.length > 0;
-                    const day = parseInt(dateStr.split('-')[2]);
-
-                    return (
-                      <div key={dateStr}
-                        onClick={() => hasApts && setSelectedDay({ date: dateStr, appointments: dayApts })}
-                        style={{
-                          minHeight: 70, padding: '6px 8px',
-                          background: isToday ? '#EFF6FF' : hasApts ? '#F0FDF4' : '#fff',
-                          border: `1px solid ${isToday ? '#2a6fdb' : hasApts ? '#86EFAC' : '#f1f5f9'}`,
-                          borderRadius: 8, cursor: hasApts ? 'pointer' : 'default',
-                          opacity: isPast && !hasApts ? 0.5 : 1, transition: 'all .15s',
-                        }}>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: isToday ? '#2a6fdb' : '#0F172A', marginBottom: 4 }}>{day}</div>
-                        {dayApts.slice(0, 2).map((a, i) => (
-                          <div key={i} style={{
-                            fontSize: 10,
-                            background: isCancelled(a.status) ? '#FEE2E2' : a.status === 'completed' ? '#EDE9FE' : '#DBEAFE',
-                            color: isCancelled(a.status) ? '#9F1239' : a.status === 'completed' ? '#5B21B6' : '#1D4ED8',
-                            padding: '2px 5px', borderRadius: 4, marginBottom: 2, fontWeight: 600,
-                            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                          }}>
-                            {a.session_time?.slice(0, 5)}
-                          </div>
-                        ))}
-                        {dayApts.length > 2 && (
-                          <div style={{ fontSize: 10, color: '#64748b', fontWeight: 600 }}>+{dayApts.length - 2}</div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div style={{ marginTop: 16, display: 'flex', gap: 14, fontSize: 12, color: '#64748B', flexWrap: 'wrap' }}>
-                  <span><span style={{ display: 'inline-block', width: 12, height: 12, background: '#EFF6FF', border: '1px solid #2a6fdb', borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />{tx.today}</span>
-                  <span><span style={{ display: 'inline-block', width: 12, height: 12, background: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />{tx.hasAppointment}</span>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
-        {/* ═══ OVERVIEW TAB ═══ */}
-        {activeTab === 'overview' && (
-          <div>
-            <div style={{ display: 'flex', gap: 14, marginBottom: 24, flexWrap: 'wrap' }}>
-              {[
-                { label: tx.statNewRequests, value: pendingCount, bg: '#FEF3C7', border: '#FDE68A', text: '#B45309' },
-                { label: tx.statConfirmed, value: confirmedCount, bg: '#DBEAFE', border: '#BFDBFE', text: '#1D4ED8' },
-                { label: tx.statCompleted, value: completedCount, bg: '#EDE9FE', border: '#DDD6FE', text: '#5B21B6' },
-                { label: tx.statAvgRating, value: avgRating, bg: '#FFFBEB', border: '#FDE68A', text: '#B45309' },
-              ].map(c => (
-                <div key={c.label} style={{ flex: 1, minWidth: 130, background: c.bg, border: `1px solid ${c.border}`, borderRadius: 14, padding: '18px 20px' }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: c.text, textTransform: 'uppercase', marginBottom: 6 }}>{c.label}</div>
-                  <div style={{ fontSize: 30, fontWeight: 700, color: c.text }}>{c.value}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* ΕΣΟΔΑ — μετρητά απευθείας από τον ασθενή.
-                Δεν υπάρχει escrow, άρα ούτε «σε εκκρεμότητα» /
-                «απελευθέρωση». Ο διαχωρισμός είναι:
-                αναμενόμενα (επιβεβαιωμένες) vs εισπραγμένα (έγιναν). */}
-            <div style={{ display: 'flex', gap: 14, marginBottom: 24, flexWrap: 'wrap' }}>
-              <div style={{ flex: 1, minWidth: 200, background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 14, padding: '20px 22px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                  <Calendar size={16} color="#1D4ED8" />
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#1D4ED8', textTransform: 'uppercase', letterSpacing: '.05em' }}>{tx.earningsUpcoming}</div>
-                </div>
-                <div style={{ fontSize: 30, fontWeight: 700, color: '#1D4ED8' }}>{upcomingEarnings.toFixed(2)}€</div>
-                <div style={{ fontSize: 12, color: '#1E40AF', marginTop: 4 }}>{tx.earningsUpcomingSub(upcomingPaidBookings.length)}</div>
-              </div>
-              <div style={{ flex: 1, minWidth: 200, background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 14, padding: '20px 22px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                  <Wallet size={16} color="#15803D" />
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#15803D', textTransform: 'uppercase', letterSpacing: '.05em' }}>{tx.earningsDone}</div>
-                </div>
-                <div style={{ fontSize: 30, fontWeight: 700, color: '#15803D' }}>{collectedEarnings.toFixed(2)}€</div>
-                <div style={{ fontSize: 12, color: '#15803D', marginTop: 4 }}>{tx.earningsDoneSub(completedBookings.length)}</div>
-              </div>
-              <div style={{ flex: 1, minWidth: 200, background: owedTotal > 0 ? '#FFFBEB' : '#F8FAFC', border: `1px solid ${owedTotal > 0 ? '#FDE68A' : '#E2E8F0'}`, borderRadius: 14, padding: '20px 22px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                  <CreditCard size={16} color={owedTotal > 0 ? '#B45309' : '#64748B'} />
-                  <div style={{ fontSize: 11, fontWeight: 700, color: owedTotal > 0 ? '#B45309' : '#64748B', textTransform: 'uppercase', letterSpacing: '.05em' }}>{tx.owedTitle}</div>
-                </div>
-                <div style={{ fontSize: 30, fontWeight: 700, color: owedTotal > 0 ? '#B45309' : '#64748B' }}>{owedTotal.toFixed(2)}€</div>
-                <div style={{ fontSize: 12, color: owedTotal > 0 ? '#92400E' : '#94A3B8', marginTop: 4 }}>
-                  {owedTotal > 0 ? tx.owedOpen.replace(':', '') : tx.owedNone}
-                </div>
-              </div>
-            </div>
-
-            {/* ΠΩΣ ΠΛΗΡΩΝΕΣΤΕ — το παλιό πάνελ έλεγε «προμήθεια 3€ ανά
-                συνεδρία», που ΔΕΝ ισχύει. Ο ασθενής πληρώνει μετρητά,
-                ο θεραπευτής κρατάει ΟΛΟ το ποσό. Η πλατφόρμα χρεώνει
-                ξεχωριστά συνδρομή + τέλος νέου ασθενή. */}
-            <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 14, padding: '20px 24px', marginBottom: 14 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#15803D', marginBottom: 10, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
-                <Wallet size={16} />
-                {tx.paymentInfo}
-              </div>
-              <div style={{ fontSize: 13, color: '#166534', lineHeight: 1.7 }}>
-                {tx.cashLine} <strong>{tx.cashLineB}</strong> {tx.cashLineC}
-                <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #BBF7D0' }}>
-                  {tx.yourPrice} <strong style={{ fontSize: 16 }}>{pricePerSession}€</strong>
-                </div>
-              </div>
-            </div>
-
-            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 14, padding: '20px 24px', marginBottom: 20 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
-                <CreditCard size={16} color="#64748B" />
-                {tx.owedTitle}
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 9, fontSize: 13 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                  <span style={{ color: '#64748B' }}>{tx.owedSubscription}</span>
-                  <strong style={{ color: '#0F172A' }}>
-                    {subscription
-                      ? (Number(subscription.price_locked) > 0
-                          ? `${Number(subscription.price_locked).toFixed(2)}€${tx.perMonthShort}`
-                          : '0€')
-                      : tx.noPlan}
-                  </strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                  <span style={{ color: '#64748B' }}>{tx.owedFirstSession}</span>
-                  <strong style={{ color: '#0F172A' }}>
-                    {firstSessionFee.toFixed(2)}€ <span style={{ fontWeight: 400, color: '#94A3B8' }}>{tx.perNewPatient}</span>
-                  </strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, paddingTop: 9, borderTop: '1px solid #f1f5f9' }}>
-                  <span style={{ color: '#64748B' }}>{tx.owedOpen}</span>
-                  <strong style={{ color: owedTotal > 0 ? '#B45309' : '#15803D', fontSize: 15 }}>{owedTotal.toFixed(2)}€</strong>
-                </div>
-              </div>
-              <div style={{ marginTop: 12, fontSize: 11.5, color: '#94A3B8', lineHeight: 1.6, display: 'flex', gap: 7, alignItems: 'flex-start' }}>
-                <Lightbulb size={13} strokeWidth={2.2} style={{ marginTop: 1, flexShrink: 0 }} />
-                <span>{tx.feeExplain}</span>
-              </div>
-            </div>
-
-            <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-              <div style={{ padding: '14px 20px', borderBottom: '1px solid #f1f5f9', fontSize: 14, fontWeight: 700, color: '#0F172A' }}>{tx.recentRequests}</div>
-              {requests.slice(0, 5).length === 0
-                ? <div style={{ padding: 40, textAlign: 'center', color: '#94A3B8', fontSize: 14 }}>{tx.noRequestsYet}</div>
-                : requests.slice(0, 5).map((r, i) => {
-                  const st = statusLabel(STATUS, r.status);
-                  const name = r.patient_name || tx.unknown;
-                  return (
-                    <div key={r.id} style={{ padding: '14px 20px', borderTop: i > 0 ? '1px solid #f1f5f9' : 'none', display: 'flex', alignItems: 'center', gap: 14 }}>
-                      <Avatar name={name} size={36} />
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 600, fontSize: 14, color: '#0F172A' }}>{name}</div>
-                        <div style={{ fontSize: 12, color: '#64748B' }}>
-                          {r.problem_type} · {r.bookings.length} {tx.sessionsWord(r.bookings.length)} · {new Date(r.created_at).toLocaleDateString(loc)}
-                        </div>
-                      </div>
-                      <Badge label={st.label} bg={st.bg} color={st.color} />
-                    </div>
-                  );
-                })}
-            </div>
-          </div>
-        )}
-
-        {/* ═══ REQUESTS TAB ═══ */}
-        {activeTab === 'requests' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {requests.length === 0
-              ? <div style={{ padding: 40, textAlign: 'center', color: '#94A3B8', background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0' }}>{tx.noRequestsYet}</div>
-              : requests.map(req => {
-                const st = statusLabel(STATUS, req.status);
-                const netAmount = getNetAmount(req);
-                const isPending = req.status === 'pending';
-                const hasActiveBookings = req.bookings.some(b => b.status === 'confirmed' || b.status === 'pending');
-                const name = req.patient_name || tx.unknown;
-                return (
-                  <div key={req.id} style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-                    <div style={{ padding: '18px 20px', borderBottom: '1px solid #f1f5f9' }}>
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-                        <Avatar name={name} size={48} />
-                        <div style={{ flex: 1 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
-                            <span style={{ fontWeight: 700, fontSize: 16, color: '#0F172A' }}>{name}</span>
-                            <Badge label={st.label} bg={st.bg} color={st.color} />
-                            <span style={{ fontSize: 11, color: '#94A3B8', marginLeft: 'auto' }}>{new Date(req.created_at).toLocaleDateString(loc)}</span>
-                          </div>
-
-                          <div style={{ fontSize: 13, color: '#475569', marginBottom: 4, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                            <MapPin size={13} color="#64748B" />
-                            {req.address}, {req.area}{req.postal_code ? `, ${req.postal_code}` : ''}
-                          </div>
-                          {req.floor_info && (
-                            <div style={{ fontSize: 12, color: '#64748B', marginBottom: 8, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                              <Home size={12} />
-                              {req.floor_info}
-                            </div>
-                          )}
-
-                          <div style={{ fontSize: 13, color: '#475569', background: '#f8fafc', padding: '10px 14px', borderRadius: 8, borderLeft: '3px solid #cbd5e1', marginBottom: 10 }}>
-                            <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 4 }}>{req.problem_type}</div>
-                            {req.problem_description || tx.noDescription}
-                          </div>
-
-                          {req.notes && (
-                            <div style={{ fontSize: 12, color: '#64748B', marginBottom: 10, fontStyle: 'italic', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                              <MessageSquare size={12} />
-                              {tx.notes} {req.notes}
-                            </div>
-                          )}
-
-                          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 13, padding: '10px 14px', background: '#F0FDF4', borderRadius: 8, border: '1px solid #BBF7D0' }}>
-                            <div>
-                              <span style={{ color: '#64748B' }}>{tx.type} </span>
-                              <strong style={{ color: '#0F172A' }}>
-                                {req.session_type === 'single' ? tx.single : tx.packageOf(req.package_size)}
-                              </strong>
-                            </div>
-                            <div>
-                              <span style={{ color: '#64748B' }}>{tx.sessionsLabel} </span>
-                              <strong style={{ color: '#0F172A' }}>{req.bookings.length}</strong>
-                            </div>
-                            <div style={{ marginLeft: 'auto' }}>
-                              <span style={{ color: '#64748B' }}>{tx.totalNet} </span>
-                              <strong style={{ color: '#15803D', fontSize: 15 }}>{netAmount.toFixed(2)}€</strong>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div style={{ padding: '16px 20px' }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 10, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                        <Calendar size={12} />
-                        {tx.sessionsHeading}
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                        {req.bookings.map((b, i) => {
-                          const bSt = statusLabel(STATUS, b.status);
-                          const d = new Date(b.session_date + 'T12:00:00');
-                          const isPast = new Date(b.session_date + 'T' + (b.session_time || '00:00')) < new Date();
-                          const payStatus = b.payment_status || 'pending';
-                          const payInfo = statusLabel(PAYMENT_STATUS, payStatus);
-                          const daysLeft = b.payment_status === 'held' ? daysUntilAutoRelease(b.auto_release_at) : null;
-
-                          return (
-                            <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: '#f8fafc', borderRadius: 8, fontSize: 13, flexWrap: 'wrap' }}>
-                              <span style={{ color: '#64748B', fontWeight: 600 }}>{i + 1}.</span>
-                              <span style={{ color: '#0F172A', fontWeight: 500 }}>
-                                {DAYS_SHORT[lang][d.getDay()]} {d.toLocaleDateString(loc, { day: '2-digit', month: '2-digit' })} {tx.at} {b.session_time?.slice(0, 5)}
-                              </span>
-                              <Badge label={bSt.label} bg={bSt.bg} color={bSt.color} />
-
-                              {b.status === 'completed' && (
-                                <Badge label={payInfo.label} bg={payInfo.bg} color={payInfo.color} icon={payInfo.icon} />
-                              )}
-
-                              {b.payment_status === 'held' && daysLeft !== null && (
-                                <span style={{ fontSize: 11, color: '#92400E', fontWeight: 600, background: '#FEF3C7', padding: '2px 8px', borderRadius: 999 }}>
-                                  {daysLeft === 0 ? tx.autoReleaseToday : tx.daysUntilRelease(daysLeft)}
-                                </span>
-                              )}
-
-                              {(b.payment_status === 'held' || b.payment_status === 'released') && b.net_to_therapist && (
-                                <span style={{ fontSize: 11, color: '#15803D', fontWeight: 700 }}>
-                                  +{parseFloat(b.net_to_therapist).toFixed(2)}€
-                                </span>
-                              )}
-
-                              <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-                                {b.status === 'confirmed' && isPast && (
-                                  <button onClick={() => openDoneModal(b, req)}
-                                    style={{ padding: '6px 12px', borderRadius: 6, border: 'none', background: '#15803D', color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' }}>
-                                    <Check size={12} strokeWidth={3} />
-                                    {tx.markDone}
-                                  </button>
-                                )}
-                                {b.status === 'confirmed' && !isPast && (() => {
-                                  const rr = pendingReschedule(b.id);
-                                  const isMine = rr?.requested_by_role === 'therapist';
-                                  return (
-                                    <>
-                                      {rr ? (
-                                        <button
-                                          onClick={() => !isMine && setRescheduleTarget({ booking: { ...b, therapist_id: req.therapist_id }, reschedule: rr, mode: 'respond' })}
-                                          style={{ padding: '5px 10px', borderRadius: 6, border: `1px solid ${isMine ? '#e2e8f0' : '#BFDBFE'}`, background: isMine ? '#f8fafc' : '#EFF6FF', color: isMine ? '#94a3b8' : '#1D4ED8', fontSize: 11, fontWeight: 600, cursor: isMine ? 'default' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}>
-                                          <CalendarClock size={12} />
-                                          {isMine ? tx.reschedulePendingYours : tx.rescheduleReview}
-                                        </button>
-                                      ) : (
-                                        <button
-                                          onClick={() => setRescheduleTarget({ booking: { ...b, therapist_id: req.therapist_id }, mode: 'propose' })}
-                                          style={{ padding: '5px 10px', borderRadius: 6, border: '1px solid #e2e8f0', background: 'transparent', color: '#64748B', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}>
-                                          <CalendarClock size={12} />
-                                          {tx.reschedule}
-                                        </button>
-                                      )}
-                                      <button onClick={() => openCancelBookingModal(b, req)}
-                                        style={{ padding: '5px 10px', borderRadius: 6, border: '1px solid #FECDD3', background: 'transparent', color: '#BE123C', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                                        {tx.cancel}
-                                      </button>
-                                    </>
-                                  );
-                                })()}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {(isPending || hasActiveBookings) && (
-                      <div style={{ padding: '14px 20px', borderTop: '1px solid #f1f5f9', background: '#f8fafc', display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-                        {isPending && (
-                          <>
-                            <button onClick={() => openCancelRequestModal(req)}
-                              style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #FECDD3', background: 'transparent', color: '#BE123C', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
-                              <X size={14} strokeWidth={2.5} />
-                              {tx.reject}
-                            </button>
-                            <button onClick={() => confirmRequest(req)}
-                              style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: '#15803D', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
-                              <Check size={14} strokeWidth={3} />
-                              {tx.acceptRequest}
-                            </button>
-                          </>
-                        )}
-                        {!isPending && hasActiveBookings && (
-                          <button onClick={() => openCancelRequestModal(req)}
-                            style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #FECDD3', background: 'transparent', color: '#BE123C', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                            {tx.cancelWholeRequest}
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-          </div>
-        )}
-
-        {/* ═══ AVAILABILITY TAB ═══ */}
-        {activeTab === 'calendar' && (
-          <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: 24 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', marginBottom: 4, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-              <Calendar size={15} color="#2a6fdb" />
-              {tx.availabilityTitle}
-            </div>
-            <div style={{ fontSize: 13, color: '#64748B', marginBottom: 16 }}>{tx.availabilityDesc}</div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-              <button onClick={() => setWeekOffset(w => Math.max(0, w - 1))} disabled={weekOffset === 0}
-                style={{ padding: '6px 16px', borderRadius: 8, border: '1px solid #e2e8f0', background: weekOffset === 0 ? '#f8fafc' : '#fff', color: weekOffset === 0 ? '#94a3b8' : '#1a2e44', fontSize: 13, fontWeight: 600, cursor: weekOffset === 0 ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' }}>
-                <ChevronLeft size={14} />
-                {tx.prev}
-              </button>
-              <div style={{ flex: 1, textAlign: 'center', fontSize: 14, fontWeight: 700, color: '#0F172A' }}>
-                {weekStart && weekEnd ? `${fmtDate(weekStart)} – ${fmtDate(weekEnd)}` : ''}
-                <span style={{ fontSize: 12, color: '#94a3b8', marginLeft: 8 }}>{tx.week} {weekOffset + 1} / {ALL_WEEKS.length}</span>
-              </div>
-              <button onClick={() => setWeekOffset(w => Math.min(ALL_WEEKS.length - 1, w + 1))}
-                style={{ padding: '6px 16px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#1a2e44', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' }}>
-                {tx.next}
-                <ChevronRight size={14} />
-              </button>
-            </div>
-
-            <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: '65vh' }}>
-              <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 480 }}>
-                <thead style={{ position: 'sticky', top: 0, background: '#fff', zIndex: 10 }}>
-                  <tr>
-                    <th style={{ padding: '8px 10px', fontSize: 11, color: '#64748B', fontWeight: 600, textAlign: 'left', minWidth: 52 }}>{tx.hour}</th>
-                    {currentWeek.map(d => {
-                      const dateObj = new Date(d + 'T12:00:00');
-                      const dayName = DAYS_SHORT[lang][dateObj.getDay()];
-                      const dayNum  = dateObj.toLocaleDateString(loc, { day: '2-digit', month: '2-digit' });
-                      const isToday = d === new Date().toISOString().split('T')[0];
-                      return (
-                        <th key={d} style={{ padding: '8px 4px', fontSize: 11, color: isToday ? '#2a6fdb' : '#64748B', fontWeight: 700, textAlign: 'center', minWidth: 50, background: isToday ? '#EFF6FF' : 'transparent', borderRadius: 6 }}>
-                          {dayName}<br /><span style={{ fontWeight: 400, fontSize: 10 }}>{dayNum}</span>
-                        </th>
-                      );
-                    })}
-                  </tr>
-                </thead>
-                <tbody>
-                  {HOURS.map(hour => (
-                    <tr key={hour} style={{ borderTop: hour.endsWith(':00') ? '1px solid #f1f5f9' : 'none' }}>
-                      <td style={{ padding: '2px 8px', fontSize: 10, color: hour.endsWith(':00') ? '#475569' : '#94a3b8', fontWeight: hour.endsWith(':00') ? 600 : 400, whiteSpace: 'nowrap' }}>{hour}</td>
-                      {currentWeek.map(day => {
-                        const slot      = slots.find(s => s.date === day && s.start_time === hour + ':00');
-                        const isBlocked = slot?.is_blocked;
-                        const isAvail   = slot && !isBlocked;
-                        const isPast    = new Date(day + 'T' + hour + ':00') < new Date();
-                        return (
-                          <td key={day} style={{ padding: 2, textAlign: 'center' }}>
-                            <div onClick={() => !isBlocked && !isPast && toggleSlot(day, hour)}
-                              style={{ width: '100%', height: 22, borderRadius: 3, cursor: isBlocked || isPast ? 'not-allowed' : 'pointer', background: isBlocked ? '#FEE2E2' : isAvail ? '#D1FAE5' : isPast ? '#F8FAFC' : '#F1F5F9', border: `1px solid ${isBlocked ? '#FECACA' : isAvail ? '#BBF7D0' : '#E2E8F0'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: isPast ? 0.35 : 1, transition: 'all .1s' }}>
-                              {isBlocked ? <Lock size={10} color="#9F1239" strokeWidth={2.5} /> : isAvail ? <Check size={11} color="#15803D" strokeWidth={3} /> : null}
-                            </div>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div style={{ marginTop: 12, display: 'flex', gap: 16, fontSize: 12, color: '#64748B', flexWrap: 'wrap' }}>
-              <span><span style={{ display: 'inline-block', width: 12, height: 12, background: '#D1FAE5', border: '1px solid #BBF7D0', borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />{tx.legendAvailable}</span>
-              <span><span style={{ display: 'inline-block', width: 12, height: 12, background: '#FEE2E2', border: '1px solid #FECACA', borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />{tx.legendBooked}</span>
-              <span><span style={{ display: 'inline-block', width: 12, height: 12, background: '#F1F5F9', border: '1px solid #E2E8F0', borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />{tx.legendUnavailable}</span>
-            </div>
-          </div>
-        )}
-
-        {/* ═══ AREAS TAB ═══ */}
-        {activeTab === 'areas' && (
-          <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: 24 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', marginBottom: 4, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-              <MapPin size={15} color="#2a6fdb" />
-              {tx.areasTitle}
-            </div>
-            <div style={{ fontSize: 13, color: '#64748B', marginBottom: 20 }}>{tx.areasDesc}</div>
-
-            <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '12px 16px', marginBottom: 20, fontSize: 12, color: '#1E40AF', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Lightbulb size={14} color="#1E40AF" />
-              <span><strong>{tx.areasSoonLabel}</strong> {tx.areasSoon}</span>
-            </div>
-
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 10 }}>
-                {tx.areasSelected((profile?.service_areas || []).length)}
-              </div>
-              {(profile?.service_areas || []).length === 0 ? (
-                <div style={{ padding: 20, textAlign: 'center', background: '#f8fafc', borderRadius: 10, color: '#94a3b8', fontSize: 13, fontStyle: 'italic' }}>
-                  {tx.areasEmpty}
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  {(profile?.service_areas || []).map(area => (
-                    <div key={area} style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 30, padding: '6px 8px 6px 12px', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#1D4ED8', fontWeight: 500 }}>
-                      <MapPin size={12} />
-                      {area}
-                      <button onClick={() => removeArea(area)} disabled={savingAreas}
-                        style={{ background: 'transparent', border: 'none', color: '#1D4ED8', cursor: 'pointer', padding: 0, marginLeft: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', width: 18, height: 18, borderRadius: '50%' }}>
-                        <X size={12} strokeWidth={2.5} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div style={{ position: 'relative' }}>
-              <label style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 8, display: 'block' }}>
-                {tx.addArea}
-              </label>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input
-                  type="text"
-                  value={areaInput}
-                  onChange={e => handleAreaInputChange(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter' && areaInput.trim()) { e.preventDefault(); addArea(areaInput); } }}
-                  placeholder={tx.areaPh}
-                  style={{ flex: 1, padding: '12px 14px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#0F172A' }}
-                />
-                <button onClick={() => addArea(areaInput)} disabled={!areaInput.trim() || savingAreas}
-                  style={{ padding: '12px 24px', borderRadius: 10, border: 'none', background: !areaInput.trim() ? '#cbd5e1' : '#1a2e44', color: '#fff', fontSize: 13, fontWeight: 600, cursor: !areaInput.trim() ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                  <Plus size={14} strokeWidth={2.5} />
-                  {tx.add}
-                </button>
-              </div>
-
-              {areaSuggestions.length > 0 && (
-                <div style={{ position: 'absolute', top: '100%', left: 0, right: 100, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, marginTop: 4, boxShadow: '0 8px 24px rgba(0,0,0,0.08)', zIndex: 10, maxHeight: 240, overflowY: 'auto' }}>
-                  {areaSuggestions.map(s => (
-                    <div key={s} onClick={() => addArea(s)}
-                      style={{ padding: '10px 14px', cursor: 'pointer', fontSize: 13, color: '#0F172A', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <MapPin size={12} color="#94a3b8" />
-                      {s}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                <Lightbulb size={12} />
-                {tx.areaHint}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ═══ CONDITIONS ═══ */}
-        {activeTab === 'conditions' && (
-          <TherapistConditionsTab
+        {/* ═══ ΔΙΑΘΕΣΙΜΟΤΗΤΑ ═══ */}
+        {activeTab === 'availability' && (
+          <AvailabilityManager
             userId={user?.id}
-            specialty={profile?.specialty}
             lang={lang}
             tx={tx}
+            loc={loc}
+            slots={slots}
+            onSlotsChanged={() => reloadSlots()}
+            weekOffset={weekOffset}
+            setWeekOffset={setWeekOffset}
+            currentWeek={currentWeek}
           />
         )}
 
-        {/* ═══ REVIEWS ═══ */}
-        {activeTab === 'reviews' && (
-          <div>
-            <div style={{ display: 'flex', gap: 14, marginBottom: 20 }}>
-              <div style={{ flex: 1, background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 14, padding: '18px 20px' }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#B45309', textTransform: 'uppercase', marginBottom: 6 }}>{tx.avgRating}</div>
-                <div style={{ fontSize: 30, fontWeight: 700, color: '#B45309' }}>{avgRating}</div>
-              </div>
-              <div style={{ flex: 1, background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 14, padding: '18px 20px' }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#15803D', textTransform: 'uppercase', marginBottom: 6 }}>{tx.totalReviews}</div>
-                <div style={{ fontSize: 30, fontWeight: 700, color: '#15803D' }}>{reviews.length}</div>
-              </div>
-            </div>
-            {reviews.length === 0
-              ? <div style={{ padding: 40, textAlign: 'center', color: '#94A3B8', background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0' }}>{tx.noReviews}</div>
-              : reviews.map(r => (
-                <div key={r.id} style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: '18px 20px', marginBottom: 10 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                    <ReviewStars rating={r.rating} size={14} />
-                    <span style={{ fontSize: 12, color: '#94A3B8' }}>{new Date(r.created_at).toLocaleDateString(loc)}</span>
-                  </div>
-                  {r.comment && <p style={{ fontSize: 14, color: '#475569', lineHeight: 1.6, margin: 0, background: '#f8fafc', padding: '10px 14px', borderRadius: 8, borderLeft: '3px solid #cbd5e1', fontStyle: 'italic' }}>{r.comment}</p>}
-                </div>
-              ))}
-          </div>
-        )}
-
-        {/* ═══ PROFILE ═══ */}
+        {/* ═══ ΠΡΟΦΙΛ ═══ */}
         {activeTab === 'profile' && (
-          <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: 28 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
-              <div style={{ position: 'relative' }}>
-                <Avatar name={profile?.name} photoUrl={profile?.photo_url} size={80} />
-                <button onClick={() => photoInputRef.current?.click()} disabled={uploadingPhoto}
-                  style={{ position: 'absolute', bottom: 0, right: 0, width: 26, height: 26, borderRadius: '50%', background: '#2a6fdb', border: '2px solid #fff', color: '#fff', cursor: uploadingPhoto ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {uploadingPhoto ? <Clock size={12} /> : <Camera size={13} />}
-                </button>
-                <input ref={photoInputRef} type="file" accept="image/*" onChange={uploadPhoto} style={{ display: 'none' }} />
+          <div>
+            <div className="tabs-scroll" style={{ marginBottom: 18 }}>
+              <div style={{ display: 'flex', gap: 4, background: '#e2e8f0', padding: 4, borderRadius: 10, width: 'fit-content' }}>
+                {PROFILE_SECTIONS.map(s => {
+                  const SIcon = s.Icon;
+                  const isActive = profileSection === s.id;
+                  return (
+                    <button key={s.id} onClick={() => setProfileSection(s.id)}
+                      style={{ padding: '8px 15px', borderRadius: 7, border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: isActive ? '#fff' : 'transparent', color: isActive ? '#0F172A' : '#64748B', boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
+                      <SIcon size={14} />
+                      {s.label}
+                    </button>
+                  );
+                })}
               </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 20, fontWeight: 700, color: '#0F172A' }}>{profile?.name || '—'}</div>
-                <div style={{ fontSize: 14, color: '#64748B' }}>{profile?.specialty} · {profile?.area}</div>
-                <div style={{ marginTop: 4 }}>
-                  {profile?.is_approved
-                    ? <Badge label={tx.approved} bg="#D1FAE5" color="#065F46" icon={CheckCircle2} />
-                    : !hasLicense
-                      ? <Badge label={tx.docsPending} bg="#FEF3C7" color="#92400E" icon={AlertTriangle} />
-                      : <Badge label={tx.awaitingAdmin} bg="#FEF3C7" color="#92400E" icon={Clock} />
-                  }
-                </div>
-                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 6, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                  {tx.photoHintA} <Camera size={11} /> {tx.photoHintB}
-                </div>
-              </div>
-              <button onClick={() => setEditProfile(!editProfile)}
-                style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid #e2e8f0', background: editProfile ? '#f1f5f9' : '#fff', color: '#475569', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
-                {editProfile ? tx.cancelEdit : <><Pencil size={13} />{tx.editProfile}</>}
-              </button>
             </div>
 
-            {editProfile ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                  {[['name', tx.fullName], ['specialty', tx.specialty], ['area', tx.baseArea]].map(([k, l]) => (
-                    <div key={k}>
-                      <label style={{ fontSize: 12, fontWeight: 600, color: '#64748B', display: 'block', marginBottom: 5 }}>{l}</label>
-                      <input value={profileForm[k] || ''} onChange={e => setProfileForm(p => ({ ...p, [k]: e.target.value }))}
-                        style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#0F172A', boxSizing: 'border-box' }} />
-                    </div>
-                  ))}
-                  <div>
-                    <label style={{ fontSize: 12, fontWeight: 600, color: '#64748B', display: 'block', marginBottom: 5 }}>{tx.pricePerSession}</label>
-                    <input type="number" min={25} max={50} value={profileForm.price_per_session || ''} onChange={e => setProfileForm(p => ({ ...p, price_per_session: e.target.value }))}
-                      style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#0F172A', boxSizing: 'border-box' }} />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: 12, fontWeight: 600, color: '#64748B', display: 'block', marginBottom: 5 }}>{tx.yearsExperience}</label>
-                    <input type="number" min={0} max={60} value={profileForm.years_experience || ''} onChange={e => setProfileForm(p => ({ ...p, years_experience: e.target.value }))}
-                      placeholder={tx.yearsPh}
-                      style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#0F172A', boxSizing: 'border-box' }} />
-                  </div>
-                </div>
-                <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: '#64748B', display: 'block', marginBottom: 5 }}>{tx.bio}</label>
-                  <textarea rows={4} value={profileForm.bio || ''} onChange={e => setProfileForm(p => ({ ...p, bio: e.target.value }))}
-                    style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#0F172A', resize: 'vertical', boxSizing: 'border-box' }} />
-                </div>
-                <button onClick={saveProfile} disabled={saving}
-                  style={{ alignSelf: 'flex-start', padding: '10px 24px', borderRadius: 30, border: 'none', background: '#1a2e44', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
-                  <Save size={14} />
-                  {saving ? tx.saving : tx.save}
-                </button>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {[
-                  [tx.specialty, profile?.specialty],
-                  [tx.baseArea, profile?.area],
-                  [tx.yearsExperience, profile?.years_experience ? tx.yearsUnit(profile.years_experience) : '—'],
-                  [tx.pricePerSession.split(' (')[0], profile?.price_per_session ? `${profile.price_per_session}€` : '—'],
-                  [tx.netPerSessionLabel, profile?.price_per_session ? `${Math.max(0, profile.price_per_session - commission)}€ ${tx.afterCommission(commission)}` : '—'],
-                ].map(([label, value]) => (
-                  <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f1f5f9', fontSize: 14, gap: 12 }}>
-                    <span style={{ color: '#64748B' }}>{label}</span>
-                    <span style={{ fontWeight: 600, color: '#0F172A', textAlign: 'right' }}>{value || '—'}</span>
-                  </div>
-                ))}
-                {profile?.bio && (
-                  <div style={{ marginTop: 8 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 8 }}>{tx.bio}</div>
-                    <p style={{ fontSize: 14, color: '#475569', lineHeight: 1.7, background: '#f8fafc', padding: '12px 16px', borderRadius: 8 }}>{profile.bio}</p>
-                  </div>
-                )}
+            <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: 26 }}>
 
-                <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid #e2e8f0' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>{tx.documents}</div>
+              {profileSection === 'basics' && (
+                <>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+                    <div style={{ position: 'relative' }}>
+                      <Avatar name={profile?.name} photoUrl={profile?.photo_url} size={80} />
+                      <button onClick={() => photoInputRef.current?.click()} disabled={uploadingPhoto}
+                        style={{ position: 'absolute', bottom: 0, right: 0, width: 26, height: 26, borderRadius: '50%', background: '#2a6fdb', border: '2px solid #fff', color: '#fff', cursor: uploadingPhoto ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {uploadingPhoto ? <Clock size={12} /> : <Camera size={13} />}
+                      </button>
+                      <input ref={photoInputRef} type="file" accept="image/*" onChange={uploadPhoto} style={{ display: 'none' }} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 200 }}>
+                      <div style={{ fontSize: 20, fontWeight: 700, color: '#0F172A' }}>{profile?.name || '—'}</div>
+                      <div style={{ fontSize: 14, color: '#64748B' }}>{profile?.specialty} · {profile?.area}</div>
+                      <div style={{ marginTop: 6 }}>
+                        {profile?.is_approved
+                          ? <Badge label={tx.approvedShort} bg="#DBEAFE" color="#1D4ED8" icon={CheckCircle2} />
+                          : !hasLicense
+                            ? <Badge label={tx.docsPending} bg="#FEF3C7" color="#92400E" icon={AlertTriangle} />
+                            : <Badge label={tx.awaitingAdmin} bg="#FEF3C7" color="#92400E" icon={Clock} />}
+                      </div>
+                      {/* «Εγκεκριμένος» δεν έλεγε τίποτα στον θεραπευτή.
+                          Τώρα λέει τι σημαίνει το σήμα. */}
+                      {profile?.is_approved && (
+                        <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 6, lineHeight: 1.5 }}>
+                          {tx.verifiedMeaning}
+                        </div>
+                      )}
+                      <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 6, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        {tx.photoHintA} <Camera size={11} /> {tx.photoHintB}
+                      </div>
+                    </div>
+                    <button onClick={() => setEditProfile(!editProfile)}
+                      style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid #e2e8f0', background: editProfile ? '#f1f5f9' : '#fff', color: '#475569', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
+                      {editProfile ? tx.cancelEdit : <><Pencil size={13} />{tx.editProfile}</>}
+                    </button>
+                  </div>
+
+                  {editProfile ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+                        {[['name', tx.fullName], ['specialty', tx.specialty], ['area', tx.baseArea]].map(([k, l]) => (
+                          <div key={k}>
+                            <label style={{ fontSize: 12, fontWeight: 600, color: '#64748B', display: 'block', marginBottom: 5 }}>{l}</label>
+                            <input value={profileForm[k] || ''} onChange={e => setProfileForm(p => ({ ...p, [k]: e.target.value }))}
+                              style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#0F172A', boxSizing: 'border-box' }} />
+                          </div>
+                        ))}
+                        <div>
+                          <label style={{ fontSize: 12, fontWeight: 600, color: '#64748B', display: 'block', marginBottom: 5 }}>{tx.pricePerSession}</label>
+                          <input type="number" min={25} max={50} value={profileForm.price_per_session || ''} onChange={e => setProfileForm(p => ({ ...p, price_per_session: e.target.value }))}
+                            style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#0F172A', boxSizing: 'border-box' }} />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: 12, fontWeight: 600, color: '#64748B', display: 'block', marginBottom: 5 }}>{tx.yearsExperience}</label>
+                          <input type="number" min={0} max={60} value={profileForm.years_experience || ''} onChange={e => setProfileForm(p => ({ ...p, years_experience: e.target.value }))}
+                            placeholder={tx.yearsPh}
+                            style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#0F172A', boxSizing: 'border-box' }} />
+                        </div>
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 12, fontWeight: 600, color: '#64748B', display: 'block', marginBottom: 5 }}>{tx.bio}</label>
+                        <textarea rows={4} value={profileForm.bio || ''} onChange={e => setProfileForm(p => ({ ...p, bio: e.target.value }))}
+                          style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#0F172A', resize: 'vertical', boxSizing: 'border-box' }} />
+                      </div>
+                      <button onClick={saveProfile} disabled={saving}
+                        style={{ alignSelf: 'flex-start', padding: '10px 24px', borderRadius: 30, border: 'none', background: '#1a2e44', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
+                        <Save size={14} />
+                        {saving ? tx.saving : tx.save}
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      {[
+                        [tx.specialty, profile?.specialty],
+                        [tx.baseArea, profile?.area],
+                        [tx.yearsExperience, profile?.years_experience ? tx.yearsUnit(profile.years_experience) : '—'],
+                        [tx.priceShort, profile?.price_per_session ? `${profile.price_per_session}€` : '—'],
+                      ].map(([label, value]) => (
+                        <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f1f5f9', fontSize: 14, gap: 12 }}>
+                          <span style={{ color: '#64748B' }}>{label}</span>
+                          <span style={{ fontWeight: 600, color: '#0F172A', textAlign: 'right' }}>{value || '—'}</span>
+                        </div>
+                      ))}
+
+                      {/* Δεν αφαιρείται προμήθεια από τη συνεδρία. Το παλιό
+                          «Καθαρά/Συνεδρία μετά την προμήθεια» ήταν λάθος. */}
+                      <div style={{ fontSize: 12.5, color: '#15803D', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '10px 14px', display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <Wallet size={14} />
+                        {tx.keepsAll}
+                      </div>
+
+                      {profile?.bio && (
+                        <div style={{ marginTop: 8 }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 8 }}>{tx.bio}</div>
+                          <p style={{ fontSize: 14, color: '#475569', lineHeight: 1.7, background: '#f8fafc', padding: '12px 16px', borderRadius: 8 }}>{profile.bio}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {profileSection === 'areas' && (
+                <>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', marginBottom: 4, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                    <MapPin size={15} color="#2a6fdb" />
+                    {tx.areasTitle}
+                  </div>
+                  <div style={{ fontSize: 13, color: '#64748B', marginBottom: 18 }}>{tx.areasDesc}</div>
+
+                  <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '11px 15px', marginBottom: 18, fontSize: 12, color: '#1E40AF', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                    <Lightbulb size={14} color="#1E40AF" style={{ marginTop: 1, flexShrink: 0 }} />
+                    <span><strong>{tx.areasSoonLabel}</strong> {tx.areasSoon}</span>
+                  </div>
+
+                  <div style={{ marginBottom: 20 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 10 }}>
+                      {tx.areasSelected((profile?.service_areas || []).length)}
+                    </div>
+                    {(profile?.service_areas || []).length === 0 ? (
+                      <div style={{ padding: 20, textAlign: 'center', background: '#f8fafc', borderRadius: 10, color: '#94a3b8', fontSize: 13, fontStyle: 'italic' }}>
+                        {tx.areasEmpty}
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                        {(profile?.service_areas || []).map(area => (
+                          <div key={area} style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 30, padding: '6px 8px 6px 12px', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#1D4ED8', fontWeight: 500 }}>
+                            <MapPin size={12} />
+                            {area}
+                            <button onClick={() => removeArea(area)} disabled={savingAreas}
+                              style={{ background: 'transparent', border: 'none', color: '#1D4ED8', cursor: 'pointer', padding: 0, marginLeft: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', width: 18, height: 18, borderRadius: '50%' }}>
+                              <X size={12} strokeWidth={2.5} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ position: 'relative' }}>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 8, display: 'block' }}>
+                      {tx.addArea}
+                    </label>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <input
+                        type="text"
+                        value={areaInput}
+                        onChange={e => handleAreaInputChange(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter' && areaInput.trim()) { e.preventDefault(); addArea(areaInput); } }}
+                        placeholder={tx.areaPh}
+                        style={{ flex: 1, padding: '12px 14px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#0F172A' }}
+                      />
+                      <button onClick={() => addArea(areaInput)} disabled={!areaInput.trim() || savingAreas}
+                        style={{ padding: '12px 22px', borderRadius: 10, border: 'none', background: !areaInput.trim() ? '#cbd5e1' : '#1a2e44', color: '#fff', fontSize: 13, fontWeight: 600, cursor: !areaInput.trim() ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        <Plus size={14} strokeWidth={2.5} />
+                        {tx.add}
+                      </button>
+                    </div>
+
+                    {areaSuggestions.length > 0 && (
+                      <div style={{ position: 'absolute', top: '100%', left: 0, right: 100, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, marginTop: 4, boxShadow: '0 8px 24px rgba(0,0,0,0.08)', zIndex: 10, maxHeight: 240, overflowY: 'auto' }}>
+                        {areaSuggestions.map(s => (
+                          <div key={s} onClick={() => addArea(s)}
+                            style={{ padding: '10px 14px', cursor: 'pointer', fontSize: 13, color: '#0F172A', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <MapPin size={12} color="#94a3b8" />
+                            {s}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      <Lightbulb size={12} />
+                      {tx.areaHint}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {profileSection === 'conditions' && (
+                <TherapistConditionsSection
+                  userId={user?.id}
+                  specialty={profile?.specialty}
+                  lang={lang}
+                  tx={tx}
+                />
+              )}
+
+              {profileSection === 'documents' && (
+                <>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, gap: 12, flexWrap: 'wrap' }}>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                      <FileText size={15} color="#2a6fdb" />
+                      {tx.documents}
+                    </div>
                     <button onClick={() => setDocsModal(true)}
-                      style={{ background: 'transparent', border: '1px solid #e2e8f0', borderRadius: 20, padding: '6px 14px', fontSize: 12, fontWeight: 600, color: '#1a2e44', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                      <Upload size={12} />
+                      style={{ background: '#1a2e44', border: 'none', borderRadius: 30, padding: '9px 20px', fontSize: 13, fontWeight: 600, color: '#fff', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <Upload size={13} />
                       {tx.manage}
                     </button>
                   </div>
+
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: hasLicense ? '#F0FDF4' : '#FEF3C7', border: `1px solid ${hasLicense ? '#BBF7D0' : '#FDE68A'}`, borderRadius: 8, fontSize: 13 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: hasLicense ? '#F0FDF4' : '#FEF3C7', border: `1px solid ${hasLicense ? '#BBF7D0' : '#FDE68A'}`, borderRadius: 10, fontSize: 13 }}>
                       {hasLicense ? <CheckCircle2 size={16} color="#15803D" /> : <AlertTriangle size={16} color="#92400E" />}
                       <strong>{tx.license}</strong>
                       <span style={{ marginLeft: 'auto', color: hasLicense ? '#15803D' : '#92400E', fontWeight: 600, fontSize: 12 }}>
                         {hasLicense ? tx.uploaded : tx.missingRequired}
                       </span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 13 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, fontSize: 13 }}>
                       {hasCv ? <CheckCircle2 size={16} color="#15803D" /> : <span style={{ width: 16, height: 16, display: 'inline-block', borderRadius: '50%', background: '#e2e8f0' }} />}
                       <span>{tx.cv}</span>
-                      <span style={{ marginLeft: 'auto', color: '#64748B', fontSize: 12 }}>
-                        {hasCv ? tx.uploaded : tx.optional}
-                      </span>
+                      <span style={{ marginLeft: 'auto', color: '#64748B', fontSize: 12 }}>{hasCv ? tx.uploaded : tx.optional}</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 13 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, fontSize: 13 }}>
                       {certCount > 0 ? <CheckCircle2 size={16} color="#15803D" /> : <span style={{ width: 16, height: 16, display: 'inline-block', borderRadius: '50%', background: '#e2e8f0' }} />}
                       <span>{tx.certifications}</span>
-                      <span style={{ marginLeft: 'auto', color: '#64748B', fontSize: 12 }}>
-                        {certCount > 0 ? tx.filesCount(certCount) : tx.optionalPlural}
-                      </span>
+                      <span style={{ marginLeft: 'auto', color: '#64748B', fontSize: 12 }}>{certCount > 0 ? tx.filesCount(certCount) : tx.optionalPlural}</span>
                     </div>
                   </div>
-                </div>
-              </div>
-            )}
+                </>
+              )}
+
+              {/* Χωρίς reviews δεν έχει νόημα να δείχνουμε δύο άδεια KPI
+                  cards με «—» και «0». Ένα καθαρό empty state αρκεί. */}
+              {profileSection === 'reviews' && (
+                reviews.length === 0 ? (
+                  <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+                    <Star size={38} color="#e2e8f0" style={{ margin: '0 auto 12px' }} />
+                    <div style={{ fontSize: 15, fontWeight: 600, color: '#475569', marginBottom: 5 }}>{tx.noReviews}</div>
+                    <div style={{ fontSize: 13, color: '#94a3b8' }}>{tx.noReviewsSub}</div>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20, paddingBottom: 18, borderBottom: '1px solid #f1f5f9', flexWrap: 'wrap' }}>
+                      <div style={{ fontSize: 34, fontWeight: 700, color: '#B45309', lineHeight: 1 }}>{avgRating}</div>
+                      <div>
+                        <ReviewStars rating={Math.round(Number(avgRating))} size={16} />
+                        <div style={{ fontSize: 13, color: '#64748B', marginTop: 3 }}>{tx.reviewsCount(reviews.length)}</div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {reviews.map(r => (
+                        <div key={r.id} style={{ padding: '14px 16px', background: '#f8fafc', borderRadius: 10 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
+                            <ReviewStars rating={r.rating} size={13} />
+                            <span style={{ fontSize: 12, color: '#94A3B8' }}>{new Date(r.created_at).toLocaleDateString(loc)}</span>
+                          </div>
+                          {r.comment && <p style={{ fontSize: 14, color: '#475569', lineHeight: 1.6, margin: 0, fontStyle: 'italic' }}>{r.comment}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )
+              )}
+            </div>
           </div>
         )}
       </div>
+
+      {/* ═══ MODAL: ΠΩΣ ΛΕΙΤΟΥΡΓΟΥΝ ΟΙ ΠΛΗΡΩΜΕΣ ═══ */}
+      {payModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}
+          onClick={e => { if (e.target === e.currentTarget) setPayModal(false); }}>
+          <div style={{ background: '#fff', borderRadius: 20, maxWidth: 480, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', maxHeight: '85vh', overflowY: 'auto' }}>
+            <div style={{ padding: '22px 26px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h2 style={{ fontSize: 17, fontWeight: 700, color: '#0F172A', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <Wallet size={17} color="#15803D" />
+                {tx.payModalTitle}
+              </h2>
+              <button onClick={() => setPayModal(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ padding: '22px 26px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 12, padding: '14px 16px', fontSize: 13.5, color: '#166534', lineHeight: 1.65 }}>
+                {tx.payModalCash}
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13.5 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                  <span style={{ color: '#64748B' }}>{tx.payModalYourPrice}</span>
+                  <strong style={{ color: '#0F172A' }}>{pricePerSession}€</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                  <span style={{ color: '#64748B' }}>{tx.payModalSubscription}</span>
+                  <strong style={{ color: '#0F172A' }}>
+                    {subscription
+                      ? (Number(subscription.price_locked) > 0 ? `${Number(subscription.price_locked).toFixed(2)}€` : '0€')
+                      : tx.noPlan}
+                  </strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                  <span style={{ color: '#64748B' }}>{tx.payModalFirstFee}</span>
+                  <strong style={{ color: '#0F172A' }}>
+                    {firstSessionFee.toFixed(2)}€ <span style={{ fontWeight: 400, color: '#94A3B8', fontSize: 12 }}>{tx.payModalPerNewPatient}</span>
+                  </strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, paddingTop: 10, borderTop: '1px solid #f1f5f9' }}>
+                  <span style={{ color: '#64748B' }}>{tx.payModalOpen}</span>
+                  <strong style={{ color: owedTotal > 0 ? '#B45309' : '#15803D', fontSize: 15 }}>{owedTotal.toFixed(2)}€</strong>
+                </div>
+              </div>
+
+              <div style={{ fontSize: 12, color: '#94A3B8', lineHeight: 1.6, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                <Lightbulb size={13} strokeWidth={2.2} style={{ marginTop: 1, flexShrink: 0 }} />
+                <span>{tx.payModalFeeExplain}</span>
+              </div>
+            </div>
+
+            <div style={{ padding: '14px 26px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'flex-end' }}>
+              <button onClick={() => setPayModal(false)}
+                style={{ background: '#1a2e44', color: '#fff', border: 'none', padding: '10px 24px', borderRadius: 30, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                {tx.close}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Calendar day-detail modal */}
       {selectedDay && (
@@ -2249,7 +2806,7 @@ export default function TherapistDashboard() {
       {doneModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}
           onClick={e => { if (e.target === e.currentTarget) setDoneModal(null); }}>
-          <div style={{ background: '#fff', borderRadius: 20, padding: '32px', maxWidth: 480, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+          <div style={{ background: '#fff', borderRadius: 20, padding: '32px', maxWidth: 460, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
             <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#D1FAE5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
               <Check size={28} color="#15803D" strokeWidth={3} />
             </div>
@@ -2258,23 +2815,19 @@ export default function TherapistDashboard() {
               {tx.doneModalDesc(doneModal.request?.patient_name || tx.unknown)}
             </p>
 
+            {/* Ο ασθενής πληρώνει μετρητά — δεν αφαιρείται προμήθεια εδώ. */}
             <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 12, padding: '14px 18px', marginBottom: 20 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: '#15803D', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6 }}>
-                {tx.releaseAmount}
+                {tx.sessionAmount}
               </div>
               <div style={{ fontSize: 28, fontWeight: 700, color: '#15803D' }}>
-                {parseFloat(doneModal.booking?.net_to_therapist || 0).toFixed(2)}€
-              </div>
-              <div style={{ fontSize: 12, color: '#15803D', marginTop: 4, lineHeight: 1.5 }}>
-                {tx.sessionTotal} {parseFloat(doneModal.booking?.session_amount || 0).toFixed(2)}€ − {tx.commissionLabel} {parseFloat(doneModal.booking?.platform_fee || commission).toFixed(2)}€
+                {bookingAmount(doneModal.booking).toFixed(2)}€
               </div>
             </div>
 
             <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 10, padding: '12px 16px', marginBottom: 24, fontSize: 12, color: '#92400E', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
               <Hourglass size={14} color="#92400E" style={{ flexShrink: 0, marginTop: 1 }} />
-              <span>
-                {tx.doneModalWarn} <strong>{tx.doneModalWarnDays}</strong> {tx.doneModalWarnEnd}
-              </span>
+              <span>{tx.doneModalWarn} <strong>{tx.doneModalWarnDays}</strong> {tx.doneModalWarnEnd}</span>
             </div>
 
             <div style={{ display: 'flex', gap: 10 }}>
@@ -2318,7 +2871,7 @@ export default function TherapistDashboard() {
                   {tx.license} <span style={{ color: '#BE123C' }}>*</span>
                 </div>
                 {hasLicense ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, flexWrap: 'wrap' }}>
                     <CheckCircle2 size={18} color="#15803D" />
                     <span style={{ fontSize: 13, color: '#15803D', fontWeight: 600, flex: 1 }}>{tx.uploaded}</span>
                     <button onClick={() => viewDocument(profile.license_url)}
@@ -2333,7 +2886,7 @@ export default function TherapistDashboard() {
                     </button>
                   </div>
                 ) : (
-                  <div style={{ border: '2px dashed #e2e8f0', borderRadius: 10, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                  <div style={{ border: '2px dashed #e2e8f0', borderRadius: 10, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                     <div style={{ fontSize: 12, color: '#64748B' }}>{tx.fileHint}</div>
                     <button onClick={() => licenseInputRef.current?.click()} disabled={uploadingDoc === 'license'}
                       style={{ background: '#1a2e44', color: '#fff', border: 'none', borderRadius: 20, padding: '8px 18px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -2351,7 +2904,7 @@ export default function TherapistDashboard() {
                   {tx.cv} <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 500 }}>{tx.optionalParen}</span>
                 </div>
                 {hasCv ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, flexWrap: 'wrap' }}>
                     <CheckCircle2 size={18} color="#1D4ED8" />
                     <span style={{ fontSize: 13, color: '#1D4ED8', fontWeight: 600, flex: 1 }}>{tx.uploaded}</span>
                     <button onClick={() => viewDocument(profile.cv_url)}
@@ -2365,7 +2918,7 @@ export default function TherapistDashboard() {
                     </button>
                   </div>
                 ) : (
-                  <div style={{ border: '2px dashed #e2e8f0', borderRadius: 10, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                  <div style={{ border: '2px dashed #e2e8f0', borderRadius: 10, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                     <div style={{ fontSize: 12, color: '#64748B' }}>{tx.fileHint}</div>
                     <button onClick={() => cvInputRef.current?.click()} disabled={uploadingDoc === 'cv'}
                       style={{ background: 'transparent', color: '#1a2e44', border: '1.5px solid #e2e8f0', borderRadius: 20, padding: '8px 18px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -2400,7 +2953,7 @@ export default function TherapistDashboard() {
                     ))}
                   </div>
                 )}
-                <div style={{ border: '2px dashed #e2e8f0', borderRadius: 10, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                <div style={{ border: '2px dashed #e2e8f0', borderRadius: 10, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                   <div style={{ fontSize: 12, color: '#64748B' }}>{tx.certHint}</div>
                   <button onClick={() => certInputRef.current?.click()} disabled={uploadingDoc === 'cert'}
                     style={{ background: 'transparent', color: '#1a2e44', border: '1.5px solid #e2e8f0', borderRadius: 20, padding: '8px 18px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -2434,7 +2987,7 @@ export default function TherapistDashboard() {
           mode={rescheduleTarget.mode}
           lang={lang}
           onClose={() => setRescheduleTarget(null)}
-          onDone={() => { setRescheduleTarget(null); loadRequests(user.id); }}
+          onDone={() => { setRescheduleTarget(null); loadRequests(user.id); reloadSlots(); }}
         />
       )}
 
