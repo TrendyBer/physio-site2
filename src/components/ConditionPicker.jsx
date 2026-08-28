@@ -1,62 +1,81 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Target, Search, Check, ChevronDown, ChevronUp, AlertCircle, Sparkles, TrendingUp } from 'lucide-react';
+import { Target, Search, Check, ChevronDown, ChevronUp, AlertCircle, Sparkles, TrendingUp, AlertTriangle } from 'lucide-react';
 
 /*
   ConditionPicker
   ───────────────
-  Controlled component επιλογής παθήσεων. Δεν γράφει ΤΙΠΟΤΑ στη βάση —
+  Controlled component επιλογής περιστατικών. Δεν γράφει ΤΙΠΟΤΑ στη βάση —
   ο γονέας κρατάει τις επιλογές και αποφασίζει πότε θα αποθηκευτούν.
 
   Γι' αυτό δουλεύει και στην ΕΓΓΡΑΦΗ, όπου δεν υπάρχει ακόμα therapist_id.
+
+  ΟΡΟΛΟΓΙΑ: λέμε «περιστατικά που αναλαμβάνεις», όχι «παθήσεις που
+  θεραπεύεις». Ο φυσικοθεραπευτής δεν διαγιγνώσκει και δεν «θεραπεύει
+  παθήσεις» — αναλαμβάνει περιστατικά. Η ίδια διατύπωση χρησιμοποιείται
+  και στην εγγραφή και στο προφίλ.
+
+  ΟΡΙΟ: υπάρχει συνιστώμενο ανώτατο όριο. Αν ο θεραπευτής τσεκάρει τα
+  πάντα, το matching χάνει κάθε νόημα και ο ασθενής βλέπει τους ίδιους
+  δέκα ανθρώπους σε κάθε αναζήτηση. Το όριο είναι προειδοποίηση, όχι
+  φράγμα — δεν μπλοκάρουμε κάποιον με πραγματικά ευρύ αντικείμενο.
 
   Props:
     value          — array με condition ids (υποχρεωτικό)
     onChange       — (ids: string[]) => void
     lang           — 'el' | 'en'
     specialty      — string, για auto-suggest βάσει related_specialties
-    minRequired    — πόσες χρειάζονται (default 3)
+    minRequired    — πόσα χρειάζονται (default 3)
+    maxRecommended — πάνω από πόσα προειδοποιούμε (default 8)
     showDemand     — αν true, δείχνει τη ζήτηση των ασθενών (μόνο στο προφίλ)
     compact        — μικρότερο padding για ενσωμάτωση σε φόρμα
 */
 
 const TX = {
   el: {
-    title: 'Παθήσεις που θεραπεύετε',
-    subtitle: (n) => `Επιλέξτε τουλάχιστον ${n}. Οι ασθενείς σας βρίσκουν μέσα από αυτές.`,
-    searchPh: 'Αναζήτηση πάθησης...',
-    selected: (n) => `${n} επιλεγμένες`,
+    title: 'Περιστατικά που αναλαμβάνετε',
+    subtitle: (n, m) => `Επιλέξτε τουλάχιστον ${n}, ιδανικά έως ${m}. Οι ασθενείς σας βρίσκουν μέσα από αυτά.`,
+    searchPh: 'Αναζήτηση περιστατικού...',
+    selected: (n) => `${n} επιλεγμένα`,
     needMore: (n) => `Χρειάζονται ${n} ακόμα`,
     enough: 'Έτοιμο',
-    suggested: 'Προτεινόμενες για την ειδικότητά σας',
+    overLimit: (m) => `Πάνω από ${m}`,
+    warnTitle: (n, m) => `Έχετε επιλέξει ${n} περιστατικά — προτείνουμε έως ${m}.`,
+    warnBody: 'Όταν επιλέγετε σχεδόν τα πάντα, το προφίλ σας δεν ξεχωρίζει σε καμία αναζήτηση. Κρατήστε αυτά που πράγματι αναλαμβάνετε τακτικά.',
+    suggested: 'Προτεινόμενα για την ειδικότητά σας',
     selectAll: 'Επιλογή όλων',
     popular: 'Δημοφιλές',
     demandTitle: 'Τι ζητούν οι ασθενείς',
-    demandDesc: 'Παθήσεις με ζήτηση και λίγους διαθέσιμους θεραπευτές.',
+    demandDesc: 'Περιστατικά με ζήτηση και λίγους διαθέσιμους θεραπευτές.',
     demandRequests: (n) => `${n} ${n === 1 ? 'αίτημα' : 'αιτήματα'}`,
     demandTherapists: (n) => `${n} ${n === 1 ? 'θεραπευτής' : 'θεραπευτές'}`,
     demandGap: 'Χωρίς κάλυψη',
-    noResults: 'Δεν βρέθηκαν παθήσεις.',
+    noResults: 'Δεν βρέθηκαν περιστατικά.',
     loading: 'Φόρτωση...',
+    suggestionsWord: 'προτάσεις',
   },
   en: {
-    title: 'Conditions you treat',
-    subtitle: (n) => `Choose at least ${n}. This is how patients find you.`,
-    searchPh: 'Search conditions...',
+    title: 'Cases you take on',
+    subtitle: (n, m) => `Choose at least ${n}, ideally up to ${m}. This is how patients find you.`,
+    searchPh: 'Search cases...',
     selected: (n) => `${n} selected`,
     needMore: (n) => `${n} more needed`,
     enough: 'Ready',
+    overLimit: (m) => `Over ${m}`,
+    warnTitle: (n, m) => `You have selected ${n} cases — we recommend up to ${m}.`,
+    warnBody: "When you select almost everything, your profile stands out in no search at all. Keep the ones you genuinely take on regularly.",
     suggested: 'Suggested for your specialty',
     selectAll: 'Select all',
     popular: 'Popular',
     demandTitle: 'What patients are asking for',
-    demandDesc: 'Conditions with demand and few available therapists.',
+    demandDesc: 'Cases with demand and few available therapists.',
     demandRequests: (n) => `${n} ${n === 1 ? 'request' : 'requests'}`,
     demandTherapists: (n) => `${n} ${n === 1 ? 'therapist' : 'therapists'}`,
     demandGap: 'Uncovered',
-    noResults: 'No conditions found.',
+    noResults: 'No cases found.',
     loading: 'Loading...',
+    suggestionsWord: 'suggestions',
   },
 };
 
@@ -70,6 +89,7 @@ export default function ConditionPicker({
   lang = 'el',
   specialty = '',
   minRequired = 3,
+  maxRecommended = 8,
   showDemand = false,
   compact = false,
 }) {
@@ -175,6 +195,7 @@ export default function ConditionPicker({
 
   const count = selected.size;
   const remaining = Math.max(0, minRequired - count);
+  const overLimit = count > maxRecommended;
   const label = (c) => (lang === 'el' ? c.name_el : (c.name_en || c.name_el));
   const desc = (c) => (lang === 'el' ? c.description_el : (c.description_en || c.description_el));
 
@@ -187,6 +208,13 @@ export default function ConditionPicker({
   }
 
   const pad = compact ? 16 : 20;
+
+  // Τρεις καταστάσεις μετρητή: λείπουν / εντάξει / πάρα πολλά
+  const counterStyle = overLimit
+    ? { bg: '#FFF7ED', border: '#FED7AA', color: '#C2410C' }
+    : remaining === 0
+      ? { bg: '#F0FDF4', border: '#BBF7D0', color: '#15803D' }
+      : { bg: '#FFFBEB', border: '#FDE68A', color: '#92400E' };
 
   return (
     <div>
@@ -202,24 +230,44 @@ export default function ConditionPicker({
           <Target size={15} color="#2a6fdb" strokeWidth={2.2} />
           {tx.title}
         </div>
-        <div style={{ fontSize: 12, color: '#6b7a8d', lineHeight: 1.5 }}>{tx.subtitle(minRequired)}</div>
+        <div style={{ fontSize: 12, color: '#6b7a8d', lineHeight: 1.5 }}>{tx.subtitle(minRequired, maxRecommended)}</div>
       </div>
 
       {/* Μετρητής */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
-        padding: '9px 14px', borderRadius: 10, marginBottom: 12, flexWrap: 'wrap',
-        background: remaining === 0 ? '#F0FDF4' : '#FFFBEB',
-        border: `1px solid ${remaining === 0 ? '#BBF7D0' : '#FDE68A'}`,
+        padding: '9px 14px', borderRadius: 10, marginBottom: overLimit ? 8 : 12, flexWrap: 'wrap',
+        background: counterStyle.bg,
+        border: `1px solid ${counterStyle.border}`,
       }}>
-        <span style={{ fontSize: 13, fontWeight: 600, color: remaining === 0 ? '#15803D' : '#92400E', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          {remaining === 0 ? <Check size={14} strokeWidth={3} /> : <AlertCircle size={14} strokeWidth={2.2} />}
+        <span style={{ fontSize: 13, fontWeight: 600, color: counterStyle.color, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          {overLimit
+            ? <AlertTriangle size={14} strokeWidth={2.4} />
+            : remaining === 0
+              ? <Check size={14} strokeWidth={3} />
+              : <AlertCircle size={14} strokeWidth={2.2} />}
           {tx.selected(count)}
         </span>
-        <span style={{ fontSize: 12, color: remaining === 0 ? '#15803D' : '#92400E', fontWeight: 500 }}>
-          {remaining === 0 ? tx.enough : tx.needMore(remaining)}
+        <span style={{ fontSize: 12, color: counterStyle.color, fontWeight: 500 }}>
+          {overLimit ? tx.overLimit(maxRecommended) : remaining === 0 ? tx.enough : tx.needMore(remaining)}
         </span>
       </div>
+
+      {/* Προειδοποίηση υπέρβασης — δεν μπλοκάρει, εξηγεί το κόστος */}
+      {overLimit && (
+        <div style={{
+          background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 10,
+          padding: '11px 14px', marginBottom: 12, display: 'flex', gap: 9, alignItems: 'flex-start',
+        }}>
+          <AlertTriangle size={15} color="#C2410C" strokeWidth={2.2} style={{ marginTop: 1, flexShrink: 0 }} />
+          <div>
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: '#C2410C', marginBottom: 3 }}>
+              {tx.warnTitle(count, maxRecommended)}
+            </div>
+            <div style={{ fontSize: 11.5, color: '#9A3412', lineHeight: 1.55 }}>{tx.warnBody}</div>
+          </div>
+        </div>
+      )}
 
       {/* Ζήτηση ασθενών — μόνο στο προφίλ */}
       {showDemand && demand.length > 0 && (
@@ -269,7 +317,7 @@ export default function ConditionPicker({
               {tx.suggested}
             </div>
             <div style={{ fontSize: 11.5, color: '#1E40AF' }}>
-              {unselectedSuggested.length} {lang === 'el' ? 'προτάσεις' : 'suggestions'}
+              {unselectedSuggested.length} {tx.suggestionsWord}
             </div>
           </div>
           <button type="button" onClick={selectSuggested}
@@ -349,6 +397,7 @@ export default function ConditionPicker({
                             borderColor: isSel ? '#15803D' : isSug ? '#FDE68A' : '#e2e8f0',
                             color: isSel ? '#15803D' : '#475569',
                             fontWeight: isSel ? 600 : 500,
+                            opacity: overLimit && !isSel ? 0.55 : 1,
                           }}
                         >
                           {isSel && <Check size={12} strokeWidth={3} />}
