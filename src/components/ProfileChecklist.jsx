@@ -17,28 +17,25 @@ const OFFWHITE = "#faf9f6";
  * Δείχνει στον θεραπευτή ΤΙ ΤΟΥ ΛΕΙΠΕΙ για να εμφανιστεί δημόσια.
  *
  * Χρήση στο dashboard/therapist/page.jsx:
- *   <ProfileChecklist onGoToTab={setActiveTab} onOpenDocuments={() => setDocsModal(true)} />
+ *   <ProfileChecklist onGoToTab={goToChecklistTarget} onOpenDocuments={() => setDocsModal(true)} />
  *
  * ΝΕΟ:
- *  - Αν λείπει εντελώς η γραμμή προφίλ, τη δημιουργεί από τα στοιχεία
- *    του λογαριασμού αντί να εξαφανιστεί σιωπηλά.
- *  - Σε ολοκαίνουργιο θεραπευτή δείχνει ΕΝΑ ξεκάθαρο πρώτο βήμα,
- *    αντί για λίστα 9 πραγμάτων που παραλύει.
+ *  - Όταν το προφίλ είναι ενεργό, το checklist ΚΛΕΙΝΕΙ από μόνο του.
+ *    Ο θεραπευτής που τελείωσε δεν πρέπει να βλέπει κάθε μέρα μια λίστα
+ *    με 16 γραμμές πάνω από τη δουλειά του.
+ *  - Υποχρεωτικά και προαιρετικά μετρούνται ΞΕΧΩΡΙΣΤΑ. Ένα ενιαίο
+ *    ποσοστό έκανε τον θεραπευτή να νομίζει ότι είναι «σχεδόν έτοιμος»
+ *    ενώ του έλειπε η άδεια.
+ *
+ * Τα keys του `tab` πηγαίνουν αυτούσια στο onGoToTab — ο γονέας ξέρει
+ * πού ζει πλέον το καθένα στη νέα δομή των 5 tabs.
  */
-
-const TAB_MAP = {
-  profile:      "profile",
-  conditions:   "conditions",
-  areas:        "areas",
-  availability: "calendar",
-  documents:    null,
-};
 
 export default function ProfileChecklist({ onGoToTab, onOpenDocuments }) {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState(null);
   const [condCount, setCondCount] = useState(0);
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(null); // null = δεν αποφασίστηκε ακόμα
 
   useEffect(() => { load(); }, []);
 
@@ -143,11 +140,11 @@ export default function ProfileChecklist({ onGoToTab, onOpenDocuments }) {
     },
     {
       key: "conditions",
-      label: "Τουλάχιστον 3 παθήσεις",
+      label: "Τουλάχιστον 3 περιστατικά",
       ok: condCount >= 3,
       why: "Έτσι σε βρίσκουν οι ασθενείς που έχουν το πρόβλημα που θεραπεύεις.",
       tab: "conditions",
-      progress: `${condCount}/3 επιλεγμένες`,
+      progress: `${condCount}/3 επιλεγμένα`,
     },
     {
       key: "areas",
@@ -186,9 +183,13 @@ export default function ProfileChecklist({ onGoToTab, onOpenDocuments }) {
   // Του δείχνουμε ΕΝΑ βήμα, όχι λίστα εννιά.
   const isBrandNew = !has(profile.license_url) && reqDone <= 3;
 
+  // Ανοιχτό όσο λείπει κάτι υποχρεωτικό, κλειστό όταν το προφίλ είναι
+  // ενεργό. Μόλις ο θεραπευτής το πειράξει χειροκίνητα, η επιλογή του μένει.
+  const isOpen = expanded === null ? !isComplete : expanded;
+
   function goTo(tab) {
     if (tab === "documents" && onOpenDocuments) { onOpenDocuments(); return; }
-    if (tab && onGoToTab) onGoToTab(TAB_MAP[tab] || tab);
+    if (tab && onGoToTab) onGoToTab(tab);
   }
 
   const state = isFull
@@ -260,211 +261,265 @@ export default function ProfileChecklist({ onGoToTab, onOpenDocuments }) {
         </div>
       )}
 
-      {/* ── HEADER ── */}
-      <div
-        onClick={() => setExpanded(!expanded)}
-        style={{ padding: "20px 24px", display: "flex", alignItems: "center", gap: 16, cursor: "pointer", flexWrap: "wrap" }}
-      >
-        <div style={{
-          width: 46, height: 46, borderRadius: 12,
-          background: "#fff", border: `1px solid ${state.border}`,
-          display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-        }}>
-          {isComplete
-            ? (isFull ? <Award size={22} color={state.color} strokeWidth={2} />
-                      : <Eye size={22} color={state.color} strokeWidth={2} />)
-            : <EyeOff size={22} color={state.color} strokeWidth={2} />}
+      {/* ── ΣΥΜΠΤΥΓΜΕΝΗ ΓΡΑΜΜΗ όταν το προφίλ είναι ενεργό ── */}
+      {isComplete && !isOpen ? (
+        <div style={{ padding: "14px 20px", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          {isFull
+            ? <Award size={19} color={state.color} strokeWidth={2.1} />
+            : <Eye size={19} color={state.color} strokeWidth={2.1} />}
+          <span style={{ fontSize: 14, fontWeight: 700, color: NAVY }}>
+            {isFull ? "Προφίλ πλήρες" : "Προφίλ ενεργό"}
+          </span>
+          <span style={{ fontSize: 13, color: "#5a6b7d" }}>
+            {optDone}/{optional.length} προαιρετικά συμπληρωμένα
+          </span>
+          <button
+            onClick={() => setExpanded(true)}
+            style={{
+              marginLeft: "auto", padding: "7px 16px", borderRadius: 30,
+              border: `1px solid ${state.border}`, background: "#fff", color: state.color,
+              fontSize: 12.5, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+              display: "inline-flex", alignItems: "center", gap: 6,
+            }}
+          >
+            {isFull ? "Δες το checklist" : "Βελτίωση προφίλ"}
+            <ChevronDown size={14} strokeWidth={2.3} />
+          </button>
         </div>
-
-        <div style={{ flex: 1, minWidth: 200 }}>
-          <div style={{
-            fontSize: 17, fontWeight: 700, color: NAVY,
-            fontFamily: "'DM Serif Display', Georgia, serif", marginBottom: 3,
-          }}>
-            {isFull
-              ? "Το προφίλ σου είναι πλήρες"
-              : isComplete
-                ? "Το προφίλ σου είναι ενεργό"
-                : "Το προφίλ σου δεν είναι ορατό ακόμα"}
-          </div>
-          <div style={{ fontSize: 13, color: "#5a6b7d", lineHeight: 1.5 }}>
-            {isFull
-              ? "Εμφανίζεσαι ψηλότερα στα αποτελέσματα και έχεις το σήμα «Πλήρες προφίλ»."
-              : isComplete
-                ? `Οι ασθενείς μπορούν να σε βρουν. Συμπλήρωσε ${4 - optDone > 0 ? `${4 - optDone} ακόμα προαιρετικά` : "τα υπόλοιπα"} για το σήμα «Πλήρες προφίλ».`
-                : `Λείπουν ${missing.length} ${missing.length === 1 ? "στοιχείο" : "στοιχεία"}. Μέχρι να συμπληρωθούν, δεν εμφανίζεσαι στις αναζητήσεις.`}
-          </div>
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: 14, flexShrink: 0 }}>
-          <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: 22, fontWeight: 700, color: state.color, lineHeight: 1 }}>
-              {reqDone}/{required.length}
+      ) : (
+        <>
+          {/* ── HEADER ── */}
+          <div
+            onClick={() => setExpanded(!isOpen)}
+            style={{ padding: "20px 24px", display: "flex", alignItems: "center", gap: 16, cursor: "pointer", flexWrap: "wrap" }}
+          >
+            <div style={{
+              width: 46, height: 46, borderRadius: 12,
+              background: "#fff", border: `1px solid ${state.border}`,
+              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+            }}>
+              {isComplete
+                ? (isFull ? <Award size={22} color={state.color} strokeWidth={2} />
+                          : <Eye size={22} color={state.color} strokeWidth={2} />)
+                : <EyeOff size={22} color={state.color} strokeWidth={2} />}
             </div>
-            <div style={{ fontSize: 11, color: "#8a9aab", marginTop: 3 }}>υποχρεωτικά</div>
-          </div>
-          {expanded ? <ChevronUp size={20} color="#8a9aab" /> : <ChevronDown size={20} color="#8a9aab" />}
-        </div>
-      </div>
 
-      {/* ── PROGRESS BAR ── */}
-      <div style={{ padding: "0 24px 18px" }}>
-        <div style={{ height: 8, background: "rgba(255,255,255,0.7)", borderRadius: 30, overflow: "hidden" }}>
-          <div style={{
-            width: `${(reqDone / required.length) * 100}%`,
-            height: "100%",
-            background: state.color,
-            borderRadius: 30,
-            transition: "width 0.4s ease",
-          }} />
-        </div>
-      </div>
-
-      {/* ── ΛΙΣΤΑ ── */}
-      {expanded && (
-        <div style={{ background: "#fff", borderTop: `1px solid ${state.border}`, padding: "20px 24px" }}>
-
-          <div style={{
-            fontSize: 11, fontWeight: 700, color: "#8a9aab",
-            textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12,
-          }}>
-            Απαραίτητα για να εμφανιστείς
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {required.map((r) => (
-              <div key={r.key} style={{
-                display: "flex", alignItems: "flex-start", gap: 12,
-                padding: "12px 0",
-                borderBottom: "1px solid #f1f5f9",
-                background: r.first && !r.ok ? "#fffbeb" : "transparent",
-                borderRadius: r.first && !r.ok ? 8 : 0,
-                paddingLeft: r.first && !r.ok ? 12 : 0,
-                paddingRight: r.first && !r.ok ? 12 : 0,
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <div style={{
+                fontSize: 17, fontWeight: 700, color: NAVY,
+                fontFamily: "'DM Serif Display', Georgia, serif", marginBottom: 3,
               }}>
-                <div style={{ paddingTop: 1, flexShrink: 0 }}>
-                  {r.ok
-                    ? <CheckCircle2 size={19} color="#15803d" strokeWidth={2.2} />
-                    : r.waiting
-                      ? <AlertTriangle size={19} color="#b45309" strokeWidth={2.2} />
-                      : <Circle size={19} color="#cbd5e1" strokeWidth={2} />}
-                </div>
+                {isFull
+                  ? "Το προφίλ σου είναι πλήρες"
+                  : isComplete
+                    ? "Το προφίλ σου είναι ενεργό"
+                    : "Το προφίλ σου δεν είναι ορατό ακόμα"}
+              </div>
+              <div style={{ fontSize: 13, color: "#5a6b7d", lineHeight: 1.5 }}>
+                {isFull
+                  ? "Εμφανίζεσαι ψηλότερα στα αποτελέσματα και έχεις το σήμα «Πλήρες προφίλ»."
+                  : isComplete
+                    ? `Οι ασθενείς μπορούν να σε βρουν. Συμπλήρωσε ${4 - optDone > 0 ? `${4 - optDone} ακόμα προαιρετικά` : "τα υπόλοιπα"} για το σήμα «Πλήρες προφίλ».`
+                    : `Λείπουν ${missing.length} ${missing.length === 1 ? "στοιχείο" : "στοιχεία"}. Μέχρι να συμπληρωθούν, δεν εμφανίζεσαι στις αναζητήσεις.`}
+              </div>
+            </div>
 
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{
-                    fontSize: 14,
-                    fontWeight: 600,
-                    color: r.ok ? "#8a9aab" : NAVY,
-                    textDecoration: r.ok ? "line-through" : "none",
-                    marginBottom: r.ok ? 0 : 3,
+            {/* Δύο ΞΕΧΩΡΙΣΤΟΙ μετρητές. Ένα ενιαίο ποσοστό έκρυβε το ότι
+                λείπει κάτι υποχρεωτικό. */}
+            <div style={{ display: "flex", alignItems: "center", gap: 18, flexShrink: 0 }}>
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: 22, fontWeight: 700, color: state.color, lineHeight: 1 }}>
+                  {reqDone}/{required.length}
+                </div>
+                <div style={{ fontSize: 11, color: "#8a9aab", marginTop: 3 }}>υποχρεωτικά</div>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: 22, fontWeight: 700, color: "#8a9aab", lineHeight: 1 }}>
+                  {optDone}/{optional.length}
+                </div>
+                <div style={{ fontSize: 11, color: "#8a9aab", marginTop: 3 }}>προαιρετικά</div>
+              </div>
+              {isOpen ? <ChevronUp size={20} color="#8a9aab" /> : <ChevronDown size={20} color="#8a9aab" />}
+            </div>
+          </div>
+
+          {/* ── PROGRESS BAR (μόνο για τα υποχρεωτικά) ── */}
+          <div style={{ padding: "0 24px 18px" }}>
+            <div style={{ height: 8, background: "rgba(255,255,255,0.7)", borderRadius: 30, overflow: "hidden" }}>
+              <div style={{
+                width: `${(reqDone / required.length) * 100}%`,
+                height: "100%",
+                background: state.color,
+                borderRadius: 30,
+                transition: "width 0.4s ease",
+              }} />
+            </div>
+          </div>
+
+          {/* ── ΛΙΣΤΑ ── */}
+          {isOpen && (
+            <div style={{ background: "#fff", borderTop: `1px solid ${state.border}`, padding: "20px 24px" }}>
+
+              <div style={{
+                fontSize: 11, fontWeight: 700, color: "#8a9aab",
+                textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12,
+              }}>
+                Απαραίτητα για να εμφανιστείς — {reqDone}/{required.length}
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                {required.map((r) => (
+                  <div key={r.key} style={{
+                    display: "flex", alignItems: "flex-start", gap: 12,
+                    padding: "12px 0",
+                    borderBottom: "1px solid #f1f5f9",
+                    background: r.first && !r.ok ? "#fffbeb" : "transparent",
+                    borderRadius: r.first && !r.ok ? 8 : 0,
+                    paddingLeft: r.first && !r.ok ? 12 : 0,
+                    paddingRight: r.first && !r.ok ? 12 : 0,
                   }}>
-                    {r.label}
-                    {r.first && !r.ok && (
-                      <span style={{
-                        marginLeft: 8, fontSize: 10, fontWeight: 700, color: "#b45309",
-                        background: "#fef3c7", border: "1px solid #fde68a",
-                        padding: "2px 8px", borderRadius: 30,
-                        textTransform: "uppercase", letterSpacing: "0.05em",
+                    <div style={{ paddingTop: 1, flexShrink: 0 }}>
+                      {r.ok
+                        ? <CheckCircle2 size={19} color="#15803d" strokeWidth={2.2} />
+                        : r.waiting
+                          ? <AlertTriangle size={19} color="#b45309" strokeWidth={2.2} />
+                          : <Circle size={19} color="#cbd5e1" strokeWidth={2} />}
+                    </div>
+
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{
+                        fontSize: 14,
+                        fontWeight: 600,
+                        color: r.ok ? "#8a9aab" : NAVY,
+                        textDecoration: r.ok ? "line-through" : "none",
+                        marginBottom: r.ok ? 0 : 3,
                       }}>
-                        Υποχρεωτικό
-                      </span>
-                    )}
-                    {r.progress && !r.ok && (
-                      <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 600, color: "#b45309" }}>
-                        {r.progress}
-                      </span>
+                        {r.label}
+                        {r.first && !r.ok && (
+                          <span style={{
+                            marginLeft: 8, fontSize: 10, fontWeight: 700, color: "#b45309",
+                            background: "#fef3c7", border: "1px solid #fde68a",
+                            padding: "2px 8px", borderRadius: 30,
+                            textTransform: "uppercase", letterSpacing: "0.05em",
+                          }}>
+                            Υποχρεωτικό
+                          </span>
+                        )}
+                        {r.progress && !r.ok && (
+                          <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 600, color: "#b45309" }}>
+                            {r.progress}
+                          </span>
+                        )}
+                      </div>
+
+                      {!r.ok && (
+                        <div style={{ fontSize: 12.5, color: "#5a6b7d", lineHeight: 1.5 }}>
+                          {r.waiting ? "Η άδεια ανέβηκε — περιμένει έλεγχο από εμάς. Δεν χρειάζεται να κάνεις κάτι." : r.why}
+                        </div>
+                      )}
+                    </div>
+
+                    {!r.ok && !r.waiting && r.tab && (
+                      <button
+                        onClick={() => goTo(r.tab)}
+                        style={{
+                          padding: "7px 16px",
+                          borderRadius: 30,
+                          border: `1px solid ${r.first ? "#b45309" : ACCENT}`,
+                          background: r.first ? "#b45309" : SOFT,
+                          color: r.first ? "#fff" : ACCENT,
+                          fontSize: 12.5,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          fontFamily: "inherit",
+                          flexShrink: 0,
+                          whiteSpace: "nowrap",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 5,
+                        }}
+                      >
+                        {r.first ? "Ανέβασε" : "Συμπλήρωσε"}
+                        <ArrowRight size={13} strokeWidth={2.4} />
+                      </button>
                     )}
                   </div>
+                ))}
+              </div>
 
-                  {!r.ok && (
-                    <div style={{ fontSize: 12.5, color: "#5a6b7d", lineHeight: 1.5 }}>
-                      {r.waiting ? "Η άδεια ανέβηκε — περιμένει έλεγχο από εμάς. Δεν χρειάζεται να κάνεις κάτι." : r.why}
-                    </div>
-                  )}
-                </div>
+              {/* Προαιρετικά — ξεχωριστό block, ξεχωριστός μετρητής */}
+              <div style={{
+                fontSize: 11, fontWeight: 700, color: "#8a9aab",
+                textTransform: "uppercase", letterSpacing: "0.08em",
+                marginTop: 26, marginBottom: 6,
+              }}>
+                Προαιρετικά — {optDone}/{optional.length}
+              </div>
+              <div style={{ fontSize: 12.5, color: "#5a6b7d", marginBottom: 14, lineHeight: 1.5 }}>
+                Με <strong style={{ color: NAVY }}>4 από τα 7</strong> παίρνεις το σήμα «Πλήρες προφίλ» και εμφανίζεσαι ψηλότερα στα αποτελέσματα. Δεν είναι απαραίτητα για να δέχεσαι ραντεβού.
+              </div>
 
-                {!r.ok && !r.waiting && r.tab && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {optional.map((o) => (
                   <button
-                    onClick={() => goTo(r.tab)}
+                    key={o.key}
+                    onClick={() => !o.ok && goTo(o.tab)}
+                    disabled={o.ok}
                     style={{
-                      padding: "7px 16px",
+                      display: "inline-flex", alignItems: "center", gap: 6,
+                      padding: "8px 14px",
                       borderRadius: 30,
-                      border: `1px solid ${r.first ? "#b45309" : ACCENT}`,
-                      background: r.first ? "#b45309" : SOFT,
-                      color: r.first ? "#fff" : ACCENT,
+                      border: `1px solid ${o.ok ? "#bbf7d0" : "#e2e8f0"}`,
+                      background: o.ok ? "#f0fdf4" : "#fff",
+                      color: o.ok ? "#15803d" : "#5a6b7d",
                       fontSize: 12.5,
                       fontWeight: 600,
-                      cursor: "pointer",
+                      cursor: o.ok ? "default" : "pointer",
                       fontFamily: "inherit",
-                      flexShrink: 0,
-                      whiteSpace: "nowrap",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 5,
                     }}
                   >
-                    {r.first ? "Ανέβασε" : "Συμπλήρωσε"}
-                    <ArrowRight size={13} strokeWidth={2.4} />
+                    {o.ok
+                      ? <CheckCircle2 size={14} strokeWidth={2.2} />
+                      : <Circle size={14} strokeWidth={2} color="#cbd5e1" />}
+                    {o.label}
                   </button>
-                )}
+                ))}
               </div>
-            ))}
-          </div>
 
-          {/* Προαιρετικά */}
-          <div style={{
-            fontSize: 11, fontWeight: 700, color: "#8a9aab",
-            textTransform: "uppercase", letterSpacing: "0.08em",
-            marginTop: 26, marginBottom: 6,
-          }}>
-            Προαιρετικά — {optDone}/{optional.length} ολοκληρωμένα
-          </div>
-          <div style={{ fontSize: 12.5, color: "#5a6b7d", marginBottom: 14, lineHeight: 1.5 }}>
-            Με <strong style={{ color: NAVY }}>4 από τα 7</strong> παίρνεις το σήμα «Πλήρες προφίλ» και εμφανίζεσαι ψηλότερα στα αποτελέσματα.
-          </div>
+              {!isComplete && (
+                <div style={{
+                  marginTop: 22,
+                  padding: "14px 18px",
+                  background: OFFWHITE,
+                  border: "1px solid #e8e4dc",
+                  borderRadius: 12,
+                  fontSize: 13,
+                  color: "#5a6b7d",
+                  lineHeight: 1.6,
+                }}>
+                  Ζητάμε αυτά τα στοιχεία γιατί ο ασθενής σε δέχεται <strong style={{ color: NAVY }}>στο σπίτι του</strong>. Όσο πιο πλήρες το προφίλ σου, τόσο περισσότερα αιτήματα δέχεσαι.
+                </div>
+              )}
 
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {optional.map((o) => (
-              <button
-                key={o.key}
-                onClick={() => !o.ok && goTo(o.tab)}
-                disabled={o.ok}
-                style={{
-                  display: "inline-flex", alignItems: "center", gap: 6,
-                  padding: "8px 14px",
-                  borderRadius: 30,
-                  border: `1px solid ${o.ok ? "#bbf7d0" : "#e2e8f0"}`,
-                  background: o.ok ? "#f0fdf4" : "#fff",
-                  color: o.ok ? "#15803d" : "#5a6b7d",
-                  fontSize: 12.5,
-                  fontWeight: 600,
-                  cursor: o.ok ? "default" : "pointer",
-                  fontFamily: "inherit",
-                }}
-              >
-                {o.ok
-                  ? <CheckCircle2 size={14} strokeWidth={2.2} />
-                  : <Circle size={14} strokeWidth={2} color="#cbd5e1" />}
-                {o.label}
-              </button>
-            ))}
-          </div>
-
-          {!isComplete && (
-            <div style={{
-              marginTop: 22,
-              padding: "14px 18px",
-              background: OFFWHITE,
-              border: "1px solid #e8e4dc",
-              borderRadius: 12,
-              fontSize: 13,
-              color: "#5a6b7d",
-              lineHeight: 1.6,
-            }}>
-              Ζητάμε αυτά τα στοιχεία γιατί ο ασθενής σε δέχεται <strong style={{ color: NAVY }}>στο σπίτι του</strong>. Όσο πιο πλήρες το προφίλ σου, τόσο περισσότερα αιτήματα δέχεσαι.
+              {isComplete && (
+                <div style={{ marginTop: 20, display: "flex", justifyContent: "flex-end" }}>
+                  <button
+                    onClick={() => setExpanded(false)}
+                    style={{
+                      padding: "8px 18px", borderRadius: 30, border: "1px solid #e2e8f0",
+                      background: "#fff", color: "#5a6b7d", fontSize: 12.5, fontWeight: 600,
+                      cursor: "pointer", fontFamily: "inherit",
+                      display: "inline-flex", alignItems: "center", gap: 6,
+                    }}
+                  >
+                    <ChevronUp size={14} strokeWidth={2.3} />
+                    Σύμπτυξη
+                  </button>
+                </div>
+              )}
             </div>
           )}
-        </div>
+        </>
       )}
     </div>
   );
