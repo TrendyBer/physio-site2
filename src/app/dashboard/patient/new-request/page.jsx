@@ -6,6 +6,7 @@ import { Check, X, ChevronLeft, ChevronRight, Calendar, ArrowRight, MapPin, Aler
 import ConditionSearch from '@/components/ConditionSearch';
 import AreaInput from '@/components/AreaInput';
 import { areasMatch } from '@/lib/areas';
+import { filterBookableSlots } from '@/lib/slots';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 function Avatar({ name, photoUrl, size = 44 }) {
@@ -269,7 +270,7 @@ export default function NewRequestPage() {
     ids.forEach((id) => { stats[id] = { sum: 0, count: 0, completed: 0, slots: 0, next: null }; });
     (revs || []).forEach((r) => { if (stats[r.therapist_id]) { stats[r.therapist_id].sum += r.rating; stats[r.therapist_id].count += 1; } });
     (reqs || []).forEach((r) => { if (stats[r.therapist_id] && r.status === 'completed') stats[r.therapist_id].completed += 1; });
-    (freeSlots || []).forEach((sl) => {
+    filterBookableSlots(freeSlots).forEach((sl) => {
       const st = stats[sl.therapist_id];
       if (!st) return;
       st.slots += 1;
@@ -345,7 +346,9 @@ export default function NewRequestPage() {
       .gte('date', startStr)
       .lte('date', endStr)
       .order('date').order('start_time');
-    setSlots(data || []);
+    // Κόβουμε ώρες που έχουν ήδη περάσει (ή είναι πολύ κοντά).
+    // Χωρίς αυτό, στις 14:45 ο ασθενής μπορούσε να κλείσει τις 10:00.
+    setSlots(filterBookableSlots(data));
     setLoadingSlots(false);
   }
 
