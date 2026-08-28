@@ -1,8 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Check, X, ChevronLeft, ChevronRight, Calendar, ArrowRight, MapPin, AlertCircle, Star, Heart, Banknote, Info } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Check, X, ChevronLeft, ChevronRight, Calendar, ArrowRight, MapPin, AlertCircle, Star, Heart, Banknote, Clock, ShieldCheck, Send } from 'lucide-react';
 import ConditionSearch from '@/components/ConditionSearch';
 import AreaInput from '@/components/AreaInput';
 import { areasMatch } from '@/lib/areas';
@@ -17,24 +17,25 @@ function Avatar({ name, photoUrl, size = 44 }) {
   );
 }
 
-const SINGLE_SESSION = {
-  id: 'single',
-  isSingle: true,
-  name_el: 'Μεμονωμένη Συνεδρία',
-  name_en: 'Single Session',
-  sessions: 1,
-  discount_percent: 0,
-  description_el: '1 συνεδρία με την τιμή του θεραπευτή',
-};
-
 const DAYS_EL = ['Κυρ', 'Δευ', 'Τρι', 'Τετ', 'Πεμ', 'Παρ', 'Σαβ'];
 
-const STEPS = ['Πρόβλημα', 'Θεραπευτής', 'Τύπος', 'Ημερομηνίες', 'Επιβεβαίωση'];
+// Το βήμα «Τύπος / Πακέτο» έχει αφαιρεθεί.
+// Κάθε αίτημα αφορά ΜΙΑ συνεδρία. Ο ασθενής δεν δεσμεύεται σε πακέτο
+// πριν καν γνωρίσει τον θεραπευτή.
+const STEPS = ['Πρόβλημα', 'Θεραπευτής', 'Ημερομηνία', 'Επιβεβαίωση'];
+
+function friendlyDay(dateStr) {
+  if (!dateStr) return '';
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const d = new Date(dateStr + 'T12:00:00'); d.setHours(0, 0, 0, 0);
+  const diff = Math.round((d - today) / 86400000);
+  if (diff === 0) return 'σήμερα';
+  if (diff === 1) return 'αύριο';
+  return null;
+}
 
 export default function NewRequestPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const preselectedPackageName = searchParams.get('package');
 
   const [user, setUser] = useState(null);
   const [step, setStep] = useState(1);
@@ -58,11 +59,6 @@ export default function NewRequestPage() {
   const [addressConfirmed, setAddressConfirmed] = useState(false);
   const [editingAddress, setEditingAddress] = useState(false);
 
-  // Step 3
-  const [packages, setPackages] = useState([]);
-  const [loadingPackages, setLoadingPackages] = useState(true);
-  const [selectedPackage, setSelectedPackage] = useState(null);
-
   // Step 2
   const [therapists, setTherapists] = useState([]);
   const [selectedTherapist, setSelectedTherapist] = useState(null);
@@ -74,9 +70,9 @@ export default function NewRequestPage() {
   // ώστε site και admin να λένε πάντα το ίδιο πράγμα.
   const [feeInfo, setFeeInfo] = useState(null);
 
-  // Step 4
+  // Step 3 — ημερομηνία
   const [slots, setSlots] = useState([]);
-  const [selectedSlots, setSelectedSlots] = useState([]);
+  const [selectedSlot, setSelectedSlot] = useState(null);
   const [calendarWeek, setCalendarWeek] = useState(0);
   const [loadingSlots, setLoadingSlots] = useState(false);
 
@@ -98,6 +94,9 @@ export default function NewRequestPage() {
         setPostalCode(prof.postal_code || '');
         setEditingAddress(false);
       } else {
+        // Ο ασθενής δεν δίνει πλέον διεύθυνση στην εγγραφή.
+        // Τη ζητάμε εδώ, την πρώτη φορά, και μετά αποθηκεύεται.
+        if (prof?.area) setArea(prof.area);
         setEditingAddress(true);
       }
 
@@ -114,30 +113,11 @@ export default function NewRequestPage() {
   }, []);
 
   useEffect(() => {
-    async function fetchPackages() {
-      const { data } = await supabase
-        .from('packages')
-        .select('id, name_el, name_en, sessions, discount_percent, description_el, description_en, display_order')
-        .eq('is_active', true)
-        .order('sessions', { ascending: true });
-      setPackages(data || []);
-      setLoadingPackages(false);
-    }
-    fetchPackages();
-  }, []);
-
-  useEffect(() => {
-    if (!preselectedPackageName || packages.length === 0) return;
-    const matched = packages.find(p => p.name_el === preselectedPackageName || p.name_en === preselectedPackageName);
-    if (matched) setSelectedPackage(matched);
-  }, [preselectedPackageName, packages]);
-
-  useEffect(() => {
     if (step === 2) fetchTherapists();
   }, [step]);
 
   useEffect(() => {
-    if (step === 4 && selectedTherapist) fetchSlots();
+    if (step === 3 && selectedTherapist) fetchSlots();
   }, [step, selectedTherapist, calendarWeek]);
 
   useEffect(() => {
@@ -163,8 +143,6 @@ export default function NewRequestPage() {
 
   // ΦΩΝΗΤΙΚΟ ταίριασμα, όχι σύγκριση string.
   // Ο θεραπευτής γράφει «Κολωνάκι», ο ασθενής «κολονακι» ή «Kolonaki».
-  // Με απλό === δεν ταίριαζε ποτέ και το site έλεγε «δεν βρέθηκε
-  // θεραπευτής» ενώ υπήρχε.
   function servesArea(t, targetArea) {
     if (!targetArea || !targetArea.trim()) return true;
     if (areasMatch(t.area, targetArea)) return true;
@@ -177,16 +155,13 @@ export default function NewRequestPage() {
    *
    * Η πάθηση ΔΕΝ βαθμολογείται — είναι σκληρό φίλτρο.
    * Όποιος δεν τη δήλωσε, δεν μπαίνει καν στην κύρια λίστα.
-   * Το score κατατάσσει ΜΟΝΟ ανάμεσα στους κατάλληλους.
    */
   function matchScore(t) {
     let score = 0;
 
-    // Διαθεσιμότητα (30) — χωρίς ελεύθερες ώρες δεν κλείνεις ραντεβού
     if (t.freeSlots >= 5) score += 30;
     else if (t.freeSlots >= 1) score += 15 + t.freeSlots * 3;
 
-    // Αξιολογήσεις (25)
     if (t.reviewCount > 0) {
       score += Math.round((t.avgRating / 5) * 20);
       if (t.reviewCount >= 5) score += 5;
@@ -195,14 +170,11 @@ export default function NewRequestPage() {
       score += 8;   // νέος θεραπευτής — ουδέτερο, όχι τιμωρία
     }
 
-    // Εμπειρία στην πλατφόρμα (20)
     score += Math.min(20, t.completedCount * 2);
 
-    // Πλήρες προφίλ (15)
     if (t.is_profile_full) score += 15;
     else score += 5;
 
-    // Ταχύτητα απόκρισης (10)
     const h = t.response_time_hours || 24;
     if (h <= 6) score += 10;
     else if (h <= 12) score += 7;
@@ -226,9 +198,6 @@ export default function NewRequestPage() {
     }
 
     // ── 2. ΠΗΓΗ: v_public_therapists ──
-    // ΟΧΙ therapist_profiles. Το view εκθέτει μόνο δημόσια πεδία και
-    // υπολογίζει το is_publicly_visible λαμβάνοντας υπόψη και το
-    // admin_visibility_override — ίδιο gate με όλο το υπόλοιπο site.
     const { data: all } = await supabase
       .from('v_public_therapists')
       .select('*')
@@ -237,14 +206,10 @@ export default function NewRequestPage() {
     let pool = all || [];
 
     // ── 2β. ΕΠΙΒΟΛΗ ΣΥΝΔΡΟΜΗΣ ──
-    // Ρυθμίζεται από το admin: 'off' | 'no_new_requests' | 'hide'.
-    // Και στις δύο αυστηρές τιμές, ο θεραπευτής χωρίς ενεργή συνδρομή
-    // δεν εμφανίζεται εδώ — δηλαδή δεν δέχεται νέα αιτήματα.
     if (pool.length > 0) {
       const [{ data: cfg }, { data: exempt }] = await Promise.all([
         supabase.from('platform_settings').select('key, value')
           .in('key', ['subscription_enforcement', 'subscription_grace_days']),
-        // Το subscription_exempt δεν είναι στο δημόσιο view — το φέρνουμε χωριστά
         supabase.from('therapist_subscriptions')
           .select('therapist_id, current_period_end, status')
           .in('therapist_id', pool.map((t) => t.id))
@@ -275,18 +240,26 @@ export default function NewRequestPage() {
     const todayStr = new Date().toISOString().split('T')[0];
 
     // ── 3. Δεδομένα κατάταξης, όλα μαζί ──
+    // Τα slots έρχονται ταξινομημένα ώστε το πρώτο κάθε θεραπευτή να
+    // είναι η επόμενη διαθέσιμη ώρα του — μπαίνει στην κάρτα.
     const [{ data: revs }, { data: reqs }, { data: freeSlots }] = await Promise.all([
       supabase.from('reviews').select('therapist_id, rating').eq('is_published', true).in('therapist_id', ids),
       supabase.from('session_requests').select('therapist_id, status').in('therapist_id', ids),
-      supabase.from('availability_slots').select('therapist_id')
-        .eq('is_blocked', false).gte('date', todayStr).in('therapist_id', ids),
+      supabase.from('availability_slots').select('therapist_id, date, start_time')
+        .eq('is_blocked', false).gte('date', todayStr).in('therapist_id', ids)
+        .order('date', { ascending: true }).order('start_time', { ascending: true }),
     ]);
 
     const stats = {};
-    ids.forEach((id) => { stats[id] = { sum: 0, count: 0, completed: 0, slots: 0 }; });
+    ids.forEach((id) => { stats[id] = { sum: 0, count: 0, completed: 0, slots: 0, next: null }; });
     (revs || []).forEach((r) => { if (stats[r.therapist_id]) { stats[r.therapist_id].sum += r.rating; stats[r.therapist_id].count += 1; } });
     (reqs || []).forEach((r) => { if (stats[r.therapist_id] && r.status === 'completed') stats[r.therapist_id].completed += 1; });
-    (freeSlots || []).forEach((sl) => { if (stats[sl.therapist_id]) stats[sl.therapist_id].slots += 1; });
+    (freeSlots || []).forEach((sl) => {
+      const st = stats[sl.therapist_id];
+      if (!st) return;
+      st.slots += 1;
+      if (!st.next) st.next = { date: sl.date, start_time: sl.start_time };
+    });
 
     const enrich = (t) => {
       const st = stats[t.id];
@@ -296,6 +269,7 @@ export default function NewRequestPage() {
         reviewCount: st.count,
         completedCount: st.completed,
         freeSlots: st.slots,
+        nextSlot: st.next,
       };
     };
 
@@ -339,15 +313,10 @@ export default function NewRequestPage() {
     setLoadingSlots(false);
   }
 
-  function toggleSlot(slot) {
-    const needed = selectedPackage?.sessions || 1;
-    const already = selectedSlots.find(s => s.id === slot.id);
-    if (already) {
-      setSelectedSlots(prev => prev.filter(s => s.id !== slot.id));
-    } else {
-      if (selectedSlots.length >= needed) return;
-      setSelectedSlots(prev => [...prev, slot]);
-    }
+  // Μία συνεδρία = μία ώρα. Νέα επιλογή αντικαθιστά την προηγούμενη
+  // αντί να μπλοκάρει τον χρήστη με «έχετε φτάσει το όριο».
+  function pickSlot(slot) {
+    setSelectedSlot(prev => (prev?.id === slot.id ? null : slot));
   }
 
   function validateStep() {
@@ -364,30 +333,16 @@ export default function NewRequestPage() {
       if (!selectedTherapist) { setError('Παρακαλώ επιλέξτε θεραπευτή.'); return false; }
     }
     if (step === 3) {
-      if (!selectedPackage) { setError('Παρακαλώ επιλέξτε τύπο συνεδρίας.'); return false; }
-    }
-    if (step === 4) {
-      const needed = selectedPackage?.sessions || 1;
-      if (selectedSlots.length < needed) { setError(`Παρακαλώ επιλέξτε ${needed} συνεδρία/ες (έχετε επιλέξει ${selectedSlots.length}).`); return false; }
+      if (!selectedSlot) { setError('Παρακαλώ επιλέξτε ημέρα και ώρα.'); return false; }
     }
     return true;
   }
 
-  function calculateTotalCost() {
-    if (!selectedPackage || !selectedTherapist) return 0;
-    const pricePerSession = selectedTherapist.price_per_session || 0;
-    const sessions = selectedPackage.sessions;
-    const discountPercent = selectedPackage.discount_percent || 0;
-    const subtotal = sessions * pricePerSession;
-    const discount = subtotal * (discountPercent / 100);
-    return Math.round(subtotal - discount);
-  }
+  const sessionCost = Math.round(Number(selectedTherapist?.price_per_session || 0));
 
   async function handleSubmit() {
     if (!validateStep()) return;
     setSubmitting(true);
-
-    const totalCost = calculateTotalCost();
 
     const changed =
       !savedAddress ||
@@ -404,16 +359,10 @@ export default function NewRequestPage() {
 
     // ── ΑΤΟΜΙΚΗ ΚΡΑΤΗΣΗ ────────────────────────────────────────────────
     // Τα πάντα σε ΕΝΑ transaction στη βάση: κλείδωμα γραμμών, έλεγχος
-    // διαθεσιμότητας, δημιουργία αιτήματος, κρατήσεις, block slots.
-    //
-    // Δεν γίνεται από εδώ με ξεχωριστά inserts, για δύο λόγους:
-    //   1. Το RLS δεν επιτρέπει στον ασθενή να κλειδώσει slot του
-    //      θεραπευτή — το update αποτύγχανε ΣΙΩΠΗΛΑ.
-    //   2. Δύο ασθενείς που βλέπουν το ίδιο ελεύθερο slot θα το
-    //      έκλειναν και οι δύο. Το FOR UPDATE στη βάση το αποτρέπει.
+    // διαθεσιμότητας, δημιουργία αιτήματος, κράτηση, block slot.
     const { data: result, error: bookErr } = await supabase.rpc('book_session_slots', {
       p_therapist_id:        selectedTherapist.id,
-      p_slot_ids:            selectedSlots.map(s => s.id),
+      p_slot_ids:            [selectedSlot.id],
       p_problem_type:        problemType,
       p_condition_id:        condition?.id || null,
       p_problem_description: problemDesc,
@@ -422,9 +371,9 @@ export default function NewRequestPage() {
       p_postal_code:         postalCode,
       p_floor_info:          floorInfo,
       p_notes:               notes,
-      p_session_type:        selectedPackage.isSingle ? 'single' : 'package',
-      p_package_size:        selectedPackage.sessions,
-      p_total_cost:          totalCost,
+      p_session_type:        'single',
+      p_package_size:        1,
+      p_total_cost:          sessionCost,
     });
 
     if (bookErr) {
@@ -435,15 +384,9 @@ export default function NewRequestPage() {
 
     if (!result?.ok) {
       if (result?.error === 'slots_taken') {
-        const list = (result.conflicts || []).join(', ');
-        setError(
-          list
-            ? `Οι ώρες ${list} μόλις κλείστηκαν από άλλον ασθενή. Επιλέξτε άλλες.`
-            : 'Κάποιες από τις ώρες μόλις κλείστηκαν. Επιλέξτε άλλες.'
-        );
-        // Γυρνάμε στο ημερολόγιο με φρέσκα δεδομένα
-        setSelectedSlots([]);
-        setStep(4);
+        setError('Η ώρα που επιλέξατε μόλις κλείστηκε από άλλον ασθενή. Επιλέξτε άλλη.');
+        setSelectedSlot(null);
+        setStep(3);
         await fetchSlots();
       } else if (result?.error === 'not_authenticated') {
         setError('Η σύνδεσή σας έληξε. Παρακαλώ συνδεθείτε ξανά.');
@@ -457,8 +400,6 @@ export default function NewRequestPage() {
     const requestId = result.request_id;
 
     // ── ΠΡΟΜΗΘΕΙΑ ΠΛΑΤΦΟΡΜΑΣ ────────────────────────────────────────────
-    // Ξαναρωτάμε τη βάση τη στιγμή της υποβολής. Το ποσό που είδαμε όταν
-    // επιλέχθηκε ο θεραπευτής μπορεί να έχει παλιώσει.
     try {
       const { data: feeNow } = await supabase.rpc('resolve_session_fee', {
         p_patient_id: user.id,
@@ -476,19 +417,16 @@ export default function NewRequestPage() {
         p_session_at: new Date().toISOString(),
       });
 
-      // Γραμμή πληρωμής μόνο όταν υπάρχει πράγματι προμήθεια.
-      //
       // ΣΗΜΕΙΩΣΗ: το patient_amount καταγράφεται ΜΟΝΟ ως πληροφορία.
       // Ο ασθενής πληρώνει μετρητά τον θεραπευτή — η πλατφόρμα δεν
-      // εισπράττει το ποσό της συνεδρίας. Η μόνη πραγματική απαίτηση
-      // της πλατφόρμας είναι το fee, που χρωστάει ο ΘΕΡΑΠΕΥΤΗΣ.
+      // εισπράττει το ποσό της συνεδρίας.
       if (fee > 0) {
         await supabase.from('payments').insert([{
           request_id: requestId,
           therapist_id: selectedTherapist.id,
           amount: fee,
-          patient_amount: totalCost,
-          therapist_net: Math.max(0, totalCost - fee),
+          patient_amount: sessionCost,
+          therapist_net: Math.max(0, sessionCost - fee),
           status: 'unpaid',
           paid: false,
           payment_method: 'cash',
@@ -512,8 +450,6 @@ export default function NewRequestPage() {
     return d.toISOString().split('T')[0];
   });
 
-  const needed = selectedPackage?.sessions || 1;
-
   const inputStyle = { width: '100%', padding: '11px 14px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', color: '#1a2e44' };
   const labelStyle = { fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 5 };
 
@@ -523,9 +459,10 @@ export default function NewRequestPage() {
         <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#D1FAE5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
           <Check size={32} color="#15803D" strokeWidth={3} />
         </div>
-        <h2 style={{ fontSize: 24, fontWeight: 700, color: '#0F172A', marginBottom: 12 }}>Το αίτημά σας εστάλη!</h2>
+        <h2 style={{ fontSize: 24, fontWeight: 700, color: '#0F172A', marginBottom: 12 }}>Το αίτημά σας εστάλη</h2>
         <p style={{ fontSize: 15, color: '#64748B', lineHeight: 1.7, marginBottom: 20 }}>
-          Ο θεραπευτής <strong>{selectedTherapist?.name}</strong> θα λάβει το αίτημά σας και θα απαντήσει σύντομα.
+          Ο θεραπευτής <strong>{selectedTherapist?.name}</strong> θα δει το αίτημά σας και θα απαντήσει σύντομα.
+          Μόλις το αποδεχθεί, το ραντεβού σας επιβεβαιώνεται.
         </p>
         <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 12, padding: '14px 16px', marginBottom: 26, textAlign: 'left', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
           <Banknote size={16} color="#15803D" strokeWidth={2.2} style={{ marginTop: 1, flexShrink: 0 }} />
@@ -534,14 +471,12 @@ export default function NewRequestPage() {
           </span>
         </div>
         <a href="/dashboard/patient" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#1a2e44', color: '#fff', padding: '13px 32px', borderRadius: 30, fontSize: 15, fontWeight: 600, textDecoration: 'none' }}>
-          Επιστροφή στο Dashboard
+          Επιστροφή στον πίνακά μου
           <ArrowRight size={16} />
         </a>
       </div>
     </div>
   );
-
-  const allOptions = [SINGLE_SESSION, ...packages];
 
   const currentStepLabel = STEPS[step - 1];
   const progressPercent = (step / STEPS.length) * 100;
@@ -576,7 +511,7 @@ export default function NewRequestPage() {
         </a>
         <a href="/dashboard/patient" style={{ fontSize: 13, color: '#64748b', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
           <ChevronLeft size={14} />
-          Πίσω στο Dashboard
+          Πίσω στον πίνακά μου
         </a>
       </nav>
 
@@ -584,8 +519,8 @@ export default function NewRequestPage() {
 
         {/* Title */}
         <div style={{ marginBottom: 24, textAlign: 'center' }}>
-          <h1 style={{ fontSize: 'clamp(22px, 4vw, 28px)', fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>Νέο Αίτημα Συνεδρίας</h1>
-          <p style={{ fontSize: 14, color: '#64748B' }}>Συμπλήρωσε τα στοιχεία σου και επίλεξε θεραπευτή και ώρα</p>
+          <h1 style={{ fontSize: 'clamp(22px, 4vw, 28px)', fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>Κλείσε ραντεβού</h1>
+          <p style={{ fontSize: 14, color: '#64748B' }}>Τέσσερα σύντομα βήματα — δεν χρειάζεται κάρτα.</p>
         </div>
 
         {/* DESKTOP Stepper */}
@@ -602,7 +537,7 @@ export default function NewRequestPage() {
                   </div>
                   <span style={{ fontSize: 10, fontWeight: 600, color: active ? '#2a6fdb' : done ? '#15803D' : '#94a3b8', whiteSpace: 'nowrap' }}>{s}</span>
                 </div>
-                {i < STEPS.length - 1 && <div style={{ width: 40, height: 2, background: done ? '#15803D' : '#e2e8f0', margin: '0 4px', marginBottom: 16, transition: 'all .2s' }} />}
+                {i < STEPS.length - 1 && <div style={{ width: 48, height: 2, background: done ? '#15803D' : '#e2e8f0', margin: '0 4px', marginBottom: 16, transition: 'all .2s' }} />}
               </div>
             );
           })}
@@ -641,12 +576,19 @@ export default function NewRequestPage() {
           {/* STEP 1 — Πρόβλημα */}
           {step === 1 && (
             <div>
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>Πες μας τι χρειάζεσαι</h2>
-              <p style={{ fontSize: 13, color: '#64748B', marginBottom: 24 }}>Συμπλήρωσε το πρόβλημα, τη διεύθυνσή σου και οποιεσδήποτε επιπλέον πληροφορίες.</p>
+              <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>Τι χρειάζεσαι;</h2>
+              <p style={{ fontSize: 13, color: '#64748B', marginBottom: 24 }}>Πες μας με απλά λόγια τι σε ενοχλεί και πού θέλεις τη συνεδρία.</p>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
                 <div>
                   <label style={labelStyle}>Τι σας ταλαιπωρεί; *</label>
+
+                  {/* Το «δεν χρειάζεται διάγνωση» μπαίνει ΠΑΝΩ από το input.
+                      Είναι το πρώτο άγχος του ασθενή — απαντιέται πριν καν γράψει. */}
+                  <div style={{ fontSize: 12.5, color: '#1D4ED8', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 8, padding: '8px 12px', marginBottom: 8, lineHeight: 1.5 }}>
+                    Δεν χρειάζεται να γνωρίζετε τη διάγνωση. Πείτε μας απλά τι σας ενοχλεί — π.χ. «πόνος στη μέση».
+                  </div>
+
                   <ConditionSearch
                     lang="el"
                     value={condition}
@@ -654,19 +596,17 @@ export default function NewRequestPage() {
                       setCondition(c);
                       setProblemType(c?.name || '');
                       setSelectedTherapist(null);
+                      setSelectedSlot(null);
                     }}
                     showChips={true}
                     compact={false}
                   />
-                  <div style={{ fontSize: 12, color: '#64748B', marginTop: 8 }}>
-                    Γράψτε με απλά λόγια — π.χ. «πόνος στη μέση». Δεν χρειάζεται διάγνωση.
-                  </div>
                 </div>
 
                 <div>
-                  <label style={labelStyle}>Περιγραφή προβλήματος</label>
-                  <textarea value={problemDesc} onChange={e => setProblemDesc(e.target.value)} rows={4}
-                    placeholder="Περιγράψτε σύντομα το πρόβλημα ή τον λόγο που ζητάτε φυσιοθεραπεία"
+                  <label style={labelStyle}>Θέλετε να προσθέσετε κάτι; <span style={{ color: '#94a3b8', fontWeight: 400 }}>— προαιρετικό</span></label>
+                  <textarea value={problemDesc} onChange={e => setProblemDesc(e.target.value)} rows={3}
+                    placeholder="Από πότε το έχετε, τι το επιδεινώνει, αν έχετε κάνει εξετάσεις..."
                     style={{ ...inputStyle, resize: 'vertical' }} />
                 </div>
 
@@ -682,7 +622,7 @@ export default function NewRequestPage() {
                       <MapPin size={18} color={addressConfirmed ? '#15803D' : '#B45309'} strokeWidth={2.2} style={{ flexShrink: 0, marginTop: 2 }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 12, fontWeight: 700, color: addressConfirmed ? '#15803D' : '#B45309', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6 }}>
-                          {addressConfirmed ? 'Διεύθυνση επιβεβαιωμένη' : 'Επιβεβαίωσε τη διεύθυνσή σου'}
+                          {addressConfirmed ? 'Διεύθυνση επιβεβαιωμένη' : 'Επιβεβαιώστε τη διεύθυνσή σας'}
                         </div>
                         <div style={{ fontSize: 16, fontWeight: 600, color: '#0F172A', marginBottom: 2 }}>
                           {savedAddress.address}
@@ -729,22 +669,27 @@ export default function NewRequestPage() {
                       </button>
                     )}
 
-                    <div className="form-grid-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                      <div>
-                        <label style={labelStyle}>Διεύθυνση *</label>
-                        <input value={address} onChange={e => setAddress(e.target.value)} placeholder="π.χ. Αθηνάς 12" style={inputStyle} />
-                      </div>
-                      <div>
-                        <label style={labelStyle}>Περιοχή *</label>
-                        <AreaInput value={area} onChange={setArea} style={inputStyle} />
-                      </div>
-                      <div>
-                        <label style={labelStyle}>Τ.Κ.</label>
-                        <input value={postalCode} onChange={e => setPostalCode(e.target.value)} placeholder="π.χ. 10674" style={inputStyle} />
-                      </div>
-                      <div>
-                        <label style={labelStyle}>Όροφος / Κουδούνι</label>
-                        <input value={floorInfo} onChange={e => setFloorInfo(e.target.value)} placeholder="π.χ. 3ος, Παπαδόπουλος" style={inputStyle} />
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 3 }}>Πού θα γίνει η συνεδρία;</div>
+                      <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 12 }}>Θα αποθηκευτεί, ώστε να μη χρειαστεί να την ξαναγράψετε.</div>
+
+                      <div className="form-grid-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                        <div>
+                          <label style={labelStyle}>Διεύθυνση *</label>
+                          <input value={address} onChange={e => setAddress(e.target.value)} placeholder="π.χ. Αθηνάς 12" style={inputStyle} />
+                        </div>
+                        <div>
+                          <label style={labelStyle}>Περιοχή *</label>
+                          <AreaInput value={area} onChange={setArea} style={inputStyle} />
+                        </div>
+                        <div>
+                          <label style={labelStyle}>Τ.Κ.</label>
+                          <input value={postalCode} onChange={e => setPostalCode(e.target.value)} placeholder="π.χ. 10674" style={inputStyle} />
+                        </div>
+                        <div>
+                          <label style={labelStyle}>Όροφος / Κουδούνι</label>
+                          <input value={floorInfo} onChange={e => setFloorInfo(e.target.value)} placeholder="π.χ. 3ος, Παπαδόπουλος" style={inputStyle} />
+                        </div>
                       </div>
                     </div>
                   </>
@@ -758,97 +703,10 @@ export default function NewRequestPage() {
                 )}
 
                 <div>
-                  <label style={labelStyle}>Επιπλέον σημειώσεις</label>
-                  <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3}
-                    placeholder="Οτιδήποτε άλλο πρέπει να γνωρίζει ο θεραπευτής"
-                    style={{ ...inputStyle, resize: 'vertical' }} />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* STEP 3 — Τύπος Συνεδρίας */}
-          {step === 3 && (
-            <div>
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>Επίλεξε τύπο συνεδρίας</h2>
-              <p style={{ fontSize: 13, color: '#64748B', marginBottom: 20 }}>
-                {selectedTherapist
-                  ? <>Τιμές για τον/την <strong style={{ color: '#0F172A' }}>{selectedTherapist.name}</strong> — {selectedTherapist.price_per_session}€ ανά συνεδρία.</>
-                  : 'Μεμονωμένη συνεδρία ή πακέτο με έκπτωση;'}
-              </p>
-
-              {preselectedPackageName && (
-                <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '10px 16px', marginBottom: 16, fontSize: 13, color: '#1D4ED8', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                  <Check size={14} strokeWidth={3} />
-                  Προεπιλέχθηκε: <strong>{preselectedPackageName}</strong>
-                </div>
-              )}
-
-              {loadingPackages ? (
-                <div style={{ textAlign: 'center', padding: 40, color: '#64748B' }}>Φόρτωση...</div>
-              ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 14 }}>
-                  {allOptions.map(pkg => {
-                    const isSelected = selectedPackage?.id === pkg.id;
-                    const name = pkg.name_el;
-                    const discount = pkg.discount_percent || 0;
-                    return (
-                      <div key={pkg.id} onClick={() => setSelectedPackage(pkg)}
-                        style={{
-                          padding: '20px 16px',
-                          border: `2px solid ${isSelected ? '#2a6fdb' : '#e2e8f0'}`,
-                          borderRadius: 14,
-                          cursor: 'pointer',
-                          textAlign: 'center',
-                          background: isSelected ? '#EFF6FF' : '#fff',
-                          transition: 'all .2s',
-                          position: 'relative',
-                        }}>
-                        {discount > 0 && (
-                          <div style={{ position: 'absolute', top: -10, right: 10, background: '#10b981', color: '#fff', padding: '3px 10px', borderRadius: 12, fontSize: 11, fontWeight: 700 }}>
-                            -{discount}%
-                          </div>
-                        )}
-                        <div style={{ fontSize: 32, fontWeight: 700, color: '#1a2e44', marginBottom: 4, fontFamily: 'Georgia, serif' }}>
-                          {pkg.sessions}
-                        </div>
-                        <div style={{ fontSize: 11, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.06em', fontWeight: 600, marginBottom: 10 }}>
-                          {pkg.sessions === 1 ? 'συνεδρία' : 'συνεδρίες'}
-                        </div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>{name}</div>
-
-                        {selectedTherapist?.price_per_session > 0 && (() => {
-                          const sub = pkg.sessions * selectedTherapist.price_per_session;
-                          const tot = Math.round(sub - (sub * discount / 100));
-                          return (
-                            <div style={{ marginBottom: 6 }}>
-                              <div style={{ fontSize: 17, fontWeight: 700, color: '#15803D' }}>{tot}€</div>
-                              {discount > 0 && (
-                                <div style={{ fontSize: 11, color: '#94A3B8', textDecoration: 'line-through' }}>{sub}€</div>
-                              )}
-                            </div>
-                          );
-                        })()}
-                        {pkg.description_el && (
-                          <div style={{ fontSize: 11, color: '#64748B', lineHeight: 1.4 }}>{pkg.description_el}</div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Τρόπος πληρωμής — ενημέρωση, όχι επιλογή */}
-              <div style={{ marginTop: 20, background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 12, padding: '14px 18px', display: 'flex', gap: 11, alignItems: 'flex-start' }}>
-                <Banknote size={17} color="#15803D" strokeWidth={2.2} style={{ marginTop: 1, flexShrink: 0 }} />
-                <div>
-                  <div style={{ fontSize: 13.5, fontWeight: 700, color: '#15803D', marginBottom: 3 }}>
-                    Πληρωμή απευθείας στον θεραπευτή
-                  </div>
-                  <div style={{ fontSize: 12.5, color: '#166534', lineHeight: 1.6 }}>
-                    Πληρώνετε τον θεραπευτή μετά από κάθε συνεδρία. Η πλατφόρμα δεν εισπράττει
-                    και δεν κρατάει χρήματα — δεν χρειάζεται κάρτα.
-                  </div>
+                  <label style={labelStyle}>Οδηγίες πρόσβασης <span style={{ color: '#94a3b8', fontWeight: 400 }}>— προαιρετικό</span></label>
+                  <input value={notes} onChange={e => setNotes(e.target.value)}
+                    placeholder="π.χ. το κουδούνι δεν λειτουργεί, τηλεφωνήστε"
+                    style={inputStyle} />
                 </div>
               </div>
             </div>
@@ -888,14 +746,15 @@ export default function NewRequestPage() {
                     const prev = idx > 0 ? therapists[idx - 1] : null;
                     const startsSecondary = t.matchLevel === 'area' && (!prev || prev.matchLevel !== 'area');
                     const isSelected = selectedTherapist?.id === t.id;
-
-                    const pricePerSession = t.price_per_session || 0;
-                    const sessions = selectedPackage?.sessions || 1;
-                    const discountPercent = selectedPackage?.discount_percent || 0;
-                    const subtotal = sessions * pricePerSession;
-                    const totalWithDiscount = Math.round(subtotal - (subtotal * discountPercent / 100));
-
                     const noSlots = t.freeSlots === 0;
+
+                    const nextLabel = (() => {
+                      if (!t.nextSlot) return null;
+                      const fd = friendlyDay(t.nextSlot.date);
+                      const d = new Date(t.nextSlot.date + 'T12:00:00');
+                      const when = fd || `${DAYS_EL[d.getDay()]} ${d.toLocaleDateString('el-GR', { day: '2-digit', month: '2-digit' })}`;
+                      return `${when} στις ${t.nextSlot.start_time?.slice(0, 5)}`;
+                    })();
 
                     return (
                       <div key={t.id}>
@@ -909,16 +768,19 @@ export default function NewRequestPage() {
                           </div>
                         </div>
                       )}
-                      <div style={{ border: `2px solid ${isSelected ? '#2a6fdb' : '#e2e8f0'}`, borderRadius: 14, padding: '16px 20px', background: isSelected ? '#EFF6FF' : '#fff', transition: 'all .2s', opacity: noSlots ? 0.65 : 1 }}>
-                        <div className="therapist-card-row" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                          <Avatar name={t.name} photoUrl={t.photo_url} size={52} />
-                          <div style={{ flex: 1 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 3 }}>
-                              <span style={{ fontWeight: 700, fontSize: 15, color: '#0F172A' }}>{t.name || '—'}</span>
-                              {t.matchLevel === 'exact' && (
-                                <span style={{ fontSize: 11, fontWeight: 700, color: '#15803D', background: '#F0FDF4', border: '1px solid #BBF7D0', padding: '2px 9px', borderRadius: 999, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                                  <Check size={11} strokeWidth={3} />
-                                  Αντιμετωπίζει {condition?.name}
+
+                      <div style={{ border: `2px solid ${isSelected ? '#2a6fdb' : '#e2e8f0'}`, borderRadius: 14, padding: '18px 20px', background: isSelected ? '#EFF6FF' : '#fff', transition: 'all .2s', opacity: noSlots ? 0.65 : 1 }}>
+                        <div className="therapist-card-row" style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                          <Avatar name={t.name} photoUrl={t.photo_url} size={56} />
+
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            {/* Όνομα + πιστοποίηση */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
+                              <span style={{ fontWeight: 700, fontSize: 16, color: '#0F172A' }}>{t.name || '—'}</span>
+                              {t.license_verified && (
+                                <span style={{ fontSize: 11, fontWeight: 700, color: '#1D4ED8', background: '#EFF6FF', border: '1px solid #BFDBFE', padding: '2px 9px', borderRadius: 999, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                  <ShieldCheck size={11} strokeWidth={2.5} />
+                                  Επαληθευμένος
                                 </span>
                               )}
                               {noSlots && (
@@ -926,36 +788,70 @@ export default function NewRequestPage() {
                                   Χωρίς διαθέσιμες ώρες
                                 </span>
                               )}
-                              {t.reviewCount > 0 && (
-                                <span style={{ fontSize: 11, fontWeight: 600, color: '#B45309', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                                  <Star size={11} fill="#B45309" color="#B45309" />
+                            </div>
+
+                            {/* Ειδικότητα · εμπειρία */}
+                            <div style={{ fontSize: 13, color: '#64748B', marginBottom: 5 }}>
+                              {t.specialty}
+                              {t.years_experience > 0 && ` · ${t.years_experience} ${t.years_experience === 1 ? 'χρόνος' : 'χρόνια'} εμπειρίας`}
+                            </div>
+
+                            {/* Αξιολογήσεις */}
+                            <div style={{ fontSize: 12.5, marginBottom: 8 }}>
+                              {t.reviewCount > 0 ? (
+                                <span style={{ fontWeight: 600, color: '#B45309', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                  <Star size={12} fill="#B45309" color="#B45309" />
                                   {t.avgRating.toFixed(1)}
-                                  <span style={{ color: '#94A3B8', fontWeight: 400 }}>({t.reviewCount})</span>
+                                  <span style={{ color: '#94A3B8', fontWeight: 400 }}>
+                                    ({t.reviewCount} {t.reviewCount === 1 ? 'αξιολόγηση' : 'αξιολογήσεις'})
+                                  </span>
+                                </span>
+                              ) : (
+                                <span style={{ color: '#94A3B8' }}>Χωρίς αξιολογήσεις ακόμη</span>
+                              )}
+                            </div>
+
+                            {/* Γιατί εμφανίζεται — χτίζει εμπιστοσύνη στο matching */}
+                            {t.matchLevel === 'exact' && (
+                              <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '9px 12px', marginBottom: 9 }}>
+                                <div style={{ fontSize: 11, fontWeight: 700, color: '#15803D', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 5 }}>
+                                  Ταιριάζει στην αναζήτησή σας
+                                </div>
+                                <div style={{ fontSize: 12.5, color: '#166534', display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2 }}>
+                                  <Check size={12} strokeWidth={3} /> Αντιμετωπίζει {condition?.name}
+                                </div>
+                                <div style={{ fontSize: 12.5, color: '#166534', display: 'flex', alignItems: 'center', gap: 5 }}>
+                                  <Check size={12} strokeWidth={3} /> Εξυπηρετεί {area}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Τιμή + επόμενο διαθέσιμο */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+                              <span style={{ fontSize: 15, color: '#2a6fdb', fontWeight: 700 }}>
+                                {Math.round(Number(t.price_per_session || 0))}€ <span style={{ fontSize: 12.5, fontWeight: 500, color: '#64748b' }}>/ συνεδρία</span>
+                              </span>
+                              {nextLabel && (
+                                <span style={{ fontSize: 12.5, color: '#15803D', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                                  <Clock size={12} />
+                                  Επόμενο διαθέσιμο: {nextLabel}
                                 </span>
                               )}
                             </div>
-                            <div style={{ fontSize: 13, color: '#64748B', marginBottom: 4 }}>{t.specialty} · {t.area}</div>
-                            <div style={{ fontSize: 13, color: '#2a6fdb', fontWeight: 600 }}>
-                              {pricePerSession}€/συνεδρία
-                              {selectedPackage && sessions > 1 && (
-                                <span style={{ color: '#64748b', fontWeight: 400, marginLeft: 8 }}>
-                                  · Σύνολο: <strong style={{ color: '#10b981' }}>{totalWithDiscount}€</strong>
-                                  {discountPercent > 0 && <span style={{ textDecoration: 'line-through', marginLeft: 6, color: '#94a3b8' }}>{subtotal}€</span>}
-                                </span>
-                              )}
-                            </div>
-                            {t.bio && <p style={{ fontSize: 12, color: '#94A3B8', marginTop: 4, lineHeight: 1.5 }}>{t.bio.slice(0, 100)}{t.bio.length > 100 ? '...' : ''}</p>}
+
+                            {t.bio && <p style={{ fontSize: 12, color: '#94A3B8', marginTop: 7, lineHeight: 1.5 }}>{t.bio.slice(0, 110)}{t.bio.length > 110 ? '...' : ''}</p>}
                           </div>
+
                           <div className="therapist-card-actions" style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
                             <button onClick={() => setProfileModal(t)}
-                              style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#475569', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                              style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#475569', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
                               Δες προφίλ
                             </button>
                             <button
-                              onClick={() => !noSlots && setSelectedTherapist(isSelected ? null : t)}
+                              onClick={() => { if (!noSlots) { setSelectedTherapist(isSelected ? null : t); setSelectedSlot(null); } }}
                               disabled={noSlots}
                               title={noSlots ? 'Δεν έχει ανοιχτές ώρες αυτή τη στιγμή' : ''}
-                              style={{ padding: '7px 14px', borderRadius: 8, border: 'none', background: noSlots ? '#cbd5e1' : (isSelected ? '#15803D' : '#1a2e44'), color: '#fff', fontSize: 12, fontWeight: 600, cursor: noSlots ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4, fontFamily: 'inherit' }}>
+                              style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: noSlots ? '#cbd5e1' : (isSelected ? '#15803D' : '#1a2e44'), color: '#fff', fontSize: 12.5, fontWeight: 600, cursor: noSlots ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4, fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
                               {isSelected && <Check size={12} strokeWidth={3} />}
                               {noSlots ? 'Μη διαθέσιμος' : isSelected ? 'Επιλεγμένος' : 'Επιλογή'}
                             </button>
@@ -970,17 +866,14 @@ export default function NewRequestPage() {
             </div>
           )}
 
-          {/* STEP 4 — Calendar */}
-          {step === 4 && (
+          {/* STEP 3 — Ημερομηνία */}
+          {step === 3 && (
             <div>
               <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>Διάλεξε ημέρα και ώρα</h2>
-              <p style={{ fontSize: 13, color: '#64748B', marginBottom: 8 }}>
-                Επίλεξε {needed === 1 ? '1 διαθέσιμο slot' : `${needed} διαθέσιμα slots`} από το ημερολόγιο του θεραπευτή.
+              <p style={{ fontSize: 13, color: '#64748B', marginBottom: 16 }}>
+                Επίλεξε την ώρα που σε βολεύει από το πρόγραμμα του θεραπευτή.
+                Ο θεραπευτής θα την επιβεβαιώσει.
               </p>
-
-              <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '10px 16px', marginBottom: 20, fontSize: 13, color: '#1D4ED8', fontWeight: 600 }}>
-                Έχετε επιλέξει {selectedSlots.length} από {needed} συνεδρία/ες
-              </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
                 <button onClick={() => setCalendarWeek(w => Math.max(0, w - 1))} disabled={calendarWeek === 0}
@@ -1013,12 +906,20 @@ export default function NewRequestPage() {
                         </div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                           {daySlots.map(slot => {
-                            const isSelected = selectedSlots.find(s => s.id === slot.id);
-                            const canSelect = isSelected || selectedSlots.length < needed;
+                            const isSelected = selectedSlot?.id === slot.id;
                             return (
-                              <button key={slot.id} onClick={() => canSelect && toggleSlot(slot)}
-                                style={{ padding: '8px 16px', borderRadius: 8, border: `1.5px solid ${isSelected ? '#2a6fdb' : '#e2e8f0'}`, background: isSelected ? '#2a6fdb' : canSelect ? '#fff' : '#f8fafc', color: isSelected ? '#fff' : canSelect ? '#0F172A' : '#94a3b8', fontSize: 13, fontWeight: 600, cursor: canSelect ? 'pointer' : 'not-allowed', transition: 'all .15s', fontFamily: 'inherit' }}>
+                              <button key={slot.id} onClick={() => pickSlot(slot)}
+                                style={{
+                                  padding: '9px 16px', borderRadius: 8,
+                                  border: `2px solid ${isSelected ? '#15803D' : '#e2e8f0'}`,
+                                  background: isSelected ? '#15803D' : '#fff',
+                                  color: isSelected ? '#fff' : '#0F172A',
+                                  fontSize: 13.5, fontWeight: isSelected ? 700 : 600,
+                                  cursor: 'pointer', transition: 'all .15s', fontFamily: 'inherit',
+                                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                                }}>
                                 {slot.start_time?.slice(0, 5)}
+                                {isSelected && <Check size={13} strokeWidth={3} />}
                               </button>
                             );
                           })}
@@ -1028,74 +929,95 @@ export default function NewRequestPage() {
                   })}
                   {slots.length === 0 && (
                     <div style={{ textAlign: 'center', padding: 32, color: '#94A3B8', fontSize: 14 }}>
-                      Δεν υπάρχουν διαθέσιμα slots αυτή την εβδομάδα. Δοκιμάστε την επόμενη.
+                      Δεν υπάρχουν διαθέσιμες ώρες αυτή την εβδομάδα. Δοκιμάστε την επόμενη.
                     </div>
                   )}
                 </div>
               )}
 
-              {selectedSlots.length > 0 && (
-                <div style={{ marginTop: 20, background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '14px 16px' }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#15803D', marginBottom: 8, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                    <Check size={14} strokeWidth={3} />
-                    Επιλεγμένες συνεδρίες:
+              {selectedSlot && (
+                <div style={{ marginTop: 20, background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                  <div style={{ fontSize: 13.5, color: '#15803D', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                    <Check size={15} strokeWidth={3} />
+                    {(() => {
+                      const d = new Date(selectedSlot.date + 'T12:00:00');
+                      return `${DAYS_EL[d.getDay()]} ${d.toLocaleDateString('el-GR', { day: '2-digit', month: '2-digit' })} στις ${selectedSlot.start_time?.slice(0, 5)}`;
+                    })()}
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {selectedSlots.map((slot, i) => {
-                      const d = new Date(slot.date + 'T12:00:00');
-                      return (
-                        <div key={slot.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13, color: '#15803D' }}>
-                          <span>{i + 1}. {DAYS_EL[d.getDay()]} {d.toLocaleDateString('el-GR', { day: '2-digit', month: '2-digit' })} στις {slot.start_time?.slice(0, 5)}</span>
-                          <button onClick={() => toggleSlot(slot)} style={{ background: 'none', border: 'none', color: '#DC2626', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', padding: 2 }}>
-                            <X size={14} />
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <button onClick={() => setSelectedSlot(null)} style={{ background: 'none', border: 'none', color: '#DC2626', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12.5, fontWeight: 600, fontFamily: 'inherit' }}>
+                    <X size={13} />
+                    Αλλαγή
+                  </button>
                 </div>
               )}
             </div>
           )}
 
-          {/* STEP 5 — Επιβεβαίωση */}
-          {step === 5 && (
+          {/* STEP 4 — Επιβεβαίωση */}
+          {step === 4 && (
             <div>
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>Επιβεβαίωση αιτήματος</h2>
-              <p style={{ fontSize: 13, color: '#64748B', marginBottom: 24 }}>Ελέγξτε τα στοιχεία πριν την αποστολή.</p>
+              <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>Έλεγχος πριν την αποστολή</h2>
+              <p style={{ fontSize: 13, color: '#64748B', marginBottom: 20 }}>Δείτε αν είναι όλα σωστά.</p>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 0, border: '1px solid #e2e8f0', borderRadius: 12, overflow: 'hidden' }}>
-                {[
-                  ['Πρόβλημα', problemType],
-                  ['Περιγραφή', problemDesc || '—'],
-                  ['Διεύθυνση', `${address}, ${area}${postalCode ? ', ' + postalCode : ''}`],
-                  ['Όροφος/Κουδούνι', floorInfo || '—'],
-                  ['Σημειώσεις', notes || '—'],
-                  ['Τύπος συνεδρίας', selectedPackage?.name_el],
-                  ['Συνεδρίες', selectedPackage?.sessions],
-                  ['Έκπτωση', selectedPackage?.discount_percent ? `${selectedPackage.discount_percent}%` : '—'],
-                  ['Θεραπευτής', selectedTherapist?.name],
-                  ['Τιμή/Συνεδρία', `${selectedTherapist?.price_per_session}€`],
-                  ['Συνολικό κόστος', `${calculateTotalCost()}€`],
-                  ['Τρόπος πληρωμής', 'Μετρητά, απευθείας στον θεραπευτή'],
-                ].map(([label, value], i) => (
-                  <div key={label} style={{ display: 'flex', padding: '12px 16px', borderBottom: '1px solid #f1f5f9', background: i % 2 === 0 ? '#f8fafc' : '#fff', fontSize: 14, flexWrap: 'wrap', gap: 8 }}>
-                    <span style={{ color: '#64748B', minWidth: 140, flexShrink: 0 }}>{label}</span>
-                    <span style={{ fontWeight: 600, color: '#0F172A', wordBreak: 'break-word' }}>{value}</span>
+              {/* Compact card αντί για μακρύ πίνακα */}
+              <div style={{ border: '1px solid #e2e8f0', borderRadius: 14, overflow: 'hidden' }}>
+                <div style={{ padding: '18px 20px', borderBottom: '1px solid #f1f5f9' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>
+                    Αίτημα για
                   </div>
-                ))}
+                  <div style={{ fontSize: 17, fontWeight: 700, color: '#0F172A' }}>{problemType || '—'}</div>
+                </div>
+
+                <div style={{ padding: '16px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <Avatar name={selectedTherapist?.name} photoUrl={selectedTherapist?.photo_url} size={44} />
+                  <div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: '#0F172A' }}>{selectedTherapist?.name}</div>
+                    <div style={{ fontSize: 13, color: '#64748B' }}>{selectedTherapist?.specialty}</div>
+                  </div>
+                </div>
+
+                <div style={{ padding: '16px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', gap: 9 }}>
+                  <div style={{ fontSize: 14, color: '#0F172A', display: 'flex', alignItems: 'flex-start', gap: 9 }}>
+                    <Calendar size={15} color="#2a6fdb" style={{ marginTop: 2, flexShrink: 0 }} />
+                    <strong>
+                      {selectedSlot && (() => {
+                        const d = new Date(selectedSlot.date + 'T12:00:00');
+                        return `${DAYS_EL[d.getDay()]} ${d.toLocaleDateString('el-GR', { day: '2-digit', month: 'long' })} στις ${selectedSlot.start_time?.slice(0, 5)}`;
+                      })()}
+                    </strong>
+                  </div>
+                  <div style={{ fontSize: 14, color: '#475569', display: 'flex', alignItems: 'flex-start', gap: 9 }}>
+                    <MapPin size={15} color="#2a6fdb" style={{ marginTop: 2, flexShrink: 0 }} />
+                    <span>
+                      {address}, {area}{postalCode ? `, ${postalCode}` : ''}
+                      {floorInfo && <span style={{ color: '#94a3b8' }}> · {floorInfo}</span>}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 14, color: '#475569', display: 'flex', alignItems: 'flex-start', gap: 9 }}>
+                    <Banknote size={15} color="#15803D" style={{ marginTop: 2, flexShrink: 0 }} />
+                    <span>
+                      <strong style={{ color: '#15803D' }}>{sessionCost}€</strong> — πληρωμή απευθείας στον θεραπευτή μετά τη συνεδρία
+                    </span>
+                  </div>
+                </div>
+
+                {(problemDesc || notes) && (
+                  <div style={{ padding: '14px 20px', background: '#f8fafc', fontSize: 13, color: '#475569', lineHeight: 1.6 }}>
+                    {problemDesc && <div>{problemDesc}</div>}
+                    {notes && <div style={{ marginTop: problemDesc ? 6 : 0, color: '#64748b' }}>Πρόσβαση: {notes}</div>}
+                  </div>
+                )}
               </div>
 
-              {/* Τρόπος πληρωμής — ενημέρωση */}
-              <div style={{ marginTop: 16, background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 12, padding: '14px 18px', display: 'flex', gap: 11, alignItems: 'flex-start' }}>
-                <Banknote size={17} color="#15803D" strokeWidth={2.2} style={{ marginTop: 1, flexShrink: 0 }} />
+              {/* Το πιο σημαντικό μήνυμα αυτής της οθόνης */}
+              <div style={{ marginTop: 16, background: '#FFFBEB', border: '1.5px solid #FDE68A', borderRadius: 12, padding: '16px 18px', display: 'flex', gap: 11, alignItems: 'flex-start' }}>
+                <AlertCircle size={18} color="#B45309" strokeWidth={2.2} style={{ marginTop: 1, flexShrink: 0 }} />
                 <div>
-                  <div style={{ fontSize: 13.5, fontWeight: 700, color: '#15803D', marginBottom: 3 }}>
-                    Πληρώνετε απευθείας τον θεραπευτή
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#92400E', marginBottom: 3 }}>
+                    Το ραντεβού δεν έχει κλείσει ακόμη
                   </div>
-                  <div style={{ fontSize: 12.5, color: '#166534', lineHeight: 1.6 }}>
-                    Το ποσό των <strong>{calculateTotalCost()}€</strong> δίνεται στον θεραπευτή μετά τη συνεδρία.
-                    Η πλατφόρμα δεν εισπράττει και δεν κρατάει χρήματα — δεν χρειάζεται κάρτα.
+                  <div style={{ fontSize: 13, color: '#78350F', lineHeight: 1.6 }}>
+                    Στέλνετε αίτημα. Ο θεραπευτής πρέπει να το αποδεχθεί — θα ειδοποιηθείτε μόλις απαντήσει.
                   </div>
                 </div>
               </div>
@@ -1109,21 +1031,6 @@ export default function NewRequestPage() {
                   </div>
                 </div>
               )}
-
-              <div style={{ marginTop: 12, background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '14px 16px' }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#1D4ED8', marginBottom: 8, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                  <Calendar size={14} />
-                  Επιλεγμένες Συνεδρίες:
-                </div>
-                {selectedSlots.map((slot, i) => {
-                  const d = new Date(slot.date + 'T12:00:00');
-                  return (
-                    <div key={slot.id} style={{ fontSize: 13, color: '#1E40AF', marginBottom: 4 }}>
-                      {i + 1}. {DAYS_EL[d.getDay()]} {d.toLocaleDateString('el-GR', { day: '2-digit', month: 'long' })} στις {slot.start_time?.slice(0, 5)}
-                    </div>
-                  );
-                })}
-              </div>
             </div>
           )}
 
@@ -1141,7 +1048,7 @@ export default function NewRequestPage() {
                 Πίσω
               </button>
             )}
-            {step < 5 ? (
+            {step < STEPS.length ? (
               <button onClick={() => { if (validateStep()) setStep(s => s + 1); }}
                 style={{ padding: '11px 32px', borderRadius: 30, border: 'none', background: '#1a2e44', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                 Συνέχεια
@@ -1149,9 +1056,9 @@ export default function NewRequestPage() {
               </button>
             ) : (
               <button onClick={handleSubmit} disabled={submitting}
-                style={{ padding: '11px 32px', borderRadius: 30, border: 'none', background: submitting ? '#94a3b8' : '#15803D', color: '#fff', fontSize: 14, fontWeight: 600, cursor: submitting ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                {!submitting && <Check size={16} strokeWidth={3} />}
-                {submitting ? 'Αποστολή...' : 'Αποστολή Αιτήματος'}
+                style={{ padding: '11px 30px', borderRadius: 30, border: 'none', background: submitting ? '#94a3b8' : '#15803D', color: '#fff', fontSize: 14, fontWeight: 600, cursor: submitting ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
+                {!submitting && <Send size={15} />}
+                {submitting ? 'Αποστολή...' : 'Στείλε αίτημα στον θεραπευτή'}
               </button>
             )}
           </div>
@@ -1166,16 +1073,28 @@ export default function NewRequestPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
               <Avatar name={profileModal.name} photoUrl={profileModal.photo_url} size={64} />
               <div>
-                <div style={{ fontSize: 20, fontWeight: 700, color: '#0F172A' }}>{profileModal.name}</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 7 }}>
+                  {profileModal.name}
+                  {profileModal.license_verified && <ShieldCheck size={16} color="#2a6fdb" strokeWidth={2.5} />}
+                </div>
                 <div style={{ fontSize: 14, color: '#64748B' }}>{profileModal.specialty}</div>
-                <div style={{ fontSize: 14, color: '#2a6fdb', fontWeight: 600 }}>{profileModal.price_per_session}€/συνεδρία</div>
+                <div style={{ fontSize: 14, color: '#2a6fdb', fontWeight: 600 }}>{Math.round(Number(profileModal.price_per_session || 0))}€/συνεδρία</div>
               </div>
             </div>
 
+            {profileModal.license_verified && (
+              <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 12.5, color: '#1D4ED8', display: 'flex', gap: 8, alignItems: 'center' }}>
+                <ShieldCheck size={14} strokeWidth={2.3} />
+                Η επαγγελματική άδεια έχει επαληθευτεί από την πλατφόρμα.
+              </div>
+            )}
+
             {[
               ['Ειδικότητα', profileModal.specialty],
+              ['Εμπειρία', profileModal.years_experience > 0 ? `${profileModal.years_experience} χρόνια` : null],
               ['Περιοχή', profileModal.area],
-              ['Τιμή/Συνεδρία', `${profileModal.price_per_session}€`],
+              ['Αξιολογήσεις', profileModal.reviewCount > 0 ? `${profileModal.avgRating.toFixed(1)} / 5 (${profileModal.reviewCount})` : 'Καμία ακόμη'],
+              ['Τιμή/Συνεδρία', `${Math.round(Number(profileModal.price_per_session || 0))}€`],
             ].map(([label, value]) => (
               <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f1f5f9', fontSize: 14, gap: 12 }}>
                 <span style={{ color: '#64748B' }}>{label}</span>
@@ -1191,7 +1110,7 @@ export default function NewRequestPage() {
             )}
 
             <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
-              <button onClick={() => { setSelectedTherapist(profileModal); setProfileModal(null); }}
+              <button onClick={() => { setSelectedTherapist(profileModal); setSelectedSlot(null); setProfileModal(null); }}
                 style={{ flex: 1, padding: '12px', borderRadius: 30, border: 'none', background: '#1a2e44', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'inherit' }}>
                 <Check size={14} strokeWidth={3} />
                 Επιλογή θεραπευτή
