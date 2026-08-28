@@ -7,6 +7,7 @@ import RatingDisplay from '../../components/RatingDisplay';
 import ConditionSearch from '../../components/ConditionSearch';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
+import { filterBookableSlots } from '@/lib/slots';
 import { Search, MapPin, Star, SlidersHorizontal, X, Check, ArrowRight, Stethoscope, Users, ChevronDown, ChevronUp, Lightbulb, BadgeCheck, ShieldCheck, Info, CalendarCheck, Briefcase } from 'lucide-react';
 
 const DAYS_SHORT = {
@@ -283,7 +284,9 @@ export default function TherapistsPage() {
           .order('date', { ascending: true })
           .order('start_time', { ascending: true });
         if (slotData) {
-          slotData.forEach(s => {
+          // Οι περασμένες ώρες της σημερινής μέρας δεν μετράνε ούτε ως
+          // «πρώτη ελεύθερη ώρα» ούτε στο σύνολο.
+          filterBookableSlots(slotData).forEach(s => {
             if (!slotMap[s.therapist_id]) {
               slotMap[s.therapist_id] = { next: { date: s.date, start_time: s.start_time }, count: 0 };
             }
