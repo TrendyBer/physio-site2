@@ -39,6 +39,14 @@ export default function NewRequestPage() {
 
   const [user, setUser] = useState(null);
   const [step, setStep] = useState(1);
+
+  // Ο ασθενής μπορεί να έρθει από το προφίλ συγκεκριμένου θεραπευτή
+  // (/therapists/<id> → «Κλείσε ραντεβού»). Τότε τον θέλει ΑΥΤΟΝ.
+  // Διαβάζεται από το window αντί για useSearchParams ώστε να μην
+  // χρειάζεται Suspense boundary στο build.
+  const [preselectedId, setPreselectedId] = useState(null);
+  const [cameFromProfile, setCameFromProfile] = useState(false);
+
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
@@ -75,6 +83,13 @@ export default function NewRequestPage() {
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [calendarWeek, setCalendarWeek] = useState(0);
   const [loadingSlots, setLoadingSlots] = useState(false);
+
+  useEffect(() => {
+    try {
+      const q = new URLSearchParams(window.location.search).get('therapist');
+      if (q) { setPreselectedId(q); setCameFromProfile(true); }
+    } catch (_) {}
+  }, []);
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
@@ -287,7 +302,28 @@ export default function NewRequestPage() {
       .map((t) => ({ ...t, matchLevel: 'area', score: matchScore(t) }))
       .sort((a, b) => b.score - a.score);
 
-    setTherapists([...primary, ...secondary]);
+    const combined = [...primary, ...secondary];
+
+    // ── 6. ΗΡΘΕ ΓΙΑ ΣΥΓΚΕΚΡΙΜΕΝΟ ΘΕΡΑΠΕΥΤΗ ──
+    // Τον ανεβάζουμε πρώτο και τον προεπιλέγουμε. Αν δεν πέρασε τα
+    // φίλτρα (π.χ. δεν δήλωσε αυτή την πάθηση ή δηλώνει άλλη περιοχή),
+    // τον δείχνουμε ΠΑΝΤΩΣ — ο ασθενής τον διάλεξε συνειδητά και δεν
+    // πρέπει να τον χάσει επειδή δεν ταιριάζει ένα tag.
+    if (preselectedId) {
+      let pre = combined.find((t) => t.id === preselectedId);
+      if (!pre) {
+        const raw = pool.find((t) => t.id === preselectedId);
+        if (raw) pre = { ...enrich(raw), matchLevel: 'chosen', score: 0 };
+      }
+      if (pre) {
+        setTherapists([{ ...pre, matchLevel: 'chosen' }, ...combined.filter((t) => t.id !== pre.id)]);
+        setSelectedTherapist(pre);
+        setLoadingTherapists(false);
+        return;
+      }
+    }
+
+    setTherapists(combined);
     setLoadingTherapists(false);
   }
 
@@ -742,6 +778,17 @@ export default function NewRequestPage() {
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+                  {cameFromProfile && selectedTherapist && (
+                    <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 12, padding: '13px 16px', display: 'flex', alignItems: 'center', gap: 11, flexWrap: 'wrap' }}>
+                      <Check size={16} color="#1D4ED8" strokeWidth={3} />
+                      <span style={{ fontSize: 13.5, color: '#1E40AF', flex: 1, minWidth: 200 }}>
+                        Επιλέξατε τον/την <strong>{selectedTherapist.name}</strong> από το προφίλ.
+                        Μπορείτε να αλλάξετε επιλογή παρακάτω.
+                      </span>
+                    </div>
+                  )}
+
                   {therapists.map((t, idx) => {
                     const prev = idx > 0 ? therapists[idx - 1] : null;
                     const startsSecondary = t.matchLevel === 'area' && (!prev || prev.matchLevel !== 'area');
