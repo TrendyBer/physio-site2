@@ -104,6 +104,8 @@ const TX = {
     payModalPerNewPatient: 'ανά νέο ασθενή',
     payModalFeeExplain: 'Χρεώνεσαι μία φορά για κάθε νέο ασθενή. Στις επόμενες συνεδρίες με τον ίδιο ασθενή δεν χρεώνεσαι ξανά.',
     payModalOpen: 'Ανεξόφλητα αυτή τη στιγμή',
+    payModalPromo: 'Κωδικός προσφοράς',
+    payModalPromoUntil: (d) => `έως ${d}`,
     noPlan: 'Χωρίς ενεργή συνδρομή',
     close: 'Κλείσιμο',
 
@@ -320,6 +322,8 @@ const TX = {
     payModalPerNewPatient: 'per new patient',
     payModalFeeExplain: 'You are charged once per new patient. Follow-up sessions with the same patient are not charged again.',
     payModalOpen: 'Currently outstanding',
+    payModalPromo: 'Promo code',
+    payModalPromoUntil: (d) => `until ${d}`,
     noPlan: 'No active subscription',
     close: 'Close',
 
@@ -1556,11 +1560,24 @@ export default function TherapistDashboard() {
 
   // Το τέλος νέου ασθενή: το κλειδωμένο του θεραπευτή υπερισχύει του
   // τρέχοντος fee του πλάνου — ό,τι συμφώνησε όταν έκανε εγγραφή.
+  // ΠΡΑΓΜΑΤΙΚΗ τιμή πρώτα: το effective_* είναι ό,τι πληρώνει σήμερα,
+  // μετά την εφαρμογή του κωδικού προσφοράς. Το *_locked είναι η τιμή
+  // καταλόγου που θα ισχύσει όταν λήξει η προσφορά.
   const firstSessionFee = Number(
+    subscription?.effective_first_session_fee
+    ?? subscription?.first_session_fee_locked
+    ?? subscription?.subscription_plans?.first_session_fee
+    ?? 0
+  );
+  const listFirstSessionFee = Number(
     subscription?.first_session_fee_locked
     ?? subscription?.subscription_plans?.first_session_fee
     ?? 0
   );
+  const monthlyPrice = Number(subscription?.effective_price ?? subscription?.price_locked ?? 0);
+  const listMonthlyPrice = Number(subscription?.price_locked ?? 0);
+  const promoActive = !!subscription?.promo_code_text
+    && (!subscription?.promo_ends_at || new Date(subscription.promo_ends_at) > new Date());
 
   // ── ΕΣΟΔΑ ──────────────────────────────────────────────────────────
   // Ο ασθενής πληρώνει ΜΕΤΡΗΤΑ απευθείας. Δεν υπάρχει escrow.
@@ -1688,6 +1705,8 @@ export default function TherapistDashboard() {
   function goToChecklistTarget(key) {
     if (key === 'availability' || key === 'calendar') { setActiveTab('availability'); return; }
     if (key === 'areas' || key === 'conditions') { setActiveTab('profile'); setProfileSection(key); return; }
+    if (key === 'reviews') { setActiveTab('profile'); setProfileSection('reviews'); return; }
+    // Πόλη, όνομα, τιμή, σπουδές — όλα ζουν στα βασικά στοιχεία.
     setActiveTab('profile');
     setProfileSection('basics');
     setEditProfile(true);
@@ -2732,16 +2751,42 @@ export default function TherapistDashboard() {
                   <span style={{ color: '#64748B' }}>{tx.payModalSubscription}</span>
                   <strong style={{ color: '#0F172A' }}>
                     {subscription
-                      ? (Number(subscription.price_locked) > 0 ? `${Number(subscription.price_locked).toFixed(2)}€` : '0€')
+                      ? (monthlyPrice > 0 ? `${monthlyPrice.toFixed(2)}€` : '0€')
                       : tx.noPlan}
+                    {subscription && promoActive && listMonthlyPrice > monthlyPrice && (
+                      <span style={{ marginLeft: 8, fontWeight: 400, color: '#94A3B8', fontSize: 12, textDecoration: 'line-through' }}>
+                        {listMonthlyPrice.toFixed(2)}€
+                      </span>
+                    )}
                   </strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
                   <span style={{ color: '#64748B' }}>{tx.payModalFirstFee}</span>
                   <strong style={{ color: '#0F172A' }}>
-                    {firstSessionFee.toFixed(2)}€ <span style={{ fontWeight: 400, color: '#94A3B8', fontSize: 12 }}>{tx.payModalPerNewPatient}</span>
+                    {firstSessionFee.toFixed(2)}€
+                    {promoActive && listFirstSessionFee > firstSessionFee && (
+                      <span style={{ marginLeft: 8, fontWeight: 400, color: '#94A3B8', fontSize: 12, textDecoration: 'line-through' }}>
+                        {listFirstSessionFee.toFixed(2)}€
+                      </span>
+                    )}
+                    <span style={{ fontWeight: 400, color: '#94A3B8', fontSize: 12 }}> {tx.payModalPerNewPatient}</span>
                   </strong>
                 </div>
+                {/* Τι ισχύει σήμερα και μέχρι πότε. Χωρίς αυτό, ο θεραπευτής
+                    βλέπει «0€» και δεν ξέρει ότι είναι προσωρινό. */}
+                {subscription && promoActive && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                    <span style={{ color: '#64748B' }}>{tx.payModalPromo}</span>
+                    <strong style={{ color: '#6D28D9' }}>
+                      {subscription.promo_code_text}
+                      {subscription.promo_ends_at && (
+                        <span style={{ fontWeight: 400, color: '#94A3B8', fontSize: 12 }}>
+                          {' '}{tx.payModalPromoUntil(new Date(subscription.promo_ends_at).toLocaleDateString(loc))}
+                        </span>
+                      )}
+                    </strong>
+                  </div>
+                )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, paddingTop: 10, borderTop: '1px solid #f1f5f9' }}>
                   <span style={{ color: '#64748B' }}>{tx.payModalOpen}</span>
                   <strong style={{ color: owedTotal > 0 ? '#B45309' : '#15803D', fontSize: 15 }}>{owedTotal.toFixed(2)}€</strong>
