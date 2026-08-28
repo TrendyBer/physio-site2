@@ -3,7 +3,25 @@ import { useState, useEffect } from 'react';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
 import RatingDisplay from './RatingDisplay';
-import { MapPin, BadgeCheck, ShieldCheck, ArrowRight } from 'lucide-react';
+import { MapPin, BadgeCheck, ShieldCheck, ArrowRight, CalendarCheck } from 'lucide-react';
+
+const DAYS_SHORT = {
+  el: ['Κυρ', 'Δευ', 'Τρι', 'Τετ', 'Πεμ', 'Παρ', 'Σαβ'],
+  en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+};
+
+function todayISO() {
+  return new Date().toISOString().split('T')[0];
+}
+
+// Το service_areas (jsonb) είναι η πραγματική λίστα περιοχών.
+// Το `area` είναι μόνο η έδρα — αν δείξουμε αυτό, θεραπευτής με 8
+// δηλωμένες περιοχές φαίνεται να καλύπτει μία.
+function allAreasOf(t) {
+  const declared = Array.isArray(t.service_areas) ? t.service_areas.filter(Boolean) : [];
+  if (declared.length > 0) return declared;
+  return t.area ? [t.area] : [];
+}
 
 function Avatar({ name, photoUrl, size = 60 }) {
   if (photoUrl) {
@@ -51,8 +69,11 @@ export default function Therapists() {
 
       const therapistIds = ths.map(t => t.id);
 
-      // Reviews + παθήσεις παράλληλα
-      const [{ data: reviewsData }, { data: condLinks }] = await Promise.all([
+      const horizon = new Date();
+      horizon.setDate(horizon.getDate() + 21);
+
+      // Reviews + περιστατικά + διαθεσιμότητα παράλληλα
+      const [{ data: reviewsData }, { data: condLinks }, { data: slotData }] = await Promise.all([
         supabase
           .from('reviews')
           .select('therapist_id, rating')
@@ -62,6 +83,15 @@ export default function Therapists() {
           .from('therapist_conditions')
           .select('therapist_id, conditions(name_el, name_en)')
           .in('therapist_id', therapistIds),
+        supabase
+          .from('availability_slots')
+          .select('therapist_id, date, start_time')
+          .eq('is_blocked', false)
+          .gte('date', todayISO())
+          .lte('date', horizon.toISOString().split('T')[0])
+          .in('therapist_id', therapistIds)
+          .order('date', { ascending: true })
+          .order('start_time', { ascending: true }),
       ]);
 
       const ratingsMap = {};
@@ -78,6 +108,13 @@ export default function Therapists() {
         condMap[c.therapist_id].push(c.conditions);
       });
 
+      // Η πρώτη ελεύθερη ώρα κάθε θεραπευτή — τα slots έρχονται ήδη
+      // ταξινομημένα, οπότε κρατάμε το πρώτο που συναντάμε.
+      const slotMap = {};
+      (slotData || []).forEach(s => {
+        if (!slotMap[s.therapist_id]) slotMap[s.therapist_id] = { date: s.date, start_time: s.start_time };
+      });
+
       const enriched = ths.map(t => {
         const stats = ratingsMap[t.id];
         return {
@@ -85,6 +122,7 @@ export default function Therapists() {
           avg_rating: stats ? stats.sum / stats.count : 0,
           review_count: stats ? stats.count : 0,
           conditions: condMap[t.id] || [],
+          next_slot: slotMap[t.id] || null,
         };
       });
 
@@ -104,8 +142,11 @@ export default function Therapists() {
       perSession: '€/συνεδρία',
       verified: 'Ελεγμένη άδεια',
       fullProfile: 'Πλήρες προφίλ',
-      treats: 'Αντιμετωπίζει',
+      treats: 'Αναλαμβάνει',
       more: 'ακόμα',
+      nextFree: 'Πρώτη ώρα',
+      today: 'Σήμερα',
+      tomorrow: 'Αύριο',
     },
     en: {
       title: 'Our', titleEm: 'Physiotherapists', titleEnd: '',
@@ -116,11 +157,26 @@ export default function Therapists() {
       perSession: '€/session',
       verified: 'Verified license',
       fullProfile: 'Complete profile',
-      treats: 'Treats',
+      treats: 'Takes on',
       more: 'more',
+      nextFree: 'Next slot',
+      today: 'Today',
+      tomorrow: 'Tomorrow',
     },
   };
   const text = t[lang];
+
+  function slotLabel(slot) {
+    if (!slot) return null;
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const target = new Date(slot.date + 'T12:00:00'); target.setHours(0, 0, 0, 0);
+    const diff = Math.round((target - today) / 86400000);
+    const time = slot.start_time?.slice(0, 5);
+    if (diff === 0) return `${text.today} ${time}`;
+    if (diff === 1) return `${text.tomorrow} ${time}`;
+    const d = new Date(slot.date + 'T12:00:00');
+    return `${DAYS_SHORT[lang][d.getDay()]} ${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')} ${time}`;
+  }
 
   if (loading) return null;
   if (therapists.length === 0) return null;
@@ -150,6 +206,8 @@ export default function Therapists() {
               const conds = th.conditions || [];
               const shown = conds.slice(0, 3);
               const rest = conds.length - shown.length;
+              const areas = allAreasOf(th);
+              const nextLabel = slotLabel(th.next_slot);
 
               return (
                 <a key={th.id} href={`/therapists/${th.id}`} className="th-card">
@@ -200,6 +258,16 @@ export default function Therapists() {
                         {text.fullProfile}
                       </span>
                     )}
+                    {nextLabel && (
+                      <span style={{
+                        padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 500,
+                        background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0',
+                        display: 'inline-flex', alignItems: 'center', gap: 4,
+                      }}>
+                        <CalendarCheck size={12} strokeWidth={2.2} />
+                        {text.nextFree}: {nextLabel}
+                      </span>
+                    )}
                   </div>
 
                   {th.bio && (
@@ -208,7 +276,7 @@ export default function Therapists() {
                     </p>
                   )}
 
-                  {/* Παθήσεις — αυτό ψάχνει ο ασθενής */}
+                  {/* Περιστατικά — αυτό ψάχνει ο ασθενής */}
                   {shown.length > 0 && (
                     <div style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 11, fontWeight: 600, color: '#8a9aab', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 7 }}>
@@ -238,10 +306,10 @@ export default function Therapists() {
                         {th.years_experience}+ {text.experience}
                       </span>
                     )}
-                    {th.area && (
+                    {areas.length > 0 && (
                       <span style={{ padding: '4px 10px', borderRadius: 20, fontSize: 12, background: '#e8f1fd', color: '#2a6fdb', border: '1px solid #c8dff9', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                         <MapPin size={12} strokeWidth={2} />
-                        {th.area}
+                        {areas.slice(0, 2).join(', ')}{areas.length > 2 ? ` +${areas.length - 2}` : ''}
                       </span>
                     )}
                   </div>
