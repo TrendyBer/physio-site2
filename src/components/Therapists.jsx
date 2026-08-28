@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
+import { filterBookableSlots } from '@/lib/slots';
 import RatingDisplay from './RatingDisplay';
 import { MapPin, BadgeCheck, ShieldCheck, ArrowRight, CalendarCheck } from 'lucide-react';
 
@@ -111,7 +112,7 @@ export default function Therapists() {
       // Η πρώτη ελεύθερη ώρα κάθε θεραπευτή — τα slots έρχονται ήδη
       // ταξινομημένα, οπότε κρατάμε το πρώτο που συναντάμε.
       const slotMap = {};
-      (slotData || []).forEach(s => {
+      filterBookableSlots(slotData).forEach(s => {
         if (!slotMap[s.therapist_id]) slotMap[s.therapist_id] = { date: s.date, start_time: s.start_time };
       });
 
