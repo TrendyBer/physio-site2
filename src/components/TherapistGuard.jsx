@@ -21,9 +21,13 @@ import { ArrowLeft, Eye } from 'lucide-react';
 
 export const VIEW_SITE_KEY = 'physiohome_view_site';
 
-// Σελίδες που ΔΕΝ πιάνει ο guard
+// Σελίδες που ΔΕΝ πιάνει ο guard.
+// Το /onboarding είναι κρίσιμο: χωρίς αυτό, ο νεοεγγεγραμμένος θεραπευτής
+// θα εκτοξευόταν στον πίνακα πριν προλάβει να ολοκληρώσει το προφίλ του,
+// και δεν θα υπήρχε τρόπος να επιστρέψει στα βήματα.
 const EXEMPT_PREFIXES = [
   '/dashboard',
+  '/onboarding',
   '/auth',
   '/admin',
 ];
@@ -47,7 +51,7 @@ export default function TherapistGuard() {
     // Μη συνδεδεμένος, ή admin → τίποτα
     if (r !== 'therapist' && r !== 'patient') { setBrowsing(false); return; }
 
-    // Σε dashboard/auth/admin δεν εμφανίζεται τίποτα
+    // Σε dashboard/onboarding/auth/admin δεν εμφανίζεται τίποτα
     if (isExempt(pathname)) { setBrowsing(false); return; }
 
     // ΑΣΘΕΝΗΣ: ελεύθερη περιήγηση, απλά με μπάρα επιστροφής
