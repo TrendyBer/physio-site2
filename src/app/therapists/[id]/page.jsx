@@ -6,6 +6,7 @@ import Footer from '../../../components/Footer';
 import RatingDisplay from '../../../components/RatingDisplay';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
+import { filterBookableSlots } from '@/lib/slots';
 import { ArrowRight, MapPin, ShieldCheck, GraduationCap, ChevronRight, CalendarCheck, Clock } from 'lucide-react';
 
 const LOCALE = { el: 'el-GR', en: 'en-US' };
@@ -239,7 +240,9 @@ export default function TherapistProfilePage() {
         .lte('date', end.toISOString().split('T')[0])
         .order('date', { ascending: true })
         .order('start_time', { ascending: true });
-      setSlots(data || []);
+      // Μόνο ώρες που είναι ακόμα κρατήσιμες — ο έλεγχος `date >= σήμερα`
+      // του query είναι έλεγχος ημέρας, όχι ώρας.
+      setSlots(filterBookableSlots(data));
       setLoadingSlots(false);
     })();
   }, [id]);
