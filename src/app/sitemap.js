@@ -13,6 +13,11 @@ export default async function sitemap() {
   const now = new Date();
 
   // ============== STATIC PAGES ==============
+  // ΔΕΝ μπαίνουν εδώ:
+  //   /packages — η σελίδα καταργήθηκε
+  //   /services — κάνει redirect στο /find-help και είναι noindex.
+  //               Ένα URL που ανακατευθύνει δεν έχει θέση στο sitemap:
+  //               λέει στη Google «αυτή είναι σελίδα» και μετά την πετάει αλλού.
   const staticPages = [
     {
       url: `${SITE_URL}/`,
@@ -39,12 +44,6 @@ export default async function sitemap() {
       priority: 0.7,
     },
     {
-      url: `${SITE_URL}/packages`,
-      lastModified: now,
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
       url: `${SITE_URL}/become-therapist`,
       lastModified: now,
       changeFrequency: 'monthly',
@@ -52,12 +51,6 @@ export default async function sitemap() {
     },
     {
       url: `${SITE_URL}/how-it-works`,
-      lastModified: now,
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${SITE_URL}/services`,
       lastModified: now,
       changeFrequency: 'monthly',
       priority: 0.6,
