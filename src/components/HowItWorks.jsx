@@ -12,24 +12,26 @@ const DEFAULT = {
     badge: 'Πώς Λειτουργεί',
     title: 'Βρείτε φροντίδα στο σπίτι',
     titleEm: 'σε 3 απλά βήματα',
-    desc: 'Από την περιγραφή της ανάγκης σας μέχρι το αίτημα συνεδρίας — μια απλή, ξεκάθαρη διαδικασία, χωρίς άγχος.',
-    cta: 'Βρες φυσιοθεραπευτή',
+    desc: 'Από την περιγραφή της ανάγκης σας μέχρι το επιβεβαιωμένο ραντεβού — μια απλή, ξεκάθαρη διαδικασία, χωρίς άγχος.',
+    cta: 'Κλείσε ραντεβού',
     steps: [
-      { num: 'Βήμα 1', title: 'Περιγράφετε την ανάγκη σας', desc: 'Πείτε μας τι σας ταλαιπωρεί ή επιλέξτε πάθηση, ώστε να καταλάβουμε τι χρειάζεστε.' },
+      { num: 'Βήμα 1', title: 'Περιγράφετε την ανάγκη σας', desc: 'Πείτε μας τι σας ταλαιπωρεί ή επιλέξτε πάθηση, ώστε να καταλάβουμε τι χρειάζεστε. Δεν χρειάζεται διάγνωση.' },
       { num: 'Βήμα 2', title: 'Βλέπετε κατάλληλους φυσιοθεραπευτές', desc: 'Σας προτείνουμε επαγγελματίες με βάση την περιοχή, την εμπειρία, τη διαθεσιμότητα και τις αξιολογήσεις.' },
-      { num: 'Βήμα 3', title: 'Στέλνετε αίτημα συνεδρίας', desc: 'Επιλέγετε θεραπευτή, ώρα και πακέτο. Θα ενημερωθείτε μόλις ο φυσιοθεραπευτής επιβεβαιώσει το αίτημα.' },
+      // Έλεγε «επιλέγετε θεραπευτή, ώρα και πακέτο». Τα πακέτα δεν
+      // υπάρχουν πια — κάθε αίτημα αφορά μία συνεδρία.
+      { num: 'Βήμα 3', title: 'Στέλνετε αίτημα και επιβεβαιώνεται', desc: 'Επιλέγετε θεραπευτή και ώρα. Θα ενημερωθείτε μόλις ο φυσιοθεραπευτής επιβεβαιώσει το ραντεβού. Πληρώνετε σε μετρητά μετά τη συνεδρία.' },
     ],
   },
   en: {
     badge: 'How It Works',
     title: 'Find home care',
     titleEm: 'in 3 simple steps',
-    desc: 'From describing your need to sending a session request — a simple, clear process, without the stress.',
-    cta: 'Find a physiotherapist',
+    desc: 'From describing your need to a confirmed appointment — a simple, clear process, without the stress.',
+    cta: 'Book an appointment',
     steps: [
-      { num: 'Step 1', title: 'Describe your need', desc: 'Tell us what troubles you or pick a condition, so we understand what you need.' },
+      { num: 'Step 1', title: 'Describe your need', desc: 'Tell us what troubles you or pick a condition, so we understand what you need. No diagnosis required.' },
       { num: 'Step 2', title: 'See suitable physiotherapists', desc: 'We suggest professionals based on area, experience, availability and reviews.' },
-      { num: 'Step 3', title: 'Send a session request', desc: 'Choose a therapist, time and package. You will be notified once the physiotherapist confirms your request.' },
+      { num: 'Step 3', title: 'Send a request and get it confirmed', desc: 'Choose a therapist and a time. You are notified as soon as the physiotherapist confirms. You pay in cash after the session.' },
     ],
   },
 };
