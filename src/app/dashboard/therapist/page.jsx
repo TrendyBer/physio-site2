@@ -14,7 +14,7 @@ import {
   LayoutDashboard, ClipboardList, Calendar, MapPin, Target, Star, User, Clock, AlertTriangle,
   Upload, Home, MessageSquare, Check, X, Lock, CalendarClock, ChevronLeft, ChevronRight,
   Plus, Lightbulb, Camera, Pencil, CheckCircle2, Save, FileText, GraduationCap, Award, Eye, Trash2,
-  Wallet, Hourglass, CalendarDays, List, Globe, Info, Copy, Ban, Repeat, Phone,
+  Wallet, Hourglass, CalendarDays, List, Globe, Info, Copy, Ban, Repeat, Phone, CreditCard,
 } from 'lucide-react';
 
 // ─── Locale data ──────────────────────────────────────────────────────
@@ -194,6 +194,25 @@ const TX = {
     errRange: 'Το διάστημα είναι πολύ μεγάλο.',
 
     secBasics: 'Βασικά στοιχεία',
+    secBilling: 'Οικονομικά στοιχεία',
+    billingTitle: 'Οικονομικά στοιχεία',
+    billingDesc: 'Χρειάζονται μόνο αν εκδίδεις παραστατικό ή θέλεις να λαμβάνεις πληρωμές μέσω τραπέζης. Δεν είναι απαραίτητα για να δέχεσαι ραντεβού.',
+    billingPrivacy: 'Τα στοιχεία αυτά δεν εμφανίζονται ποτέ δημόσια. Τα βλέπει μόνο η ομάδα του PhysioHome.',
+    fIban: 'IBAN',
+    fIbanPh: 'GR00 0000 0000 0000 0000 0000 000',
+    fPayoutName: 'Δικαιούχος λογαριασμού',
+    fPayoutNamePh: 'Όπως αναγράφεται στην τράπεζα',
+    fTaxId: 'ΑΦΜ',
+    fTaxOffice: 'ΔΟΥ',
+    fLegalName: 'Επωνυμία',
+    fLegalNamePh: 'Αν τιμολογείς ως εταιρεία',
+    fBillingAddress: 'Έδρα',
+    fBillingAddressPh: 'Οδός, αριθμός, ΤΚ, πόλη',
+    fKad: 'ΚΑΔ',
+    fKadPh: 'Κωδικός Αριθμός Δραστηριότητας',
+    billingSaved: 'Τα στοιχεία αποθηκεύτηκαν',
+    errIban: 'Το IBAN φαίνεται λανθασμένο. Έλεγξέ το ή άφησέ το κενό.',
+    errTaxId: 'Το ΑΦΜ πρέπει να έχει 9 ψηφία.',
     secAreas: 'Περιοχές',
     secConditions: 'Περιστατικά',
     secDocuments: 'Δικαιολογητικά',
@@ -412,6 +431,25 @@ const TX = {
     errRange: 'That range is too large.',
 
     secBasics: 'Basic details',
+    secBilling: 'Billing details',
+    billingTitle: 'Billing details',
+    billingDesc: 'Only needed if you issue invoices or want to receive bank payments. Not required to accept appointments.',
+    billingPrivacy: 'These details are never shown publicly. Only the PhysioHome team can see them.',
+    fIban: 'IBAN',
+    fIbanPh: 'GR00 0000 0000 0000 0000 0000 000',
+    fPayoutName: 'Account holder',
+    fPayoutNamePh: 'As it appears at your bank',
+    fTaxId: 'Tax ID (ΑΦΜ)',
+    fTaxOffice: 'Tax office (ΔΟΥ)',
+    fLegalName: 'Legal name',
+    fLegalNamePh: 'If you invoice as a company',
+    fBillingAddress: 'Registered address',
+    fBillingAddressPh: 'Street, number, postcode, city',
+    fKad: 'Activity code (ΚΑΔ)',
+    fKadPh: 'Business activity code',
+    billingSaved: 'Details saved',
+    errIban: 'That IBAN looks wrong. Check it or leave it empty.',
+    errTaxId: 'Tax ID must be 9 digits.',
     secAreas: 'Areas',
     secConditions: 'Cases',
     secDocuments: 'Documents',
@@ -1203,11 +1241,37 @@ export default function TherapistDashboard() {
   const cvInputRef = useRef();
   const certInputRef = useRef();
 
+  // ΟΙΚΟΝΟΜΙΚΑ ΣΤΟΙΧΕΙΑ
+  // Το ΚΑΔ δεν έχει σταθερό όνομα στήλης σε όλες τις εγκαταστάσεις.
+  // Αντί να μαντέψουμε (και το update να σκάει ολόκληρο, χάνοντας ΚΑΙ τα
+  // υπόλοιπα πεδία), εντοπίζουμε ποια στήλη υπάρχει πραγματικά στο profile.
+  // Αν δεν υπάρχει καμία, το πεδίο απλά δεν εμφανίζεται.
+  const KAD_CANDIDATES = ['kad', 'kad_code', 'activity_code', 'business_activity'];
+  const kadKey = profile ? KAD_CANDIDATES.find(k => k in profile) : null;
+
+  const [billingForm, setBillingForm] = useState({});
+  const [savingBilling, setSavingBilling] = useState(false);
+  const [billingMsg, setBillingMsg] = useState(null);
+
   const [areaInput, setAreaInput] = useState('');
   const [savingAreas, setSavingAreas] = useState(false);
   const [areaSuggestions, setAreaSuggestions] = useState([]);
 
   const currentWeek = ALL_WEEKS[weekOffset] || ALL_WEEKS[0];
+
+  useEffect(() => {
+    if (!profile) return;
+    const next = {
+      iban: profile.iban || '',
+      payout_name: profile.payout_name || '',
+      tax_id: profile.tax_id || '',
+      tax_office: profile.tax_office || '',
+      legal_name: profile.legal_name || '',
+      billing_address: profile.billing_address || '',
+    };
+    if (kadKey) next[kadKey] = profile[kadKey] || '';
+    setBillingForm(next);
+  }, [profile, kadKey]);
 
   useEffect(() => { init(); }, []);
 
@@ -1471,6 +1535,47 @@ export default function TherapistDashboard() {
     setSaving(false);
   }
 
+  async function saveBilling() {
+    const iban = (billingForm.iban || '').replace(/\s/g, '').toUpperCase();
+    const taxId = (billingForm.tax_id || '').replace(/\D/g, '');
+
+    // Ήπιος έλεγχος: μπλοκάρουμε μόνο ό,τι είναι σίγουρα λάθος.
+    // Κενό πεδίο επιτρέπεται — τίποτα εδώ δεν είναι υποχρεωτικό.
+    if (iban && !/^GR\d{25}$/.test(iban) && iban.length > 0 && !/^[A-Z]{2}\d{2}[A-Z0-9]{10,30}$/.test(iban)) {
+      setBillingMsg({ type: 'error', text: tx.errIban });
+      return;
+    }
+    if (taxId && taxId.length !== 9) {
+      setBillingMsg({ type: 'error', text: tx.errTaxId });
+      return;
+    }
+
+    setSavingBilling(true);
+    setBillingMsg(null);
+
+    const payload = {
+      iban: iban || null,
+      payout_name: billingForm.payout_name?.trim() || null,
+      tax_id: taxId || null,
+      tax_office: billingForm.tax_office?.trim() || null,
+      legal_name: billingForm.legal_name?.trim() || null,
+      billing_address: billingForm.billing_address?.trim() || null,
+    };
+    if (kadKey) payload[kadKey] = billingForm[kadKey]?.trim() || null;
+
+    const { error } = await supabase.from('therapist_profiles').update(payload).eq('id', user.id);
+    setSavingBilling(false);
+
+    if (error) {
+      setBillingMsg({ type: 'error', text: tx.errPrefix + error.message });
+      return;
+    }
+
+    setProfile(p => ({ ...p, ...payload }));
+    setBillingMsg({ type: 'success', text: tx.billingSaved });
+    setTimeout(() => setBillingMsg(null), 3000);
+  }
+
   // Κάθε αίτημα αφορά ΜΙΑ συνεδρία. Η αποδοχή επιβεβαιώνει και το
   // ραντεβού — ο θεραπευτής δεν χρειάζεται δεύτερη οθόνη για να
   // διαλέξει ώρα, γιατί η ώρα είναι ήδη μία.
@@ -1695,6 +1800,7 @@ export default function TherapistDashboard() {
 
   const PROFILE_SECTIONS = [
     { id: 'basics', label: tx.secBasics, Icon: User },
+    { id: 'billing', label: tx.secBilling, Icon: CreditCard },
     { id: 'areas', label: tx.secAreas, Icon: MapPin },
     { id: 'conditions', label: tx.secConditions, Icon: Target },
     { id: 'documents', label: tx.secDocuments, Icon: FileText },
