@@ -1,10 +1,11 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
+import { Mail, Phone, MapPin, Star, Check, X } from 'lucide-react';
 
 const SERVICES = ['Not sure/Need guidance','Musculoskeletal Physiotherapy','Post-Surgery Rehabilitation','Sports Injury Recovery','Elderly Care and Mobility Support','Back Pain','Neck and Shoulder Pain','Joint Pain','Sports Injury','Balance Issues','Reduced Mobility','Neurological Physiotherapy'];
 const SERVICES_EL = ['Δεν είμαι σίγουρος/η - Χρειάζομαι καθοδήγηση','Μυοσκελετική Φυσιοθεραπεία','Μετεγχειρητική Αποκατάσταση','Αποκατάσταση Αθλητικών Τραυματισμών','Φροντίδα Ηλικιωμένων & Κινητικότητα','Πόνος στη Μέση','Πόνος στον Αυχένα & Ώμους','Πόνος στις Αρθρώσεις','Αθλητικός Τραυματισμός','Προβλήματα Ισορροπίας','Μειωμένη Κινητικότητα','Νευρολογική Φυσιοθεραπεία'];
@@ -18,11 +19,6 @@ const t = {
     pageDesc: 'Συμπληρώστε τη φόρμα και η ομάδα μας θα επικοινωνήσει μαζί σας εντός 24 ωρών.',
     preferenceNotice: 'Έχετε επιλέξει θεραπευτή:',
     steps: ['Στοιχεία Επικοινωνίας','Διεύθυνση','Υπηρεσία / Κατάσταση','Επιπλέον Πληροφορίες'],
-    contacts: [
-      { icon: '✉', value: 'email@example.com', href: 'mailto:email@example.com' },
-      { icon: '📞', value: '+1 (555) 000-0000', href: 'tel:+15550000000' },
-      { icon: '📍', value: '123 Sample St, Sydney NSW 2000 AU' },
-    ],
     step1Title: 'Τα στοιχεία επικοινωνίας σας', step1Desc: 'Θα τα χρησιμοποιήσουμε για να επιβεβαιώσουμε τη συνεδρία σας',
     fullName: 'Ονοματεπώνυμο', fullNamePh: 'π.χ. Γιώργος Παπαδόπουλος',
     email: 'Email', emailPh: 'emailexample@gmail.com',
@@ -54,11 +50,6 @@ const t = {
     pageDesc: 'Complete the form below and our team will contact you within 24 hours.',
     preferenceNotice: 'You selected a preferred therapist:',
     steps: ['Contact Details','Address details','Service or condition','Additional information'],
-    contacts: [
-      { icon: '✉', value: 'email@example.com', href: 'mailto:email@example.com' },
-      { icon: '📞', value: '+1 (555) 000-0000', href: 'tel:+15550000000' },
-      { icon: '📍', value: '123 Sample St, Sydney NSW 2000 AU' },
-    ],
     step1Title: 'Your contact details', step1Desc: "We'll use this to confirm your session and get in touch",
     fullName: 'Full Name', fullNamePh: 'e.g. John Smith',
     email: 'Your Email', emailPh: 'emailexample@gmail.com',
@@ -95,6 +86,26 @@ export default function RequestPage() {
 
   const services = lang === 'el' ? SERVICES_EL : SERVICES;
   const howHeardOptions = lang === 'el' ? HOW_HEARD_EL : HOW_HEARD_EN;
+
+  const [settings, setSettings] = useState({
+    email: 'info@physiohome.gr',
+    phone: '+30 210 123 4567',
+    address: 'Αθήνα & Αττική, Ελλάδα',
+  });
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from('platform_settings').select('key, value');
+      if (!data) return;
+      const s = {};
+      data.forEach((row) => { s[row.key] = row.value; });
+      setSettings((prev) => ({
+        email: s.email || prev.email,
+        phone: s.phone || prev.phone,
+        address: s.address || prev.address,
+      }));
+    })();
+  }, []);
 
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
@@ -133,29 +144,67 @@ export default function RequestPage() {
     if (!validateStep()) return;
     setLoading(true);
 
-    const { error: insertError } = await supabase
-      .from('requests')
-      .insert([{
-        name: form.name,
-        email: form.email,
-        phone: form.phone,
-        country: form.country,
-        zip: form.zip,
-        city: form.city,
-        street: form.street,
-        service: form.service,
-        description: form.description,
-        how_heard: form.howHeard,
-        referred: form.referred === 'yes',
-        doctor_name: form.doctorName || null,
-        preferred_therapist: preferredTherapist || null,
-        status: 'pending',
-      }]);
+    // Γράφει στον πίνακα `leads`.
+    // Παλιά έγραφε σε `requests`, πίνακα που ΔΕΝ ΥΠΑΡΧΕΙ — κάθε υποβολή
+    // κατέληγε σε σφάλμα αφού ο επισκέπτης είχε συμπληρώσει και τα 4 βήματα.
+    const payload = {
+      name: form.name,
+      email: form.email,
+      phone: form.phone,
+      country: form.country || null,
+      zip: form.zip || null,
+      city: form.city || null,
+      street: form.street || null,
+      service: form.service || null,
+      description: form.description || null,
+      how_heard: form.howHeard || null,
+      referred: form.referred === 'yes',
+      doctor_name: form.doctorName || null,
+      preferred_therapist: preferredTherapist || null,
+      consent: !!form.consent,
+      lang,
+      source: 'request_form',
+      utm_source: searchParams.get('utm_source') || null,
+      utm_medium: searchParams.get('utm_medium') || null,
+      utm_campaign: searchParams.get('utm_campaign') || null,
+      status: 'new',
+    };
+
+    const { error: insertError } = await supabase.from('leads').insert([payload]);
 
     if (insertError) {
       setError('Σφάλμα υποβολής: ' + insertError.message);
       setLoading(false);
       return;
+    }
+
+    // Ειδοποίηση admin. Αν αποτύχει, ΔΕΝ χαλάει την υποβολή — το lead
+    // είναι ήδη αποθηκευμένο και αυτό είναι το σημαντικό.
+    try {
+      await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firstName: form.name,
+          lastName: '',
+          email: form.email,
+          phone: form.phone,
+          service: `[LEAD] ${form.service || 'Χωρίς υπηρεσία'}`,
+          message:
+            `Νέο lead από τη σελίδα /request\n\n` +
+            `Όνομα: ${form.name}\n` +
+            `Email: ${form.email}\n` +
+            `Τηλέφωνο: ${form.phone}\n` +
+            `Περιοχή: ${[form.street, form.city, form.zip, form.country].filter(Boolean).join(', ') || '—'}\n` +
+            `Υπηρεσία: ${form.service || '—'}\n` +
+            `Περιγραφή: ${form.description || '—'}\n` +
+            `Πώς μας βρήκε: ${form.howHeard || '—'}\n` +
+            (preferredTherapist ? `Προτίμηση θεραπευτή: ${preferredTherapist}\n` : ''),
+          lang,
+        }),
+      });
+    } catch (err) {
+      console.error('[request] lead notification failed:', err);
     }
 
     localStorage.removeItem('preferredTherapist');
@@ -195,7 +244,7 @@ export default function RequestPage() {
         <p style={{ fontSize: 16, color: '#6b7a8d', maxWidth: 600, margin: '0 auto' }}>{tx.pageDesc}</p>
         {preferredTherapist && (
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, background: '#FEF3C7', border: '1px solid #FCD34D', borderRadius: 12, padding: '10px 20px', marginTop: 20, fontSize: 14, color: '#92400E', fontWeight: 600 }}>
-            ⭐ {tx.preferenceNotice} <strong>{preferredTherapist}</strong>
+            <Star size={13} fill="#F59E0B" color="#F59E0B" style={{ verticalAlign: 'middle', marginRight: 4 }} /> {tx.preferenceNotice} <strong>{preferredTherapist}</strong>
           </div>
         )}
       </section>
@@ -210,7 +259,7 @@ export default function RequestPage() {
               {preferredTherapist && (
                 <div style={{ background: '#FEF3C7', border: '1px solid #FCD34D', borderRadius: 10, padding: '12px 14px', marginBottom: 24 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: '#92400E', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 4 }}>Προτίμηση</div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: '#92400E' }}>⭐ {preferredTherapist}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#92400E' }}><Star size={13} fill="#F59E0B" color="#F59E0B" style={{ verticalAlign: 'middle', marginRight: 4 }} /> {preferredTherapist}</div>
                 </div>
               )}
               <div style={{ flex: 1 }}>
@@ -222,7 +271,7 @@ export default function RequestPage() {
                     <div key={i} style={{ display: 'flex', gap: 14, marginBottom: 8 }}>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                         <div style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0, background: isCompleted || isActive ? '#2a6fdb' : '#cbd5e1', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700 }}>
-                          {isCompleted ? '✓' : stepNum}
+                          {isCompleted ? <Check size={15} strokeWidth={3} /> : stepNum}
                         </div>
                         {i < tx.steps.length - 1 && (
                           <div style={{ width: 2, flex: 1, minHeight: 32, background: isCompleted ? '#2a6fdb' : '#cbd5e1', margin: '4px 0' }} />
@@ -242,14 +291,23 @@ export default function RequestPage() {
                   );
                 })}
               </div>
+              {/* ΠΡΑΓΜΑΤΙΚΑ στοιχεία, από το platform_settings.
+                  Εδώ υπήρχαν σταθερά «email@example.com», «+1 (555) 000-0000»
+                  και διεύθυνση στο Σίδνεϊ — στη σελίδα όπου προσγειώνονται
+                  πληρωμένα κλικ. Όποιος ήθελε να τηλεφωνήσει, έφευγε. */}
               <div style={{ marginTop: 32, display: 'flex', flexDirection: 'column', gap: 14 }}>
-                {tx.contacts.map((c, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontSize: 16 }}>{c.icon}</span>
-                    {c.href ? <a href={c.href} style={{ fontSize: 13, color: '#2a6fdb', textDecoration: 'none', fontWeight: 500 }}>{c.value}</a>
-                    : <span style={{ fontSize: 13, color: '#475569' }}>{c.value}</span>}
-                  </div>
-                ))}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <Mail size={16} color="#94a3b8" strokeWidth={2} />
+                  <a href={`mailto:${settings.email}`} style={{ fontSize: 13, color: '#2a6fdb', textDecoration: 'none', fontWeight: 500, wordBreak: 'break-all' }}>{settings.email}</a>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <Phone size={16} color="#94a3b8" strokeWidth={2} />
+                  <a href={`tel:${settings.phone}`} style={{ fontSize: 13, color: '#2a6fdb', textDecoration: 'none', fontWeight: 500 }}>{settings.phone}</a>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                  <MapPin size={16} color="#94a3b8" strokeWidth={2} style={{ marginTop: 1, flexShrink: 0 }} />
+                  <span style={{ fontSize: 13, color: '#475569' }}>{settings.address}</span>
+                </div>
               </div>
             </div>
 
@@ -259,7 +317,7 @@ export default function RequestPage() {
                 <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>Step {step} of {tx.steps.length}</div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: '#2a6fdb' }}>{tx.steps[step - 1]}</div>
                 {preferredTherapist && (
-                  <div style={{ fontSize: 12, color: '#92400E', fontWeight: 600, marginTop: 6 }}>⭐ {tx.preferenceNotice} {preferredTherapist}</div>
+                  <div style={{ fontSize: 12, color: '#92400E', fontWeight: 600, marginTop: 6 }}><Star size={13} fill="#F59E0B" color="#F59E0B" style={{ verticalAlign: 'middle', marginRight: 4 }} /> {tx.preferenceNotice} {preferredTherapist}</div>
                 )}
               </div>
 
@@ -388,8 +446,8 @@ export default function RequestPage() {
       {submitted && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}>
           <div style={{ background: '#fff', borderRadius: 20, padding: '48px 40px', maxWidth: 520, width: '100%', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', position: 'relative' }}>
-            <button onClick={() => setSubmitted(false)} style={{ position: 'absolute', top: 16, right: 20, background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#94a3b8' }}>✕</button>
-            <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#D1FAE5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: 24, color: '#065F46' }}>✓</div>
+            <button onClick={() => setSubmitted(false)} style={{ position: 'absolute', top: 16, right: 20, background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#94a3b8', lineHeight: 0 }}><X size={20} /></button>
+            <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#D1FAE5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', color: '#065F46' }}><Check size={28} strokeWidth={3} /></div>
             <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 24, color: '#1a2e44', marginBottom: 16 }}>{tx.successTitle}</h3>
             <p style={{ fontSize: 15, color: '#6b7a8d', lineHeight: 1.7, marginBottom: 28 }}>
               {tx.successDesc} <strong>{form.email}</strong> {tx.successEnd}
