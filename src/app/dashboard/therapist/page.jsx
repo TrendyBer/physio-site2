@@ -10,6 +10,7 @@ import LanguageSwitcher from '@/components/LanguageSwitcher';
 import RescheduleModal from '@/components/RescheduleModal';
 import { searchAreas, canonicalArea, phonetic } from '@/lib/areas';
 import ConditionPicker from '@/components/ConditionPicker';
+import { C, R as RAD, T, F, MAX_WIDTH, card, btn, badge } from '@/lib/tokens';
 import {
   LayoutDashboard, ClipboardList, Calendar, MapPin, Target, Star, User, Clock, AlertTriangle,
   Upload, Home, MessageSquare, Check, X, Lock, CalendarClock, ChevronLeft, ChevronRight,
@@ -45,18 +46,18 @@ const MONTHS_FULL = {
 // ΟΡΟΛΟΓΙΑ (ίδια σε ΟΛΟ το προϊόν):
 //   Αίτημα → Επιβεβαιωμένο ραντεβού → Ολοκληρωμένη συνεδρία → Αξιολόγηση
 const STATUS = {
-  pending:   { el: 'Εκκρεμεί',        en: 'Pending',   bg: '#FEF3C7', color: '#92400E' },
-  confirmed: { el: 'Επιβεβαιωμένο',   en: 'Confirmed', bg: '#DBEAFE', color: '#1D4ED8' },
-  completed: { el: 'Ολοκληρώθηκε',    en: 'Completed', bg: '#EDE9FE', color: '#5B21B6' },
-  cancelled: { el: 'Ακυρώθηκε',       en: 'Cancelled', bg: '#FFE4E6', color: '#9F1239' },
-  no_show:   { el: 'Δεν εμφανίστηκε', en: 'No show',   bg: '#FEE2E2', color: '#991B1B' },
+  pending:   { el: 'Εκκρεμεί',        en: 'Pending',   bg: C.warnBg, color: C.warn },
+  confirmed: { el: 'Επιβεβαιωμένο',   en: 'Confirmed', bg: C.infoBg, color: C.info },
+  completed: { el: 'Ολοκληρώθηκε',    en: 'Completed', bg: C.infoBg, color: C.info },
+  cancelled: { el: 'Ακυρώθηκε',       en: 'Cancelled', bg: C.dangerBg, color: C.danger },
+  no_show:   { el: 'Δεν εμφανίστηκε', en: 'No show',   bg: C.dangerBg, color: C.danger },
 };
 
 const PAYMENT_STATUS = {
-  pending:  { el: 'Σε αναμονή',            en: 'Awaiting',         bg: '#F1F5F9', color: '#475569', icon: Hourglass },
-  held:     { el: 'Αναμονή επιβεβαίωσης',  en: 'Awaiting confirm', bg: '#FEF3C7', color: '#92400E', icon: Hourglass },
-  released: { el: 'Ολοκληρώθηκε',          en: 'Closed',           bg: '#D1FAE5', color: '#065F46', icon: CheckCircle2 },
-  refunded: { el: 'Επιστράφηκε',           en: 'Refunded',         bg: '#FEE2E2', color: '#991B1B', icon: X },
+  pending:  { el: 'Σε αναμονή',            en: 'Awaiting',         bg: C.borderSoft, color: C.textBody, icon: Hourglass },
+  held:     { el: 'Αναμονή επιβεβαίωσης',  en: 'Awaiting confirm', bg: C.warnBg, color: C.warn, icon: Hourglass },
+  released: { el: 'Ολοκληρώθηκε',          en: 'Closed',           bg: C.successBg, color: C.success, icon: CheckCircle2 },
+  refunded: { el: 'Επιστράφηκε',           en: 'Refunded',         bg: C.dangerBg, color: C.danger, icon: X },
 };
 
 // ─── Translations ─────────────────────────────────────────────────────
@@ -81,8 +82,8 @@ const TX = {
     todayNewRequest: 'νέο αίτημα',
     todayReschedules: 'προτάσεις αλλαγής ώρας',
     todayReschedule: 'πρόταση αλλαγής ώρας',
-    todayNothing: 'Δεν εκκρεμεί τίποτα σήμερα.',
-    todayNothingSub: 'Θα σε ειδοποιήσουμε μόλις έρθει νέο αίτημα.',
+    todayNothing: 'Είσαι εντάξει για σήμερα.',
+    todayNothingSub: 'Θα σε ενημερώσουμε μόλις έρθει νέο αίτημα ή αλλαγή σε ραντεβού.',
     seeRequests: 'Δες τα αιτήματα',
     todaySchedule: 'Το πρόγραμμά σου σήμερα',
     noSessionsToday: 'Δεν έχεις ραντεβού σήμερα.',
@@ -318,8 +319,8 @@ const TX = {
     todayNewRequest: 'new request',
     todayReschedules: 'reschedule proposals',
     todayReschedule: 'reschedule proposal',
-    todayNothing: 'Nothing pending today.',
-    todayNothingSub: "We'll let you know as soon as a request comes in.",
+    todayNothing: "You're all set for today.",
+    todayNothingSub: "We'll let you know as soon as a new request or a change comes in.",
     seeRequests: 'See requests',
     todaySchedule: 'Your schedule today',
     noSessionsToday: 'No appointments today.',
@@ -545,7 +546,7 @@ const isCancelled = (s) => String(s || '').startsWith('cancelled');
 function Avatar({ name, photoUrl, size = 48 }) {
   if (photoUrl) return <img src={photoUrl} alt={name} style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />;
   return (
-    <div style={{ width: size, height: size, borderRadius: '50%', background: 'linear-gradient(135deg,#2a6fdb,#1a2e44)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.35, fontWeight: 700, flexShrink: 0 }}>
+    <div style={{ width: size, height: size, borderRadius: '50%', background: 'linear-gradient(135deg,${C.accent},${C.brand})', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.35, fontWeight: 700, flexShrink: 0 }}>
       {(name || '?').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
     </div>
   );
@@ -553,7 +554,7 @@ function Avatar({ name, photoUrl, size = 48 }) {
 
 function Badge({ label, bg, color, icon: Icon }) {
   return (
-    <span style={{ background: bg, color, padding: '3px 10px', borderRadius: 999, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+    <span style={{ background: bg, color, padding: '3px 10px', borderRadius: RAD.pill, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
       {Icon && <Icon size={11} strokeWidth={2.5} />}
       {label}
     </span>
@@ -564,7 +565,7 @@ function ReviewStars({ rating, size = 14 }) {
   return (
     <span style={{ display: 'inline-flex', gap: 2 }}>
       {[1, 2, 3, 4, 5].map(i => (
-        <Star key={i} size={size} fill={i <= (rating || 0) ? '#F59E0B' : 'none'} color={i <= (rating || 0) ? '#F59E0B' : '#E2E8F0'} strokeWidth={2} />
+        <Star key={i} size={size} fill={i <= (rating || 0) ? C.warn : 'none'} color={i <= (rating || 0) ? C.warn : C.border} strokeWidth={2} />
       ))}
     </span>
   );
@@ -686,7 +687,7 @@ function TherapistConditionsSection({ userId, specialty, lang, tx }) {
   }
 
   if (loading) {
-    return <div style={{ padding: 40, textAlign: 'center', color: '#64748B' }}>{tx.loading}</div>;
+    return <div style={{ padding: 40, textAlign: 'center', color: C.textMuted }}>{tx.loading}</div>;
   }
 
   return (
@@ -701,24 +702,24 @@ function TherapistConditionsSection({ userId, specialty, lang, tx }) {
       />
 
       {(changed || msg) && (
-        <div style={{ position: 'sticky', bottom: 0, marginTop: 20, paddingTop: 16, borderTop: '1px solid #e2e8f0', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ position: 'sticky', bottom: 0, marginTop: 20, paddingTop: 16, borderTop: '1px solid ${C.border}', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
           {msg ? (
             <div style={{
-              background: msg.type === 'success' ? '#D1FAE5' : '#FEF2F2',
-              border: `1px solid ${msg.type === 'success' ? '#86EFAC' : '#FECACA'}`,
+              background: msg.type === 'success' ? C.successBg : C.dangerBg,
+              border: `1px solid ${msg.type === 'success' ? C.successBorder : C.dangerBorder}`,
               borderRadius: 8, padding: '8px 14px', fontSize: 13,
-              color: msg.type === 'success' ? '#15803D' : '#DC2626',
+              color: msg.type === 'success' ? C.success : C.danger,
               fontWeight: 600, flex: 1, display: 'flex', alignItems: 'center', gap: 7,
             }}>
               {msg.type === 'success' ? <Check size={14} strokeWidth={3} /> : <AlertTriangle size={14} strokeWidth={2.5} />}
               {msg.text}
             </div>
           ) : (
-            <div style={{ fontSize: 13, color: '#64748B', flex: 1 }}>{tx.condUnsaved}</div>
+            <div style={{ fontSize: 13, color: C.textMuted, flex: 1 }}>{tx.condUnsaved}</div>
           )}
           {changed && (
             <button onClick={save} disabled={saving}
-              style={{ background: '#1a2e44', color: '#fff', border: 'none', padding: '11px 28px', borderRadius: 30, fontSize: 14, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: saving ? 0.7 : 1, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+              style={{ background: C.brand, color: '#fff', border: 'none', padding: '11px 28px', borderRadius: RAD.button, fontSize: 14, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: saving ? 0.7 : 1, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
               <Save size={15} strokeWidth={2.2} />
               {saving ? tx.saving : tx.save}
             </button>
@@ -877,28 +878,28 @@ function AvailabilityManager({ userId, lang, tx, loc, slots, onSlotsChanged, wee
     await onSlotsChanged();
   }
 
-  const inputStyle = { padding: '9px 12px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', outline: 'none', color: '#0F172A', boxSizing: 'border-box' };
-  const labelStyle = { fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.05em', display: 'block', marginBottom: 5 };
+  const inputStyle = { padding: '9px 12px', border: '1.5px solid ${C.border}', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', outline: 'none', color: C.text, boxSizing: 'border-box' };
+  const labelStyle = { fontSize: 11, fontWeight: 700, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '.05em', display: 'block', marginBottom: 5 };
 
   const fmtDate = d => new Date(d + 'T12:00:00').toLocaleDateString(loc, { day: '2-digit', month: '2-digit' });
   const weekStart = currentWeek?.[0];
   const weekEnd = currentWeek?.[currentWeek.length - 1];
 
   if (loading) {
-    return <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: 40, textAlign: 'center', color: '#64748B' }}>{tx.loading}</div>;
+    return <div style={{ background: '#fff', borderRadius: RAD.card, border: '1px solid ${C.border}', padding: 40, textAlign: 'center', color: C.textMuted }}>{tx.loading}</div>;
   }
 
   return (
     <div>
       <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 18, fontWeight: 700, color: '#0F172A', marginBottom: 3 }}>{tx.availTitle}</div>
-        <div style={{ fontSize: 13, color: '#64748B', lineHeight: 1.5 }}>{tx.availDesc}</div>
+        <div style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 3 }}>{tx.availTitle}</div>
+        <div style={{ fontSize: 13, color: C.textMuted, lineHeight: 1.5 }}>{tx.availDesc}</div>
       </div>
 
-      <div style={{ display: 'flex', gap: 4, background: '#e2e8f0', padding: 4, borderRadius: 10, width: 'fit-content', marginBottom: 18 }}>
+      <div style={{ display: 'flex', gap: 4, background: C.border, padding: 4, borderRadius: 10, width: 'fit-content', marginBottom: 18 }}>
         {[['weekly', tx.modeWeekly, Repeat], ['grid', tx.modeGrid, CalendarDays]].map(([id, label, Icon]) => (
           <button key={id} onClick={() => setMode(id)}
-            style={{ padding: '8px 16px', borderRadius: 7, border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: mode === id ? '#fff' : 'transparent', color: mode === id ? '#0F172A' : '#64748B', boxShadow: mode === id ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            style={{ padding: '8px 16px', borderRadius: 7, border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: mode === id ? '#fff' : 'transparent', color: mode === id ? C.text : C.textMuted, boxShadow: mode === id ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             <Icon size={14} />
             {label}
           </button>
@@ -907,10 +908,10 @@ function AvailabilityManager({ userId, lang, tx, loc, slots, onSlotsChanged, wee
 
       {msg && (
         <div style={{
-          background: msg.type === 'success' ? '#D1FAE5' : '#FEF2F2',
-          border: `1px solid ${msg.type === 'success' ? '#86EFAC' : '#FECACA'}`,
+          background: msg.type === 'success' ? C.successBg : C.dangerBg,
+          border: `1px solid ${msg.type === 'success' ? C.successBorder : C.dangerBorder}`,
           borderRadius: 10, padding: '11px 16px', fontSize: 13, marginBottom: 16,
-          color: msg.type === 'success' ? '#15803D' : '#DC2626', fontWeight: 600,
+          color: msg.type === 'success' ? C.success : C.danger, fontWeight: 600,
           display: 'flex', alignItems: 'center', gap: 8,
         }}>
           {msg.type === 'success' ? <Check size={15} strokeWidth={3} /> : <AlertTriangle size={15} strokeWidth={2.4} />}
@@ -921,30 +922,30 @@ function AvailabilityManager({ userId, lang, tx, loc, slots, onSlotsChanged, wee
       {mode === 'weekly' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-          <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: 22 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', marginBottom: 3, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
-              <Repeat size={15} color="#2a6fdb" />
+          <div style={{ background: '#fff', borderRadius: RAD.card, border: '1px solid ${C.border}', padding: 22 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 3, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+              <Repeat size={15} color={C.accent} />
               {tx.weeklyTitle}
             </div>
-            <div style={{ fontSize: 12.5, color: '#64748B', marginBottom: 16 }}>{tx.weeklyDesc}</div>
+            <div style={{ fontSize: 12.5, color: C.textMuted, marginBottom: 16 }}>{tx.weeklyDesc}</div>
 
             {blocks.length === 0 ? (
-              <div style={{ padding: 20, textAlign: 'center', background: '#f8fafc', borderRadius: 10, color: '#94a3b8', fontSize: 13, fontStyle: 'italic', marginBottom: 16 }}>
+              <div style={{ padding: 20, textAlign: 'center', background: C.page, borderRadius: 10, color: C.textFaint, fontSize: 13, fontStyle: 'italic', marginBottom: 16 }}>
                 {tx.noBlocks}
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 16 }}>
                 {blocks.map(b => (
-                  <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: '#15803D', minWidth: 78 }}>{DAYS[lang][b.weekday]}</span>
-                    <span style={{ fontSize: 13.5, color: '#166534', fontWeight: 600 }}>
+                  <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', background: C.successBg, border: '1px solid ${C.successBorder}', borderRadius: 10, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: C.success, minWidth: 78 }}>{DAYS[lang][b.weekday]}</span>
+                    <span style={{ fontSize: 13.5, color: C.success, fontWeight: 600 }}>
                       {b.start_time?.slice(0, 5)} – {b.end_time?.slice(0, 5)}
                     </span>
-                    <span style={{ fontSize: 12, color: '#15803D', background: '#fff', border: '1px solid #BBF7D0', padding: '2px 9px', borderRadius: 999 }}>
+                    <span style={{ fontSize: 12, color: C.success, background: '#fff', border: '1px solid ${C.successBorder}', padding: '2px 9px', borderRadius: RAD.pill }}>
                       {b.slot_minutes} {tx.minutesShort}
                     </span>
                     <button onClick={() => removeBlock(b.id)}
-                      style={{ marginLeft: 'auto', background: 'transparent', border: '1px solid #FECDD3', color: '#BE123C', borderRadius: 20, padding: '5px 12px', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                      style={{ marginLeft: 'auto', background: 'transparent', border: '1px solid ${C.dangerBorder}', color: C.danger, borderRadius: 20, padding: '5px 12px', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                       <Trash2 size={12} />
                       {tx.removeBlock}
                     </button>
@@ -953,7 +954,7 @@ function AvailabilityManager({ userId, lang, tx, loc, slots, onSlotsChanged, wee
               </div>
             )}
 
-            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap', paddingTop: 16, borderTop: '1px solid #f1f5f9' }}>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap', paddingTop: 16, borderTop: '1px solid ${C.borderSoft}' }}>
               <div style={{ minWidth: 120 }}>
                 <label style={labelStyle}>{tx.day}</label>
                 <select value={form.weekday} onChange={e => setForm(f => ({ ...f, weekday: e.target.value }))} style={{ ...inputStyle, width: '100%' }}>
@@ -975,56 +976,56 @@ function AvailabilityManager({ userId, lang, tx, loc, slots, onSlotsChanged, wee
                 </select>
               </div>
               <button onClick={addBlock} disabled={busy === 'block'}
-                style={{ padding: '10px 20px', borderRadius: 8, border: 'none', background: '#1a2e44', color: '#fff', fontSize: 13, fontWeight: 600, cursor: busy === 'block' ? 'wait' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                style={{ padding: '10px 20px', borderRadius: 8, border: 'none', background: C.brand, color: '#fff', fontSize: 13, fontWeight: 600, cursor: busy === 'block' ? 'wait' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                 <Plus size={14} strokeWidth={2.5} />
                 {tx.addBlock}
               </button>
             </div>
           </div>
 
-          <div style={{ background: '#EFF6FF', borderRadius: 14, border: '1px solid #BFDBFE', padding: 22 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#1D4ED8', marginBottom: 3, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+          <div style={{ background: C.infoBg, borderRadius: RAD.card, border: '1px solid ${C.infoBorder}', padding: 22 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: C.info, marginBottom: 3, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
               <CalendarDays size={15} />
               {tx.generateTitle}
             </div>
-            <div style={{ fontSize: 12.5, color: '#1E40AF', marginBottom: 16, lineHeight: 1.5 }}>{tx.generateDesc}</div>
+            <div style={{ fontSize: 12.5, color: C.info, marginBottom: 16, lineHeight: 1.5 }}>{tx.generateDesc}</div>
 
             <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
               <div>
-                <label style={{ ...labelStyle, color: '#1D4ED8' }}>{tx.weeksAhead}</label>
+                <label style={{ ...labelStyle, color: C.info }}>{tx.weeksAhead}</label>
                 <select value={weeksAhead} onChange={e => setWeeksAhead(Number(e.target.value))} style={{ ...inputStyle, background: '#fff' }}>
                   {[2, 4, 8, 12, 24].map(w => <option key={w} value={w}>{w} {tx.weeks}</option>)}
                 </select>
               </div>
               <button onClick={generate} disabled={busy === 'generate' || blocks.length === 0}
-                style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: blocks.length === 0 ? '#cbd5e1' : '#1D4ED8', color: '#fff', fontSize: 13, fontWeight: 700, cursor: blocks.length === 0 ? 'not-allowed' : busy === 'generate' ? 'wait' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: blocks.length === 0 ? C.border : C.info, color: '#fff', fontSize: 13, fontWeight: 700, cursor: blocks.length === 0 ? 'not-allowed' : busy === 'generate' ? 'wait' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
                 <Check size={14} strokeWidth={3} />
                 {busy === 'generate' ? tx.generating : tx.generateBtn}
               </button>
             </div>
           </div>
 
-          <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: 22 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', marginBottom: 3, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
-              <Ban size={15} color="#BE123C" />
+          <div style={{ background: '#fff', borderRadius: RAD.card, border: '1px solid ${C.border}', padding: 22 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 3, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+              <Ban size={15} color={C.danger} />
               {tx.exceptionsTitle}
             </div>
-            <div style={{ fontSize: 12.5, color: '#64748B', marginBottom: 16 }}>{tx.exceptionsDesc}</div>
+            <div style={{ fontSize: 12.5, color: C.textMuted, marginBottom: 16 }}>{tx.exceptionsDesc}</div>
 
             {exceptions.length === 0 ? (
-              <div style={{ padding: 16, textAlign: 'center', background: '#f8fafc', borderRadius: 10, color: '#94a3b8', fontSize: 13, fontStyle: 'italic', marginBottom: 16 }}>
+              <div style={{ padding: 16, textAlign: 'center', background: C.page, borderRadius: 10, color: C.textFaint, fontSize: 13, fontStyle: 'italic', marginBottom: 16 }}>
                 {tx.noExceptions}
               </div>
             ) : (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
                 {exceptions.map(e => (
-                  <div key={e.id} style={{ background: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: 30, padding: '6px 8px 6px 14px', display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#9F1239', fontWeight: 500 }}>
+                  <div key={e.id} style={{ background: C.dangerBg, border: '1px solid ${C.dangerBorder}', borderRadius: RAD.button, padding: '6px 8px 6px 14px', display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: C.danger, fontWeight: 500 }}>
                     <span style={{ fontWeight: 700 }}>
                       {new Date(e.date + 'T12:00:00').toLocaleDateString(loc, { day: '2-digit', month: 'short' })}
                     </span>
                     {e.note && <span style={{ fontSize: 12, opacity: 0.8 }}>{e.note}</span>}
                     <button onClick={() => removeException(e.id)}
-                      style={{ background: 'transparent', border: 'none', color: '#9F1239', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', width: 18, height: 18 }}>
+                      style={{ background: 'transparent', border: 'none', color: C.danger, cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', width: 18, height: 18 }}>
                       <X size={13} strokeWidth={2.5} />
                     </button>
                   </div>
@@ -1032,7 +1033,7 @@ function AvailabilityManager({ userId, lang, tx, loc, slots, onSlotsChanged, wee
               </div>
             )}
 
-            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap', paddingTop: 16, borderTop: '1px solid #f1f5f9' }}>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap', paddingTop: 16, borderTop: '1px solid ${C.borderSoft}' }}>
               <div>
                 <label style={labelStyle}>{tx.day}</label>
                 <input type="date" min={todayISO()} value={excForm.date} onChange={e => setExcForm(f => ({ ...f, date: e.target.value }))} style={inputStyle} />
@@ -1042,7 +1043,7 @@ function AvailabilityManager({ userId, lang, tx, loc, slots, onSlotsChanged, wee
                 <input value={excForm.note} onChange={e => setExcForm(f => ({ ...f, note: e.target.value }))} placeholder={tx.exceptionNotePh} style={{ ...inputStyle, width: '100%' }} />
               </div>
               <button onClick={addException} disabled={!excForm.date || busy === 'exception'}
-                style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #FECDD3', background: !excForm.date ? '#f8fafc' : '#fff', color: !excForm.date ? '#94a3b8' : '#BE123C', fontSize: 13, fontWeight: 600, cursor: !excForm.date ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid ${C.dangerBorder}', background: !excForm.date ? C.page : '#fff', color: !excForm.date ? C.textFaint : C.danger, fontSize: 13, fontWeight: 600, cursor: !excForm.date ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                 <Plus size={14} strokeWidth={2.5} />
                 {tx.addException}
               </button>
@@ -1052,39 +1053,39 @@ function AvailabilityManager({ userId, lang, tx, loc, slots, onSlotsChanged, wee
       )}
 
       {mode === 'grid' && (
-        <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: 22 }}>
-          <div style={{ fontSize: 12.5, color: '#64748B', marginBottom: 16 }}>{tx.gridDesc}</div>
+        <div style={{ background: '#fff', borderRadius: RAD.card, border: '1px solid ${C.border}', padding: 22 }}>
+          <div style={{ fontSize: 12.5, color: C.textMuted, marginBottom: 16 }}>{tx.gridDesc}</div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
             <button onClick={() => setWeekOffset(w => Math.max(0, w - 1))} disabled={weekOffset === 0}
-              style={{ padding: '6px 16px', borderRadius: 8, border: '1px solid #e2e8f0', background: weekOffset === 0 ? '#f8fafc' : '#fff', color: weekOffset === 0 ? '#94a3b8' : '#1a2e44', fontSize: 13, fontWeight: 600, cursor: weekOffset === 0 ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' }}>
+              style={{ padding: '6px 16px', borderRadius: 8, border: '1px solid ${C.border}', background: weekOffset === 0 ? C.page : '#fff', color: weekOffset === 0 ? C.textFaint : C.brand, fontSize: 13, fontWeight: 600, cursor: weekOffset === 0 ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' }}>
               <ChevronLeft size={14} />
               {tx.prev}
             </button>
-            <div style={{ flex: 1, textAlign: 'center', fontSize: 14, fontWeight: 700, color: '#0F172A', minWidth: 140 }}>
+            <div style={{ flex: 1, textAlign: 'center', fontSize: 14, fontWeight: 700, color: C.text, minWidth: 140 }}>
               {weekStart && weekEnd ? `${fmtDate(weekStart)} – ${fmtDate(weekEnd)}` : ''}
-              <span style={{ fontSize: 12, color: '#94a3b8', marginLeft: 8 }}>{tx.week} {weekOffset + 1}</span>
+              <span style={{ fontSize: 12, color: C.textFaint, marginLeft: 8 }}>{tx.week} {weekOffset + 1}</span>
             </div>
             <button onClick={() => setWeekOffset(w => Math.min(ALL_WEEKS.length - 1, w + 1))}
-              style={{ padding: '6px 16px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#1a2e44', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' }}>
+              style={{ padding: '6px 16px', borderRadius: 8, border: '1px solid ${C.border}', background: '#fff', color: C.brand, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' }}>
               {tx.next}
               <ChevronRight size={14} />
             </button>
           </div>
 
-          <div style={{ background: '#F5F3FF', border: '1px solid #DDD6FE', borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ background: C.infoBg, border: '1px solid ${C.infoBorder}', borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: 180 }}>
-              <div style={{ fontSize: 12.5, fontWeight: 700, color: '#6D28D9', marginBottom: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: C.info, marginBottom: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
                 <Copy size={13} strokeWidth={2.2} />
                 {tx.copyWeekTitle}
               </div>
-              <div style={{ fontSize: 11.5, color: '#7C3AED', lineHeight: 1.5 }}>{tx.copyWeekDesc}</div>
+              <div style={{ fontSize: 11.5, color: C.info, lineHeight: 1.5 }}>{tx.copyWeekDesc}</div>
             </div>
             <select value={copyWeeks} onChange={e => setCopyWeeks(Number(e.target.value))} style={{ ...inputStyle, background: '#fff' }}>
               {[1, 2, 3, 4, 8, 12].map(w => <option key={w} value={w}>{w} {tx.weeks}</option>)}
             </select>
             <button onClick={copyWeek} disabled={busy === 'copy'}
-              style={{ padding: '9px 18px', borderRadius: 8, border: 'none', background: '#6D28D9', color: '#fff', fontSize: 12.5, fontWeight: 600, cursor: busy === 'copy' ? 'wait' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
+              style={{ padding: '9px 18px', borderRadius: 8, border: 'none', background: C.info, color: '#fff', fontSize: 12.5, fontWeight: 600, cursor: busy === 'copy' ? 'wait' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
               <Copy size={13} />
               {busy === 'copy' ? tx.copying : tx.copyWeekBtn}
             </button>
@@ -1094,7 +1095,7 @@ function AvailabilityManager({ userId, lang, tx, loc, slots, onSlotsChanged, wee
             <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 480 }}>
               <thead style={{ position: 'sticky', top: 0, background: '#fff', zIndex: 10 }}>
                 <tr>
-                  <th style={{ padding: '8px 10px', fontSize: 11, color: '#64748B', fontWeight: 600, textAlign: 'left', minWidth: 52 }}>{tx.hour}</th>
+                  <th style={{ padding: '8px 10px', fontSize: 11, color: C.textMuted, fontWeight: 600, textAlign: 'left', minWidth: 52 }}>{tx.hour}</th>
                   {(currentWeek || []).map(d => {
                     const dateObj = new Date(d + 'T12:00:00');
                     const dayName = DAYS_SHORT[lang][dateObj.getDay()];
@@ -1102,7 +1103,7 @@ function AvailabilityManager({ userId, lang, tx, loc, slots, onSlotsChanged, wee
                     const isToday = d === todayISO();
                     const isExc = exceptions.some(e => e.date === d);
                     return (
-                      <th key={d} style={{ padding: '8px 4px', fontSize: 11, color: isExc ? '#BE123C' : isToday ? '#2a6fdb' : '#64748B', fontWeight: 700, textAlign: 'center', minWidth: 50, background: isExc ? '#FFF1F2' : isToday ? '#EFF6FF' : 'transparent', borderRadius: 6 }}>
+                      <th key={d} style={{ padding: '8px 4px', fontSize: 11, color: isExc ? C.danger : isToday ? C.accent : C.textMuted, fontWeight: 700, textAlign: 'center', minWidth: 50, background: isExc ? C.dangerBg : isToday ? C.infoBg : 'transparent', borderRadius: 6 }}>
                         {dayName}<br /><span style={{ fontWeight: 400, fontSize: 10 }}>{dayNum}</span>
                       </th>
                     );
@@ -1111,8 +1112,8 @@ function AvailabilityManager({ userId, lang, tx, loc, slots, onSlotsChanged, wee
               </thead>
               <tbody>
                 {HOURS.map(hour => (
-                  <tr key={hour} style={{ borderTop: hour.endsWith(':00') ? '1px solid #f1f5f9' : 'none' }}>
-                    <td style={{ padding: '2px 8px', fontSize: 10, color: hour.endsWith(':00') ? '#475569' : '#94a3b8', fontWeight: hour.endsWith(':00') ? 600 : 400, whiteSpace: 'nowrap' }}>{hour}</td>
+                  <tr key={hour} style={{ borderTop: hour.endsWith(':00') ? '1px solid ${C.borderSoft}' : 'none' }}>
+                    <td style={{ padding: '2px 8px', fontSize: 10, color: hour.endsWith(':00') ? C.textBody : C.textFaint, fontWeight: hour.endsWith(':00') ? 600 : 400, whiteSpace: 'nowrap' }}>{hour}</td>
                     {(currentWeek || []).map(day => {
                       const slot = slots.find(s => s.date === day && s.start_time === hour + ':00');
                       const isBlocked = slot?.is_blocked;
@@ -1121,8 +1122,8 @@ function AvailabilityManager({ userId, lang, tx, loc, slots, onSlotsChanged, wee
                       return (
                         <td key={day} style={{ padding: 2, textAlign: 'center' }}>
                           <div onClick={() => !isBlocked && !isPast && toggleSlot(day, hour)}
-                            style={{ width: '100%', height: 22, borderRadius: 3, cursor: isBlocked || isPast ? 'not-allowed' : 'pointer', background: isBlocked ? '#FEE2E2' : isAvail ? '#D1FAE5' : isPast ? '#F8FAFC' : '#F1F5F9', border: `1px solid ${isBlocked ? '#FECACA' : isAvail ? '#BBF7D0' : '#E2E8F0'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: isPast ? 0.35 : 1, transition: 'all .1s' }}>
-                            {isBlocked ? <Lock size={10} color="#9F1239" strokeWidth={2.5} /> : isAvail ? <Check size={11} color="#15803D" strokeWidth={3} /> : null}
+                            style={{ width: '100%', height: 22, borderRadius: 3, cursor: isBlocked || isPast ? 'not-allowed' : 'pointer', background: isBlocked ? C.dangerBg : isAvail ? C.successBg : isPast ? C.page : C.borderSoft, border: `1px solid ${isBlocked ? C.dangerBorder : isAvail ? C.successBorder : C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: isPast ? 0.35 : 1, transition: 'all .1s' }}>
+                            {isBlocked ? <Lock size={10} color={C.danger} strokeWidth={2.5} /> : isAvail ? <Check size={11} color={C.success} strokeWidth={3} /> : null}
                           </div>
                         </td>
                       );
@@ -1133,10 +1134,10 @@ function AvailabilityManager({ userId, lang, tx, loc, slots, onSlotsChanged, wee
             </table>
           </div>
 
-          <div style={{ marginTop: 12, display: 'flex', gap: 16, fontSize: 12, color: '#64748B', flexWrap: 'wrap' }}>
-            <span><span style={{ display: 'inline-block', width: 12, height: 12, background: '#D1FAE5', border: '1px solid #BBF7D0', borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />{tx.legendAvailable}</span>
-            <span><span style={{ display: 'inline-block', width: 12, height: 12, background: '#FEE2E2', border: '1px solid #FECACA', borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />{tx.legendBooked}</span>
-            <span><span style={{ display: 'inline-block', width: 12, height: 12, background: '#F1F5F9', border: '1px solid #E2E8F0', borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />{tx.legendUnavailable}</span>
+          <div style={{ marginTop: 12, display: 'flex', gap: 16, fontSize: 12, color: C.textMuted, flexWrap: 'wrap' }}>
+            <span><span style={{ display: 'inline-block', width: 12, height: 12, background: C.successBg, border: '1px solid ${C.successBorder}', borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />{tx.legendAvailable}</span>
+            <span><span style={{ display: 'inline-block', width: 12, height: 12, background: C.dangerBg, border: '1px solid ${C.dangerBorder}', borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />{tx.legendBooked}</span>
+            <span><span style={{ display: 'inline-block', width: 12, height: 12, background: C.borderSoft, border: '1px solid ${C.border}', borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />{tx.legendUnavailable}</span>
           </div>
         </div>
       )}
@@ -1782,8 +1783,8 @@ export default function TherapistDashboard() {
   }
 
   if (loading) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc' }}>
-      <div style={{ fontSize: 16, color: '#64748B' }}>{tx.loading}</div>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: C.page }}>
+      <div style={{ fontSize: 16, color: C.textMuted }}>{tx.loading}</div>
     </div>
   );
 
@@ -1819,7 +1820,7 @@ export default function TherapistDashboard() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: C.page, fontFamily: "'DM Sans', sans-serif" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1832,31 +1833,31 @@ export default function TherapistDashboard() {
         }
       `}</style>
 
-      <nav style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', padding: '0 24px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'Georgia, serif', fontSize: 18, fontWeight: 700, color: '#1a2e44' }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#2a6fdb', display: 'inline-block' }} />
+      <nav style={{ background: '#fff', borderBottom: '1px solid ${C.border}', padding: '0 24px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'Georgia, serif', fontSize: 18, fontWeight: 700, color: C.brand }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.accent, display: 'inline-block' }} />
           PhysioHome
-          <span style={{ fontSize: 12, fontWeight: 500, color: '#64748b', marginLeft: 8, background: '#f1f5f9', padding: '2px 10px', borderRadius: 999 }}>{tx.roleBadge}</span>
+          <span style={{ fontSize: 12, fontWeight: 500, color: C.textMuted, marginLeft: 8, background: C.borderSoft, padding: '2px 10px', borderRadius: RAD.pill }}>{tx.roleBadge}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           {!profile?.is_approved && hasLicense && (
-            <span style={{ background: '#FEF3C7', color: '#92400E', padding: '4px 12px', borderRadius: 999, fontSize: 12, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ background: C.warnBg, color: C.warn, padding: '4px 12px', borderRadius: RAD.pill, fontSize: 12, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
               <Clock size={12} />
               {tx.awaitingApproval}
             </span>
           )}
-          <LanguageSwitcher color="#64748b" hoverColor="#1a2e44" navHeight={60} />
+          <LanguageSwitcher color={C.textMuted} hoverColor={C.brand} navHeight={60} />
           <button onClick={viewSite} title={tx.viewSiteTitle}
-            style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #c8dff9', background: '#eaf2fc', color: '#2a6fdb', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, fontFamily: 'inherit' }}>
+            style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid ${C.accentBorder}', background: C.accentSoft, color: C.accent, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, fontFamily: 'inherit' }}>
             <Globe size={13} />
             {tx.site}
           </button>
           <Avatar name={profile?.name || user?.email} photoUrl={profile?.photo_url} size={36} />
-          <button onClick={signOut} style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #e2e8f0', background: 'transparent', color: '#64748b', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>{tx.signOut}</button>
+          <button onClick={signOut} style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid ${C.border}', background: 'transparent', color: C.textMuted, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>{tx.signOut}</button>
         </div>
       </nav>
 
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px' }}>
+      <div style={{ maxWidth: MAX_WIDTH, margin: '0 auto', padding: '24px' }}>
 
         {/* Το checklist είναι ΠΑΝΩ από τα tabs. Χωρίς scroll, ο θεραπευτής
             πατάει «Συμπλήρωσε», το tab αλλάζει σωστά, αλλά αυτός βλέπει
@@ -1872,17 +1873,17 @@ export default function TherapistDashboard() {
         />
 
         <div ref={tabsRef} className="tabs-scroll" style={{ marginBottom: 24, scrollMarginTop: 76 }}>
-          <div style={{ display: 'flex', gap: 4, background: '#e2e8f0', padding: 4, borderRadius: 12, width: 'fit-content', minWidth: 'min-content' }}>
+          <div style={{ display: 'flex', gap: 4, background: C.border, padding: 4, borderRadius: 12, width: 'fit-content', minWidth: 'min-content' }}>
             {TABS.map(t => {
               const TabIcon = t.Icon;
               const isActive = activeTab === t.id;
               return (
                 <button key={t.id} onClick={() => setActiveTab(t.id)}
-                  style={{ padding: '9px 18px', borderRadius: 8, border: 'none', fontSize: 13.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: isActive ? '#fff' : 'transparent', color: isActive ? '#0F172A' : '#64748B', boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
+                  style={{ padding: '9px 18px', borderRadius: 8, border: 'none', fontSize: 13.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: isActive ? '#fff' : 'transparent', color: isActive ? C.text : C.textMuted, boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
                   <TabIcon size={14} />
                   {t.label}
                   {t.count > 0 && (
-                    <span style={{ background: isActive ? '#2a6fdb' : '#94a3b8', color: '#fff', fontSize: 11, fontWeight: 700, minWidth: 19, height: 19, borderRadius: 999, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 6px' }}>
+                    <span style={{ background: isActive ? C.accent : C.textFaint, color: '#fff', fontSize: 11, fontWeight: 700, minWidth: 19, height: 19, borderRadius: RAD.pill, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 6px' }}>
                       {t.count}
                     </span>
                   )}
@@ -1897,29 +1898,29 @@ export default function TherapistDashboard() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
             {/* Μόνο ό,τι χρειάζεται ΣΗΜΕΡΑ. Τα υπόλοιπα ζουν στα tabs. */}
-            <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-              <div style={{ padding: '18px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
-                <Clock size={17} color="#2a6fdb" />
-                <span style={{ fontSize: 16, fontWeight: 700, color: '#0F172A' }}>{tx.todayTitle}</span>
-                <span style={{ fontSize: 13, color: '#94a3b8', marginLeft: 'auto' }}>{formatFullDate(todayStr)}</span>
+            <div style={{ background: '#fff', borderRadius: RAD.card, border: '1px solid ${C.border}', overflow: 'hidden' }}>
+              <div style={{ padding: '18px 24px', borderBottom: '1px solid ${C.borderSoft}', display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
+                <Clock size={17} color={C.accent} />
+                <span style={{ fontSize: 16, fontWeight: 700, color: C.text }}>{tx.todayTitle}</span>
+                <span style={{ fontSize: 13, color: C.textFaint, marginLeft: 'auto' }}>{formatFullDate(todayStr)}</span>
               </div>
 
               {pendingCount === 0 && todaysAppointments.length === 0 && incomingReschedules.length === 0 ? (
                 <div style={{ padding: '32px 24px', textAlign: 'center' }}>
-                  <CheckCircle2 size={34} color="#BBF7D0" style={{ margin: '0 auto 10px' }} />
-                  <div style={{ fontSize: 15, fontWeight: 600, color: '#475569', marginBottom: 4 }}>{tx.todayNothing}</div>
-                  <div style={{ fontSize: 13, color: '#94a3b8' }}>{tx.todayNothingSub}</div>
+                  <CheckCircle2 size={34} color={C.successBorder} style={{ margin: '0 auto 10px' }} />
+                  <div style={{ fontSize: 15, fontWeight: 600, color: C.textBody, marginBottom: 4 }}>{tx.todayNothing}</div>
+                  <div style={{ fontSize: 13, color: C.textFaint }}>{tx.todayNothingSub}</div>
                 </div>
               ) : (
                 <div style={{ padding: '18px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {pendingCount > 0 && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 12, flexWrap: 'wrap' }}>
-                      <ClipboardList size={18} color="#B45309" />
-                      <span style={{ fontSize: 15, fontWeight: 700, color: '#92400E' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', background: C.warnBg, border: '1px solid ${C.warnBorder}', borderRadius: 12, flexWrap: 'wrap' }}>
+                      <ClipboardList size={18} color={C.warn} />
+                      <span style={{ fontSize: 15, fontWeight: 700, color: C.warn }}>
                         {pendingCount} {pendingCount === 1 ? tx.todayNewRequest : tx.todayNewRequests}
                       </span>
                       <button onClick={() => setActiveTab('requests')}
-                        style={{ marginLeft: 'auto', padding: '8px 18px', borderRadius: 30, border: 'none', background: '#B45309', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        style={{ marginLeft: 'auto', padding: '8px 18px', borderRadius: RAD.button, border: 'none', background: C.warn, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                         {tx.seeRequests}
                         <ChevronRight size={14} />
                       </button>
@@ -1927,13 +1928,13 @@ export default function TherapistDashboard() {
                   )}
 
                   {incomingReschedules.length > 0 && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 12, flexWrap: 'wrap' }}>
-                      <CalendarClock size={18} color="#1D4ED8" />
-                      <span style={{ fontSize: 15, fontWeight: 700, color: '#1D4ED8' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', background: C.infoBg, border: '1px solid ${C.infoBorder}', borderRadius: 12, flexWrap: 'wrap' }}>
+                      <CalendarClock size={18} color={C.info} />
+                      <span style={{ fontSize: 15, fontWeight: 700, color: C.info }}>
                         {incomingReschedules.length} {incomingReschedules.length === 1 ? tx.todayReschedule : tx.todayReschedules}
                       </span>
                       <button onClick={() => setActiveTab('appointments')}
-                        style={{ marginLeft: 'auto', padding: '8px 18px', borderRadius: 30, border: 'none', background: '#1D4ED8', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        style={{ marginLeft: 'auto', padding: '8px 18px', borderRadius: RAD.button, border: 'none', background: C.info, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                         {tx.tabAppointments}
                         <ChevronRight size={14} />
                       </button>
@@ -1941,24 +1942,24 @@ export default function TherapistDashboard() {
                   )}
 
                   <div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 9 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 9 }}>
                       {tx.todaySchedule}
                     </div>
                     {todaysAppointments.length === 0 ? (
-                      <div style={{ fontSize: 13.5, color: '#94a3b8', fontStyle: 'italic', padding: '10px 0' }}>{tx.noSessionsToday}</div>
+                      <div style={{ fontSize: 13.5, color: C.textFaint, fontStyle: 'italic', padding: '10px 0' }}>{tx.noSessionsToday}</div>
                     ) : (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
                         {todaysAppointments.map(apt => {
                           const st = statusLabel(STATUS, apt.status);
                           return (
-                            <div key={apt.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', background: '#f8fafc', borderRadius: 10, flexWrap: 'wrap' }}>
-                              <span style={{ fontSize: 16, fontWeight: 700, color: '#0F172A', minWidth: 52 }}>
+                            <div key={apt.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', background: C.page, borderRadius: 10, flexWrap: 'wrap' }}>
+                              <span style={{ fontSize: 16, fontWeight: 700, color: C.text, minWidth: 52 }}>
                                 {apt.session_time?.slice(0, 5)}
                               </span>
-                              <span style={{ fontSize: 14, color: '#0F172A', fontWeight: 600 }}>
+                              <span style={{ fontSize: 14, color: C.text, fontWeight: 600 }}>
                                 {apt.request?.patient_name || tx.unknown}
                               </span>
-                              <span style={{ fontSize: 13, color: '#64748B', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                              <span style={{ fontSize: 13, color: C.textMuted, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                                 <MapPin size={12} />
                                 {apt.request?.area}
                               </span>
@@ -1977,34 +1978,40 @@ export default function TherapistDashboard() {
 
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
-                <span style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>{tx.financeTitle}</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{tx.financeTitle}</span>
                 {/* Το μακροσκελές κείμενο για τις πληρωμές έγινε modal.
                     Μετά από δύο-τρεις χρήσεις είναι θόρυβος. */}
                 <button onClick={() => setPayModal(true)}
-                  style={{ background: 'transparent', border: 'none', color: '#2a6fdb', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5, padding: 0 }}>
+                  style={{ background: 'transparent', border: 'none', color: C.accent, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5, padding: 0 }}>
                   <Info size={13} />
                   {tx.howPaymentsWork}
                 </button>
               </div>
 
               <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-                <div style={{ flex: 1, minWidth: 190, background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 14, padding: '18px 20px' }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#1D4ED8', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6 }}>{tx.earningsUpcoming}</div>
-                  <div style={{ fontSize: 28, fontWeight: 700, color: '#1D4ED8' }}>{upcomingEarnings.toFixed(2)}€</div>
-                  <div style={{ fontSize: 12, color: '#1E40AF', marginTop: 4 }}>{tx.earningsUpcomingSub(upcomingPaidBookings.length)}</div>
-                </div>
-                <div style={{ flex: 1, minWidth: 190, background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 14, padding: '18px 20px' }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#15803D', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6 }}>{tx.earningsDone}</div>
-                  <div style={{ fontSize: 28, fontWeight: 700, color: '#15803D' }}>{collectedEarnings.toFixed(2)}€</div>
-                  <div style={{ fontSize: 12, color: '#15803D', marginTop: 4 }}>{tx.earningsDoneSub(completedBookings.length)}</div>
-                </div>
-                <div style={{ flex: 1, minWidth: 190, background: owedTotal > 0 ? '#FFFBEB' : '#F8FAFC', border: `1px solid ${owedTotal > 0 ? '#FDE68A' : '#E2E8F0'}`, borderRadius: 14, padding: '18px 20px' }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: owedTotal > 0 ? '#B45309' : '#64748B', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6 }}>{tx.owedTitle}</div>
-                  <div style={{ fontSize: 28, fontWeight: 700, color: owedTotal > 0 ? '#B45309' : '#64748B' }}>{owedTotal.toFixed(2)}€</div>
-                  <div style={{ fontSize: 12, color: owedTotal > 0 ? '#92400E' : '#94A3B8', marginTop: 4 }}>
-                    {owedTotal > 0 ? tx.owedOpenShort : tx.owedNone}
+                {/* Λευκές cards με λεπτό accent στην κορυφή, όχι τρία
+                    διαφορετικά pastel blocks δίπλα-δίπλα. Το χρώμα μπαίνει
+                    μόνο στο νούμερο και στη γραμμή — λιγότερο «λογιστική»
+                    εμφάνιση, πιο premium. */}
+                {[
+                  { label: tx.earningsUpcoming, value: upcomingEarnings,  sub: tx.earningsUpcomingSub(upcomingPaidBookings.length), tone: C.accent },
+                  { label: tx.earningsDone,     value: collectedEarnings, sub: tx.earningsDoneSub(completedBookings.length),        tone: C.success },
+                  { label: tx.owedTitle,        value: owedTotal,         sub: owedTotal > 0 ? tx.owedOpenShort : tx.owedNone,      tone: owedTotal > 0 ? C.warn : C.textFaint },
+                ].map((c) => (
+                  <div key={c.label} style={{
+                    ...card({ padding: 0 }),
+                    flex: 1, minWidth: 190, overflow: 'hidden',
+                    borderTop: `3px solid ${c.tone}`,
+                  }}>
+                    <div style={{ padding: '18px 20px' }}>
+                      <div style={{ ...T.eyebrow, marginBottom: 8 }}>{c.label}</div>
+                      <div style={{ fontSize: 28, fontWeight: 700, color: c.tone, lineHeight: 1 }}>
+                        {c.value.toFixed(2)}€
+                      </div>
+                      <div style={{ fontSize: 12.5, color: C.textMuted, marginTop: 6 }}>{c.sub}</div>
+                    </div>
                   </div>
-                </div>
+                ))}
               </div>
             </div>
           </div>
@@ -2013,13 +2020,13 @@ export default function TherapistDashboard() {
         {/* ═══ ΑΙΤΗΜΑΤΑ ═══ */}
         {activeTab === 'requests' && (
           <div>
-            <div style={{ display: 'flex', gap: 4, background: '#e2e8f0', padding: 4, borderRadius: 10, width: 'fit-content', marginBottom: 18 }}>
+            <div style={{ display: 'flex', gap: 4, background: C.border, padding: 4, borderRadius: 10, width: 'fit-content', marginBottom: 18 }}>
               {[['pending', tx.requestsPending, pendingCount], ['all', tx.requestsAll, 0]].map(([id, label, count]) => (
                 <button key={id} onClick={() => setRequestFilter(id)}
-                  style={{ padding: '8px 16px', borderRadius: 7, border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: requestFilter === id ? '#fff' : 'transparent', color: requestFilter === id ? '#0F172A' : '#64748B', boxShadow: requestFilter === id ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  style={{ padding: '8px 16px', borderRadius: 7, border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: requestFilter === id ? '#fff' : 'transparent', color: requestFilter === id ? C.text : C.textMuted, boxShadow: requestFilter === id ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   {label}
                   {count > 0 && (
-                    <span style={{ background: '#B45309', color: '#fff', fontSize: 11, fontWeight: 700, minWidth: 18, height: 18, borderRadius: 999, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 5px' }}>{count}</span>
+                    <span style={{ background: C.warn, color: '#fff', fontSize: 11, fontWeight: 700, minWidth: 18, height: 18, borderRadius: RAD.pill, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 5px' }}>{count}</span>
                   )}
                 </button>
               ))}
@@ -2030,7 +2037,7 @@ export default function TherapistDashboard() {
                 const list = requestFilter === 'pending' ? pendingRequests : requests;
                 if (list.length === 0) {
                   return (
-                    <div style={{ padding: 40, textAlign: 'center', color: '#94A3B8', background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', fontSize: 14 }}>
+                    <div style={{ padding: 40, textAlign: 'center', color: C.textFaint, background: '#fff', borderRadius: RAD.card, border: '1px solid ${C.border}', fontSize: 14 }}>
                       {requestFilter === 'pending' ? tx.noPendingRequests : tx.noRequestsYet}
                     </div>
                   );
@@ -2047,8 +2054,8 @@ export default function TherapistDashboard() {
 
                   return (
                     <div key={req.id} style={{
-                      background: '#fff', borderRadius: 14,
-                      border: isPending ? '2px solid #FDE68A' : '1px solid #e2e8f0',
+                      background: '#fff', borderRadius: RAD.card,
+                      border: isPending ? '2px solid ${C.warnBorder}' : '1px solid ${C.border}',
                       overflow: 'hidden',
                     }}>
                       {/* ΤΑ ΠΑΝΤΑ ΓΙΑ ΤΗΝ ΑΠΟΦΑΣΗ, ΣΕ ΜΙΑ ΟΘΟΝΗ.
@@ -2059,38 +2066,38 @@ export default function TherapistDashboard() {
                           <Avatar name={name} size={46} />
                           <div style={{ flex: 1, minWidth: 200 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 5, flexWrap: 'wrap' }}>
-                              <span style={{ fontWeight: 700, fontSize: 16, color: '#0F172A' }}>{name}</span>
+                              <span style={{ fontWeight: 700, fontSize: 16, color: C.text }}>{name}</span>
                               <Badge label={st.label} bg={st.bg} color={st.color} />
-                              <span style={{ fontSize: 11.5, color: '#94A3B8', marginLeft: 'auto' }}>
+                              <span style={{ fontSize: 11.5, color: C.textFaint, marginLeft: 'auto' }}>
                                 {new Date(req.created_at).toLocaleDateString(loc)}
                               </span>
                             </div>
 
                             {req.problem_type && (
-                              <div style={{ fontSize: 14, fontWeight: 600, color: '#1a2e44', marginBottom: 6 }}>
+                              <div style={{ fontSize: 14, fontWeight: 600, color: C.brand, marginBottom: 6 }}>
                                 {req.problem_type}
                               </div>
                             )}
 
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px 16px', fontSize: 13, color: '#64748B', marginBottom: 10 }}>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px 16px', fontSize: 13, color: C.textMuted, marginBottom: 10 }}>
                               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                                 <MapPin size={13} />
                                 {req.area}{req.postal_code ? `, ${req.postal_code}` : ''}
                               </span>
                               {booking && (
-                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#1a2e44', fontWeight: 600 }}>
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: C.brand, fontWeight: 600 }}>
                                   <Calendar size={13} />
                                   {formatShortDate(booking.session_date)} {tx.at} {booking.session_time?.slice(0, 5)}
                                 </span>
                               )}
-                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#15803D', fontWeight: 700 }}>
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: C.success, fontWeight: 700 }}>
                                 <Wallet size={13} />
                                 {tx.youEarn} {amount.toFixed(0)}€
                               </span>
                             </div>
 
                             <button onClick={() => setExpandedRequest(isOpen ? null : req.id)}
-                              style={{ background: 'transparent', border: 'none', color: '#2a6fdb', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', padding: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                              style={{ background: 'transparent', border: 'none', color: C.accent, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', padding: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                               {isOpen ? tx.hideDetails : tx.details}
                               <ChevronRight size={13} style={{ transform: isOpen ? 'rotate(90deg)' : 'none', transition: 'transform .15s' }} />
                             </button>
@@ -2098,27 +2105,27 @@ export default function TherapistDashboard() {
                         </div>
 
                         {isOpen && (
-                          <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', gap: 9, fontSize: 13, color: '#475569' }}>
+                          <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid ${C.borderSoft}', display: 'flex', flexDirection: 'column', gap: 9, fontSize: 13, color: C.textBody }}>
                             <div style={{ display: 'inline-flex', alignItems: 'flex-start', gap: 7 }}>
-                              <Home size={14} color="#64748B" style={{ marginTop: 1, flexShrink: 0 }} />
+                              <Home size={14} color={C.textMuted} style={{ marginTop: 1, flexShrink: 0 }} />
                               <span>
                                 {req.address}, {req.area}{req.postal_code ? `, ${req.postal_code}` : ''}
-                                {req.floor_info && <span style={{ color: '#94a3b8' }}> · {req.floor_info}</span>}
+                                {req.floor_info && <span style={{ color: C.textFaint }}> · {req.floor_info}</span>}
                               </span>
                             </div>
                             {/* Το τηλέφωνο εμφανίζεται ΜΟΝΟ αφού αποδεχτεί.
                                 Πριν από αυτό δεν έχει λόγο να το ξέρει. */}
                             {req.patient_phone && !isPending && (
                               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
-                                <Phone size={14} color="#64748B" />
-                                <a href={`tel:${req.patient_phone}`} style={{ color: '#2a6fdb', fontWeight: 600, textDecoration: 'none' }}>{req.patient_phone}</a>
+                                <Phone size={14} color={C.textMuted} />
+                                <a href={`tel:${req.patient_phone}`} style={{ color: C.accent, fontWeight: 600, textDecoration: 'none' }}>{req.patient_phone}</a>
                               </div>
                             )}
-                            <div style={{ background: '#f8fafc', padding: '10px 14px', borderRadius: 8, borderLeft: '3px solid #cbd5e1', lineHeight: 1.6 }}>
+                            <div style={{ background: C.page, padding: '10px 14px', borderRadius: 8, borderLeft: '3px solid ${C.border}', lineHeight: 1.6 }}>
                               {req.problem_description || tx.noDescription}
                             </div>
                             {req.notes && (
-                              <div style={{ fontSize: 12.5, color: '#64748B', display: 'inline-flex', alignItems: 'flex-start', gap: 7 }}>
+                              <div style={{ fontSize: 12.5, color: C.textMuted, display: 'inline-flex', alignItems: 'flex-start', gap: 7 }}>
                                 <MessageSquare size={13} style={{ marginTop: 1, flexShrink: 0 }} />
                                 <span>{tx.notes} {req.notes}</span>
                               </div>
@@ -2128,17 +2135,17 @@ export default function TherapistDashboard() {
                       </div>
 
                       {(isPending || hasActiveBookings) && (
-                        <div className="req-actions" style={{ padding: '14px 20px', borderTop: '1px solid #f1f5f9', background: isPending ? '#FFFBEB' : '#f8fafc', display: 'flex', gap: 10, alignItems: 'center', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                        <div className="req-actions" style={{ padding: '14px 20px', borderTop: '1px solid ${C.borderSoft}', background: isPending ? C.warnBg : C.page, display: 'flex', gap: 10, alignItems: 'center', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                           {isPending && (
                             <>
-                              <span className="req-hint" style={{ fontSize: 12.5, color: '#92400E', marginRight: 'auto' }}>{tx.respondFast}</span>
+                              <span className="req-hint" style={{ fontSize: 12.5, color: C.warn, marginRight: 'auto' }}>{tx.respondFast}</span>
                               <button onClick={() => openCancelRequestModal(req)}
-                                style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #FECDD3', background: '#fff', color: '#BE123C', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'inherit' }}>
+                                style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid ${C.dangerBorder}', background: '#fff', color: C.danger, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'inherit' }}>
                                 <X size={14} strokeWidth={2.5} />
                                 {tx.reject}
                               </button>
                               <button onClick={() => confirmRequest(req)} disabled={accepting === req.id}
-                                style={{ padding: '10px 26px', borderRadius: 8, border: 'none', background: accepting === req.id ? '#94a3b8' : '#15803D', color: '#fff', fontSize: 13, fontWeight: 700, cursor: accepting === req.id ? 'wait' : 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'inherit' }}>
+                                style={{ padding: '10px 26px', borderRadius: 8, border: 'none', background: accepting === req.id ? C.textFaint : C.success, color: '#fff', fontSize: 13, fontWeight: 700, cursor: accepting === req.id ? 'wait' : 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'inherit' }}>
                                 <Check size={14} strokeWidth={3} />
                                 {accepting === req.id ? tx.accepting : tx.acceptRequest}
                               </button>
@@ -2146,7 +2153,7 @@ export default function TherapistDashboard() {
                           )}
                           {!isPending && hasActiveBookings && (
                             <button onClick={() => openCancelRequestModal(req)}
-                              style={{ padding: '9px 18px', borderRadius: 8, border: '1px solid #FECDD3', background: 'transparent', color: '#BE123C', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                              style={{ padding: '9px 18px', borderRadius: 8, border: '1px solid ${C.dangerBorder}', background: 'transparent', color: C.danger, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                               {tx.cancelWholeRequest}
                             </button>
                           )}
@@ -2168,8 +2175,8 @@ export default function TherapistDashboard() {
               const fullDate = formatFullDate(nextAppointment.session_date);
               return (
                 <div style={{
-                  background: 'linear-gradient(135deg, #1a2e44 0%, #2a6fdb 100%)',
-                  borderRadius: 18, padding: '28px 32px', marginBottom: 20, color: '#fff',
+                  background: 'linear-gradient(135deg, ${C.brand} 0%, ${C.accent} 100%)',
+                  borderRadius: RAD.card, padding: '28px 32px', marginBottom: 20, color: '#fff',
                   boxShadow: '0 8px 32px rgba(26, 46, 68, 0.2)',
                 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -2229,7 +2236,7 @@ export default function TherapistDashboard() {
                   </div>
 
                   {nextAppointment.status === 'pending' && (
-                    <div style={{ marginTop: 16, padding: '10px 14px', background: 'rgba(255, 204, 0, 0.15)', borderRadius: 10, fontSize: 13, color: '#FEF3C7', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ marginTop: 16, padding: '10px 14px', background: 'rgba(255, 204, 0, 0.15)', borderRadius: 10, fontSize: 13, color: C.warnBg, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                       <Clock size={14} />
                       {tx.awaitingYourConfirm}
                     </div>
@@ -2239,8 +2246,8 @@ export default function TherapistDashboard() {
             })()}
 
             {!nextAppointment && upcomingAppointments.length === 0 && pastAppointments.length === 0 ? (
-              <div style={{ padding: 60, textAlign: 'center', color: '#94A3B8', background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0' }}>
-                <Calendar size={48} color="#cbd5e1" style={{ margin: '0 auto 16px' }} />
+              <div style={{ padding: 60, textAlign: 'center', color: C.textFaint, background: '#fff', borderRadius: RAD.card, border: '1px solid ${C.border}' }}>
+                <Calendar size={48} color={C.border} style={{ margin: '0 auto 16px' }} />
                 <div style={{ fontSize: 16, marginBottom: 8 }}>{tx.noAppointments}</div>
                 <div style={{ fontSize: 13 }}>{tx.noAppointmentsSub}</div>
               </div>
@@ -2250,10 +2257,10 @@ export default function TherapistDashboard() {
                     Ο θεραπευτής ρωτάει «ποιον έχω σήμερα», όχι «τι έγινε
                     τον Μάρτιο». Το μηνιαίο ημερολόγιο είναι δευτερεύον. */}
                 <div className="tabs-scroll" style={{ marginBottom: 20 }}>
-                  <div style={{ display: 'flex', gap: 4, background: '#e2e8f0', padding: 4, borderRadius: 10, width: 'fit-content' }}>
+                  <div style={{ display: 'flex', gap: 4, background: C.border, padding: 4, borderRadius: 10, width: 'fit-content' }}>
                     {[['upcoming', tx.viewUpcoming, List], ['past', tx.viewPast, Clock], ['calendar', tx.viewCalendar, CalendarDays]].map(([id, label, Icon]) => (
                       <button key={id} onClick={() => setAppointmentsView(id)}
-                        style={{ padding: '8px 16px', borderRadius: 7, border: 'none', fontSize: 13.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: appointmentsView === id ? '#fff' : 'transparent', color: appointmentsView === id ? '#0F172A' : '#64748B', boxShadow: appointmentsView === id ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
+                        style={{ padding: '8px 16px', borderRadius: 7, border: 'none', fontSize: 13.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: appointmentsView === id ? '#fff' : 'transparent', color: appointmentsView === id ? C.text : C.textMuted, boxShadow: appointmentsView === id ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
                         <Icon size={14} />
                         {label}
                       </button>
@@ -2263,11 +2270,11 @@ export default function TherapistDashboard() {
 
                 {appointmentsView === 'upcoming' && (
                   <div>
-                    <h3 style={{ fontSize: 13, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12 }}>
+                    <h3 style={{ fontSize: 13, fontWeight: 700, color: C.textBody, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12 }}>
                       {tx.upcoming(upcomingAppointments.length)}
                     </h3>
                     {upcomingAppointments.length === 0 ? (
-                      <div style={{ padding: 32, textAlign: 'center', color: '#94A3B8', background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 14 }}>
+                      <div style={{ padding: 32, textAlign: 'center', color: C.textFaint, background: '#fff', borderRadius: 12, border: '1px solid ${C.border}', fontSize: 14 }}>
                         {tx.noUpcoming}
                       </div>
                     ) : (
@@ -2285,44 +2292,44 @@ export default function TherapistDashboard() {
                           return (
                             <div key={apt.id} style={{
                               background: '#fff', borderRadius: 12,
-                              border: isHeld ? '2px solid #F59E0B' : '1px solid #e2e8f0',
+                              border: isHeld ? '2px solid ${C.warn}' : '1px solid ${C.border}',
                               padding: '18px 20px',
                             }}>
                               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
                                 <div style={{ minWidth: 110 }}>
                                   {friendly ? (
-                                    <div style={{ fontSize: 14, fontWeight: 700, color: '#2a6fdb', marginBottom: 2 }}>{friendly}</div>
+                                    <div style={{ fontSize: 14, fontWeight: 700, color: C.accent, marginBottom: 2 }}>{friendly}</div>
                                   ) : null}
-                                  <div style={{ fontSize: 15, color: '#0F172A', fontWeight: 600 }}>{formatShortDate(apt.session_date)}</div>
-                                  <div style={{ fontSize: 17, color: '#0F172A', fontWeight: 700, marginTop: 2 }}>{apt.session_time?.slice(0, 5)}</div>
+                                  <div style={{ fontSize: 15, color: C.text, fontWeight: 600 }}>{formatShortDate(apt.session_date)}</div>
+                                  <div style={{ fontSize: 17, color: C.text, fontWeight: 700, marginTop: 2 }}>{apt.session_time?.slice(0, 5)}</div>
                                 </div>
 
                                 <div style={{ flex: 1, minWidth: 200 }}>
-                                  <div style={{ fontSize: 16, fontWeight: 600, color: '#0F172A', marginBottom: 4, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                                    <User size={15} color="#2a6fdb" />
+                                  <div style={{ fontSize: 16, fontWeight: 600, color: C.text, marginBottom: 4, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                    <User size={15} color={C.accent} />
                                     {apt.request?.patient_name || tx.unknown}
                                   </div>
                                   {apt.request?.address && (
-                                    <div style={{ fontSize: 14, color: '#64748B', display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                                    <div style={{ fontSize: 14, color: C.textMuted, display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                                       <MapPin size={13} />
                                       {apt.request.address}, {apt.request.area}
                                       {apt.request.postal_code && `, ${apt.request.postal_code}`}
                                     </div>
                                   )}
                                   {apt.request?.floor_info && (
-                                    <div style={{ fontSize: 13, color: '#94A3B8', display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                                    <div style={{ fontSize: 13, color: C.textFaint, display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                                       <Home size={12} />
                                       {apt.request.floor_info}
                                     </div>
                                   )}
                                   {apt.request?.patient_phone && apt.status === 'confirmed' && (
                                     <div style={{ fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                                      <Phone size={12} color="#64748B" />
-                                      <a href={`tel:${apt.request.patient_phone}`} style={{ color: '#2a6fdb', fontWeight: 600, textDecoration: 'none' }}>{apt.request.patient_phone}</a>
+                                      <Phone size={12} color={C.textMuted} />
+                                      <a href={`tel:${apt.request.patient_phone}`} style={{ color: C.accent, fontWeight: 600, textDecoration: 'none' }}>{apt.request.patient_phone}</a>
                                     </div>
                                   )}
                                   {apt.request?.problem_type && (
-                                    <div style={{ fontSize: 13, color: '#475569', background: '#f8fafc', padding: '6px 10px', borderRadius: 6, marginTop: 6, display: 'inline-block' }}>
+                                    <div style={{ fontSize: 13, color: C.textBody, background: C.page, padding: '6px 10px', borderRadius: 6, marginTop: 6, display: 'inline-block' }}>
                                       {apt.request.problem_type}
                                     </div>
                                   )}
@@ -2331,7 +2338,7 @@ export default function TherapistDashboard() {
                                     {apt.status === 'completed' && (
                                       <Badge label={payInfo.label} bg={payInfo.bg} color={payInfo.color} icon={payInfo.icon} />
                                     )}
-                                    <span style={{ fontSize: 13, color: '#15803D', fontWeight: 700 }}>
+                                    <span style={{ fontSize: 13, color: C.success, fontWeight: 700 }}>
                                       {bookingAmount(apt).toFixed(0)}€
                                     </span>
                                   </div>
@@ -2340,7 +2347,7 @@ export default function TherapistDashboard() {
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
                                   {canMarkDone && (
                                     <button onClick={() => openDoneModal(apt, apt.request)}
-                                      style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: '#15803D', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
+                                      style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: C.success, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
                                       <Check size={14} strokeWidth={3} />
                                       {tx.markDone}
                                     </button>
@@ -2353,20 +2360,20 @@ export default function TherapistDashboard() {
                                         {rr ? (
                                           <button
                                             onClick={() => !isMine && setRescheduleTarget({ booking: apt, reschedule: rr, mode: 'respond' })}
-                                            style={{ padding: '7px 12px', borderRadius: 8, border: `1px solid ${isMine ? '#e2e8f0' : '#BFDBFE'}`, background: isMine ? '#f8fafc' : '#EFF6FF', color: isMine ? '#94a3b8' : '#1D4ED8', fontSize: 12, fontWeight: 600, cursor: isMine ? 'default' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
+                                            style={{ padding: '7px 12px', borderRadius: 8, border: `1px solid ${isMine ? C.border : C.infoBorder}`, background: isMine ? C.page : C.infoBg, color: isMine ? C.textFaint : C.info, fontSize: 12, fontWeight: 600, cursor: isMine ? 'default' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
                                             <CalendarClock size={13} />
                                             {isMine ? tx.reschedulePendingYours : tx.rescheduleReview}
                                           </button>
                                         ) : (
                                           <button
                                             onClick={() => setRescheduleTarget({ booking: apt, mode: 'propose' })}
-                                            style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid #e2e8f0', background: 'transparent', color: '#64748B', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
+                                            style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid ${C.border}', background: 'transparent', color: C.textMuted, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
                                             <CalendarClock size={13} />
                                             {tx.reschedule}
                                           </button>
                                         )}
                                         <button onClick={() => openCancelBookingModal(apt)}
-                                          style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid #FECDD3', background: 'transparent', color: '#BE123C', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                                          style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid ${C.dangerBorder}', background: 'transparent', color: C.danger, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                                           {tx.cancel}
                                         </button>
                                       </>
@@ -2376,13 +2383,13 @@ export default function TherapistDashboard() {
                               </div>
 
                               {isHeld && (
-                                <div style={{ marginTop: 14, padding: 12, background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 10 }}>
-                                  <div style={{ fontSize: 13, color: '#92400E', fontWeight: 600, marginBottom: 2, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                <div style={{ marginTop: 14, padding: 12, background: C.warnBg, border: '1px solid ${C.warnBorder}', borderRadius: 10 }}>
+                                  <div style={{ fontSize: 13, color: C.warn, fontWeight: 600, marginBottom: 2, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                                     <Hourglass size={13} />
                                     {tx.awaitingRelease}
                                   </div>
                                   {daysLeft !== null && (
-                                    <div style={{ fontSize: 12, color: '#78350F' }}>
+                                    <div style={{ fontSize: 12, color: C.warn }}>
                                       {daysLeft === 0 ? tx.autoReleaseToday : tx.autoReleaseIn(daysLeft)}
                                     </div>
                                   )}
@@ -2398,11 +2405,11 @@ export default function TherapistDashboard() {
 
                 {appointmentsView === 'past' && (
                   <div>
-                    <h3 style={{ fontSize: 13, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12 }}>
+                    <h3 style={{ fontSize: 13, fontWeight: 700, color: C.textBody, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12 }}>
                       {tx.past(pastAppointments.length)}
                     </h3>
                     {pastAppointments.length === 0 ? (
-                      <div style={{ padding: 32, textAlign: 'center', color: '#94A3B8', background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 14 }}>
+                      <div style={{ padding: 32, textAlign: 'center', color: C.textFaint, background: '#fff', borderRadius: 12, border: '1px solid ${C.border}', fontSize: 14 }}>
                         {tx.noPast}
                       </div>
                     ) : (
@@ -2414,17 +2421,17 @@ export default function TherapistDashboard() {
 
                           return (
                             <div key={apt.id} style={{
-                              background: '#fff', borderRadius: 10, border: '1px solid #e2e8f0',
+                              background: '#fff', borderRadius: 10, border: '1px solid ${C.border}',
                               padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
                             }}>
                               <div style={{ minWidth: 100 }}>
-                                <div style={{ fontSize: 14, color: '#475569', fontWeight: 600 }}>{formatShortDate(apt.session_date)}</div>
-                                <div style={{ fontSize: 13, color: '#94A3B8' }}>{tx.at} {apt.session_time?.slice(0, 5)}</div>
+                                <div style={{ fontSize: 14, color: C.textBody, fontWeight: 600 }}>{formatShortDate(apt.session_date)}</div>
+                                <div style={{ fontSize: 13, color: C.textFaint }}>{tx.at} {apt.session_time?.slice(0, 5)}</div>
                               </div>
 
                               <div style={{ flex: 1, minWidth: 150 }}>
-                                <div style={{ fontSize: 14, color: '#475569', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                                  <User size={12} color="#64748B" />
+                                <div style={{ fontSize: 14, color: C.textBody, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                  <User size={12} color={C.textMuted} />
                                   {apt.request?.patient_name || tx.unknown}
                                 </div>
                               </div>
@@ -2435,17 +2442,17 @@ export default function TherapistDashboard() {
                                   <Badge label={payInfo.label} bg={payInfo.bg} color={payInfo.color} icon={payInfo.icon} />
                                 )}
                                 {apt.status === 'completed' && (
-                                  <span style={{ fontSize: 12, color: '#15803D', fontWeight: 700 }}>
+                                  <span style={{ fontSize: 12, color: C.success, fontWeight: 700 }}>
                                     +{bookingAmount(apt).toFixed(2)}€
                                   </span>
                                 )}
                               </div>
 
                               {isCancelled(apt.status) && apt.cancelled_reason && (
-                                <div style={{ width: '100%', paddingTop: 8, marginTop: 4, borderTop: '1px solid #f1f5f9', fontSize: 12, color: '#9F1239' }}>
+                                <div style={{ width: '100%', paddingTop: 8, marginTop: 4, borderTop: '1px solid ${C.borderSoft}', fontSize: 12, color: C.danger }}>
                                   {tx.cancelledBy[apt.cancelled_by_role] || tx.cancelledBy.admin}
                                   {' · '}
-                                  <span style={{ fontStyle: 'italic', color: '#78350F' }}>{apt.cancelled_reason}</span>
+                                  <span style={{ fontStyle: 'italic', color: C.warn }}>{apt.cancelled_reason}</span>
                                 </div>
                               )}
                             </div>
@@ -2457,18 +2464,18 @@ export default function TherapistDashboard() {
                 )}
 
                 {appointmentsView === 'calendar' && (
-                  <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: 20 }}>
+                  <div style={{ background: '#fff', borderRadius: RAD.card, border: '1px solid ${C.border}', padding: 20 }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, gap: 10, flexWrap: 'wrap' }}>
                       <button onClick={() => navigateMonth(-1)}
-                        style={{ padding: '10px 16px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#1a2e44', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
+                        style={{ padding: '10px 16px', borderRadius: 8, border: '1px solid ${C.border}', background: '#fff', color: C.brand, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
                         <ChevronLeft size={16} />
                         {tx.prev}
                       </button>
-                      <div style={{ fontSize: 19, fontWeight: 700, color: '#0F172A', textAlign: 'center' }}>
+                      <div style={{ fontSize: 19, fontWeight: 700, color: C.text, textAlign: 'center' }}>
                         {MONTHS_FULL[lang][calendarMonth.month]} {calendarMonth.year}
                       </div>
                       <button onClick={() => navigateMonth(1)}
-                        style={{ padding: '10px 16px', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', color: '#1a2e44', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
+                        style={{ padding: '10px 16px', borderRadius: 8, border: '1px solid ${C.border}', background: '#fff', color: C.brand, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
                         {tx.next}
                         <ChevronRight size={16} />
                       </button>
@@ -2476,7 +2483,7 @@ export default function TherapistDashboard() {
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 8 }}>
                       {DAYS_GRID[lang].map(d => (
-                        <div key={d} style={{ textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#64748B', padding: 6 }}>{d}</div>
+                        <div key={d} style={{ textAlign: 'center', fontSize: 12, fontWeight: 700, color: C.textMuted, padding: 6 }}>{d}</div>
                       ))}
                     </div>
 
@@ -2494,17 +2501,17 @@ export default function TherapistDashboard() {
                             onClick={() => hasApts && setSelectedDay({ date: dateStr, appointments: dayApts })}
                             style={{
                               minHeight: 70, padding: '6px 8px',
-                              background: isToday ? '#EFF6FF' : hasApts ? '#F0FDF4' : '#fff',
-                              border: `1px solid ${isToday ? '#2a6fdb' : hasApts ? '#86EFAC' : '#f1f5f9'}`,
+                              background: isToday ? C.infoBg : hasApts ? C.successBg : '#fff',
+                              border: `1px solid ${isToday ? C.accent : hasApts ? C.successBorder : C.borderSoft}`,
                               borderRadius: 8, cursor: hasApts ? 'pointer' : 'default',
                               opacity: isPast && !hasApts ? 0.5 : 1, transition: 'all .15s',
                             }}>
-                            <div style={{ fontSize: 14, fontWeight: 700, color: isToday ? '#2a6fdb' : '#0F172A', marginBottom: 4 }}>{day}</div>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: isToday ? C.accent : C.text, marginBottom: 4 }}>{day}</div>
                             {dayApts.slice(0, 2).map((a, i) => (
                               <div key={i} style={{
                                 fontSize: 10,
-                                background: isCancelled(a.status) ? '#FEE2E2' : a.status === 'completed' ? '#EDE9FE' : '#DBEAFE',
-                                color: isCancelled(a.status) ? '#9F1239' : a.status === 'completed' ? '#5B21B6' : '#1D4ED8',
+                                background: isCancelled(a.status) ? C.dangerBg : a.status === 'completed' ? C.infoBg : C.infoBg,
+                                color: isCancelled(a.status) ? C.danger : a.status === 'completed' ? C.info : C.info,
                                 padding: '2px 5px', borderRadius: 4, marginBottom: 2, fontWeight: 600,
                                 whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                               }}>
@@ -2512,16 +2519,16 @@ export default function TherapistDashboard() {
                               </div>
                             ))}
                             {dayApts.length > 2 && (
-                              <div style={{ fontSize: 10, color: '#64748b', fontWeight: 600 }}>+{dayApts.length - 2}</div>
+                              <div style={{ fontSize: 10, color: C.textMuted, fontWeight: 600 }}>+{dayApts.length - 2}</div>
                             )}
                           </div>
                         );
                       })}
                     </div>
 
-                    <div style={{ marginTop: 16, display: 'flex', gap: 14, fontSize: 12, color: '#64748B', flexWrap: 'wrap' }}>
-                      <span><span style={{ display: 'inline-block', width: 12, height: 12, background: '#EFF6FF', border: '1px solid #2a6fdb', borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />{tx.today}</span>
-                      <span><span style={{ display: 'inline-block', width: 12, height: 12, background: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />{tx.hasAppointment}</span>
+                    <div style={{ marginTop: 16, display: 'flex', gap: 14, fontSize: 12, color: C.textMuted, flexWrap: 'wrap' }}>
+                      <span><span style={{ display: 'inline-block', width: 12, height: 12, background: C.infoBg, border: '1px solid ${C.accent}', borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />{tx.today}</span>
+                      <span><span style={{ display: 'inline-block', width: 12, height: 12, background: C.successBg, border: '1px solid ${C.successBorder}', borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />{tx.hasAppointment}</span>
                     </div>
                   </div>
                 )}
@@ -2549,13 +2556,13 @@ export default function TherapistDashboard() {
         {activeTab === 'profile' && (
           <div>
             <div className="tabs-scroll" style={{ marginBottom: 18 }}>
-              <div style={{ display: 'flex', gap: 4, background: '#e2e8f0', padding: 4, borderRadius: 10, width: 'fit-content' }}>
+              <div style={{ display: 'flex', gap: 4, background: C.border, padding: 4, borderRadius: 10, width: 'fit-content' }}>
                 {PROFILE_SECTIONS.map(s => {
                   const SIcon = s.Icon;
                   const isActive = profileSection === s.id;
                   return (
                     <button key={s.id} onClick={() => setProfileSection(s.id)}
-                      style={{ padding: '8px 15px', borderRadius: 7, border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: isActive ? '#fff' : 'transparent', color: isActive ? '#0F172A' : '#64748B', boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
+                      style={{ padding: '8px 15px', borderRadius: 7, border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: isActive ? '#fff' : 'transparent', color: isActive ? C.text : C.textMuted, boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
                       <SIcon size={14} />
                       {s.label}
                     </button>
@@ -2564,7 +2571,7 @@ export default function TherapistDashboard() {
               </div>
             </div>
 
-            <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: 26 }}>
+            <div style={{ background: '#fff', borderRadius: RAD.card, border: '1px solid ${C.border}', padding: 26 }}>
 
               {profileSection === 'basics' && (
                 <>
@@ -2572,34 +2579,34 @@ export default function TherapistDashboard() {
                     <div style={{ position: 'relative' }}>
                       <Avatar name={profile?.name} photoUrl={profile?.photo_url} size={80} />
                       <button onClick={() => photoInputRef.current?.click()} disabled={uploadingPhoto}
-                        style={{ position: 'absolute', bottom: 0, right: 0, width: 26, height: 26, borderRadius: '50%', background: '#2a6fdb', border: '2px solid #fff', color: '#fff', cursor: uploadingPhoto ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        style={{ position: 'absolute', bottom: 0, right: 0, width: 26, height: 26, borderRadius: '50%', background: C.accent, border: '2px solid #fff', color: '#fff', cursor: uploadingPhoto ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         {uploadingPhoto ? <Clock size={12} /> : <Camera size={13} />}
                       </button>
                       <input ref={photoInputRef} type="file" accept="image/*" onChange={uploadPhoto} style={{ display: 'none' }} />
                     </div>
                     <div style={{ flex: 1, minWidth: 200 }}>
-                      <div style={{ fontSize: 20, fontWeight: 700, color: '#0F172A' }}>{profile?.name || '—'}</div>
-                      <div style={{ fontSize: 14, color: '#64748B' }}>{profile?.specialty} · {profile?.area}</div>
+                      <div style={{ fontSize: 20, fontWeight: 700, color: C.text }}>{profile?.name || '—'}</div>
+                      <div style={{ fontSize: 14, color: C.textMuted }}>{profile?.specialty} · {profile?.area}</div>
                       <div style={{ marginTop: 6 }}>
                         {profile?.is_approved
-                          ? <Badge label={tx.approvedShort} bg="#DBEAFE" color="#1D4ED8" icon={CheckCircle2} />
+                          ? <Badge label={tx.approvedShort} bg={C.infoBg} color={C.info} icon={CheckCircle2} />
                           : !hasLicense
-                            ? <Badge label={tx.docsPending} bg="#FEF3C7" color="#92400E" icon={AlertTriangle} />
-                            : <Badge label={tx.awaitingAdmin} bg="#FEF3C7" color="#92400E" icon={Clock} />}
+                            ? <Badge label={tx.docsPending} bg={C.warnBg} color={C.warn} icon={AlertTriangle} />
+                            : <Badge label={tx.awaitingAdmin} bg={C.warnBg} color={C.warn} icon={Clock} />}
                       </div>
                       {/* «Εγκεκριμένος» δεν έλεγε τίποτα στον θεραπευτή.
                           Τώρα λέει τι σημαίνει το σήμα. */}
                       {profile?.is_approved && (
-                        <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 6, lineHeight: 1.5 }}>
+                        <div style={{ fontSize: 11.5, color: C.textMuted, marginTop: 6, lineHeight: 1.5 }}>
                           {tx.verifiedMeaning}
                         </div>
                       )}
-                      <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 6, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      <div style={{ fontSize: 11, color: C.textFaint, marginTop: 6, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                         {tx.photoHintA} <Camera size={11} /> {tx.photoHintB}
                       </div>
                     </div>
                     <button onClick={() => setEditProfile(!editProfile)}
-                      style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid #e2e8f0', background: editProfile ? '#f1f5f9' : '#fff', color: '#475569', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
+                      style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid ${C.border}', background: editProfile ? C.borderSoft : '#fff', color: C.textBody, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
                       {editProfile ? tx.cancelEdit : <><Pencil size={13} />{tx.editProfile}</>}
                     </button>
                   </div>
@@ -2609,30 +2616,30 @@ export default function TherapistDashboard() {
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
                         {[['name', tx.fullName], ['specialty', tx.specialty], ['area', tx.baseArea]].map(([k, l]) => (
                           <div key={k}>
-                            <label style={{ fontSize: 12, fontWeight: 600, color: '#64748B', display: 'block', marginBottom: 5 }}>{l}</label>
+                            <label style={{ fontSize: 12, fontWeight: 600, color: C.textMuted, display: 'block', marginBottom: 5 }}>{l}</label>
                             <input value={profileForm[k] || ''} onChange={e => setProfileForm(p => ({ ...p, [k]: e.target.value }))}
-                              style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#0F172A', boxSizing: 'border-box' }} />
+                              style={{ width: '100%', padding: '10px 14px', border: '1.5px solid ${C.border}', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: C.text, boxSizing: 'border-box' }} />
                           </div>
                         ))}
                         <div>
-                          <label style={{ fontSize: 12, fontWeight: 600, color: '#64748B', display: 'block', marginBottom: 5 }}>{tx.pricePerSession}</label>
+                          <label style={{ fontSize: 12, fontWeight: 600, color: C.textMuted, display: 'block', marginBottom: 5 }}>{tx.pricePerSession}</label>
                           <input type="number" min={25} max={50} value={profileForm.price_per_session || ''} onChange={e => setProfileForm(p => ({ ...p, price_per_session: e.target.value }))}
-                            style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#0F172A', boxSizing: 'border-box' }} />
+                            style={{ width: '100%', padding: '10px 14px', border: '1.5px solid ${C.border}', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: C.text, boxSizing: 'border-box' }} />
                         </div>
                         <div>
-                          <label style={{ fontSize: 12, fontWeight: 600, color: '#64748B', display: 'block', marginBottom: 5 }}>{tx.yearsExperience}</label>
+                          <label style={{ fontSize: 12, fontWeight: 600, color: C.textMuted, display: 'block', marginBottom: 5 }}>{tx.yearsExperience}</label>
                           <input type="number" min={0} max={60} value={profileForm.years_experience || ''} onChange={e => setProfileForm(p => ({ ...p, years_experience: e.target.value }))}
                             placeholder={tx.yearsPh}
-                            style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#0F172A', boxSizing: 'border-box' }} />
+                            style={{ width: '100%', padding: '10px 14px', border: '1.5px solid ${C.border}', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: C.text, boxSizing: 'border-box' }} />
                         </div>
                       </div>
                       <div>
-                        <label style={{ fontSize: 12, fontWeight: 600, color: '#64748B', display: 'block', marginBottom: 5 }}>{tx.bio}</label>
+                        <label style={{ fontSize: 12, fontWeight: 600, color: C.textMuted, display: 'block', marginBottom: 5 }}>{tx.bio}</label>
                         <textarea rows={4} value={profileForm.bio || ''} onChange={e => setProfileForm(p => ({ ...p, bio: e.target.value }))}
-                          style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#0F172A', resize: 'vertical', boxSizing: 'border-box' }} />
+                          style={{ width: '100%', padding: '10px 14px', border: '1.5px solid ${C.border}', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: C.text, resize: 'vertical', boxSizing: 'border-box' }} />
                       </div>
                       <button onClick={saveProfile} disabled={saving}
-                        style={{ alignSelf: 'flex-start', padding: '10px 24px', borderRadius: 30, border: 'none', background: '#1a2e44', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
+                        style={{ alignSelf: 'flex-start', padding: '10px 24px', borderRadius: RAD.button, border: 'none', background: C.brand, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
                         <Save size={14} />
                         {saving ? tx.saving : tx.save}
                       </button>
@@ -2645,23 +2652,23 @@ export default function TherapistDashboard() {
                         [tx.yearsExperience, profile?.years_experience ? tx.yearsUnit(profile.years_experience) : '—'],
                         [tx.priceShort, profile?.price_per_session ? `${profile.price_per_session}€` : '—'],
                       ].map(([label, value]) => (
-                        <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f1f5f9', fontSize: 14, gap: 12 }}>
-                          <span style={{ color: '#64748B' }}>{label}</span>
-                          <span style={{ fontWeight: 600, color: '#0F172A', textAlign: 'right' }}>{value || '—'}</span>
+                        <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid ${C.borderSoft}', fontSize: 14, gap: 12 }}>
+                          <span style={{ color: C.textMuted }}>{label}</span>
+                          <span style={{ fontWeight: 600, color: C.text, textAlign: 'right' }}>{value || '—'}</span>
                         </div>
                       ))}
 
                       {/* Δεν αφαιρείται προμήθεια από τη συνεδρία. Το παλιό
                           «Καθαρά/Συνεδρία μετά την προμήθεια» ήταν λάθος. */}
-                      <div style={{ fontSize: 12.5, color: '#15803D', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '10px 14px', display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <div style={{ fontSize: 12.5, color: C.success, background: C.successBg, border: '1px solid ${C.successBorder}', borderRadius: 10, padding: '10px 14px', display: 'flex', gap: 8, alignItems: 'center' }}>
                         <Wallet size={14} />
                         {tx.keepsAll}
                       </div>
 
                       {profile?.bio && (
                         <div style={{ marginTop: 8 }}>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 8 }}>{tx.bio}</div>
-                          <p style={{ fontSize: 14, color: '#475569', lineHeight: 1.7, background: '#f8fafc', padding: '12px 16px', borderRadius: 8 }}>{profile.bio}</p>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: C.textMuted, textTransform: 'uppercase', marginBottom: 8 }}>{tx.bio}</div>
+                          <p style={{ fontSize: 14, color: C.textBody, lineHeight: 1.7, background: C.page, padding: '12px 16px', borderRadius: 8 }}>{profile.bio}</p>
                         </div>
                       )}
                     </div>
@@ -2671,33 +2678,33 @@ export default function TherapistDashboard() {
 
               {profileSection === 'areas' && (
                 <>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', marginBottom: 4, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
-                    <MapPin size={15} color="#2a6fdb" />
+                  <div style={{ fontSize: 15, fontWeight: 700, color: C.text, marginBottom: 4, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                    <MapPin size={15} color={C.accent} />
                     {tx.areasTitle}
                   </div>
-                  <div style={{ fontSize: 13, color: '#64748B', marginBottom: 18 }}>{tx.areasDesc}</div>
+                  <div style={{ fontSize: 13, color: C.textMuted, marginBottom: 18 }}>{tx.areasDesc}</div>
 
-                  <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '11px 15px', marginBottom: 18, fontSize: 12, color: '#1E40AF', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                    <Lightbulb size={14} color="#1E40AF" style={{ marginTop: 1, flexShrink: 0 }} />
+                  <div style={{ background: C.infoBg, border: '1px solid ${C.infoBorder}', borderRadius: 10, padding: '11px 15px', marginBottom: 18, fontSize: 12, color: C.info, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                    <Lightbulb size={14} color={C.info} style={{ marginTop: 1, flexShrink: 0 }} />
                     <span><strong>{tx.areasSoonLabel}</strong> {tx.areasSoon}</span>
                   </div>
 
                   <div style={{ marginBottom: 20 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 10 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: C.textMuted, textTransform: 'uppercase', marginBottom: 10 }}>
                       {tx.areasSelected((profile?.service_areas || []).length)}
                     </div>
                     {(profile?.service_areas || []).length === 0 ? (
-                      <div style={{ padding: 20, textAlign: 'center', background: '#f8fafc', borderRadius: 10, color: '#94a3b8', fontSize: 13, fontStyle: 'italic' }}>
+                      <div style={{ padding: 20, textAlign: 'center', background: C.page, borderRadius: 10, color: C.textFaint, fontSize: 13, fontStyle: 'italic' }}>
                         {tx.areasEmpty}
                       </div>
                     ) : (
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                         {(profile?.service_areas || []).map(area => (
-                          <div key={area} style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 30, padding: '6px 8px 6px 12px', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#1D4ED8', fontWeight: 500 }}>
+                          <div key={area} style={{ background: C.infoBg, border: '1px solid ${C.infoBorder}', borderRadius: RAD.button, padding: '6px 8px 6px 12px', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: C.info, fontWeight: 500 }}>
                             <MapPin size={12} />
                             {area}
                             <button onClick={() => removeArea(area)} disabled={savingAreas}
-                              style={{ background: 'transparent', border: 'none', color: '#1D4ED8', cursor: 'pointer', padding: 0, marginLeft: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', width: 18, height: 18, borderRadius: '50%' }}>
+                              style={{ background: 'transparent', border: 'none', color: C.info, cursor: 'pointer', padding: 0, marginLeft: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', width: 18, height: 18, borderRadius: '50%' }}>
                               <X size={12} strokeWidth={2.5} />
                             </button>
                           </div>
@@ -2707,7 +2714,7 @@ export default function TherapistDashboard() {
                   </div>
 
                   <div style={{ position: 'relative' }}>
-                    <label style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 8, display: 'block' }}>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: C.textMuted, textTransform: 'uppercase', marginBottom: 8, display: 'block' }}>
                       {tx.addArea}
                     </label>
                     <div style={{ display: 'flex', gap: 8 }}>
@@ -2717,28 +2724,28 @@ export default function TherapistDashboard() {
                         onChange={e => handleAreaInputChange(e.target.value)}
                         onKeyDown={e => { if (e.key === 'Enter' && areaInput.trim()) { e.preventDefault(); addArea(areaInput); } }}
                         placeholder={tx.areaPh}
-                        style={{ flex: 1, padding: '12px 14px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#0F172A' }}
+                        style={{ flex: 1, padding: '12px 14px', border: '1.5px solid ${C.border}', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: C.text }}
                       />
                       <button onClick={() => addArea(areaInput)} disabled={!areaInput.trim() || savingAreas}
-                        style={{ padding: '12px 22px', borderRadius: 10, border: 'none', background: !areaInput.trim() ? '#cbd5e1' : '#1a2e44', color: '#fff', fontSize: 13, fontWeight: 600, cursor: !areaInput.trim() ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        style={{ padding: '12px 22px', borderRadius: 10, border: 'none', background: !areaInput.trim() ? C.border : C.brand, color: '#fff', fontSize: 13, fontWeight: 600, cursor: !areaInput.trim() ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                         <Plus size={14} strokeWidth={2.5} />
                         {tx.add}
                       </button>
                     </div>
 
                     {areaSuggestions.length > 0 && (
-                      <div style={{ position: 'absolute', top: '100%', left: 0, right: 100, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, marginTop: 4, boxShadow: '0 8px 24px rgba(0,0,0,0.08)', zIndex: 10, maxHeight: 240, overflowY: 'auto' }}>
+                      <div style={{ position: 'absolute', top: '100%', left: 0, right: 100, background: '#fff', border: '1px solid ${C.border}', borderRadius: 10, marginTop: 4, boxShadow: '0 8px 24px rgba(0,0,0,0.08)', zIndex: 10, maxHeight: 240, overflowY: 'auto' }}>
                         {areaSuggestions.map(s => (
                           <div key={s} onClick={() => addArea(s)}
-                            style={{ padding: '10px 14px', cursor: 'pointer', fontSize: 13, color: '#0F172A', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <MapPin size={12} color="#94a3b8" />
+                            style={{ padding: '10px 14px', cursor: 'pointer', fontSize: 13, color: C.text, borderBottom: '1px solid ${C.borderSoft}', display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <MapPin size={12} color={C.textFaint} />
                             {s}
                           </div>
                         ))}
                       </div>
                     )}
 
-                    <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <div style={{ fontSize: 11, color: C.textFaint, marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                       <Lightbulb size={12} />
                       {tx.areaHint}
                     </div>
@@ -2758,34 +2765,34 @@ export default function TherapistDashboard() {
               {profileSection === 'documents' && (
                 <>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, gap: 12, flexWrap: 'wrap' }}>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
-                      <FileText size={15} color="#2a6fdb" />
+                    <div style={{ fontSize: 15, fontWeight: 700, color: C.text, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                      <FileText size={15} color={C.accent} />
                       {tx.documents}
                     </div>
                     <button onClick={() => setDocsModal(true)}
-                      style={{ background: '#1a2e44', border: 'none', borderRadius: 30, padding: '9px 20px', fontSize: 13, fontWeight: 600, color: '#fff', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      style={{ background: C.brand, border: 'none', borderRadius: RAD.button, padding: '9px 20px', fontSize: 13, fontWeight: 600, color: '#fff', cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                       <Upload size={13} />
                       {tx.manage}
                     </button>
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: hasLicense ? '#F0FDF4' : '#FEF3C7', border: `1px solid ${hasLicense ? '#BBF7D0' : '#FDE68A'}`, borderRadius: 10, fontSize: 13 }}>
-                      {hasLicense ? <CheckCircle2 size={16} color="#15803D" /> : <AlertTriangle size={16} color="#92400E" />}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: hasLicense ? C.successBg : C.warnBg, border: `1px solid ${hasLicense ? C.successBorder : C.warnBorder}`, borderRadius: 10, fontSize: 13 }}>
+                      {hasLicense ? <CheckCircle2 size={16} color={C.success} /> : <AlertTriangle size={16} color={C.warn} />}
                       <strong>{tx.license}</strong>
-                      <span style={{ marginLeft: 'auto', color: hasLicense ? '#15803D' : '#92400E', fontWeight: 600, fontSize: 12 }}>
+                      <span style={{ marginLeft: 'auto', color: hasLicense ? C.success : C.warn, fontWeight: 600, fontSize: 12 }}>
                         {hasLicense ? tx.uploaded : tx.missingRequired}
                       </span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, fontSize: 13 }}>
-                      {hasCv ? <CheckCircle2 size={16} color="#15803D" /> : <span style={{ width: 16, height: 16, display: 'inline-block', borderRadius: '50%', background: '#e2e8f0' }} />}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: C.page, border: '1px solid ${C.border}', borderRadius: 10, fontSize: 13 }}>
+                      {hasCv ? <CheckCircle2 size={16} color={C.success} /> : <span style={{ width: 16, height: 16, display: 'inline-block', borderRadius: '50%', background: C.border }} />}
                       <span>{tx.cv}</span>
-                      <span style={{ marginLeft: 'auto', color: '#64748B', fontSize: 12 }}>{hasCv ? tx.uploaded : tx.optional}</span>
+                      <span style={{ marginLeft: 'auto', color: C.textMuted, fontSize: 12 }}>{hasCv ? tx.uploaded : tx.optional}</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, fontSize: 13 }}>
-                      {certCount > 0 ? <CheckCircle2 size={16} color="#15803D" /> : <span style={{ width: 16, height: 16, display: 'inline-block', borderRadius: '50%', background: '#e2e8f0' }} />}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: C.page, border: '1px solid ${C.border}', borderRadius: 10, fontSize: 13 }}>
+                      {certCount > 0 ? <CheckCircle2 size={16} color={C.success} /> : <span style={{ width: 16, height: 16, display: 'inline-block', borderRadius: '50%', background: C.border }} />}
                       <span>{tx.certifications}</span>
-                      <span style={{ marginLeft: 'auto', color: '#64748B', fontSize: 12 }}>{certCount > 0 ? tx.filesCount(certCount) : tx.optionalPlural}</span>
+                      <span style={{ marginLeft: 'auto', color: C.textMuted, fontSize: 12 }}>{certCount > 0 ? tx.filesCount(certCount) : tx.optionalPlural}</span>
                     </div>
                   </div>
                 </>
@@ -2796,27 +2803,27 @@ export default function TherapistDashboard() {
               {profileSection === 'reviews' && (
                 reviews.length === 0 ? (
                   <div style={{ padding: '40px 20px', textAlign: 'center' }}>
-                    <Star size={38} color="#e2e8f0" style={{ margin: '0 auto 12px' }} />
-                    <div style={{ fontSize: 15, fontWeight: 600, color: '#475569', marginBottom: 5 }}>{tx.noReviews}</div>
-                    <div style={{ fontSize: 13, color: '#94a3b8' }}>{tx.noReviewsSub}</div>
+                    <Star size={38} color={C.border} style={{ margin: '0 auto 12px' }} />
+                    <div style={{ fontSize: 15, fontWeight: 600, color: C.textBody, marginBottom: 5 }}>{tx.noReviews}</div>
+                    <div style={{ fontSize: 13, color: C.textFaint }}>{tx.noReviewsSub}</div>
                   </div>
                 ) : (
                   <>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20, paddingBottom: 18, borderBottom: '1px solid #f1f5f9', flexWrap: 'wrap' }}>
-                      <div style={{ fontSize: 34, fontWeight: 700, color: '#B45309', lineHeight: 1 }}>{avgRating}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20, paddingBottom: 18, borderBottom: '1px solid ${C.borderSoft}', flexWrap: 'wrap' }}>
+                      <div style={{ fontSize: 34, fontWeight: 700, color: C.warn, lineHeight: 1 }}>{avgRating}</div>
                       <div>
                         <ReviewStars rating={Math.round(Number(avgRating))} size={16} />
-                        <div style={{ fontSize: 13, color: '#64748B', marginTop: 3 }}>{tx.reviewsCount(reviews.length)}</div>
+                        <div style={{ fontSize: 13, color: C.textMuted, marginTop: 3 }}>{tx.reviewsCount(reviews.length)}</div>
                       </div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                       {reviews.map(r => (
-                        <div key={r.id} style={{ padding: '14px 16px', background: '#f8fafc', borderRadius: 10 }}>
+                        <div key={r.id} style={{ padding: '14px 16px', background: C.page, borderRadius: 10 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
                             <ReviewStars rating={r.rating} size={13} />
-                            <span style={{ fontSize: 12, color: '#94A3B8' }}>{new Date(r.created_at).toLocaleDateString(loc)}</span>
+                            <span style={{ fontSize: 12, color: C.textFaint }}>{new Date(r.created_at).toLocaleDateString(loc)}</span>
                           </div>
-                          {r.comment && <p style={{ fontSize: 14, color: '#475569', lineHeight: 1.6, margin: 0, fontStyle: 'italic' }}>{r.comment}</p>}
+                          {r.comment && <p style={{ fontSize: 14, color: C.textBody, lineHeight: 1.6, margin: 0, fontStyle: 'italic' }}>{r.comment}</p>}
                         </div>
                       ))}
                     </div>
@@ -2833,81 +2840,81 @@ export default function TherapistDashboard() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}
           onClick={e => { if (e.target === e.currentTarget) setPayModal(false); }}>
           <div style={{ background: '#fff', borderRadius: 20, maxWidth: 480, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', maxHeight: '85vh', overflowY: 'auto' }}>
-            <div style={{ padding: '22px 26px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h2 style={{ fontSize: 17, fontWeight: 700, color: '#0F172A', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                <Wallet size={17} color="#15803D" />
+            <div style={{ padding: '22px 26px', borderBottom: '1px solid ${C.borderSoft}', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h2 style={{ fontSize: 17, fontWeight: 700, color: C.text, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <Wallet size={17} color={C.success} />
                 {tx.payModalTitle}
               </h2>
-              <button onClick={() => setPayModal(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex' }}>
+              <button onClick={() => setPayModal(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: C.textFaint, display: 'flex' }}>
                 <X size={20} />
               </button>
             </div>
 
             <div style={{ padding: '22px 26px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 12, padding: '14px 16px', fontSize: 13.5, color: '#166534', lineHeight: 1.65 }}>
+              <div style={{ background: C.successBg, border: '1px solid ${C.successBorder}', borderRadius: 12, padding: '14px 16px', fontSize: 13.5, color: C.success, lineHeight: 1.65 }}>
                 {tx.payModalCash}
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13.5 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                  <span style={{ color: '#64748B' }}>{tx.payModalYourPrice}</span>
-                  <strong style={{ color: '#0F172A' }}>{pricePerSession}€</strong>
+                  <span style={{ color: C.textMuted }}>{tx.payModalYourPrice}</span>
+                  <strong style={{ color: C.text }}>{pricePerSession}€</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                  <span style={{ color: '#64748B' }}>{tx.payModalSubscription}</span>
-                  <strong style={{ color: '#0F172A' }}>
+                  <span style={{ color: C.textMuted }}>{tx.payModalSubscription}</span>
+                  <strong style={{ color: C.text }}>
                     {subscription
                       ? (monthlyPrice > 0 ? `${monthlyPrice.toFixed(2)}€` : '0€')
                       : tx.noPlan}
                     {subscription && promoActive && listMonthlyPrice > monthlyPrice && (
-                      <span style={{ marginLeft: 8, fontWeight: 400, color: '#94A3B8', fontSize: 12, textDecoration: 'line-through' }}>
+                      <span style={{ marginLeft: 8, fontWeight: 400, color: C.textFaint, fontSize: 12, textDecoration: 'line-through' }}>
                         {listMonthlyPrice.toFixed(2)}€
                       </span>
                     )}
                   </strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                  <span style={{ color: '#64748B' }}>{tx.payModalFirstFee}</span>
-                  <strong style={{ color: '#0F172A' }}>
+                  <span style={{ color: C.textMuted }}>{tx.payModalFirstFee}</span>
+                  <strong style={{ color: C.text }}>
                     {firstSessionFee.toFixed(2)}€
                     {promoActive && listFirstSessionFee > firstSessionFee && (
-                      <span style={{ marginLeft: 8, fontWeight: 400, color: '#94A3B8', fontSize: 12, textDecoration: 'line-through' }}>
+                      <span style={{ marginLeft: 8, fontWeight: 400, color: C.textFaint, fontSize: 12, textDecoration: 'line-through' }}>
                         {listFirstSessionFee.toFixed(2)}€
                       </span>
                     )}
-                    <span style={{ fontWeight: 400, color: '#94A3B8', fontSize: 12 }}> {tx.payModalPerNewPatient}</span>
+                    <span style={{ fontWeight: 400, color: C.textFaint, fontSize: 12 }}> {tx.payModalPerNewPatient}</span>
                   </strong>
                 </div>
                 {/* Τι ισχύει σήμερα και μέχρι πότε. Χωρίς αυτό, ο θεραπευτής
                     βλέπει «0€» και δεν ξέρει ότι είναι προσωρινό. */}
                 {subscription && promoActive && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                    <span style={{ color: '#64748B' }}>{tx.payModalPromo}</span>
-                    <strong style={{ color: '#6D28D9' }}>
+                    <span style={{ color: C.textMuted }}>{tx.payModalPromo}</span>
+                    <strong style={{ color: C.info }}>
                       {subscription.promo_code_text}
                       {subscription.promo_ends_at && (
-                        <span style={{ fontWeight: 400, color: '#94A3B8', fontSize: 12 }}>
+                        <span style={{ fontWeight: 400, color: C.textFaint, fontSize: 12 }}>
                           {' '}{tx.payModalPromoUntil(new Date(subscription.promo_ends_at).toLocaleDateString(loc))}
                         </span>
                       )}
                     </strong>
                   </div>
                 )}
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, paddingTop: 10, borderTop: '1px solid #f1f5f9' }}>
-                  <span style={{ color: '#64748B' }}>{tx.payModalOpen}</span>
-                  <strong style={{ color: owedTotal > 0 ? '#B45309' : '#15803D', fontSize: 15 }}>{owedTotal.toFixed(2)}€</strong>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, paddingTop: 10, borderTop: '1px solid ${C.borderSoft}' }}>
+                  <span style={{ color: C.textMuted }}>{tx.payModalOpen}</span>
+                  <strong style={{ color: owedTotal > 0 ? C.warn : C.success, fontSize: 15 }}>{owedTotal.toFixed(2)}€</strong>
                 </div>
               </div>
 
-              <div style={{ fontSize: 12, color: '#94A3B8', lineHeight: 1.6, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+              <div style={{ fontSize: 12, color: C.textFaint, lineHeight: 1.6, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
                 <Lightbulb size={13} strokeWidth={2.2} style={{ marginTop: 1, flexShrink: 0 }} />
                 <span>{tx.payModalFeeExplain}</span>
               </div>
             </div>
 
-            <div style={{ padding: '14px 26px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ padding: '14px 26px', borderTop: '1px solid ${C.borderSoft}', display: 'flex', justifyContent: 'flex-end' }}>
               <button onClick={() => setPayModal(false)}
-                style={{ background: '#1a2e44', color: '#fff', border: 'none', padding: '10px 24px', borderRadius: 30, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                style={{ background: C.brand, color: '#fff', border: 'none', padding: '10px 24px', borderRadius: RAD.button, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                 {tx.close}
               </button>
             </div>
@@ -2920,9 +2927,9 @@ export default function TherapistDashboard() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}
           onClick={e => { if (e.target === e.currentTarget) setSelectedDay(null); }}>
           <div style={{ background: '#fff', borderRadius: 20, padding: 0, maxWidth: 480, width: '100%', maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
-            <div style={{ padding: '24px 28px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: '#0F172A' }}>{formatFullDate(selectedDay.date)}</h2>
-              <button onClick={() => setSelectedDay(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center' }}>
+            <div style={{ padding: '24px 28px', borderBottom: '1px solid ${C.borderSoft}', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text }}>{formatFullDate(selectedDay.date)}</h2>
+              <button onClick={() => setSelectedDay(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: C.textFaint, display: 'flex', alignItems: 'center' }}>
                 <X size={22} />
               </button>
             </div>
@@ -2930,16 +2937,16 @@ export default function TherapistDashboard() {
               {selectedDay.appointments.map(apt => {
                 const bSt = statusLabel(STATUS, apt.status);
                 return (
-                  <div key={apt.id} style={{ background: '#f8fafc', borderRadius: 10, padding: 16 }}>
-                    <div style={{ fontSize: 18, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>
+                  <div key={apt.id} style={{ background: C.page, borderRadius: 10, padding: 16 }}>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 8 }}>
                       {tx.at} {apt.session_time?.slice(0, 5)}
                     </div>
-                    <div style={{ fontSize: 14, color: '#475569', marginBottom: 4, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                      <User size={14} color="#2a6fdb" />
+                    <div style={{ fontSize: 14, color: C.textBody, marginBottom: 4, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <User size={14} color={C.accent} />
                       {apt.request?.patient_name || tx.unknown}
                     </div>
                     {apt.request?.address && (
-                      <div style={{ fontSize: 13, color: '#64748B', marginBottom: 8, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <div style={{ fontSize: 13, color: C.textMuted, marginBottom: 8, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                         <MapPin size={12} />
                         {apt.request.address}, {apt.request.area}
                       </div>
@@ -2958,36 +2965,36 @@ export default function TherapistDashboard() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}
           onClick={e => { if (e.target === e.currentTarget) setDoneModal(null); }}>
           <div style={{ background: '#fff', borderRadius: 20, padding: '32px', maxWidth: 460, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
-            <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#D1FAE5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-              <Check size={28} color="#15803D" strokeWidth={3} />
+            <div style={{ width: 56, height: 56, borderRadius: '50%', background: C.successBg, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+              <Check size={28} color={C.success} strokeWidth={3} />
             </div>
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', marginBottom: 12, textAlign: 'center' }}>{tx.doneModalTitle}</h2>
-            <p style={{ fontSize: 14, color: '#64748B', marginBottom: 20, lineHeight: 1.6, textAlign: 'center' }}>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, marginBottom: 12, textAlign: 'center' }}>{tx.doneModalTitle}</h2>
+            <p style={{ fontSize: 14, color: C.textMuted, marginBottom: 20, lineHeight: 1.6, textAlign: 'center' }}>
               {tx.doneModalDesc(doneModal.request?.patient_name || tx.unknown)}
             </p>
 
             {/* Ο ασθενής πληρώνει μετρητά — δεν αφαιρείται προμήθεια εδώ. */}
-            <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 12, padding: '14px 18px', marginBottom: 20 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#15803D', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6 }}>
+            <div style={{ background: C.successBg, border: '1px solid ${C.successBorder}', borderRadius: 12, padding: '14px 18px', marginBottom: 20 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: C.success, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6 }}>
                 {tx.sessionAmount}
               </div>
-              <div style={{ fontSize: 28, fontWeight: 700, color: '#15803D' }}>
+              <div style={{ fontSize: 28, fontWeight: 700, color: C.success }}>
                 {bookingAmount(doneModal.booking).toFixed(2)}€
               </div>
             </div>
 
-            <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 10, padding: '12px 16px', marginBottom: 24, fontSize: 12, color: '#92400E', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-              <Hourglass size={14} color="#92400E" style={{ flexShrink: 0, marginTop: 1 }} />
+            <div style={{ background: C.warnBg, border: '1px solid ${C.warnBorder}', borderRadius: 10, padding: '12px 16px', marginBottom: 24, fontSize: 12, color: C.warn, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+              <Hourglass size={14} color={C.warn} style={{ flexShrink: 0, marginTop: 1 }} />
               <span>{tx.doneModalWarn} <strong>{tx.doneModalWarnDays}</strong> {tx.doneModalWarnEnd}</span>
             </div>
 
             <div style={{ display: 'flex', gap: 10 }}>
               <button onClick={() => setDoneModal(null)} disabled={marking}
-                style={{ flex: 1, padding: '12px', borderRadius: 30, border: '1px solid #e2e8f0', background: 'transparent', color: '#64748b', fontSize: 14, fontWeight: 600, cursor: marking ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
+                style={{ flex: 1, padding: '12px', borderRadius: RAD.button, border: '1px solid ${C.border}', background: 'transparent', color: C.textMuted, fontSize: 14, fontWeight: 600, cursor: marking ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
                 {tx.cancel}
               </button>
               <button onClick={markBookingDone} disabled={marking}
-                style={{ flex: 2, padding: '12px', borderRadius: 30, border: 'none', background: marking ? '#94a3b8' : '#15803D', color: '#fff', fontSize: 14, fontWeight: 600, cursor: marking ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'inherit' }}>
+                style={{ flex: 2, padding: '12px', borderRadius: RAD.button, border: 'none', background: marking ? C.textFaint : C.success, color: '#fff', fontSize: 14, fontWeight: 600, cursor: marking ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'inherit' }}>
                 <Check size={14} strokeWidth={3} />
                 {marking ? tx.marking : tx.confirmDone}
               </button>
@@ -3001,46 +3008,46 @@ export default function TherapistDashboard() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}
           onClick={e => { if (e.target === e.currentTarget) setDocsModal(false); }}>
           <div style={{ background: '#fff', borderRadius: 20, padding: 0, maxWidth: 560, width: '100%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
-            <div style={{ padding: '24px 28px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: '#0F172A', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                <FileText size={18} color="#2a6fdb" />
+            <div style={{ padding: '24px 28px', borderBottom: '1px solid ${C.borderSoft}', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <FileText size={18} color={C.accent} />
                 {tx.documents}
               </h2>
-              <button onClick={() => setDocsModal(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center' }}>
+              <button onClick={() => setDocsModal(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: C.textFaint, display: 'flex', alignItems: 'center' }}>
                 <X size={20} />
               </button>
             </div>
             <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 20 }}>
-              <div style={{ background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 10, padding: '12px 16px', fontSize: 13, color: '#92400E', lineHeight: 1.5, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                <AlertTriangle size={16} color="#92400E" style={{ flexShrink: 0, marginTop: 1 }} />
+              <div style={{ background: C.warnBg, border: '1px solid ${C.warnBorder}', borderRadius: 10, padding: '12px 16px', fontSize: 13, color: C.warn, lineHeight: 1.5, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                <AlertTriangle size={16} color={C.warn} style={{ flexShrink: 0, marginTop: 1 }} />
                 <span><strong>{tx.docsModalWarnA}</strong> {tx.docsModalWarnB}</span>
               </div>
 
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 8, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                  <GraduationCap size={15} color="#2a6fdb" />
-                  {tx.license} <span style={{ color: '#BE123C' }}>*</span>
+                <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 8, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <GraduationCap size={15} color={C.accent} />
+                  {tx.license} <span style={{ color: C.danger }}>*</span>
                 </div>
                 {hasLicense ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, flexWrap: 'wrap' }}>
-                    <CheckCircle2 size={18} color="#15803D" />
-                    <span style={{ fontSize: 13, color: '#15803D', fontWeight: 600, flex: 1 }}>{tx.uploaded}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: C.successBg, border: '1px solid ${C.successBorder}', borderRadius: 10, flexWrap: 'wrap' }}>
+                    <CheckCircle2 size={18} color={C.success} />
+                    <span style={{ fontSize: 13, color: C.success, fontWeight: 600, flex: 1 }}>{tx.uploaded}</span>
                     <button onClick={() => viewDocument(profile.license_url)}
-                      style={{ background: 'transparent', border: '1px solid #BBF7D0', borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 600, color: '#15803D', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' }}>
+                      style={{ background: 'transparent', border: '1px solid ${C.successBorder}', borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 600, color: C.success, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' }}>
                       <Eye size={12} />
                       {tx.view}
                     </button>
                     <button onClick={() => removeDocument('license')}
-                      style={{ background: 'transparent', border: '1px solid #FECDD3', borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 600, color: '#BE123C', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' }}>
+                      style={{ background: 'transparent', border: '1px solid ${C.dangerBorder}', borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 600, color: C.danger, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' }}>
                       <Trash2 size={12} />
                       {tx.remove}
                     </button>
                   </div>
                 ) : (
-                  <div style={{ border: '2px dashed #e2e8f0', borderRadius: 10, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-                    <div style={{ fontSize: 12, color: '#64748B' }}>{tx.fileHint}</div>
+                  <div style={{ border: '2px dashed ${C.border}', borderRadius: 10, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                    <div style={{ fontSize: 12, color: C.textMuted }}>{tx.fileHint}</div>
                     <button onClick={() => licenseInputRef.current?.click()} disabled={uploadingDoc === 'license'}
-                      style={{ background: '#1a2e44', color: '#fff', border: 'none', borderRadius: 20, padding: '8px 18px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      style={{ background: C.brand, color: '#fff', border: 'none', borderRadius: 20, padding: '8px 18px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                       <Upload size={12} />
                       {uploadingDoc === 'license' ? tx.uploading : tx.chooseFile}
                     </button>
@@ -3050,29 +3057,29 @@ export default function TherapistDashboard() {
               </div>
 
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 8, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                  <FileText size={15} color="#2a6fdb" />
-                  {tx.cv} <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 500 }}>{tx.optionalParen}</span>
+                <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 8, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <FileText size={15} color={C.accent} />
+                  {tx.cv} <span style={{ fontSize: 11, color: C.textFaint, fontWeight: 500 }}>{tx.optionalParen}</span>
                 </div>
                 {hasCv ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, flexWrap: 'wrap' }}>
-                    <CheckCircle2 size={18} color="#1D4ED8" />
-                    <span style={{ fontSize: 13, color: '#1D4ED8', fontWeight: 600, flex: 1 }}>{tx.uploaded}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: C.infoBg, border: '1px solid ${C.infoBorder}', borderRadius: 10, flexWrap: 'wrap' }}>
+                    <CheckCircle2 size={18} color={C.info} />
+                    <span style={{ fontSize: 13, color: C.info, fontWeight: 600, flex: 1 }}>{tx.uploaded}</span>
                     <button onClick={() => viewDocument(profile.cv_url)}
-                      style={{ background: 'transparent', border: '1px solid #BFDBFE', borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 600, color: '#1D4ED8', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' }}>
+                      style={{ background: 'transparent', border: '1px solid ${C.infoBorder}', borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 600, color: C.info, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' }}>
                       <Eye size={12} />
                       {tx.view}
                     </button>
                     <button onClick={() => removeDocument('cv')}
-                      style={{ background: 'transparent', border: '1px solid #FECDD3', borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 600, color: '#BE123C', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', fontFamily: 'inherit' }}>
+                      style={{ background: 'transparent', border: '1px solid ${C.dangerBorder}', borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 600, color: C.danger, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', fontFamily: 'inherit' }}>
                       <Trash2 size={12} />
                     </button>
                   </div>
                 ) : (
-                  <div style={{ border: '2px dashed #e2e8f0', borderRadius: 10, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-                    <div style={{ fontSize: 12, color: '#64748B' }}>{tx.fileHint}</div>
+                  <div style={{ border: '2px dashed ${C.border}', borderRadius: 10, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                    <div style={{ fontSize: 12, color: C.textMuted }}>{tx.fileHint}</div>
                     <button onClick={() => cvInputRef.current?.click()} disabled={uploadingDoc === 'cv'}
-                      style={{ background: 'transparent', color: '#1a2e44', border: '1.5px solid #e2e8f0', borderRadius: 20, padding: '8px 18px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      style={{ background: 'transparent', color: C.brand, border: '1.5px solid ${C.border}', borderRadius: 20, padding: '8px 18px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                       <Upload size={12} />
                       {uploadingDoc === 'cv' ? tx.uploading : tx.choose}
                     </button>
@@ -3082,32 +3089,32 @@ export default function TherapistDashboard() {
               </div>
 
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 8, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                  <Award size={15} color="#2a6fdb" />
-                  {tx.certifications} <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 500 }}>{tx.optionalMulti}</span>
+                <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 8, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <Award size={15} color={C.accent} />
+                  {tx.certifications} <span style={{ fontSize: 11, color: C.textFaint, fontWeight: 500 }}>{tx.optionalMulti}</span>
                 </div>
                 {(profile?.certifications_urls || []).length > 0 && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
                     {(profile.certifications_urls || []).map((path, idx) => (
-                      <div key={path} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10 }}>
-                        <FileText size={14} color="#64748b" />
-                        <span style={{ fontSize: 12, color: '#475569', flex: 1 }}>{tx.certLabel(idx + 1)}</span>
+                      <div key={path} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: C.page, border: '1px solid ${C.border}', borderRadius: 10 }}>
+                        <FileText size={14} color={C.textMuted} />
+                        <span style={{ fontSize: 12, color: C.textBody, flex: 1 }}>{tx.certLabel(idx + 1)}</span>
                         <button onClick={() => viewDocument(path)}
-                          style={{ background: 'transparent', border: '1px solid #e2e8f0', borderRadius: 20, padding: '4px 10px', fontSize: 11, fontWeight: 600, color: '#1a2e44', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', fontFamily: 'inherit' }}>
+                          style={{ background: 'transparent', border: '1px solid ${C.border}', borderRadius: 20, padding: '4px 10px', fontSize: 11, fontWeight: 600, color: C.brand, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', fontFamily: 'inherit' }}>
                           <Eye size={12} />
                         </button>
                         <button onClick={() => removeDocument('cert', path)}
-                          style={{ background: 'transparent', border: '1px solid #FECDD3', borderRadius: 20, padding: '4px 10px', fontSize: 11, fontWeight: 600, color: '#BE123C', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', fontFamily: 'inherit' }}>
+                          style={{ background: 'transparent', border: '1px solid ${C.dangerBorder}', borderRadius: 20, padding: '4px 10px', fontSize: 11, fontWeight: 600, color: C.danger, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', fontFamily: 'inherit' }}>
                           <Trash2 size={12} />
                         </button>
                       </div>
                     ))}
                   </div>
                 )}
-                <div style={{ border: '2px dashed #e2e8f0', borderRadius: 10, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-                  <div style={{ fontSize: 12, color: '#64748B' }}>{tx.certHint}</div>
+                <div style={{ border: '2px dashed ${C.border}', borderRadius: 10, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                  <div style={{ fontSize: 12, color: C.textMuted }}>{tx.certHint}</div>
                   <button onClick={() => certInputRef.current?.click()} disabled={uploadingDoc === 'cert'}
-                    style={{ background: 'transparent', color: '#1a2e44', border: '1.5px solid #e2e8f0', borderRadius: 20, padding: '8px 18px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    style={{ background: 'transparent', color: C.brand, border: '1.5px solid ${C.border}', borderRadius: 20, padding: '8px 18px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                     <Plus size={12} strokeWidth={2.5} />
                     {uploadingDoc === 'cert' ? tx.uploading : tx.add}
                   </button>
@@ -3115,9 +3122,9 @@ export default function TherapistDashboard() {
                 </div>
               </div>
             </div>
-            <div style={{ padding: '16px 28px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ padding: '16px 28px', borderTop: '1px solid ${C.borderSoft}', display: 'flex', justifyContent: 'flex-end' }}>
               <button onClick={() => setDocsModal(false)}
-                style={{ background: '#1a2e44', color: '#fff', border: 'none', padding: '10px 24px', borderRadius: 30, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                style={{ background: C.brand, color: '#fff', border: 'none', padding: '10px 24px', borderRadius: RAD.button, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                 {tx.close}
               </button>
             </div>
