@@ -546,7 +546,7 @@ const isCancelled = (s) => String(s || '').startsWith('cancelled');
 function Avatar({ name, photoUrl, size = 48 }) {
   if (photoUrl) return <img src={photoUrl} alt={name} style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />;
   return (
-    <div style={{ width: size, height: size, borderRadius: '50%', background: 'linear-gradient(135deg,${C.accent},${C.brand})', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.35, fontWeight: 700, flexShrink: 0 }}>
+    <div style={{ width: size, height: size, borderRadius: '50%', background: `linear-gradient(135deg,${C.accent},${C.brand})`, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.35, fontWeight: 700, flexShrink: 0 }}>
       {(name || '?').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
     </div>
   );
@@ -702,7 +702,7 @@ function TherapistConditionsSection({ userId, specialty, lang, tx }) {
       />
 
       {(changed || msg) && (
-        <div style={{ position: 'sticky', bottom: 0, marginTop: 20, paddingTop: 16, borderTop: '1px solid ${C.border}', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ position: 'sticky', bottom: 0, marginTop: 20, paddingTop: 16, borderTop: `1px solid ${C.border}`, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
           {msg ? (
             <div style={{
               background: msg.type === 'success' ? C.successBg : C.dangerBg,
@@ -878,7 +878,7 @@ function AvailabilityManager({ userId, lang, tx, loc, slots, onSlotsChanged, wee
     await onSlotsChanged();
   }
 
-  const inputStyle = { padding: '9px 12px', border: '1.5px solid ${C.border}', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', outline: 'none', color: C.text, boxSizing: 'border-box' };
+  const inputStyle = { padding: '9px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, fontFamily: 'inherit', outline: 'none', color: C.text, boxSizing: 'border-box' };
   const labelStyle = { fontSize: 11, fontWeight: 700, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '.05em', display: 'block', marginBottom: 5 };
 
   const fmtDate = d => new Date(d + 'T12:00:00').toLocaleDateString(loc, { day: '2-digit', month: '2-digit' });
@@ -886,7 +886,7 @@ function AvailabilityManager({ userId, lang, tx, loc, slots, onSlotsChanged, wee
   const weekEnd = currentWeek?.[currentWeek.length - 1];
 
   if (loading) {
-    return <div style={{ background: '#fff', borderRadius: RAD.card, border: '1px solid ${C.border}', padding: 40, textAlign: 'center', color: C.textMuted }}>{tx.loading}</div>;
+    return <div style={{ background: '#fff', borderRadius: RAD.card, border: `1px solid ${C.border}`, padding: 40, textAlign: 'center', color: C.textMuted }}>{tx.loading}</div>;
   }
 
   return (
@@ -922,7 +922,7 @@ function AvailabilityManager({ userId, lang, tx, loc, slots, onSlotsChanged, wee
       {mode === 'weekly' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-          <div style={{ background: '#fff', borderRadius: RAD.card, border: '1px solid ${C.border}', padding: 22 }}>
+          <div style={{ background: '#fff', borderRadius: RAD.card, border: `1px solid ${C.border}`, padding: 22 }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 3, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
               <Repeat size={15} color={C.accent} />
               {tx.weeklyTitle}
@@ -936,16 +936,16 @@ function AvailabilityManager({ userId, lang, tx, loc, slots, onSlotsChanged, wee
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 16 }}>
                 {blocks.map(b => (
-                  <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', background: C.successBg, border: '1px solid ${C.successBorder}', borderRadius: 10, flexWrap: 'wrap' }}>
+                  <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', background: C.successBg, border: `1px solid ${C.successBorder}`, borderRadius: 10, flexWrap: 'wrap' }}>
                     <span style={{ fontSize: 13, fontWeight: 700, color: C.success, minWidth: 78 }}>{DAYS[lang][b.weekday]}</span>
                     <span style={{ fontSize: 13.5, color: C.success, fontWeight: 600 }}>
                       {b.start_time?.slice(0, 5)} – {b.end_time?.slice(0, 5)}
                     </span>
-                    <span style={{ fontSize: 12, color: C.success, background: '#fff', border: '1px solid ${C.successBorder}', padding: '2px 9px', borderRadius: RAD.pill }}>
+                    <span style={{ fontSize: 12, color: C.success, background: '#fff', border: `1px solid ${C.successBorder}`, padding: '2px 9px', borderRadius: RAD.pill }}>
                       {b.slot_minutes} {tx.minutesShort}
                     </span>
                     <button onClick={() => removeBlock(b.id)}
-                      style={{ marginLeft: 'auto', background: 'transparent', border: '1px solid ${C.dangerBorder}', color: C.danger, borderRadius: 20, padding: '5px 12px', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                      style={{ marginLeft: 'auto', background: 'transparent', border: `1px solid ${C.dangerBorder}`, color: C.danger, borderRadius: 20, padding: '5px 12px', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                       <Trash2 size={12} />
                       {tx.removeBlock}
                     </button>
@@ -954,7 +954,7 @@ function AvailabilityManager({ userId, lang, tx, loc, slots, onSlotsChanged, wee
               </div>
             )}
 
-            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap', paddingTop: 16, borderTop: '1px solid ${C.borderSoft}' }}>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap', paddingTop: 16, borderTop: `1px solid ${C.borderSoft}` }}>
               <div style={{ minWidth: 120 }}>
                 <label style={labelStyle}>{tx.day}</label>
                 <select value={form.weekday} onChange={e => setForm(f => ({ ...f, weekday: e.target.value }))} style={{ ...inputStyle, width: '100%' }}>
@@ -983,7 +983,7 @@ function AvailabilityManager({ userId, lang, tx, loc, slots, onSlotsChanged, wee
             </div>
           </div>
 
-          <div style={{ background: C.infoBg, borderRadius: RAD.card, border: '1px solid ${C.infoBorder}', padding: 22 }}>
+          <div style={{ background: C.infoBg, borderRadius: RAD.card, border: `1px solid ${C.infoBorder}`, padding: 22 }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: C.info, marginBottom: 3, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
               <CalendarDays size={15} />
               {tx.generateTitle}
@@ -1005,7 +1005,7 @@ function AvailabilityManager({ userId, lang, tx, loc, slots, onSlotsChanged, wee
             </div>
           </div>
 
-          <div style={{ background: '#fff', borderRadius: RAD.card, border: '1px solid ${C.border}', padding: 22 }}>
+          <div style={{ background: '#fff', borderRadius: RAD.card, border: `1px solid ${C.border}`, padding: 22 }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 3, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
               <Ban size={15} color={C.danger} />
               {tx.exceptionsTitle}
@@ -1019,7 +1019,7 @@ function AvailabilityManager({ userId, lang, tx, loc, slots, onSlotsChanged, wee
             ) : (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
                 {exceptions.map(e => (
-                  <div key={e.id} style={{ background: C.dangerBg, border: '1px solid ${C.dangerBorder}', borderRadius: RAD.button, padding: '6px 8px 6px 14px', display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: C.danger, fontWeight: 500 }}>
+                  <div key={e.id} style={{ background: C.dangerBg, border: `1px solid ${C.dangerBorder}`, borderRadius: RAD.button, padding: '6px 8px 6px 14px', display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: C.danger, fontWeight: 500 }}>
                     <span style={{ fontWeight: 700 }}>
                       {new Date(e.date + 'T12:00:00').toLocaleDateString(loc, { day: '2-digit', month: 'short' })}
                     </span>
@@ -1033,7 +1033,7 @@ function AvailabilityManager({ userId, lang, tx, loc, slots, onSlotsChanged, wee
               </div>
             )}
 
-            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap', paddingTop: 16, borderTop: '1px solid ${C.borderSoft}' }}>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap', paddingTop: 16, borderTop: `1px solid ${C.borderSoft}` }}>
               <div>
                 <label style={labelStyle}>{tx.day}</label>
                 <input type="date" min={todayISO()} value={excForm.date} onChange={e => setExcForm(f => ({ ...f, date: e.target.value }))} style={inputStyle} />
@@ -1043,7 +1043,7 @@ function AvailabilityManager({ userId, lang, tx, loc, slots, onSlotsChanged, wee
                 <input value={excForm.note} onChange={e => setExcForm(f => ({ ...f, note: e.target.value }))} placeholder={tx.exceptionNotePh} style={{ ...inputStyle, width: '100%' }} />
               </div>
               <button onClick={addException} disabled={!excForm.date || busy === 'exception'}
-                style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid ${C.dangerBorder}', background: !excForm.date ? C.page : '#fff', color: !excForm.date ? C.textFaint : C.danger, fontSize: 13, fontWeight: 600, cursor: !excForm.date ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                style={{ padding: '10px 20px', borderRadius: 8, border: `1px solid ${C.dangerBorder}`, background: !excForm.date ? C.page : '#fff', color: !excForm.date ? C.textFaint : C.danger, fontSize: 13, fontWeight: 600, cursor: !excForm.date ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                 <Plus size={14} strokeWidth={2.5} />
                 {tx.addException}
               </button>
@@ -1053,12 +1053,12 @@ function AvailabilityManager({ userId, lang, tx, loc, slots, onSlotsChanged, wee
       )}
 
       {mode === 'grid' && (
-        <div style={{ background: '#fff', borderRadius: RAD.card, border: '1px solid ${C.border}', padding: 22 }}>
+        <div style={{ background: '#fff', borderRadius: RAD.card, border: `1px solid ${C.border}`, padding: 22 }}>
           <div style={{ fontSize: 12.5, color: C.textMuted, marginBottom: 16 }}>{tx.gridDesc}</div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
             <button onClick={() => setWeekOffset(w => Math.max(0, w - 1))} disabled={weekOffset === 0}
-              style={{ padding: '6px 16px', borderRadius: 8, border: '1px solid ${C.border}', background: weekOffset === 0 ? C.page : '#fff', color: weekOffset === 0 ? C.textFaint : C.brand, fontSize: 13, fontWeight: 600, cursor: weekOffset === 0 ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' }}>
+              style={{ padding: '6px 16px', borderRadius: 8, border: `1px solid ${C.border}`, background: weekOffset === 0 ? C.page : '#fff', color: weekOffset === 0 ? C.textFaint : C.brand, fontSize: 13, fontWeight: 600, cursor: weekOffset === 0 ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' }}>
               <ChevronLeft size={14} />
               {tx.prev}
             </button>
@@ -1067,13 +1067,13 @@ function AvailabilityManager({ userId, lang, tx, loc, slots, onSlotsChanged, wee
               <span style={{ fontSize: 12, color: C.textFaint, marginLeft: 8 }}>{tx.week} {weekOffset + 1}</span>
             </div>
             <button onClick={() => setWeekOffset(w => Math.min(ALL_WEEKS.length - 1, w + 1))}
-              style={{ padding: '6px 16px', borderRadius: 8, border: '1px solid ${C.border}', background: '#fff', color: C.brand, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' }}>
+              style={{ padding: '6px 16px', borderRadius: 8, border: `1px solid ${C.border}`, background: '#fff', color: C.brand, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' }}>
               {tx.next}
               <ChevronRight size={14} />
             </button>
           </div>
 
-          <div style={{ background: C.infoBg, border: '1px solid ${C.infoBorder}', borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ background: C.infoBg, border: `1px solid ${C.infoBorder}`, borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: 180 }}>
               <div style={{ fontSize: 12.5, fontWeight: 700, color: C.info, marginBottom: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
                 <Copy size={13} strokeWidth={2.2} />
@@ -1112,7 +1112,7 @@ function AvailabilityManager({ userId, lang, tx, loc, slots, onSlotsChanged, wee
               </thead>
               <tbody>
                 {HOURS.map(hour => (
-                  <tr key={hour} style={{ borderTop: hour.endsWith(':00') ? '1px solid ${C.borderSoft}' : 'none' }}>
+                  <tr key={hour} style={{ borderTop: hour.endsWith(':00') ? `1px solid ${C.borderSoft}` : 'none' }}>
                     <td style={{ padding: '2px 8px', fontSize: 10, color: hour.endsWith(':00') ? C.textBody : C.textFaint, fontWeight: hour.endsWith(':00') ? 600 : 400, whiteSpace: 'nowrap' }}>{hour}</td>
                     {(currentWeek || []).map(day => {
                       const slot = slots.find(s => s.date === day && s.start_time === hour + ':00');
@@ -1135,9 +1135,9 @@ function AvailabilityManager({ userId, lang, tx, loc, slots, onSlotsChanged, wee
           </div>
 
           <div style={{ marginTop: 12, display: 'flex', gap: 16, fontSize: 12, color: C.textMuted, flexWrap: 'wrap' }}>
-            <span><span style={{ display: 'inline-block', width: 12, height: 12, background: C.successBg, border: '1px solid ${C.successBorder}', borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />{tx.legendAvailable}</span>
-            <span><span style={{ display: 'inline-block', width: 12, height: 12, background: C.dangerBg, border: '1px solid ${C.dangerBorder}', borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />{tx.legendBooked}</span>
-            <span><span style={{ display: 'inline-block', width: 12, height: 12, background: C.borderSoft, border: '1px solid ${C.border}', borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />{tx.legendUnavailable}</span>
+            <span><span style={{ display: 'inline-block', width: 12, height: 12, background: C.successBg, border: `1px solid ${C.successBorder}`, borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />{tx.legendAvailable}</span>
+            <span><span style={{ display: 'inline-block', width: 12, height: 12, background: C.dangerBg, border: `1px solid ${C.dangerBorder}`, borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />{tx.legendBooked}</span>
+            <span><span style={{ display: 'inline-block', width: 12, height: 12, background: C.borderSoft, border: `1px solid ${C.border}`, borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />{tx.legendUnavailable}</span>
           </div>
         </div>
       )}
@@ -1833,7 +1833,7 @@ export default function TherapistDashboard() {
         }
       `}</style>
 
-      <nav style={{ background: '#fff', borderBottom: '1px solid ${C.border}', padding: '0 24px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
+      <nav style={{ background: '#fff', borderBottom: `1px solid ${C.border}`, padding: '0 24px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'Georgia, serif', fontSize: 18, fontWeight: 700, color: C.brand }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.accent, display: 'inline-block' }} />
           PhysioHome
@@ -1848,12 +1848,12 @@ export default function TherapistDashboard() {
           )}
           <LanguageSwitcher color={C.textMuted} hoverColor={C.brand} navHeight={60} />
           <button onClick={viewSite} title={tx.viewSiteTitle}
-            style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid ${C.accentBorder}', background: C.accentSoft, color: C.accent, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, fontFamily: 'inherit' }}>
+            style={{ padding: '6px 14px', borderRadius: 8, border: `1px solid ${C.accentBorder}`, background: C.accentSoft, color: C.accent, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, fontFamily: 'inherit' }}>
             <Globe size={13} />
             {tx.site}
           </button>
           <Avatar name={profile?.name || user?.email} photoUrl={profile?.photo_url} size={36} />
-          <button onClick={signOut} style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid ${C.border}', background: 'transparent', color: C.textMuted, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>{tx.signOut}</button>
+          <button onClick={signOut} style={{ padding: '6px 14px', borderRadius: 8, border: `1px solid ${C.border}`, background: 'transparent', color: C.textMuted, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>{tx.signOut}</button>
         </div>
       </nav>
 
@@ -1898,8 +1898,8 @@ export default function TherapistDashboard() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
             {/* Μόνο ό,τι χρειάζεται ΣΗΜΕΡΑ. Τα υπόλοιπα ζουν στα tabs. */}
-            <div style={{ background: '#fff', borderRadius: RAD.card, border: '1px solid ${C.border}', overflow: 'hidden' }}>
-              <div style={{ padding: '18px 24px', borderBottom: '1px solid ${C.borderSoft}', display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
+            <div style={{ background: '#fff', borderRadius: RAD.card, border: `1px solid ${C.border}`, overflow: 'hidden' }}>
+              <div style={{ padding: '18px 24px', borderBottom: `1px solid ${C.borderSoft}`, display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
                 <Clock size={17} color={C.accent} />
                 <span style={{ fontSize: 16, fontWeight: 700, color: C.text }}>{tx.todayTitle}</span>
                 <span style={{ fontSize: 13, color: C.textFaint, marginLeft: 'auto' }}>{formatFullDate(todayStr)}</span>
@@ -1914,7 +1914,7 @@ export default function TherapistDashboard() {
               ) : (
                 <div style={{ padding: '18px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {pendingCount > 0 && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', background: C.warnBg, border: '1px solid ${C.warnBorder}', borderRadius: 12, flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', background: C.warnBg, border: `1px solid ${C.warnBorder}`, borderRadius: 12, flexWrap: 'wrap' }}>
                       <ClipboardList size={18} color={C.warn} />
                       <span style={{ fontSize: 15, fontWeight: 700, color: C.warn }}>
                         {pendingCount} {pendingCount === 1 ? tx.todayNewRequest : tx.todayNewRequests}
@@ -1928,7 +1928,7 @@ export default function TherapistDashboard() {
                   )}
 
                   {incomingReschedules.length > 0 && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', background: C.infoBg, border: '1px solid ${C.infoBorder}', borderRadius: 12, flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', background: C.infoBg, border: `1px solid ${C.infoBorder}`, borderRadius: 12, flexWrap: 'wrap' }}>
                       <CalendarClock size={18} color={C.info} />
                       <span style={{ fontSize: 15, fontWeight: 700, color: C.info }}>
                         {incomingReschedules.length} {incomingReschedules.length === 1 ? tx.todayReschedule : tx.todayReschedules}
@@ -2037,7 +2037,7 @@ export default function TherapistDashboard() {
                 const list = requestFilter === 'pending' ? pendingRequests : requests;
                 if (list.length === 0) {
                   return (
-                    <div style={{ padding: 40, textAlign: 'center', color: C.textFaint, background: '#fff', borderRadius: RAD.card, border: '1px solid ${C.border}', fontSize: 14 }}>
+                    <div style={{ padding: 40, textAlign: 'center', color: C.textFaint, background: '#fff', borderRadius: RAD.card, border: `1px solid ${C.border}`, fontSize: 14 }}>
                       {requestFilter === 'pending' ? tx.noPendingRequests : tx.noRequestsYet}
                     </div>
                   );
@@ -2055,7 +2055,7 @@ export default function TherapistDashboard() {
                   return (
                     <div key={req.id} style={{
                       background: '#fff', borderRadius: RAD.card,
-                      border: isPending ? '2px solid ${C.warnBorder}' : '1px solid ${C.border}',
+                      border: isPending ? `2px solid ${C.warnBorder}` : `1px solid ${C.border}`,
                       overflow: 'hidden',
                     }}>
                       {/* ΤΑ ΠΑΝΤΑ ΓΙΑ ΤΗΝ ΑΠΟΦΑΣΗ, ΣΕ ΜΙΑ ΟΘΟΝΗ.
@@ -2105,7 +2105,7 @@ export default function TherapistDashboard() {
                         </div>
 
                         {isOpen && (
-                          <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid ${C.borderSoft}', display: 'flex', flexDirection: 'column', gap: 9, fontSize: 13, color: C.textBody }}>
+                          <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${C.borderSoft}`, display: 'flex', flexDirection: 'column', gap: 9, fontSize: 13, color: C.textBody }}>
                             <div style={{ display: 'inline-flex', alignItems: 'flex-start', gap: 7 }}>
                               <Home size={14} color={C.textMuted} style={{ marginTop: 1, flexShrink: 0 }} />
                               <span>
@@ -2121,7 +2121,7 @@ export default function TherapistDashboard() {
                                 <a href={`tel:${req.patient_phone}`} style={{ color: C.accent, fontWeight: 600, textDecoration: 'none' }}>{req.patient_phone}</a>
                               </div>
                             )}
-                            <div style={{ background: C.page, padding: '10px 14px', borderRadius: 8, borderLeft: '3px solid ${C.border}', lineHeight: 1.6 }}>
+                            <div style={{ background: C.page, padding: '10px 14px', borderRadius: 8, borderLeft: `3px solid ${C.border}`, lineHeight: 1.6 }}>
                               {req.problem_description || tx.noDescription}
                             </div>
                             {req.notes && (
@@ -2135,12 +2135,12 @@ export default function TherapistDashboard() {
                       </div>
 
                       {(isPending || hasActiveBookings) && (
-                        <div className="req-actions" style={{ padding: '14px 20px', borderTop: '1px solid ${C.borderSoft}', background: isPending ? C.warnBg : C.page, display: 'flex', gap: 10, alignItems: 'center', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                        <div className="req-actions" style={{ padding: '14px 20px', borderTop: `1px solid ${C.borderSoft}`, background: isPending ? C.warnBg : C.page, display: 'flex', gap: 10, alignItems: 'center', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                           {isPending && (
                             <>
                               <span className="req-hint" style={{ fontSize: 12.5, color: C.warn, marginRight: 'auto' }}>{tx.respondFast}</span>
                               <button onClick={() => openCancelRequestModal(req)}
-                                style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid ${C.dangerBorder}', background: '#fff', color: C.danger, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'inherit' }}>
+                                style={{ padding: '10px 20px', borderRadius: 8, border: `1px solid ${C.dangerBorder}`, background: '#fff', color: C.danger, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'inherit' }}>
                                 <X size={14} strokeWidth={2.5} />
                                 {tx.reject}
                               </button>
@@ -2153,7 +2153,7 @@ export default function TherapistDashboard() {
                           )}
                           {!isPending && hasActiveBookings && (
                             <button onClick={() => openCancelRequestModal(req)}
-                              style={{ padding: '9px 18px', borderRadius: 8, border: '1px solid ${C.dangerBorder}', background: 'transparent', color: C.danger, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                              style={{ padding: '9px 18px', borderRadius: 8, border: `1px solid ${C.dangerBorder}`, background: 'transparent', color: C.danger, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                               {tx.cancelWholeRequest}
                             </button>
                           )}
@@ -2175,7 +2175,7 @@ export default function TherapistDashboard() {
               const fullDate = formatFullDate(nextAppointment.session_date);
               return (
                 <div style={{
-                  background: 'linear-gradient(135deg, ${C.brand} 0%, ${C.accent} 100%)',
+                  background: `linear-gradient(135deg, ${C.brand} 0%, ${C.accent} 100%)`,
                   borderRadius: RAD.card, padding: '28px 32px', marginBottom: 20, color: '#fff',
                   boxShadow: '0 8px 32px rgba(26, 46, 68, 0.2)',
                 }}>
@@ -2246,7 +2246,7 @@ export default function TherapistDashboard() {
             })()}
 
             {!nextAppointment && upcomingAppointments.length === 0 && pastAppointments.length === 0 ? (
-              <div style={{ padding: 60, textAlign: 'center', color: C.textFaint, background: '#fff', borderRadius: RAD.card, border: '1px solid ${C.border}' }}>
+              <div style={{ padding: 60, textAlign: 'center', color: C.textFaint, background: '#fff', borderRadius: RAD.card, border: `1px solid ${C.border}` }}>
                 <Calendar size={48} color={C.border} style={{ margin: '0 auto 16px' }} />
                 <div style={{ fontSize: 16, marginBottom: 8 }}>{tx.noAppointments}</div>
                 <div style={{ fontSize: 13 }}>{tx.noAppointmentsSub}</div>
@@ -2274,7 +2274,7 @@ export default function TherapistDashboard() {
                       {tx.upcoming(upcomingAppointments.length)}
                     </h3>
                     {upcomingAppointments.length === 0 ? (
-                      <div style={{ padding: 32, textAlign: 'center', color: C.textFaint, background: '#fff', borderRadius: 12, border: '1px solid ${C.border}', fontSize: 14 }}>
+                      <div style={{ padding: 32, textAlign: 'center', color: C.textFaint, background: '#fff', borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 14 }}>
                         {tx.noUpcoming}
                       </div>
                     ) : (
@@ -2292,7 +2292,7 @@ export default function TherapistDashboard() {
                           return (
                             <div key={apt.id} style={{
                               background: '#fff', borderRadius: 12,
-                              border: isHeld ? '2px solid ${C.warn}' : '1px solid ${C.border}',
+                              border: isHeld ? `2px solid ${C.warn}` : `1px solid ${C.border}`,
                               padding: '18px 20px',
                             }}>
                               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
@@ -2367,13 +2367,13 @@ export default function TherapistDashboard() {
                                         ) : (
                                           <button
                                             onClick={() => setRescheduleTarget({ booking: apt, mode: 'propose' })}
-                                            style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid ${C.border}', background: 'transparent', color: C.textMuted, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
+                                            style={{ padding: '7px 12px', borderRadius: 8, border: `1px solid ${C.border}`, background: 'transparent', color: C.textMuted, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
                                             <CalendarClock size={13} />
                                             {tx.reschedule}
                                           </button>
                                         )}
                                         <button onClick={() => openCancelBookingModal(apt)}
-                                          style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid ${C.dangerBorder}', background: 'transparent', color: C.danger, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                                          style={{ padding: '7px 12px', borderRadius: 8, border: `1px solid ${C.dangerBorder}`, background: 'transparent', color: C.danger, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                                           {tx.cancel}
                                         </button>
                                       </>
@@ -2383,7 +2383,7 @@ export default function TherapistDashboard() {
                               </div>
 
                               {isHeld && (
-                                <div style={{ marginTop: 14, padding: 12, background: C.warnBg, border: '1px solid ${C.warnBorder}', borderRadius: 10 }}>
+                                <div style={{ marginTop: 14, padding: 12, background: C.warnBg, border: `1px solid ${C.warnBorder}`, borderRadius: 10 }}>
                                   <div style={{ fontSize: 13, color: C.warn, fontWeight: 600, marginBottom: 2, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                                     <Hourglass size={13} />
                                     {tx.awaitingRelease}
@@ -2409,7 +2409,7 @@ export default function TherapistDashboard() {
                       {tx.past(pastAppointments.length)}
                     </h3>
                     {pastAppointments.length === 0 ? (
-                      <div style={{ padding: 32, textAlign: 'center', color: C.textFaint, background: '#fff', borderRadius: 12, border: '1px solid ${C.border}', fontSize: 14 }}>
+                      <div style={{ padding: 32, textAlign: 'center', color: C.textFaint, background: '#fff', borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 14 }}>
                         {tx.noPast}
                       </div>
                     ) : (
@@ -2421,7 +2421,7 @@ export default function TherapistDashboard() {
 
                           return (
                             <div key={apt.id} style={{
-                              background: '#fff', borderRadius: 10, border: '1px solid ${C.border}',
+                              background: '#fff', borderRadius: 10, border: `1px solid ${C.border}`,
                               padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
                             }}>
                               <div style={{ minWidth: 100 }}>
@@ -2449,7 +2449,7 @@ export default function TherapistDashboard() {
                               </div>
 
                               {isCancelled(apt.status) && apt.cancelled_reason && (
-                                <div style={{ width: '100%', paddingTop: 8, marginTop: 4, borderTop: '1px solid ${C.borderSoft}', fontSize: 12, color: C.danger }}>
+                                <div style={{ width: '100%', paddingTop: 8, marginTop: 4, borderTop: `1px solid ${C.borderSoft}`, fontSize: 12, color: C.danger }}>
                                   {tx.cancelledBy[apt.cancelled_by_role] || tx.cancelledBy.admin}
                                   {' · '}
                                   <span style={{ fontStyle: 'italic', color: C.warn }}>{apt.cancelled_reason}</span>
@@ -2464,10 +2464,10 @@ export default function TherapistDashboard() {
                 )}
 
                 {appointmentsView === 'calendar' && (
-                  <div style={{ background: '#fff', borderRadius: RAD.card, border: '1px solid ${C.border}', padding: 20 }}>
+                  <div style={{ background: '#fff', borderRadius: RAD.card, border: `1px solid ${C.border}`, padding: 20 }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, gap: 10, flexWrap: 'wrap' }}>
                       <button onClick={() => navigateMonth(-1)}
-                        style={{ padding: '10px 16px', borderRadius: 8, border: '1px solid ${C.border}', background: '#fff', color: C.brand, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
+                        style={{ padding: '10px 16px', borderRadius: 8, border: `1px solid ${C.border}`, background: '#fff', color: C.brand, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
                         <ChevronLeft size={16} />
                         {tx.prev}
                       </button>
@@ -2475,7 +2475,7 @@ export default function TherapistDashboard() {
                         {MONTHS_FULL[lang][calendarMonth.month]} {calendarMonth.year}
                       </div>
                       <button onClick={() => navigateMonth(1)}
-                        style={{ padding: '10px 16px', borderRadius: 8, border: '1px solid ${C.border}', background: '#fff', color: C.brand, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
+                        style={{ padding: '10px 16px', borderRadius: 8, border: `1px solid ${C.border}`, background: '#fff', color: C.brand, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
                         {tx.next}
                         <ChevronRight size={16} />
                       </button>
@@ -2527,8 +2527,8 @@ export default function TherapistDashboard() {
                     </div>
 
                     <div style={{ marginTop: 16, display: 'flex', gap: 14, fontSize: 12, color: C.textMuted, flexWrap: 'wrap' }}>
-                      <span><span style={{ display: 'inline-block', width: 12, height: 12, background: C.infoBg, border: '1px solid ${C.accent}', borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />{tx.today}</span>
-                      <span><span style={{ display: 'inline-block', width: 12, height: 12, background: C.successBg, border: '1px solid ${C.successBorder}', borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />{tx.hasAppointment}</span>
+                      <span><span style={{ display: 'inline-block', width: 12, height: 12, background: C.infoBg, border: `1px solid ${C.accent}`, borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />{tx.today}</span>
+                      <span><span style={{ display: 'inline-block', width: 12, height: 12, background: C.successBg, border: `1px solid ${C.successBorder}`, borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />{tx.hasAppointment}</span>
                     </div>
                   </div>
                 )}
@@ -2571,7 +2571,7 @@ export default function TherapistDashboard() {
               </div>
             </div>
 
-            <div style={{ background: '#fff', borderRadius: RAD.card, border: '1px solid ${C.border}', padding: 26 }}>
+            <div style={{ background: '#fff', borderRadius: RAD.card, border: `1px solid ${C.border}`, padding: 26 }}>
 
               {profileSection === 'basics' && (
                 <>
@@ -2606,7 +2606,7 @@ export default function TherapistDashboard() {
                       </div>
                     </div>
                     <button onClick={() => setEditProfile(!editProfile)}
-                      style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid ${C.border}', background: editProfile ? C.borderSoft : '#fff', color: C.textBody, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
+                      style={{ padding: '8px 18px', borderRadius: 8, border: `1px solid ${C.border}`, background: editProfile ? C.borderSoft : '#fff', color: C.textBody, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
                       {editProfile ? tx.cancelEdit : <><Pencil size={13} />{tx.editProfile}</>}
                     </button>
                   </div>
@@ -2618,25 +2618,25 @@ export default function TherapistDashboard() {
                           <div key={k}>
                             <label style={{ fontSize: 12, fontWeight: 600, color: C.textMuted, display: 'block', marginBottom: 5 }}>{l}</label>
                             <input value={profileForm[k] || ''} onChange={e => setProfileForm(p => ({ ...p, [k]: e.target.value }))}
-                              style={{ width: '100%', padding: '10px 14px', border: '1.5px solid ${C.border}', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: C.text, boxSizing: 'border-box' }} />
+                              style={{ width: '100%', padding: '10px 14px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: C.text, boxSizing: 'border-box' }} />
                           </div>
                         ))}
                         <div>
                           <label style={{ fontSize: 12, fontWeight: 600, color: C.textMuted, display: 'block', marginBottom: 5 }}>{tx.pricePerSession}</label>
                           <input type="number" min={25} max={50} value={profileForm.price_per_session || ''} onChange={e => setProfileForm(p => ({ ...p, price_per_session: e.target.value }))}
-                            style={{ width: '100%', padding: '10px 14px', border: '1.5px solid ${C.border}', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: C.text, boxSizing: 'border-box' }} />
+                            style={{ width: '100%', padding: '10px 14px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: C.text, boxSizing: 'border-box' }} />
                         </div>
                         <div>
                           <label style={{ fontSize: 12, fontWeight: 600, color: C.textMuted, display: 'block', marginBottom: 5 }}>{tx.yearsExperience}</label>
                           <input type="number" min={0} max={60} value={profileForm.years_experience || ''} onChange={e => setProfileForm(p => ({ ...p, years_experience: e.target.value }))}
                             placeholder={tx.yearsPh}
-                            style={{ width: '100%', padding: '10px 14px', border: '1.5px solid ${C.border}', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: C.text, boxSizing: 'border-box' }} />
+                            style={{ width: '100%', padding: '10px 14px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: C.text, boxSizing: 'border-box' }} />
                         </div>
                       </div>
                       <div>
                         <label style={{ fontSize: 12, fontWeight: 600, color: C.textMuted, display: 'block', marginBottom: 5 }}>{tx.bio}</label>
                         <textarea rows={4} value={profileForm.bio || ''} onChange={e => setProfileForm(p => ({ ...p, bio: e.target.value }))}
-                          style={{ width: '100%', padding: '10px 14px', border: '1.5px solid ${C.border}', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: C.text, resize: 'vertical', boxSizing: 'border-box' }} />
+                          style={{ width: '100%', padding: '10px 14px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: C.text, resize: 'vertical', boxSizing: 'border-box' }} />
                       </div>
                       <button onClick={saveProfile} disabled={saving}
                         style={{ alignSelf: 'flex-start', padding: '10px 24px', borderRadius: RAD.button, border: 'none', background: C.brand, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
@@ -2652,7 +2652,7 @@ export default function TherapistDashboard() {
                         [tx.yearsExperience, profile?.years_experience ? tx.yearsUnit(profile.years_experience) : '—'],
                         [tx.priceShort, profile?.price_per_session ? `${profile.price_per_session}€` : '—'],
                       ].map(([label, value]) => (
-                        <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid ${C.borderSoft}', fontSize: 14, gap: 12 }}>
+                        <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: `1px solid ${C.borderSoft}`, fontSize: 14, gap: 12 }}>
                           <span style={{ color: C.textMuted }}>{label}</span>
                           <span style={{ fontWeight: 600, color: C.text, textAlign: 'right' }}>{value || '—'}</span>
                         </div>
@@ -2660,7 +2660,7 @@ export default function TherapistDashboard() {
 
                       {/* Δεν αφαιρείται προμήθεια από τη συνεδρία. Το παλιό
                           «Καθαρά/Συνεδρία μετά την προμήθεια» ήταν λάθος. */}
-                      <div style={{ fontSize: 12.5, color: C.success, background: C.successBg, border: '1px solid ${C.successBorder}', borderRadius: 10, padding: '10px 14px', display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <div style={{ fontSize: 12.5, color: C.success, background: C.successBg, border: `1px solid ${C.successBorder}`, borderRadius: 10, padding: '10px 14px', display: 'flex', gap: 8, alignItems: 'center' }}>
                         <Wallet size={14} />
                         {tx.keepsAll}
                       </div>
@@ -2684,7 +2684,7 @@ export default function TherapistDashboard() {
                   </div>
                   <div style={{ fontSize: 13, color: C.textMuted, marginBottom: 18 }}>{tx.areasDesc}</div>
 
-                  <div style={{ background: C.infoBg, border: '1px solid ${C.infoBorder}', borderRadius: 10, padding: '11px 15px', marginBottom: 18, fontSize: 12, color: C.info, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                  <div style={{ background: C.infoBg, border: `1px solid ${C.infoBorder}`, borderRadius: 10, padding: '11px 15px', marginBottom: 18, fontSize: 12, color: C.info, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
                     <Lightbulb size={14} color={C.info} style={{ marginTop: 1, flexShrink: 0 }} />
                     <span><strong>{tx.areasSoonLabel}</strong> {tx.areasSoon}</span>
                   </div>
@@ -2700,7 +2700,7 @@ export default function TherapistDashboard() {
                     ) : (
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                         {(profile?.service_areas || []).map(area => (
-                          <div key={area} style={{ background: C.infoBg, border: '1px solid ${C.infoBorder}', borderRadius: RAD.button, padding: '6px 8px 6px 12px', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: C.info, fontWeight: 500 }}>
+                          <div key={area} style={{ background: C.infoBg, border: `1px solid ${C.infoBorder}`, borderRadius: RAD.button, padding: '6px 8px 6px 12px', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: C.info, fontWeight: 500 }}>
                             <MapPin size={12} />
                             {area}
                             <button onClick={() => removeArea(area)} disabled={savingAreas}
@@ -2724,7 +2724,7 @@ export default function TherapistDashboard() {
                         onChange={e => handleAreaInputChange(e.target.value)}
                         onKeyDown={e => { if (e.key === 'Enter' && areaInput.trim()) { e.preventDefault(); addArea(areaInput); } }}
                         placeholder={tx.areaPh}
-                        style={{ flex: 1, padding: '12px 14px', border: '1.5px solid ${C.border}', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: C.text }}
+                        style={{ flex: 1, padding: '12px 14px', border: `1.5px solid ${C.border}`, borderRadius: 10, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: C.text }}
                       />
                       <button onClick={() => addArea(areaInput)} disabled={!areaInput.trim() || savingAreas}
                         style={{ padding: '12px 22px', borderRadius: 10, border: 'none', background: !areaInput.trim() ? C.border : C.brand, color: '#fff', fontSize: 13, fontWeight: 600, cursor: !areaInput.trim() ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -2734,10 +2734,10 @@ export default function TherapistDashboard() {
                     </div>
 
                     {areaSuggestions.length > 0 && (
-                      <div style={{ position: 'absolute', top: '100%', left: 0, right: 100, background: '#fff', border: '1px solid ${C.border}', borderRadius: 10, marginTop: 4, boxShadow: '0 8px 24px rgba(0,0,0,0.08)', zIndex: 10, maxHeight: 240, overflowY: 'auto' }}>
+                      <div style={{ position: 'absolute', top: '100%', left: 0, right: 100, background: '#fff', border: `1px solid ${C.border}`, borderRadius: 10, marginTop: 4, boxShadow: '0 8px 24px rgba(0,0,0,0.08)', zIndex: 10, maxHeight: 240, overflowY: 'auto' }}>
                         {areaSuggestions.map(s => (
                           <div key={s} onClick={() => addArea(s)}
-                            style={{ padding: '10px 14px', cursor: 'pointer', fontSize: 13, color: C.text, borderBottom: '1px solid ${C.borderSoft}', display: 'flex', alignItems: 'center', gap: 8 }}>
+                            style={{ padding: '10px 14px', cursor: 'pointer', fontSize: 13, color: C.text, borderBottom: `1px solid ${C.borderSoft}`, display: 'flex', alignItems: 'center', gap: 8 }}>
                             <MapPin size={12} color={C.textFaint} />
                             {s}
                           </div>
@@ -2784,12 +2784,12 @@ export default function TherapistDashboard() {
                         {hasLicense ? tx.uploaded : tx.missingRequired}
                       </span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: C.page, border: '1px solid ${C.border}', borderRadius: 10, fontSize: 13 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: C.page, border: `1px solid ${C.border}`, borderRadius: 10, fontSize: 13 }}>
                       {hasCv ? <CheckCircle2 size={16} color={C.success} /> : <span style={{ width: 16, height: 16, display: 'inline-block', borderRadius: '50%', background: C.border }} />}
                       <span>{tx.cv}</span>
                       <span style={{ marginLeft: 'auto', color: C.textMuted, fontSize: 12 }}>{hasCv ? tx.uploaded : tx.optional}</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: C.page, border: '1px solid ${C.border}', borderRadius: 10, fontSize: 13 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: C.page, border: `1px solid ${C.border}`, borderRadius: 10, fontSize: 13 }}>
                       {certCount > 0 ? <CheckCircle2 size={16} color={C.success} /> : <span style={{ width: 16, height: 16, display: 'inline-block', borderRadius: '50%', background: C.border }} />}
                       <span>{tx.certifications}</span>
                       <span style={{ marginLeft: 'auto', color: C.textMuted, fontSize: 12 }}>{certCount > 0 ? tx.filesCount(certCount) : tx.optionalPlural}</span>
@@ -2809,7 +2809,7 @@ export default function TherapistDashboard() {
                   </div>
                 ) : (
                   <>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20, paddingBottom: 18, borderBottom: '1px solid ${C.borderSoft}', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20, paddingBottom: 18, borderBottom: `1px solid ${C.borderSoft}`, flexWrap: 'wrap' }}>
                       <div style={{ fontSize: 34, fontWeight: 700, color: C.warn, lineHeight: 1 }}>{avgRating}</div>
                       <div>
                         <ReviewStars rating={Math.round(Number(avgRating))} size={16} />
@@ -2840,7 +2840,7 @@ export default function TherapistDashboard() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}
           onClick={e => { if (e.target === e.currentTarget) setPayModal(false); }}>
           <div style={{ background: '#fff', borderRadius: 20, maxWidth: 480, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', maxHeight: '85vh', overflowY: 'auto' }}>
-            <div style={{ padding: '22px 26px', borderBottom: '1px solid ${C.borderSoft}', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ padding: '22px 26px', borderBottom: `1px solid ${C.borderSoft}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <h2 style={{ fontSize: 17, fontWeight: 700, color: C.text, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                 <Wallet size={17} color={C.success} />
                 {tx.payModalTitle}
@@ -2851,7 +2851,7 @@ export default function TherapistDashboard() {
             </div>
 
             <div style={{ padding: '22px 26px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div style={{ background: C.successBg, border: '1px solid ${C.successBorder}', borderRadius: 12, padding: '14px 16px', fontSize: 13.5, color: C.success, lineHeight: 1.65 }}>
+              <div style={{ background: C.successBg, border: `1px solid ${C.successBorder}`, borderRadius: 12, padding: '14px 16px', fontSize: 13.5, color: C.success, lineHeight: 1.65 }}>
                 {tx.payModalCash}
               </div>
 
@@ -2900,7 +2900,7 @@ export default function TherapistDashboard() {
                     </strong>
                   </div>
                 )}
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, paddingTop: 10, borderTop: '1px solid ${C.borderSoft}' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, paddingTop: 10, borderTop: `1px solid ${C.borderSoft}` }}>
                   <span style={{ color: C.textMuted }}>{tx.payModalOpen}</span>
                   <strong style={{ color: owedTotal > 0 ? C.warn : C.success, fontSize: 15 }}>{owedTotal.toFixed(2)}€</strong>
                 </div>
@@ -2912,7 +2912,7 @@ export default function TherapistDashboard() {
               </div>
             </div>
 
-            <div style={{ padding: '14px 26px', borderTop: '1px solid ${C.borderSoft}', display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ padding: '14px 26px', borderTop: `1px solid ${C.borderSoft}`, display: 'flex', justifyContent: 'flex-end' }}>
               <button onClick={() => setPayModal(false)}
                 style={{ background: C.brand, color: '#fff', border: 'none', padding: '10px 24px', borderRadius: RAD.button, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                 {tx.close}
@@ -2927,7 +2927,7 @@ export default function TherapistDashboard() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}
           onClick={e => { if (e.target === e.currentTarget) setSelectedDay(null); }}>
           <div style={{ background: '#fff', borderRadius: 20, padding: 0, maxWidth: 480, width: '100%', maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
-            <div style={{ padding: '24px 28px', borderBottom: '1px solid ${C.borderSoft}', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ padding: '24px 28px', borderBottom: `1px solid ${C.borderSoft}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text }}>{formatFullDate(selectedDay.date)}</h2>
               <button onClick={() => setSelectedDay(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: C.textFaint, display: 'flex', alignItems: 'center' }}>
                 <X size={22} />
@@ -2974,7 +2974,7 @@ export default function TherapistDashboard() {
             </p>
 
             {/* Ο ασθενής πληρώνει μετρητά — δεν αφαιρείται προμήθεια εδώ. */}
-            <div style={{ background: C.successBg, border: '1px solid ${C.successBorder}', borderRadius: 12, padding: '14px 18px', marginBottom: 20 }}>
+            <div style={{ background: C.successBg, border: `1px solid ${C.successBorder}`, borderRadius: 12, padding: '14px 18px', marginBottom: 20 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: C.success, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6 }}>
                 {tx.sessionAmount}
               </div>
@@ -2983,14 +2983,14 @@ export default function TherapistDashboard() {
               </div>
             </div>
 
-            <div style={{ background: C.warnBg, border: '1px solid ${C.warnBorder}', borderRadius: 10, padding: '12px 16px', marginBottom: 24, fontSize: 12, color: C.warn, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+            <div style={{ background: C.warnBg, border: `1px solid ${C.warnBorder}`, borderRadius: 10, padding: '12px 16px', marginBottom: 24, fontSize: 12, color: C.warn, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
               <Hourglass size={14} color={C.warn} style={{ flexShrink: 0, marginTop: 1 }} />
               <span>{tx.doneModalWarn} <strong>{tx.doneModalWarnDays}</strong> {tx.doneModalWarnEnd}</span>
             </div>
 
             <div style={{ display: 'flex', gap: 10 }}>
               <button onClick={() => setDoneModal(null)} disabled={marking}
-                style={{ flex: 1, padding: '12px', borderRadius: RAD.button, border: '1px solid ${C.border}', background: 'transparent', color: C.textMuted, fontSize: 14, fontWeight: 600, cursor: marking ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
+                style={{ flex: 1, padding: '12px', borderRadius: RAD.button, border: `1px solid ${C.border}`, background: 'transparent', color: C.textMuted, fontSize: 14, fontWeight: 600, cursor: marking ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
                 {tx.cancel}
               </button>
               <button onClick={markBookingDone} disabled={marking}
@@ -3008,7 +3008,7 @@ export default function TherapistDashboard() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}
           onClick={e => { if (e.target === e.currentTarget) setDocsModal(false); }}>
           <div style={{ background: '#fff', borderRadius: 20, padding: 0, maxWidth: 560, width: '100%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
-            <div style={{ padding: '24px 28px', borderBottom: '1px solid ${C.borderSoft}', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ padding: '24px 28px', borderBottom: `1px solid ${C.borderSoft}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                 <FileText size={18} color={C.accent} />
                 {tx.documents}
@@ -3018,7 +3018,7 @@ export default function TherapistDashboard() {
               </button>
             </div>
             <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 20 }}>
-              <div style={{ background: C.warnBg, border: '1px solid ${C.warnBorder}', borderRadius: 10, padding: '12px 16px', fontSize: 13, color: C.warn, lineHeight: 1.5, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+              <div style={{ background: C.warnBg, border: `1px solid ${C.warnBorder}`, borderRadius: 10, padding: '12px 16px', fontSize: 13, color: C.warn, lineHeight: 1.5, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
                 <AlertTriangle size={16} color={C.warn} style={{ flexShrink: 0, marginTop: 1 }} />
                 <span><strong>{tx.docsModalWarnA}</strong> {tx.docsModalWarnB}</span>
               </div>
@@ -3029,22 +3029,22 @@ export default function TherapistDashboard() {
                   {tx.license} <span style={{ color: C.danger }}>*</span>
                 </div>
                 {hasLicense ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: C.successBg, border: '1px solid ${C.successBorder}', borderRadius: 10, flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: C.successBg, border: `1px solid ${C.successBorder}`, borderRadius: 10, flexWrap: 'wrap' }}>
                     <CheckCircle2 size={18} color={C.success} />
                     <span style={{ fontSize: 13, color: C.success, fontWeight: 600, flex: 1 }}>{tx.uploaded}</span>
                     <button onClick={() => viewDocument(profile.license_url)}
-                      style={{ background: 'transparent', border: '1px solid ${C.successBorder}', borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 600, color: C.success, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' }}>
+                      style={{ background: 'transparent', border: `1px solid ${C.successBorder}`, borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 600, color: C.success, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' }}>
                       <Eye size={12} />
                       {tx.view}
                     </button>
                     <button onClick={() => removeDocument('license')}
-                      style={{ background: 'transparent', border: '1px solid ${C.dangerBorder}', borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 600, color: C.danger, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' }}>
+                      style={{ background: 'transparent', border: `1px solid ${C.dangerBorder}`, borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 600, color: C.danger, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' }}>
                       <Trash2 size={12} />
                       {tx.remove}
                     </button>
                   </div>
                 ) : (
-                  <div style={{ border: '2px dashed ${C.border}', borderRadius: 10, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                  <div style={{ border: `2px dashed ${C.border}`, borderRadius: 10, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                     <div style={{ fontSize: 12, color: C.textMuted }}>{tx.fileHint}</div>
                     <button onClick={() => licenseInputRef.current?.click()} disabled={uploadingDoc === 'license'}
                       style={{ background: C.brand, color: '#fff', border: 'none', borderRadius: 20, padding: '8px 18px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -3062,24 +3062,24 @@ export default function TherapistDashboard() {
                   {tx.cv} <span style={{ fontSize: 11, color: C.textFaint, fontWeight: 500 }}>{tx.optionalParen}</span>
                 </div>
                 {hasCv ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: C.infoBg, border: '1px solid ${C.infoBorder}', borderRadius: 10, flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: C.infoBg, border: `1px solid ${C.infoBorder}`, borderRadius: 10, flexWrap: 'wrap' }}>
                     <CheckCircle2 size={18} color={C.info} />
                     <span style={{ fontSize: 13, color: C.info, fontWeight: 600, flex: 1 }}>{tx.uploaded}</span>
                     <button onClick={() => viewDocument(profile.cv_url)}
-                      style={{ background: 'transparent', border: '1px solid ${C.infoBorder}', borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 600, color: C.info, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' }}>
+                      style={{ background: 'transparent', border: `1px solid ${C.infoBorder}`, borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 600, color: C.info, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' }}>
                       <Eye size={12} />
                       {tx.view}
                     </button>
                     <button onClick={() => removeDocument('cv')}
-                      style={{ background: 'transparent', border: '1px solid ${C.dangerBorder}', borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 600, color: C.danger, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', fontFamily: 'inherit' }}>
+                      style={{ background: 'transparent', border: `1px solid ${C.dangerBorder}`, borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 600, color: C.danger, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', fontFamily: 'inherit' }}>
                       <Trash2 size={12} />
                     </button>
                   </div>
                 ) : (
-                  <div style={{ border: '2px dashed ${C.border}', borderRadius: 10, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                  <div style={{ border: `2px dashed ${C.border}`, borderRadius: 10, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                     <div style={{ fontSize: 12, color: C.textMuted }}>{tx.fileHint}</div>
                     <button onClick={() => cvInputRef.current?.click()} disabled={uploadingDoc === 'cv'}
-                      style={{ background: 'transparent', color: C.brand, border: '1.5px solid ${C.border}', borderRadius: 20, padding: '8px 18px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      style={{ background: 'transparent', color: C.brand, border: `1.5px solid ${C.border}`, borderRadius: 20, padding: '8px 18px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                       <Upload size={12} />
                       {uploadingDoc === 'cv' ? tx.uploading : tx.choose}
                     </button>
@@ -3096,25 +3096,25 @@ export default function TherapistDashboard() {
                 {(profile?.certifications_urls || []).length > 0 && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
                     {(profile.certifications_urls || []).map((path, idx) => (
-                      <div key={path} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: C.page, border: '1px solid ${C.border}', borderRadius: 10 }}>
+                      <div key={path} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: C.page, border: `1px solid ${C.border}`, borderRadius: 10 }}>
                         <FileText size={14} color={C.textMuted} />
                         <span style={{ fontSize: 12, color: C.textBody, flex: 1 }}>{tx.certLabel(idx + 1)}</span>
                         <button onClick={() => viewDocument(path)}
-                          style={{ background: 'transparent', border: '1px solid ${C.border}', borderRadius: 20, padding: '4px 10px', fontSize: 11, fontWeight: 600, color: C.brand, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', fontFamily: 'inherit' }}>
+                          style={{ background: 'transparent', border: `1px solid ${C.border}`, borderRadius: 20, padding: '4px 10px', fontSize: 11, fontWeight: 600, color: C.brand, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', fontFamily: 'inherit' }}>
                           <Eye size={12} />
                         </button>
                         <button onClick={() => removeDocument('cert', path)}
-                          style={{ background: 'transparent', border: '1px solid ${C.dangerBorder}', borderRadius: 20, padding: '4px 10px', fontSize: 11, fontWeight: 600, color: C.danger, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', fontFamily: 'inherit' }}>
+                          style={{ background: 'transparent', border: `1px solid ${C.dangerBorder}`, borderRadius: 20, padding: '4px 10px', fontSize: 11, fontWeight: 600, color: C.danger, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', fontFamily: 'inherit' }}>
                           <Trash2 size={12} />
                         </button>
                       </div>
                     ))}
                   </div>
                 )}
-                <div style={{ border: '2px dashed ${C.border}', borderRadius: 10, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                <div style={{ border: `2px dashed ${C.border}`, borderRadius: 10, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                   <div style={{ fontSize: 12, color: C.textMuted }}>{tx.certHint}</div>
                   <button onClick={() => certInputRef.current?.click()} disabled={uploadingDoc === 'cert'}
-                    style={{ background: 'transparent', color: C.brand, border: '1.5px solid ${C.border}', borderRadius: 20, padding: '8px 18px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    style={{ background: 'transparent', color: C.brand, border: `1.5px solid ${C.border}`, borderRadius: 20, padding: '8px 18px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                     <Plus size={12} strokeWidth={2.5} />
                     {uploadingDoc === 'cert' ? tx.uploading : tx.add}
                   </button>
@@ -3122,7 +3122,7 @@ export default function TherapistDashboard() {
                 </div>
               </div>
             </div>
-            <div style={{ padding: '16px 28px', borderTop: '1px solid ${C.borderSoft}', display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ padding: '16px 28px', borderTop: `1px solid ${C.borderSoft}`, display: 'flex', justifyContent: 'flex-end' }}>
               <button onClick={() => setDocsModal(false)}
                 style={{ background: C.brand, color: '#fff', border: 'none', padding: '10px 24px', borderRadius: RAD.button, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                 {tx.close}

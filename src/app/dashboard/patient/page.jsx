@@ -301,7 +301,7 @@ const isCancelled = (s) => String(s || '').startsWith('cancelled');
 
 function Avatar({ name, size = 44 }) {
   return (
-    <div style={{ width: size, height: size, borderRadius: '50%', background: 'linear-gradient(135deg,${C.accent},${C.brand})', color: C.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.35, fontWeight: 700, flexShrink: 0 }}>
+    <div style={{ width: size, height: size, borderRadius: '50%', background: `linear-gradient(135deg,${C.accent},${C.brand})`, color: C.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.35, fontWeight: 700, flexShrink: 0 }}>
       {(name || '?').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
     </div>
   );
@@ -770,7 +770,7 @@ export default function PatientDashboard() {
         </div>
 
         {heldBookings.length > 0 && (
-          <div style={{ background: 'linear-gradient(135deg, ${C.warnBg}, ${C.warnBorder})', border: '1px solid ${C.warn}', borderRadius: RAD.card, padding: '18px 22px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+          <div style={{ background: `linear-gradient(135deg, ${C.warnBg}, ${C.warnBorder})`, border: `1px solid ${C.warn}`, borderRadius: RAD.card, padding: '18px 22px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
             <div style={{ width: 52, height: 52, borderRadius: RAD.button, background: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <AlertCircle size={28} color={C.warn} strokeWidth={2.2} />
             </div>
@@ -801,27 +801,38 @@ export default function PatientDashboard() {
 
         <div style={{ display: 'flex', gap: 14, marginBottom: 24, flexWrap: 'wrap' }}>
           {[
-            { label: tx.statPending, value: pendingCount, bg: C.warnBg, border: C.warnBorder, text: C.warn },
-            { label: tx.statActive, value: confirmedCount, bg: C.infoBg, border: C.infoBorder, text: C.info },
-            { label: tx.statCompleted, value: completedCount, bg: C.successBg, border: C.successBorder, text: C.success },
-            ...(heldBookings.length > 0 ? [{ label: tx.statToRelease, value: `${heldAmount.toFixed(0)}€`, bg: C.warnBg, border: C.warnBorder, text: C.warn }] : []),
+            { label: tx.statPending, value: pendingCount, tone: pendingCount > 0 ? C.warn : C.textFaint },
+            { label: tx.statActive, value: confirmedCount, tone: confirmedCount > 0 ? C.accent : C.textFaint },
+            { label: tx.statCompleted, value: completedCount, tone: completedCount > 0 ? C.success : C.textFaint },
+            ...(heldBookings.length > 0 ? [{ label: tx.statToRelease, value: `${heldAmount.toFixed(0)}€`, tone: C.warn }] : []),
           ].map(c => (
-            <div key={c.label} style={{ flex: 1, minWidth: 140, background: c.bg, border: `1px solid ${c.border}`, borderRadius: RAD.card, padding: '18px 20px' }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: c.text, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6 }}>{c.label}</div>
-              <div style={{ fontSize: 32, fontWeight: 700, color: c.text }}>{c.value}</div>
+            /* Λευκές cards με λεπτή γραμμή accent στην κορυφή.
+               Τρία διαφορετικά pastel blocks δίπλα-δίπλα έκαναν τη σελίδα
+               να μοιάζει με admin panel. Το χρώμα μένει μόνο στο νούμερο,
+               και ξεθωριάζει όταν η τιμή είναι μηδέν — δεν έχει νόημα να
+               τραβάει το μάτι ένα «0». */
+            <div key={c.label} style={{
+              ...card({ padding: 0 }),
+              flex: 1, minWidth: 140, overflow: 'hidden',
+              borderTop: `3px solid ${c.tone}`,
+            }}>
+              <div style={{ padding: '18px 20px' }}>
+                <div style={{ ...T.eyebrow, marginBottom: 8 }}>{c.label}</div>
+                <div style={{ fontSize: 30, fontWeight: 700, color: c.tone, lineHeight: 1 }}>{c.value}</div>
+              </div>
             </div>
           ))}
         </div>
 
         {/* TABS με badges */}
         <div style={{ marginBottom: 20 }}>
-          <div style={{ display: 'flex', gap: 4, background: C.border, padding: 4, borderRadius: RAD.button, width: 'fit-content', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 4, background: C.borderSoft, padding: 4, borderRadius: RAD.button, width: 'fit-content', flexWrap: 'wrap' }}>
             {TABS.map(t => {
               const TabIcon = t.Icon;
               const isActive = activeTab === t.id;
               return (
                 <button key={t.id} onClick={() => setActiveTab(t.id)}
-                  style={{ padding: '10px 18px', borderRadius: 8, border: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: isActive ? '#fff' : 'transparent', color: isActive ? C.text : C.textMuted, boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  style={{ padding: '10px 18px', borderRadius: 8, border: 'none', fontSize: 14, fontWeight: isActive ? 600 : 500, cursor: 'pointer', fontFamily: 'inherit', background: isActive ? C.surface : 'transparent', color: isActive ? C.text : C.textMuted, boxShadow: isActive ? '0 1px 3px rgba(15,23,42,0.08)' : 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   <TabIcon size={15} />
                   {t.label}
                   {t.count > 0 && (
@@ -1013,7 +1024,7 @@ export default function PatientDashboard() {
                         return (
                           <div key={apt.id} style={{
                             background: C.surface, borderRadius: RAD.button,
-                            border: isHeld ? '2px solid ${C.warn}' : '1px solid ${C.border}',
+                            border: isHeld ? `2px solid ${C.warn}` : `1px solid ${C.border}`,
                             padding: '18px 20px',
                           }}>
                             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
@@ -1243,7 +1254,7 @@ export default function PatientDashboard() {
 
                 <div style={{ marginTop: 16, display: 'flex', gap: 14, fontSize: 12, color: C.textMuted, flexWrap: 'wrap' }}>
                   <span><span style={{ display: 'inline-block', width: 12, height: 12, background: C.infoBg, border: `1px solid ${C.accent}`, borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />{tx.today}</span>
-                  <span><span style={{ display: 'inline-block', width: 12, height: 12, background: C.successBg, border: '1px solid ${C.successBorder}', borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />{tx.hasAppointment}</span>
+                  <span><span style={{ display: 'inline-block', width: 12, height: 12, background: C.successBg, border: `1px solid ${C.successBorder}`, borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />{tx.hasAppointment}</span>
                 </div>
               </div>
             )}
@@ -1272,7 +1283,7 @@ export default function PatientDashboard() {
               const reqHeldBookings = req.bookings.filter(b => b.payment_status === 'held');
 
               return (
-                <div key={req.id} style={{ background: C.surface, borderRadius: RAD.card, border: reqHeldBookings.length > 0 ? '2px solid ${C.warn}' : '1px solid ${C.border}', overflow: 'hidden' }}>
+                <div key={req.id} style={{ background: C.surface, borderRadius: RAD.card, border: reqHeldBookings.length > 0 ? `2px solid ${C.warn}` : `1px solid ${C.border}`, overflow: 'hidden' }}>
                   <div style={{ padding: '18px 20px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
                       <span style={{ fontWeight: 700, fontSize: 16, color: C.text }}>{req.problem_type || tx.physiotherapy}</span>
@@ -1310,7 +1321,7 @@ export default function PatientDashboard() {
                         {tx.total}: {req.total_cost}€
                       </div>
                     )}
-                    {req.problem_description && <div style={{ fontSize: 14, color: C.textBody, background: C.page, padding: '10px 14px', borderRadius: 8, borderLeft: '3px solid ${C.border}', marginTop: 6 }}>{req.problem_description}</div>}
+                    {req.problem_description && <div style={{ fontSize: 14, color: C.textBody, background: C.page, padding: '10px 14px', borderRadius: 8, borderLeft: `3px solid ${C.border}`, marginTop: 6 }}>{req.problem_description}</div>}
                   </div>
 
                   {req.bookings.length > 0 && (
@@ -1333,7 +1344,7 @@ export default function PatientDashboard() {
                               display: 'flex', flexDirection: 'column', gap: 8, padding: '10px 14px',
                               background: isHeld ? C.warnBg : isCancelled(b.status) ? C.dangerBg : C.page,
                               borderRadius: 8, fontSize: 14,
-                              border: isHeld ? '1px solid ${C.warnBorder}' : isCancelled(b.status) ? '1px solid ${C.dangerBorder}' : 'none',
+                              border: isHeld ? `1px solid ${C.warnBorder}` : isCancelled(b.status) ? `1px solid ${C.dangerBorder}` : 'none',
                             }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                                 <span style={{ color: C.text, fontWeight: 500 }}>
