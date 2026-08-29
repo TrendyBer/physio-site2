@@ -86,7 +86,6 @@ export function therapistNewRequest({ therapistName, request, slaDueAt, slaHours
     rows: [
       { label: 'Πρόβλημα', value: request.problem_type },
       { label: 'Περιοχή', value: request.area },
-      { label: 'Τύπος', value: request.session_type === 'package' ? `Πακέτο ${request.package_size} συνεδριών` : 'Μεμονωμένη συνεδρία' },
       { label: 'Αμοιβή', value: request.total_cost ? `${request.total_cost}€` : null },
     ],
     ctaLabel: 'Δείτε το αίτημα',
