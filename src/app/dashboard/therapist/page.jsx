@@ -15,7 +15,7 @@ import {
   LayoutDashboard, ClipboardList, Calendar, MapPin, Target, Star, User, Clock, AlertTriangle,
   Upload, Home, MessageSquare, Check, X, Lock, CalendarClock, ChevronLeft, ChevronRight,
   Plus, Lightbulb, Camera, Pencil, CheckCircle2, Save, FileText, GraduationCap, Award, Eye, Trash2,
-  Wallet, Hourglass, CalendarDays, List, Globe, Info, Copy, Ban, Repeat, Phone, CreditCard,
+  Wallet, Hourglass, CalendarDays, List, Globe, Info, Copy, Ban, Repeat, CreditCard,
 } from 'lucide-react';
 
 // ─── Locale data ──────────────────────────────────────────────────────
@@ -1341,7 +1341,10 @@ export default function TherapistDashboard() {
     const patientIds = [...new Set(reqs.map(r => r.patient_id).filter(Boolean))];
     const { data: patients } = await supabase
       .from('patient_profiles')
-      .select('id, name, phone')
+      // ΤΟ ΤΗΛΕΦΩΝΟ ΤΟΥ ΑΣΘΕΝΗ ΔΕΝ ΖΗΤΕΙΤΑΙ ΚΑΝ.
+      // Δεν αρκεί να το κρύψουμε στην οθόνη: με select('phone') το νούμερο
+      // ταξιδεύει στον browser του θεραπευτή και φαίνεται στα DevTools.
+      .select('id, name')
       .in('id', patientIds);
 
     const bookingIds = (bks || []).map(b => b.id);
@@ -1363,7 +1366,6 @@ export default function TherapistDashboard() {
         ...req,
         bookings: reqBookings,
         patient_name: patient?.name || null,
-        patient_phone: patient?.phone || null,
       };
     });
 
@@ -2115,12 +2117,7 @@ export default function TherapistDashboard() {
                             </div>
                             {/* Το τηλέφωνο εμφανίζεται ΜΟΝΟ αφού αποδεχτεί.
                                 Πριν από αυτό δεν έχει λόγο να το ξέρει. */}
-                            {req.patient_phone && !isPending && (
-                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
-                                <Phone size={14} color={C.textMuted} />
-                                <a href={`tel:${req.patient_phone}`} style={{ color: C.accent, fontWeight: 600, textDecoration: 'none' }}>{req.patient_phone}</a>
-                              </div>
-                            )}
+                            {/* Το τηλέφωνο του ασθενή δεν εμφανίζεται ποτέ — ούτε πριν ούτε μετά την αποδοχή. */}
                             <div style={{ background: C.page, padding: '10px 14px', borderRadius: 8, borderLeft: `3px solid ${C.border}`, lineHeight: 1.6 }}>
                               {req.problem_description || tx.noDescription}
                             </div>
@@ -2225,14 +2222,6 @@ export default function TherapistDashboard() {
                       </div>
                     )}
 
-                    {nextAppointment.request?.patient_phone && nextAppointment.status === 'confirmed' && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <Phone size={18} color="rgba(255,255,255,0.7)" />
-                        <a href={`tel:${nextAppointment.request.patient_phone}`} style={{ fontSize: 15, color: '#fff', fontWeight: 600, textDecoration: 'none' }}>
-                          {nextAppointment.request.patient_phone}
-                        </a>
-                      </div>
-                    )}
                   </div>
 
                   {nextAppointment.status === 'pending' && (
@@ -2320,12 +2309,6 @@ export default function TherapistDashboard() {
                                     <div style={{ fontSize: 13, color: C.textFaint, display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                                       <Home size={12} />
                                       {apt.request.floor_info}
-                                    </div>
-                                  )}
-                                  {apt.request?.patient_phone && apt.status === 'confirmed' && (
-                                    <div style={{ fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                                      <Phone size={12} color={C.textMuted} />
-                                      <a href={`tel:${apt.request.patient_phone}`} style={{ color: C.accent, fontWeight: 600, textDecoration: 'none' }}>{apt.request.patient_phone}</a>
                                     </div>
                                   )}
                                   {apt.request?.problem_type && (
