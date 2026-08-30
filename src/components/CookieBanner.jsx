@@ -61,6 +61,30 @@ export default function CookieBanner() {
     setIsVisible(false);
     setShowSettings(false);
 
+    // ── GOOGLE CONSENT MODE v2 ──
+    // Χωρίς αυτό, το banner θα ήταν διακοσμητικό: ο χρήστης θα πατούσε
+    // «Αποδοχή» και το GA4 θα συνέχιζε να μη μετράει τίποτα, επειδή το
+    // layout ορίζει τα πάντα σε 'denied' κατά την εκκίνηση.
+    //
+    // Οι δύο κατηγορίες αντιστοιχούν σε διαφορετικά πεδία:
+    //   analytics → analytics_storage       (GA4 μετρήσεις)
+    //   marketing → ad_storage & συναφή      (Google Ads conversions)
+    // Ο χρήστης μπορεί να δεχτεί το ένα και όχι το άλλο.
+    if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
+      window.gtag('consent', 'update', {
+        analytics_storage:  toSave.analytics ? 'granted' : 'denied',
+        ad_storage:         toSave.marketing ? 'granted' : 'denied',
+        ad_user_data:       toSave.marketing ? 'granted' : 'denied',
+        ad_personalization: toSave.marketing ? 'granted' : 'denied',
+      });
+    }
+
+    // Το lib/analytics.js διαβάζει αυτό το κλειδί για να αποφασίσει αν
+    // θα στείλει events. Το κρατάμε συγχρονισμένο με τις κατηγορίες.
+    try {
+      localStorage.setItem('cookie_consent', toSave.analytics ? 'accepted' : 'declined');
+    } catch (_) {}
+
     // Dispatch event so other components can react
     window.dispatchEvent(new CustomEvent('cookie-prefs-changed', { detail: toSave }));
   }

@@ -6,6 +6,7 @@ import { Check, X, ChevronLeft, ChevronRight, Calendar, ArrowRight, MapPin, Aler
 import ConditionSearch from '@/components/ConditionSearch';
 import AreaInput from '@/components/AreaInput';
 import VerifiedBadge from '@/components/VerifiedBadge';
+import { track, EV, getClientId, getUtm, captureUtm } from '@/lib/analytics';
 import { areasMatch } from '@/lib/areas';
 import { filterBookableSlots } from '@/lib/slots';
 
@@ -89,6 +90,10 @@ export default function NewRequestPage() {
   const [retryFrom, setRetryFrom] = useState(null);
 
   useEffect(() => {
+    // Το πρώτο σκαλί του funnel: επισκέπτες → εγγραφές → ΕΝΑΡΞΗ BOOKING
+    captureUtm();
+    track(EV.BOOKING_STARTED);
+
     try {
       const params = new URLSearchParams(window.location.search);
       const q = params.get('therapist');
@@ -405,7 +410,17 @@ export default function NewRequestPage() {
   // Μία συνεδρία = μία ώρα. Νέα επιλογή αντικαθιστά την προηγούμενη
   // αντί να μπλοκάρει τον χρήστη με «έχετε φτάσει το όριο».
   function pickSlot(slot) {
-    setSelectedSlot(prev => (prev?.id === slot.id ? null : slot));
+    setSelectedSlot(prev => {
+      const next = prev?.id === slot.id ? null : slot;
+      if (next) {
+        track(EV.SLOT_SELECTED, {
+          therapist_id: selectedTherapist?.id || null,
+          slot_date: next.date,
+          slot_time: String(next.start_time || '').slice(0, 5),
+        });
+      }
+      return next;
+    });
   }
 
   function validateStep() {
@@ -487,6 +502,36 @@ export default function NewRequestPage() {
     }
 
     const requestId = result.request_id;
+
+    // ── ΑΠΟΔΟΣΗ CONVERSION ────────────────────────────────────────────
+    // Το booking_confirmed θα σταλεί ΑΡΓΟΤΕΡΑ, από τον server, όταν ο
+    // θεραπευτής αποδεχτεί. Αν το στέλναμε από τον browser ΤΟΥ, το GA4
+    // θα το απέδιδε στη δική του συνεδρία και η διαφήμιση που έφερε τον
+    // ασθενή δεν θα έπαιρνε ποτέ credit.
+    // Γι' αυτό αποθηκεύουμε ΕΔΩ το client_id και τα UTM του ασθενή.
+    try {
+      const clientId = await getClientId();
+      const utm = getUtm();
+      if (clientId || Object.keys(utm).length > 0) {
+        await supabase.from('session_requests').update({
+          ga_client_id: clientId,
+          utm_source:   utm.utm_source   || null,
+          utm_medium:   utm.utm_medium   || null,
+          utm_campaign: utm.utm_campaign || null,
+          gclid:        utm.gclid        || null,
+        }).eq('id', requestId);
+      }
+    } catch (err) {
+      // Η αποτυχία attribution ΔΕΝ χαλάει την κράτηση.
+      console.error('[analytics] attribution failed:', err);
+    }
+
+    track(EV.BOOKING_REQUEST_SUBMITTED, {
+      request_id: requestId,
+      therapist_id: selectedTherapist.id,
+      value: Number(sessionCost) || 0,
+      currency: 'EUR',
+    });
 
     // ── ΠΡΟΜΗΘΕΙΑ ΠΛΑΤΦΟΡΜΑΣ ────────────────────────────────────────────
     try {
@@ -946,7 +991,18 @@ export default function NewRequestPage() {
                               Δες προφίλ
                             </button>
                             <button
-                              onClick={() => { if (!noSlots) { setSelectedTherapist(isSelected ? null : t); setSelectedSlot(null); } }}
+                              onClick={() => {
+                                if (noSlots) return;
+                                setSelectedTherapist(isSelected ? null : t);
+                                setSelectedSlot(null);
+                                if (!isSelected) {
+                                  track(EV.THERAPIST_SELECTED, {
+                                    therapist_id: t.id,
+                                    price: Number(t.price_per_session) || 0,
+                                    match_level: t.matchLevel || null,
+                                  });
+                                }
+                              }}
                               disabled={noSlots}
                               title={noSlots ? 'Δεν έχει ανοιχτές ώρες αυτή τη στιγμή' : ''}
                               style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: noSlots ? '#cbd5e1' : (isSelected ? '#15803D' : '#1a2e44'), color: '#fff', fontSize: 12.5, fontWeight: 600, cursor: noSlots ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4, fontFamily: 'inherit', whiteSpace: 'nowrap' }}>

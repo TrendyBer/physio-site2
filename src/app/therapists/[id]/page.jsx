@@ -8,6 +8,7 @@ import VerifiedBadge from '../../../components/VerifiedBadge';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
 import { filterBookableSlots } from '@/lib/slots';
+import { track, EV, captureUtm } from '@/lib/analytics';
 import { ArrowRight, MapPin, ShieldCheck, GraduationCap, ChevronRight, CalendarCheck, Clock } from 'lucide-react';
 
 const LOCALE = { el: 'el-GR', en: 'en-US' };
@@ -217,6 +218,17 @@ export default function TherapistProfilePage() {
       const avg = count > 0 ? reviewsData.reduce((s, r) => s + r.rating, 0) / count : 0;
 
       setTherapist({ ...th, avg_rating: avg, review_count: count });
+
+      // Δείκτης ενδιαφέροντος: πόσοι βλέπουν προφίλ σε σχέση με πόσοι
+      // κλείνουν. Αν πολλοί βλέπουν και λίγοι κλείνουν, το πρόβλημα
+      // είναι στο προφίλ ή στην τιμή, όχι στη διαφήμιση.
+      captureUtm();
+      track(EV.THERAPIST_PROFILE_VIEWED, {
+        therapist_id: th.id,
+        price: Number(th.price_per_session) || 0,
+        verified: !!th.license_verified,
+        rating: avg || 0,
+      });
       setReviews(reviewsData);
       setConditions(conditionNames);
       setLoading(false);

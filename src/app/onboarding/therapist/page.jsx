@@ -10,6 +10,7 @@ import StepAreas from '@/components/onboarding/StepAreas';
 import StepLicense from '@/components/onboarding/StepLicense';
 import StepPlan from '@/components/onboarding/StepPlan';
 import { Check, Cloud, LogOut, CheckCircle2, Clock, ArrowRight } from 'lucide-react';
+import { track, EV } from '@/lib/analytics';
 
 /*
   ONBOARDING ΘΕΡΑΠΕΥΤΗ — φάση 2 από 2
@@ -182,6 +183,10 @@ export default function TherapistOnboardingPage() {
         })
         .eq('therapist_id', user.id);
     }
+    // Το τελευταίο σκαλί του funnel θεραπευτή:
+    // εγγραφή → onboarding → ενεργό προφίλ
+    track(EV.THERAPIST_ONBOARDING_COMPLETED, { therapist_id: user?.id || null });
+
     await refreshProfile();
     setDone(true);
     topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });

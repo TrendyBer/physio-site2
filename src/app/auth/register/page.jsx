@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { useLang } from '@/context/LanguageContext';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { HeartPulse, Stethoscope, ArrowRight, ArrowLeft, Lightbulb } from 'lucide-react';
+import { track, EV, captureUtm } from '@/lib/analytics';
 
 /*
   ΔΗΜΙΟΥΡΓΙΑ ΛΟΓΑΡΙΑΣΜΟΥ — φάση 1 από 2
@@ -140,6 +141,15 @@ export default function RegisterPage() {
   const [cities, setCities] = useState([]);
 
   useEffect(() => {
+    captureUtm();
+    // Αν ήρθε από /become-therapist με ?role=therapist, το βήμα 1
+    // παρακάμπτεται — το started πρέπει να πυροδοτηθεί εδώ.
+    if (preRole) {
+      track(preRole === 'therapist' ? EV.THERAPIST_SIGNUP_STARTED : EV.PATIENT_SIGNUP_STARTED);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
     (async () => {
       const { data } = await supabase
         .from('cities')
@@ -241,6 +251,11 @@ export default function RegisterPage() {
       if (paErr) { setError(tx.errProfile + paErr.message); setLoading(false); return; }
     }
 
+    track(role === 'therapist' ? EV.THERAPIST_SIGNUP_COMPLETED : EV.PATIENT_SIGNUP_COMPLETED, {
+      user_id: userId,
+      city_id: role === 'therapist' ? form.cityId : null,
+    });
+
     redirectAfterRegister(role);
     setLoading(false);
   }
@@ -299,7 +314,11 @@ export default function RegisterPage() {
                 </div>
               ))}
             </div>
-            <button onClick={() => { if (role) setStep(2); }} disabled={!role}
+            <button onClick={() => {
+                if (!role) return;
+                track(role === 'therapist' ? EV.THERAPIST_SIGNUP_STARTED : EV.PATIENT_SIGNUP_STARTED);
+                setStep(2);
+              }} disabled={!role}
               style={{ width: '100%', background: role ? '#1a2e44' : '#e2e8f0', color: role ? '#fff' : '#94a3b8', padding: '13px', borderRadius: 30, fontSize: 15, fontWeight: 600, border: 'none', cursor: role ? 'pointer' : 'not-allowed', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
               {tx.continue}
               <ArrowRight size={16} />
