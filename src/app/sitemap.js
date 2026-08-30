@@ -87,7 +87,42 @@ export default async function sitemap() {
     },
   ];
 
-  // ============== DYNAMIC: CONDITION DETAIL PAGES ==============
+  // ============== DYNAMIC: SEO LANDING PAGES ==============
+  //
+  // Η seo_pages() επιστρέφει ΜΟΝΟ σελίδες που περνούν τον φραγμό:
+  // αρκετοί θεραπευτές ΚΑΙ γραμμένο κείμενο. Οι υπόλοιπες υπάρχουν
+  // και είναι προσβάσιμες, αλλά μένουν εκτός sitemap και noindex.
+  //
+  // Το να δηλώσεις στη Google σαράντα κενές σελίδες βλάπτει ΟΛΟ το
+  // domain, όχι μόνο αυτές. Καλύτερα δέκα καλές.
+  let seoPages = [];
+
+  try {
+    const { data: pages } = await supabase.rpc('seo_pages');
+
+    if (pages && pages.length > 0) {
+      seoPages = pages
+        .filter((p) => p.should_index)
+        .map((p) => ({
+          url: p.kind === 'condition'
+            ? `${SITE_URL}/pathiseis/${p.slug}`
+            : `${SITE_URL}/fysiotherapeia-sto-spiti/${p.slug}`,
+          lastModified: p.updated_at ? new Date(p.updated_at) : now,
+          changeFrequency: 'weekly',
+          // Οι περιοχές έχουν συνήθως υψηλότερο commercial intent:
+          // «φυσικοθεραπευτής Παγκράτι» είναι πιο κοντά σε κράτηση από
+          // «τι είναι η οσφυαλγία».
+          priority: p.kind === 'area' ? 0.8 : 0.7,
+        }));
+    }
+  } catch (err) {
+    console.error('Sitemap: failed to load SEO pages', err);
+  }
+
+  // ============== DYNAMIC: CONDITION FILTER PAGES ==============
+  // Το /find-help/[slug] παραμένει ως φίλτρο της εφαρμογής.
+  // ΧΩΡΙΣ τα ?lang=en διπλότυπα: το ίδιο περιεχόμενο σε δύο URL
+  // ανταγωνίζεται τον εαυτό του στα αποτελέσματα.
   let conditionPages = [];
 
   try {
@@ -97,24 +132,14 @@ export default async function sitemap() {
       .eq('is_active', true);
 
     if (conditions && conditions.length > 0) {
-      // Για κάθε condition — 1 EL URL + 1 EN URL
-      conditionPages = conditions.flatMap((c) => [
-        {
-          url: `${SITE_URL}/find-help/${c.slug}`,
-          lastModified: now,
-          changeFrequency: 'monthly',
-          priority: c.is_popular ? 0.8 : 0.6,
-        },
-        {
-          url: `${SITE_URL}/find-help/${c.slug}?lang=en`,
-          lastModified: now,
-          changeFrequency: 'monthly',
-          priority: c.is_popular ? 0.6 : 0.4,
-        },
-      ]);
+      conditionPages = conditions.map((c) => ({
+        url: `${SITE_URL}/find-help/${c.slug}`,
+        lastModified: now,
+        changeFrequency: 'monthly',
+        priority: c.is_popular ? 0.6 : 0.5,
+      }));
     }
   } catch (err) {
-    // Αν fail το DB query, δεν σπάει το sitemap — απλά δεν θα έχει τα dynamic
     console.error('Sitemap: failed to load conditions', err);
   }
 
@@ -138,5 +163,5 @@ export default async function sitemap() {
     // Αν δεν υπάρχει blog_posts table, σιωπηλά skip
   }
 
-  return [...staticPages, ...conditionPages, ...blogPages];
+  return [...staticPages, ...seoPages, ...conditionPages, ...blogPages];
 }
