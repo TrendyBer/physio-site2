@@ -93,7 +93,17 @@ export default function HowItWorks() {
               <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#1a2e44', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 16, marginBottom: 16 }}>
                 {i + 1}
               </div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#2a6fdb', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6 }}>{step.num}</div>
+              {/* ΔΙΠΛΟ ΝΟΥΜΕΡΟ.
+                  Ο κύκλος από πάνω δείχνει ήδη τη σειρά. Αν το CMS έχει
+                  num = "1" αντί για "ΒΗΜΑ 1", ο χρήστης έβλεπε «1» δύο
+                  φορές, τη μία μέσα σε κύκλο και την άλλη από κάτω.
+                  Εμφανίζουμε το num ΜΟΝΟ αν προσθέτει κάτι — δηλαδή αν
+                  δεν είναι απλώς ο ίδιος αριθμός. */}
+              {step.num && String(step.num).trim() !== String(i + 1) && (
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#2a6fdb', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6 }}>
+                  {step.num}
+                </div>
+              )}
               <h3 style={{ fontSize: 18, fontWeight: 700, color: '#1a2e44', marginBottom: 10 }}>{step.title}</h3>
               <p style={{ fontSize: 14, color: '#6b7a8d', lineHeight: 1.6 }}>{step.desc}</p>
             </div>

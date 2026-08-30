@@ -123,6 +123,14 @@ const TX = {
     deadEndExpired: 'Ο θεραπευτής δεν απάντησε εγκαίρως.',
     deadEndAction: 'Δείτε άλλους διαθέσιμους θεραπευτές — τα στοιχεία σας είναι ήδη συμπληρωμένα.',
     deadEndBtn: 'Δες άλλους θεραπευτές',
+    matchesTitle: (n) => n === 1 ? 'Βρήκαμε 1 διαθέσιμο θεραπευτή' : `Βρήκαμε ${n} διαθέσιμους θεραπευτές`,
+    matchesToday: 'που μπορούν σήμερα',
+    matchesPick: 'Επίλεξε',
+    today: 'Σήμερα',
+    deadlineLabel: 'Απάντηση έως',
+    deadlineLeft: (t) => `Απομένουν ${t}`,
+    deadlinePassed: 'Η προθεσμία πέρασε',
+    sameDayTag: 'Αυθημερόν',
     physiotherapy: 'Φυσικοθεραπεία',
     pendingApproval: (n) => `${n} προς έγκριση`,
     total: 'Κόστος συνεδρίας',
@@ -241,6 +249,14 @@ const TX = {
     deadEndExpired: 'The therapist did not reply in time.',
     deadEndAction: 'See other available therapists — your details are already filled in.',
     deadEndBtn: 'See other therapists',
+    matchesTitle: (n) => n === 1 ? 'We found 1 available therapist' : `We found ${n} available therapists`,
+    matchesToday: 'available today',
+    matchesPick: 'Choose',
+    today: 'Today',
+    deadlineLabel: 'Reply by',
+    deadlineLeft: (t) => `${t} left`,
+    deadlinePassed: 'The deadline has passed',
+    sameDayTag: 'Same day',
     physiotherapy: 'Physiotherapy',
     pendingApproval: (n) => `${n} to approve`,
     total: 'Session cost',
@@ -416,6 +432,8 @@ export default function PatientDashboard() {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [sessionRequests, setSessionRequests] = useState([]);
+
+  const [rematches, setRematches] = useState({});
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('appointments');
@@ -476,6 +494,17 @@ export default function PatientDashboard() {
     }
 
     if (!reqs || reqs.length === 0) { setSessionRequests([]); return; }
+
+    // ΠΡΟΤΑΣΕΙΣ ΓΙΑ ΤΑ ΑΔΙΕΞΟΔΑ.
+    // Το email λήξης δίνει ήδη τρεις συγκεκριμένους θεραπευτές. Χωρίς
+    // αυτό, η ίδια η εφαρμογή θα ήταν λιγότερο χρήσιμη από το email της.
+    const deadEnds = reqs.filter(r => ['declined', 'rejected', 'expired'].includes(r.status));
+    const matchMap = {};
+    await Promise.all(deadEnds.slice(0, 5).map(async (r) => {
+      const { data } = await supabase.rpc('rematch_therapists', { p_request_id: r.id, p_limit: 3 });
+      if (data && data.length) matchMap[r.id] = data;
+    }));
+    setRematches(matchMap);
 
     const therapistIds = [...new Set(reqs.map(r => r.therapist_id).filter(Boolean))];
     let therapists = [];
@@ -752,15 +781,26 @@ export default function PatientDashboard() {
 
   return (
     <div style={{ minHeight: '100vh', background: C.page, fontFamily: F.sans }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap'); * { box-sizing: border-box; margin: 0; padding: 0; }`}</style>
+      <style>{`
+        /* ΚΑΜΙΑ ΠΛΑΓΙΑ ΚΥΛΙΣΗ.
+           Αρκεί ένα στοιχείο να ξεπεράσει το πλάτος για να
+           εμφανιστεί κενό δεξιά σε όλη τη σελίδα. */
+        html, body { max-width: 100%; overflow-x: hidden; }
+        * { min-width: 0; }
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap'); * { box-sizing: border-box; margin: 0; padding: 0; }`}</style>
 
-      <nav style={{ background: C.surface, borderBottom: `1px solid ${C.border}`, padding: '0 24px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
-        <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'Georgia, serif', fontSize: 19, fontWeight: 700, color: C.brand, textDecoration: 'none' }}>
+      {/* OVERFLOW ΣΕ ΚΙΝΗΤΟ.
+          Το header είχε σταθερό ύψος και δεν τύλιγε: σε 382px τα
+          στοιχεία σπρώχνανε τη σελίδα πλάγια και εμφανιζόταν κενό
+          δεξιά. Τώρα τυλίγει, το ύψος είναι ελάχιστο αντί για σταθερό,
+          και το minWidth: 0 επιτρέπει στα παιδιά να συρρικνωθούν. */}
+      <nav style={{ background: C.surface, borderBottom: `1px solid ${C.border}`, padding: '10px 16px', minHeight: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', position: 'sticky', top: 0, zIndex: 100, maxWidth: '100%', boxSizing: 'border-box' }}>
+        <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'Georgia, serif', fontSize: 19, fontWeight: 700, color: C.brand, textDecoration: 'none', minWidth: 0, flexShrink: 1 }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.accent, display: 'inline-block' }} />
           PhysioHome
           <span style={{ fontSize: 13, fontWeight: 500, color: C.textMuted, marginLeft: 8, background: C.borderSoft, padding: '3px 12px', borderRadius: RAD.pill }}>{tx.roleBadge}</span>
         </a>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', minWidth: 0 }}>
           <LanguageSwitcher color={C.textMuted} hoverColor={C.brand} navHeight={64} />
           <a href="/"
             title={tx.backToSite}
@@ -1302,6 +1342,26 @@ export default function PatientDashboard() {
               // και ώρα. Τα περισσότεροι απλά φεύγουν.
               const isDeadEnd = ['declined', 'rejected', 'expired'].includes(req.status);
               const retryUrl = `/dashboard/patient/new-request?retry=${req.id}`;
+              const matches = rematches[req.id] || [];
+
+              // ΑΝΤΙΣΤΡΟΦΗ ΜΕΤΡΗΣΗ.
+              // Χωρίς αυτή, ο ασθενής βλέπει «Εκκρεμεί» και δεν ξέρει αν
+              // περιμένει δέκα λεπτά ή δύο μέρες. Οι περισσότεροι
+              // υποθέτουν ότι κάτι δεν πάει καλά και φεύγουν.
+              let deadlineText = null;
+              let deadlineUrgent = false;
+              if (req.status === 'pending' && req.expires_at) {
+                const ms = new Date(req.expires_at).getTime() - Date.now();
+                if (ms <= 0) {
+                  deadlineText = tx.deadlinePassed;
+                  deadlineUrgent = true;
+                } else {
+                  const h = Math.floor(ms / 3600000);
+                  const m = Math.floor((ms % 3600000) / 60000);
+                  deadlineText = tx.deadlineLeft(h > 0 ? `${h}ω ${m}λ` : `${m} λεπτά`);
+                  deadlineUrgent = ms < 2 * 3600000;
+                }
+              }
               const reqHeldBookings = req.bookings.filter(b => b.payment_status === 'held');
 
               return (
@@ -1310,6 +1370,19 @@ export default function PatientDashboard() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
                       <span style={{ fontWeight: 700, fontSize: 16, color: C.text }}>{req.problem_type || tx.physiotherapy}</span>
                       <Badge label={st.label} bg={st.bg} color={st.color} />
+                      {req.is_same_day && req.status === 'pending' && (
+                        <Badge label={tx.sameDayTag} bg={C.warnBg} color={C.warn} />
+                      )}
+                      {deadlineText && (
+                        <span style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 5,
+                          fontSize: 12, fontWeight: 600,
+                          color: deadlineUrgent ? C.danger : C.textMuted,
+                        }}>
+                          <Clock size={12} />
+                          {deadlineText}
+                        </span>
+                      )}
                       {reqHeldBookings.length > 0 && (
                         <Badge label={tx.pendingApproval(reqHeldBookings.length)} bg={C.warnBg} color={C.warn} icon={AlertCircle} />
                       )}
@@ -1327,7 +1400,43 @@ export default function PatientDashboard() {
                         <div style={{ fontSize: 13, color: C.textMuted, marginBottom: 12, lineHeight: 1.6 }}>
                           {tx.deadEndAction}
                         </div>
-                        <a href={retryUrl} style={{ ...btn('primary', { padding: '10px 20px', fontSize: 13.5, textDecoration: 'none' }) }}>
+                        {/* ΣΥΓΚΕΚΡΙΜΕΝΟΙ θεραπευτές, όχι «ξαναψάξε».
+                            Ίδια πρόταση με το email που μόλις έλαβε. */}
+                        {matches.length > 0 && (
+                          <div style={{ marginBottom: 14 }}>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: C.success, marginBottom: 10 }}>
+                              {tx.matchesTitle(matches.length)}
+                              {matches.some(m => m.same_day) ? ` ${tx.matchesToday}` : ''}
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                              {matches.map(m => (
+                                <a key={m.therapist_id}
+                                  href={`/dashboard/patient/new-request?retry=${req.id}&therapist=${m.therapist_id}`}
+                                  style={{
+                                    display: 'flex', alignItems: 'center', gap: 12,
+                                    background: C.surface, border: `1px solid ${C.border}`,
+                                    borderRadius: RAD.input, padding: '11px 14px',
+                                    textDecoration: 'none',
+                                  }}>
+                                  <Avatar name={m.name} size={34} />
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{m.name}</div>
+                                    <div style={{ fontSize: 12, color: C.textMuted }}>
+                                      {m.same_day ? tx.today : new Date(m.next_slot_date).toLocaleDateString(loc, { day: '2-digit', month: 'short' })}
+                                      {m.next_slot_time ? ` ${String(m.next_slot_time).slice(0, 5)}` : ''}
+                                      {m.price ? ` · ${Math.round(Number(m.price))}€` : ''}
+                                    </div>
+                                  </div>
+                                  <span style={{ fontSize: 12.5, fontWeight: 600, color: C.accent, whiteSpace: 'nowrap' }}>
+                                    {tx.matchesPick}
+                                  </span>
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <a href={retryUrl} style={{ ...btn(matches.length > 0 ? 'secondary' : 'primary', { padding: '10px 20px', fontSize: 13.5, textDecoration: 'none' }) }}>
                           {tx.deadEndBtn}
                           <ArrowRight size={15} />
                         </a>

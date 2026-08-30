@@ -1832,6 +1832,12 @@ export default function TherapistDashboard() {
   return (
     <div style={{ minHeight: '100vh', background: C.page, fontFamily: "'DM Sans', sans-serif" }}>
       <style>{`
+        /* ΚΑΜΙΑ ΠΛΑΓΙΑ ΚΥΛΙΣΗ.
+           Αρκεί ένα στοιχείο να ξεπεράσει το πλάτος για να
+           εμφανιστεί κενό δεξιά σε όλη τη σελίδα. */
+        html, body { max-width: 100%; overflow-x: hidden; }
+        * { min-width: 0; }
+
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
         .tabs-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -1843,13 +1849,14 @@ export default function TherapistDashboard() {
         }
       `}</style>
 
-      <nav style={{ background: '#fff', borderBottom: `1px solid ${C.border}`, padding: '0 24px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'Georgia, serif', fontSize: 18, fontWeight: 700, color: C.brand }}>
+      {/* Ίδια διόρθωση overflow με τον πίνακα ασθενή */}
+      <nav style={{ background: '#fff', borderBottom: `1px solid ${C.border}`, padding: '10px 16px', minHeight: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', position: 'sticky', top: 0, zIndex: 100, maxWidth: '100%', boxSizing: 'border-box' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'Georgia, serif', fontSize: 18, fontWeight: 700, color: C.brand, minWidth: 0, flexShrink: 1 }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.accent, display: 'inline-block' }} />
           PhysioHome
           <span style={{ fontSize: 12, fontWeight: 500, color: C.textMuted, marginLeft: 8, background: C.borderSoft, padding: '2px 10px', borderRadius: RAD.pill }}>{tx.roleBadge}</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', minWidth: 0 }}>
           {!profile?.is_approved && hasLicense && (
             <span style={{ background: C.warnBg, color: C.warn, padding: '4px 12px', borderRadius: RAD.pill, fontSize: 12, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
               <Clock size={12} />
