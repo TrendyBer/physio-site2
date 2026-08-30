@@ -262,6 +262,84 @@ const TX = {
   },
 };
 
+// ΟΡΙΖΕΤΑΙ ΕΞΩ ΑΠΟ ΤΟ HomePage, ΣΚΟΠΙΜΑ.
+// Όταν ήταν μέσα, κάθε πληκτρολόγηση άλλαζε state → το HomePage έκανε
+// render → δημιουργούνταν ΝΕΑ συνάρτηση SearchBox. Το React τη θεωρεί
+// διαφορετικό component, ξηλώνει το παλιό input και βάζει καινούργιο,
+// οπότε ο κέρσορας χανόταν μετά από κάθε γράμμα.
+function SearchBox({ compact, tx, problem, setProblem, onKey, searchHref, chips, suggestions = [], lang = 'el' }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ background: '#fff', borderRadius: 20, border: compact ? 'none' : `1px solid ${C.border}`, padding: compact ? '22px 20px' : '26px 24px', boxShadow: compact ? '0 8px 40px rgba(0,0,0,0.2)' : '0 4px 28px rgba(26,46,68,0.07)', textAlign: 'left' }}>
+      <div style={{ fontSize: 15, fontWeight: 600, color: C.navy, marginBottom: 12 }}>
+        {tx.searchLabel}
+      </div>
+
+      <div className="pv-search">
+        <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
+          <div className="pv-search-input">
+            <Search size={18} color={C.faint} strokeWidth={2} style={{ flexShrink: 0 }} />
+            <input
+              value={problem}
+              onChange={e => { setProblem(e.target.value); setOpen(true); }}
+              onKeyDown={onKey}
+              onFocus={() => setOpen(true)}
+              onBlur={() => setTimeout(() => setOpen(false), 160)}
+              placeholder={tx.searchPh}
+              style={{ flex: 1, border: 'none', outline: 'none', fontSize: 15, color: C.navy, fontFamily: 'inherit', background: 'transparent', minWidth: 0 }}
+            />
+          </div>
+
+          {/* ΠΡΟΤΑΣΕΙΣ ΚΑΘΩΣ ΓΡΑΦΕΙ.
+              Ο ασθενής γράφει «πονάει η μέση μου», όχι «οσφυαλγία».
+              Χωρίς αντιστοίχιση, η ελεύθερη αναζήτηση συχνά δεν βρίσκει
+              τίποτα και φεύγει νομίζοντας ότι δεν τον καλύπτουμε.
+
+              Το setTimeout στο blur είναι απαραίτητο: χωρίς αυτό η λίστα
+              κλείνει πριν προλάβει να καταγραφεί το κλικ. */}
+          {open && suggestions.length > 0 && (
+            <div style={{
+              position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0,
+              background: '#fff', border: `1px solid ${C.border}`, borderRadius: 12,
+              boxShadow: '0 8px 32px rgba(26,46,68,0.14)', overflow: 'hidden', zIndex: 40,
+            }}>
+              {suggestions.map(c => (
+                <a key={c.id} href={`/therapists?condition=${encodeURIComponent(c.slug)}`}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '11px 15px', fontSize: 14.5, color: C.navy,
+                    textDecoration: 'none', borderBottom: `1px solid ${C.line}`,
+                  }}>
+                  <Stethoscope size={15} color={C.accent} strokeWidth={2} style={{ flexShrink: 0 }} />
+                  {lang === 'en' ? (c.name_en || c.name_el) : c.name_el}
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <a href={searchHref} className="pv-search-btn">
+          {tx.searchBtn}
+          <ArrowRight size={16} />
+        </a>
+      </div>
+
+      <div style={{ fontSize: 12.5, color: C.faint, marginTop: 10, lineHeight: 1.5 }}>
+        {tx.searchMicro}
+      </div>
+
+      <div style={{ fontSize: 11.5, fontWeight: 700, color: C.faint, textTransform: 'uppercase', letterSpacing: '.07em', margin: '18px 0 9px' }}>
+        {tx.popular}
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+        {chips.map((c, i) => (
+          <a key={i} href={c.href} className="pv-chip">{c.label}</a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ════════════════════════════════════════════════════════════════════════
 export default function HomePage() {
   const { lang } = useLang();
@@ -276,10 +354,9 @@ export default function HomePage() {
     (async () => {
       const { data: conds } = await supabase
         .from('conditions')
-        .select('id, slug, name_el, name_en')
+        .select('id, slug, name_el, name_en, aliases_el, aliases_en, symptoms_el, symptoms_en')
         .eq('is_active', true)
-        .order('display_order', { ascending: true })
-        .limit(12);
+        .order('display_order', { ascending: true });
       if (conds?.length) setConditions(conds);
 
       const { data: ths } = await supabase
@@ -288,9 +365,9 @@ export default function HomePage() {
         .eq('is_publicly_visible', true);
 
       if (ths?.length) {
-        // Πλήθος ΟΡΑΤΩΝ θεραπευτών ανά περιοχή. Δείχνουμε μόνο όσες
-        // έχουν τουλάχιστον έναν — αλλιώς ο επισκέπτης πατάει και
-        // βρίσκει κενό, που είναι χειρότερο από το να μη δει τίποτα.
+        // ΜΟΝΟ περιοχές με ορατούς θεραπευτές. Το v_public_therapists
+        // φιλτράρει ήδη όσους δεν εμφανίζονται· αν μαζεύαμε από όλους,
+        // ο επισκέπτης θα πατούσε «Παγκράτι» και θα έβρισκε κενό.
         const tally = new Map();
         ths.forEach(t => {
           const names = [t.area, ...(t.service_areas || [])].filter(Boolean);
@@ -298,8 +375,7 @@ export default function HomePage() {
             tally.set(n, (tally.get(n) || 0) + 1);
           });
         });
-        const withTherapists = [...tally.keys()];
-        const cleaned = cleanAreas(withTherapists);
+        const cleaned = cleanAreas([...tally.keys()]);
         if (cleaned.length >= 3) setAreas(cleaned.slice(0, 12));
 
         // Πραγματικός επαληθευμένος θεραπευτής, όχι mock.
@@ -332,8 +408,52 @@ export default function HomePage() {
     : '/find-help';
 
   function onKey(e) {
-    if (e.key === 'Enter') window.location.href = searchHref;
+    if (e.key !== 'Enter') return;
+    // Αν υπάρχει ταίριασμα, πάει σε φιλτραρισμένους θεραπευτές — πιο
+    // χρήσιμο από ελεύθερη αναζήτηση που μπορεί να μη βρει τίποτα.
+    if (suggestions.length > 0) {
+      window.location.href = `/therapists?condition=${encodeURIComponent(suggestions[0].slug)}`;
+      return;
+    }
+    window.location.href = searchHref;
   }
+
+  // ── ΑΝΤΙΣΤΟΙΧΙΣΗ ΚΑΘΩΣ ΓΡΑΦΕΙ ──
+  // Ο ασθενής γράφει «πονάει η μέση μου», όχι «οσφυαλγία». Χωρίς
+  // προτάσεις, η ελεύθερη αναζήτηση συχνά δεν βρίσκει τίποτα και
+  // φεύγει με την εντύπωση ότι δεν τον καλύπτουμε.
+  // Ο ασθενής γράφει «πονάει η μέση μου», όχι «οσφυαλγία».
+  // Τα aliases_el και symptoms_el κρατούν ακριβώς αυτές τις λαϊκές
+  // διατυπώσεις — χωρίς αυτά, η αναζήτηση δουλεύει μόνο για όποιον
+  // ξέρει ήδη τον ιατρικό όρο, δηλαδή για ελάχιστους.
+  const norm = (v) => {
+    if (!v) return '';
+    const t = Array.isArray(v) ? v.join(' ') : String(v);
+    return t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  };
+
+  const q = norm(problem.trim());
+  const suggestions = q.length < 2 ? [] : conditions
+    .map(c => {
+      const el = norm(c.name_el);
+      const en = norm(c.name_en);
+      const al = norm(c.aliases_el) + ' ' + norm(c.aliases_en);
+      const sy = norm(c.symptoms_el) + ' ' + norm(c.symptoms_en);
+
+      // Σειρά προτεραιότητας: ακριβής αρχή → περιέχεται στο όνομα →
+      // συνώνυμο → σύμπτωμα. Ο τόνος αγνοείται, ώστε «οσφυαλγια» και
+      // «οσφυαλγία» να δίνουν το ίδιο αποτέλεσμα.
+      let score = -1;
+      if (el.startsWith(q) || en.startsWith(q)) score = 0;
+      else if (el.includes(q) || en.includes(q)) score = 1;
+      else if (al.includes(q)) score = 2;
+      else if (sy.includes(q)) score = 3;
+      return { c, score };
+    })
+    .filter(x => x.score >= 0)
+    .sort((a, b) => a.score - b.score)
+    .slice(0, 6)
+    .map(x => x.c);
 
   const chips = conditions.length > 0
     ? conditions.slice(0, 6).map(c => ({
@@ -349,45 +469,6 @@ export default function HomePage() {
   const WHAT_ICONS  = [Target, MapPin, Tag];
   const PRIN_ICONS  = [ShieldCheck, Star, Lock];
 
-  function SearchBox({ compact }) {
-    return (
-      <div style={{ background: '#fff', borderRadius: 20, border: compact ? 'none' : `1px solid ${C.border}`, padding: compact ? '22px 20px' : '26px 24px', boxShadow: compact ? '0 8px 40px rgba(0,0,0,0.2)' : '0 4px 28px rgba(26,46,68,0.07)', textAlign: 'left' }}>
-        <div style={{ fontSize: 15, fontWeight: 600, color: C.navy, marginBottom: 12 }}>
-          {tx.searchLabel}
-        </div>
-
-        <div className="pv-search">
-          <div className="pv-search-input">
-            <Search size={18} color={C.faint} strokeWidth={2} style={{ flexShrink: 0 }} />
-            <input
-              value={problem}
-              onChange={e => setProblem(e.target.value)}
-              onKeyDown={onKey}
-              placeholder={tx.searchPh}
-              style={{ flex: 1, border: 'none', outline: 'none', fontSize: 15, color: C.navy, fontFamily: 'inherit', background: 'transparent', minWidth: 0 }}
-            />
-          </div>
-          <a href={searchHref} className="pv-search-btn">
-            {tx.searchBtn}
-            <ArrowRight size={16} />
-          </a>
-        </div>
-
-        <div style={{ fontSize: 12.5, color: C.faint, marginTop: 10, lineHeight: 1.5 }}>
-          {tx.searchMicro}
-        </div>
-
-        <div style={{ fontSize: 11.5, fontWeight: 700, color: C.faint, textTransform: 'uppercase', letterSpacing: '.07em', margin: '18px 0 9px' }}>
-          {tx.popular}
-        </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {chips.map((c, i) => (
-            <a key={i} href={c.href} className="pv-chip">{c.label}</a>
-          ))}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <>
@@ -408,7 +489,7 @@ export default function HomePage() {
           border: 1px solid ${C.border}; border-radius: 12px; padding: 13px 15px; background: #fff;
         }
         .pv-search-btn {
-          display: inline-flex; align-items: center; gap: 8px;
+          display: inline-flex; align-items: center; gap: 8; gap: 8px;
           background: ${C.navy}; color: #fff; padding: 0 26px; border-radius: 12px;
           font-size: 15px; font-weight: 600; text-decoration: none; white-space: nowrap;
           justify-content: center;
@@ -451,7 +532,7 @@ export default function HomePage() {
           <p style={{ fontSize: 17, color: C.muted, lineHeight: 1.7, margin: '0 auto 34px', maxWidth: 580 }}>
             {tx.heroDesc}
           </p>
-          <SearchBox />
+          <SearchBox tx={tx} problem={problem} setProblem={setProblem} onKey={onKey} searchHref={searchHref} chips={chips} suggestions={suggestions} lang={lang} />
         </div>
       </section>
 
@@ -603,7 +684,7 @@ export default function HomePage() {
           {(conditions.length ? conditions : FALLBACK_CHIPS[lang].map((n, i) => ({ id: i, slug: slugify(n), name_el: n, name_en: n }))).map(c => {
             const label = lang === 'en' ? (c.name_en || c.name_el) : c.name_el;
             return (
-              <a key={c.id} href={`/therapists?condition=${encodeURIComponent(c.slug || slugify(label))}`}
+              <a key={c.id} href={`/pathiseis/${c.slug || slugify(label)}`}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#fff', border: `1px solid ${C.border}`, borderRadius: 30, padding: '11px 20px', fontSize: 14.5, color: C.navy, textDecoration: 'none', fontWeight: 500 }}>
                 <Stethoscope size={15} color={C.accent} strokeWidth={2} />
                 {label}
@@ -671,7 +752,7 @@ export default function HomePage() {
           <p style={{ fontSize: 15.5, color: 'rgba(255,255,255,0.75)', lineHeight: 1.7, margin: '0 auto 26px', maxWidth: 540 }}>
             {tx.finalDesc}
           </p>
-          <SearchBox compact />
+          <SearchBox compact tx={tx} problem={problem} setProblem={setProblem} onKey={onKey} searchHref={searchHref} chips={chips} suggestions={suggestions} lang={lang} />
         </div>
       </section>
 
