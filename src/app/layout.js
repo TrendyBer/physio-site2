@@ -1,4 +1,4 @@
-import { Geist, Geist_Mono, EB_Garamond, DM_Sans } from "next/font/google";
+import { Geist, Geist_Mono, Manrope } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/context/LanguageContext";
 import CookieBanner from "@/components/CookieBanner";
@@ -17,27 +17,24 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// ── ΓΡΑΜΜΑΤΟΣΕΙΡΕΣ ΜΕ ΕΛΛΗΝΙΚΑ ──
+// ── ΜΙΑ ΓΡΑΜΜΑΤΟΣΕΙΡΑ, ΠΑΝΤΟΥ ──
 //
 // ΤΟ ΠΡΟΒΛΗΜΑ ΠΟΥ ΛΥΝΕΙ:
-// Το EB Garamond ΔΕΝ έχει ελληνικούς χαρακτήρες. Όταν το κείμενο
-// ήταν ελληνικό, ο browser έπεφτε σιωπηλά στη Georgia — άλλη γραμματοσειρά,
-// άλλο ύφος, άλλο βάρος. Γι' αυτό τα αγγλικά φαίνονταν τελείως
-// διαφορετικά: εκεί έβλεπες το πραγματικό DM Serif, στα ελληνικά ποτέ.
+// Το DM Serif Display ΔΕΝ έχει ελληνικούς χαρακτήρες. Στα ελληνικά ο
+// browser έπεφτε σιωπηλά στη Georgia — άλλο ύφος, άλλο βάρος. Γι' αυτό
+// τα αγγλικά φαίνονταν τελείως διαφορετικά από τα ελληνικά.
 //
-// Το EB Garamond έχει πλήρη ελληνική στήριξη, οπότε ΤΟ ΙΔΙΟ σχήμα
-// εμφανίζεται και στις δύο γλώσσες.
-const serif = EB_Garamond({
-  variable: "--font-serif",
+// Το Manrope έχει πλήρη ελληνική στήριξη και είναι γεωμετρικό sans:
+// στρογγυλές φόρμες, καθαρές γραμμές, δυνατά βάρη στους τίτλους.
+// ΕΝΑ οικογένεια για τίτλους και σώμα — χωρίς serif πουθενά.
+const display = Manrope({
+  variable: "--font-serif",   // κρατάει το όνομα ώστε να μη σπάσει ό,τι το χρησιμοποιεί
   subsets: ["latin", "greek"],
-  weight: ["400", "500", "600"],
-  style: ["normal", "italic"],
+  weight: ["500", "600", "700", "800"],
   display: "swap",
 });
 
-// Το ίδιο ισχύει για το σώμα κειμένου: χωρίς το greek subset, τα
-// ελληνικά έπαιρναν system font.
-const sans = DM_Sans({
+const sans = Manrope({
   variable: "--font-sans",
   subsets: ["latin", "greek"],
   weight: ["400", "500", "600", "700"],
@@ -67,9 +64,34 @@ export default function RootLayout({ children }) {
         {/* Το next/font κατεβάζει τα αρχεία και τα σερβίρει από το δικό
             μας domain — χωρίς αίτημα στη Google σε κάθε επίσκεψη, και
             χωρίς το «flash of unstyled text» που βλέπεις με @import. */}
+        {/* Το next/font κατεβάζει τα αρχεία και τα σερβίρει από το δικό
+            μας domain — χωρίς αίτημα στη Google σε κάθε επίσκεψη.
+
+            Τα !important είναι σκόπιμα: δεκαπέντε components γράφουν
+            fontFamily μέσα σε inline style, που κανονικά υπερισχύει.
+            Χωρίς αυτά, η αλλαγή θα έπιανε μόνο όπου δεν υπάρχει inline. */}
         <style>{`
-          body { font-family: var(--font-sans), system-ui, sans-serif; }
-          h1, h2, h3, .serif { font-family: var(--font-serif), Georgia, serif; }
+          body,
+          body * {
+            font-family: var(--font-sans), system-ui, sans-serif;
+          }
+          h1, h2, h3, .serif,
+          [style*="Serif"], [style*="serif"], [style*="Georgia"] {
+            font-family: var(--font-serif), system-ui, sans-serif !important;
+            letter-spacing: -0.02em;
+          }
+          h1, h2 { font-weight: 700; }
+          h3 { font-weight: 600; }
+
+          /* Το Manrope ΔΕΝ έχει πλάγια. Οι τίτλοι χρησιμοποιούν <em>
+             για το μπλε μέρος· χωρίς αυτό ο browser θα τα έγερνε
+             τεχνητά και θα φαινόταν στραβό.
+             Η έμφαση περνάει στο βάρος — το χρώμα το δίνει ήδη το
+             inline style κάθε τίτλου. */
+          h1 em, h2 em, h3 em, .serif em {
+            font-style: normal !important;
+            font-weight: 800;
+          }
         `}</style>
 
         {/* GOOGLE CONSENT MODE v2 — ΠΡΕΠΕΙ να τρέξει ΠΡΙΝ το GA script.
@@ -117,7 +139,7 @@ export default function RootLayout({ children }) {
         </Script>
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${serif.variable} ${sans.variable} min-h-full flex flex-col`}
+        className={`${geistSans.variable} ${geistMono.variable} ${display.variable} ${sans.variable} min-h-full flex flex-col`}
         style={{ background: "#faf9f6", color: "#1a2e44", margin: 0, minHeight: "100vh" }}
       >
         <LanguageProvider>
