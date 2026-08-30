@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
+import { C, R as RAD, T, card, badge } from '@/lib/tokens';
 import { Target, Search, Check, ChevronDown, ChevronUp, AlertCircle, Sparkles, TrendingUp, AlertTriangle } from 'lucide-react';
 
 /*
@@ -201,7 +202,7 @@ export default function ConditionPicker({
 
   if (loading) {
     return (
-      <div style={{ padding: 24, textAlign: 'center', color: '#94a3b8', fontSize: 13 }}>
+      <div style={{ padding: 24, textAlign: 'center', color: C.textFaint, fontSize: 13 }}>
         {tx.loading}
       </div>
     );
@@ -211,10 +212,10 @@ export default function ConditionPicker({
 
   // Τρεις καταστάσεις μετρητή: λείπουν / εντάξει / πάρα πολλά
   const counterStyle = overLimit
-    ? { bg: '#FFF7ED', border: '#FED7AA', color: '#C2410C' }
+    ? { bg: C.warnBg, border: C.warnBorder, color: C.warn }
     : remaining === 0
-      ? { bg: '#F0FDF4', border: '#BBF7D0', color: '#15803D' }
-      : { bg: '#FFFBEB', border: '#FDE68A', color: '#92400E' };
+      ? { bg: C.successBg, border: C.successBorder, color: C.success }
+      : { bg: C.warnBg, border: C.warnBorder, color: C.warn };
 
   return (
     <div>
@@ -226,17 +227,17 @@ export default function ConditionPicker({
 
       {/* Header */}
       <div style={{ marginBottom: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 14, fontWeight: 700, color: '#1a2e44', marginBottom: 3 }}>
-          <Target size={15} color="#2a6fdb" strokeWidth={2.2} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 14, fontWeight: 700, color: C.brand, marginBottom: 3 }}>
+          <Target size={15} color={C.accent} strokeWidth={2.2} />
           {tx.title}
         </div>
-        <div style={{ fontSize: 12, color: '#6b7a8d', lineHeight: 1.5 }}>{tx.subtitle(minRequired, maxRecommended)}</div>
+        <div style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.5 }}>{tx.subtitle(minRequired, maxRecommended)}</div>
       </div>
 
       {/* Μετρητής */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
-        padding: '9px 14px', borderRadius: 10, marginBottom: overLimit ? 8 : 12, flexWrap: 'wrap',
+        padding: '9px 14px', borderRadius: RAD.input, marginBottom: overLimit ? 8 : 12, flexWrap: 'wrap',
         background: counterStyle.bg,
         border: `1px solid ${counterStyle.border}`,
       }}>
@@ -256,27 +257,27 @@ export default function ConditionPicker({
       {/* Προειδοποίηση υπέρβασης — δεν μπλοκάρει, εξηγεί το κόστος */}
       {overLimit && (
         <div style={{
-          background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 10,
+          background: C.warnBg, border: `1px solid ${C.warnBorder}`, borderRadius: RAD.input,
           padding: '11px 14px', marginBottom: 12, display: 'flex', gap: 9, alignItems: 'flex-start',
         }}>
-          <AlertTriangle size={15} color="#C2410C" strokeWidth={2.2} style={{ marginTop: 1, flexShrink: 0 }} />
+          <AlertTriangle size={15} color={C.warn} strokeWidth={2.2} style={{ marginTop: 1, flexShrink: 0 }} />
           <div>
-            <div style={{ fontSize: 12.5, fontWeight: 700, color: '#C2410C', marginBottom: 3 }}>
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: C.warn, marginBottom: 3 }}>
               {tx.warnTitle(count, maxRecommended)}
             </div>
-            <div style={{ fontSize: 11.5, color: '#9A3412', lineHeight: 1.55 }}>{tx.warnBody}</div>
+            <div style={{ fontSize: 11.5, color: C.warn, lineHeight: 1.55 }}>{tx.warnBody}</div>
           </div>
         </div>
       )}
 
       {/* Ζήτηση ασθενών — μόνο στο προφίλ */}
       {showDemand && demand.length > 0 && (
-        <div style={{ background: '#F5F3FF', border: '1px solid #DDD6FE', borderRadius: 12, padding: 14, marginBottom: 14 }}>
-          <div style={{ fontSize: 12.5, fontWeight: 700, color: '#6D28D9', marginBottom: 3, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ background: C.infoBg, border: `1px solid ${C.infoBorder}`, borderRadius: RAD.button, padding: 14, marginBottom: 14 }}>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: C.info, marginBottom: 3, display: 'flex', alignItems: 'center', gap: 6 }}>
             <TrendingUp size={13} strokeWidth={2.2} />
             {tx.demandTitle}
           </div>
-          <div style={{ fontSize: 11.5, color: '#7C3AED', marginBottom: 10, lineHeight: 1.5 }}>{tx.demandDesc}</div>
+          <div style={{ fontSize: 11.5, color: C.info, marginBottom: 10, lineHeight: 1.5 }}>{tx.demandDesc}</div>
           <div className="cp-demand-grid">
             {demand.map(d => {
               const isSel = selected.has(d.condition_id);
@@ -287,19 +288,19 @@ export default function ConditionPicker({
                   type="button"
                   onClick={() => toggle(d.condition_id)}
                   style={{
-                    background: isSel ? '#EDE9FE' : '#fff',
-                    border: `1.5px solid ${isSel ? '#8B5CF6' : '#E9D5FF'}`,
-                    borderRadius: 10, padding: '9px 12px', cursor: 'pointer',
+                    background: isSel ? C.infoBg : C.surface,
+                    border: `1.5px solid ${isSel ? C.info : C.infoBorder}`,
+                    borderRadius: RAD.input, padding: '9px 12px', cursor: 'pointer',
                     textAlign: 'left', fontFamily: 'inherit',
                   }}
                 >
-                  <div style={{ fontSize: 12.5, fontWeight: 600, color: '#1a2e44', marginBottom: 3, display: 'flex', alignItems: 'center', gap: 5 }}>
-                    {isSel && <Check size={11} color="#6D28D9" strokeWidth={3} />}
+                  <div style={{ fontSize: 12.5, fontWeight: 600, color: C.brand, marginBottom: 3, display: 'flex', alignItems: 'center', gap: 5 }}>
+                    {isSel && <Check size={11} color={C.info} strokeWidth={3} />}
                     {lang === 'el' ? d.name_el : (d.name_en || d.name_el)}
                   </div>
-                  <div style={{ fontSize: 11, color: '#7C3AED' }}>
+                  <div style={{ fontSize: 11, color: C.info }}>
                     {tx.demandRequests(d.request_count)} · {tx.demandTherapists(d.therapist_count)}
-                    {gap && <span style={{ color: '#BE123C', fontWeight: 600 }}> · {tx.demandGap}</span>}
+                    {gap && <span style={{ color: C.danger, fontWeight: 600 }}> · {tx.demandGap}</span>}
                   </div>
                 </button>
               );
@@ -310,18 +311,18 @@ export default function ConditionPicker({
 
       {/* Auto-suggest */}
       {unselectedSuggested.length > 0 && (
-        <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 12, padding: '12px 14px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ background: C.infoBg, border: `1px solid ${C.infoBorder}`, borderRadius: RAD.button, padding: '12px 14px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: 180 }}>
-            <div style={{ fontSize: 12.5, fontWeight: 700, color: '#1D4ED8', marginBottom: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: C.info, marginBottom: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
               <Sparkles size={13} strokeWidth={2.2} />
               {tx.suggested}
             </div>
-            <div style={{ fontSize: 11.5, color: '#1E40AF' }}>
+            <div style={{ fontSize: 11.5, color: C.info }}>
               {unselectedSuggested.length} {tx.suggestionsWord}
             </div>
           </div>
           <button type="button" onClick={selectSuggested}
-            style={{ background: '#1D4ED8', color: '#fff', border: 'none', borderRadius: 20, padding: '7px 16px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
+            style={{ background: C.info, color: C.surface, border: 'none', borderRadius: 20, padding: '7px 16px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
             <Check size={12} strokeWidth={3} />
             {tx.selectAll}
           </button>
@@ -330,19 +331,19 @@ export default function ConditionPicker({
 
       {/* Αναζήτηση */}
       <div style={{ position: 'relative', marginBottom: 12 }}>
-        <Search size={15} color="#94a3b8" strokeWidth={2} style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+        <Search size={15} color={C.textFaint} strokeWidth={2} style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
         <input
           type="text"
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder={tx.searchPh}
-          style={{ width: '100%', padding: '10px 14px 10px 36px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 13, fontFamily: 'inherit', outline: 'none', color: '#1a2e44', boxSizing: 'border-box' }}
+          style={{ width: '100%', padding: '10px 14px 10px 36px', border: `1.5px solid ${C.border}`, borderRadius: RAD.input, fontSize: 13, fontFamily: 'inherit', outline: 'none', color: C.brand, boxSizing: 'border-box' }}
         />
       </div>
 
       {/* Κατηγορίες */}
       {grouped.length === 0 ? (
-        <div style={{ padding: 24, textAlign: 'center', color: '#94a3b8', fontSize: 13, fontStyle: 'italic' }}>
+        <div style={{ padding: 24, textAlign: 'center', color: C.textFaint, fontSize: 13, fontStyle: 'italic' }}>
           {tx.noResults}
         </div>
       ) : (
@@ -351,37 +352,37 @@ export default function ConditionPicker({
             const isOpen = expanded.has(cat.id) || search.trim().length > 0;
             const catSelected = cat.items.filter(c => selected.has(c.id)).length;
             return (
-              <div key={cat.id} style={{ border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
+              <div key={cat.id} style={{ border: `1px solid ${C.border}`, borderRadius: RAD.input, overflow: 'hidden' }}>
                 <button
                   type="button"
                   className="cp-cat-btn"
                   onClick={() => !search && toggleCategory(cat.id)}
                   style={{
-                    background: cat.bg || '#f8fafc',
-                    borderBottom: isOpen ? `1px solid ${cat.color || '#e2e8f0'}33` : 'none',
+                    background: isOpen ? C.surfaceAlt : C.surface,
+                    borderBottom: isOpen ? `1px solid ${C.borderSoft}` : 'none',
                     cursor: search ? 'default' : 'pointer',
                   }}
                 >
                   <span style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                    <span style={{ width: 3, height: 16, borderRadius: 2, background: cat.color || '#2a6fdb', display: 'inline-block' }} />
-                    <span style={{ fontSize: 13.5, fontWeight: 700, color: cat.color || '#0F172A' }}>
+                    <span style={{ width: 3, height: 16, borderRadius: 2, background: catSelected > 0 ? C.accent : C.border, display: 'inline-block' }} />
+                    <span style={{ fontSize: 13.5, fontWeight: 600, color: C.text }}>
                       {lang === 'el' ? cat.name_el : (cat.name_en || cat.name_el)}
                     </span>
                     {catSelected > 0 && (
-                      <span style={{ background: cat.color || '#1D4ED8', color: '#fff', padding: '1px 8px', borderRadius: 999, fontSize: 10.5, fontWeight: 700 }}>
+                      <span style={{ ...badge('active'), height: 19, padding: '0 8px', fontSize: 10.5 }}>
                         {catSelected}
                       </span>
                     )}
                   </span>
                   {!search && (
                     isOpen
-                      ? <ChevronUp size={15} color={cat.color || '#64748b'} strokeWidth={2.2} />
-                      : <ChevronDown size={15} color={cat.color || '#64748b'} strokeWidth={2.2} />
+                      ? <ChevronUp size={15} color={C.textMuted} strokeWidth={2.2} />
+                      : <ChevronDown size={15} color={C.textMuted} strokeWidth={2.2} />
                   )}
                 </button>
 
                 {isOpen && (
-                  <div style={{ background: '#fff', padding: pad === 16 ? 12 : 14, display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+                  <div style={{ background: C.surface, padding: pad === 16 ? 12 : 14, display: 'flex', flexWrap: 'wrap', gap: 7 }}>
                     {cat.items.map(c => {
                       const isSel = selected.has(c.id);
                       const isSug = suggestedIds.has(c.id) && !isSel;
@@ -393,9 +394,9 @@ export default function ConditionPicker({
                           onClick={() => toggle(c.id)}
                           title={desc(c) || ''}
                           style={{
-                            background: isSel ? '#F0FDF4' : isSug ? '#FFFBEB' : '#fff',
-                            borderColor: isSel ? '#15803D' : isSug ? '#FDE68A' : '#e2e8f0',
-                            color: isSel ? '#15803D' : '#475569',
+                            background: isSel ? C.successBg : isSug ? C.warnBg : C.surface,
+                            borderColor: isSel ? C.success : isSug ? C.warnBorder : C.border,
+                            color: isSel ? C.success : C.textBody,
                             fontWeight: isSel ? 600 : 500,
                             opacity: overLimit && !isSel ? 0.55 : 1,
                           }}
@@ -403,7 +404,7 @@ export default function ConditionPicker({
                           {isSel && <Check size={12} strokeWidth={3} />}
                           {label(c)}
                           {c.is_popular && !isSel && (
-                            <span style={{ fontSize: 9.5, color: '#2a6fdb', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em' }}>
+                            <span style={{ fontSize: 9.5, color: C.accent, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em' }}>
                               {tx.popular}
                             </span>
                           )}
