@@ -18,9 +18,18 @@ const DAYS_SHORT = {
 
 const TX = {
   el: {
-    badge: 'Βρείτε τον ιδανικό',
-    hero: 'Οι', heroEm: 'Φυσιοθεραπευτές', heroEnd: 'μας',
-    heroDesc: 'Έμπειροι, αδειοδοτημένοι επαγγελματίες, που παρέχουν εξατομικευμένη φροντίδα στο σπίτι σας.',
+    badge: 'Επιλέξτε με σιγουριά',
+    hero: 'Βρείτε φυσικοθεραπευτή με', heroEm: 'μεγαλύτερη σιγουριά', heroEnd: '',
+    heroDesc: 'Δείτε επαγγελματίες που έχουν επαληθεύσει την επαγγελματική τους άδεια, αναλαμβάνουν το περιστατικό σας και εξυπηρετούν την περιοχή σας.',
+    trustLine: [
+      'Επαληθευμένη επαγγελματική άδεια',
+      'Περιστατικά που αναλαμβάνει',
+      'Περιοχές εξυπηρέτησης',
+      'Τιμή και διαθεσιμότητα',
+    ],
+    matchTitle: 'Ταιριάζει στην αναζήτησή σας',
+    matchCondition: (c) => `Αναλαμβάνει ${c}`,
+    matchArea: (a) => `Εξυπηρετεί ${a}`,
     bookCta: 'Κλείσε ραντεβού',
     viewProfile: 'Δείτε Προφίλ',
     noTherapists: 'Δεν υπάρχουν ενεργοί θεραπευτές ακόμα.',
@@ -63,9 +72,18 @@ const TX = {
     tomorrow: 'Αύριο',
   },
   en: {
-    badge: 'Find your',
-    hero: 'Our', heroEm: 'Physiotherapists', heroEnd: '',
-    heroDesc: 'Experienced, licensed professionals providing personalized care at your home.',
+    badge: 'Choose with confidence',
+    hero: 'Find a physiotherapist with', heroEm: 'more confidence', heroEnd: '',
+    heroDesc: 'See professionals who have verified their licence, handle your condition and serve your area.',
+    trustLine: [
+      'Verified professional licence',
+      'Conditions they handle',
+      'Service areas',
+      'Price and availability',
+    ],
+    matchTitle: 'Matches your search',
+    matchCondition: (c) => `Handles ${c}`,
+    matchArea: (a) => `Serves ${a}`,
     bookCta: 'Book an appointment',
     viewProfile: 'View Profile',
     noTherapists: 'No active therapists yet.',
@@ -510,6 +528,18 @@ export default function TherapistsPage() {
             {tx.bookCta}
             <ArrowRight size={18} />
           </a>
+
+          {/* Τι θα δει σε κάθε προφίλ, ΠΡΙΝ κατέβει στα αποτελέσματα.
+              Θέτει την προσδοκία: δεν είναι κατάλογος, είναι επιλογή
+              με βάση συγκεκριμένα κριτήρια. */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 18, justifyContent: 'center', marginTop: 30 }}>
+            {(tx.trustLine || []).map(item => (
+              <span key={item} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13.5, color: '#6b7a8d' }}>
+                <Check size={14} color="#15803d" strokeWidth={2.6} />
+                {item}
+              </span>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -718,6 +748,32 @@ export default function TherapistsPage() {
                     <div style={{ marginBottom: 8 }}>
                       <RatingDisplay rating={th.avg_rating} count={th.review_count} lang={lang} variant="compact" size={13} />
                     </div>
+
+                    {/* ΓΙΑΤΙ ΒΛΕΠΕΙΣ ΑΥΤΟΝ.
+                        Ο χρήστης δεν πρέπει να αναρωτιέται «γιατί μου τον
+                        δείχνει;». Όταν έχει φιλτράρει σε περιστατικό ή
+                        περιοχή, του λέμε ρητά τι ταιριάζει. */}
+                    {(selectedCondition || filterArea) && (
+                      <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '9px 12px', marginBottom: 12 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: '#15803d', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6 }}>
+                          {tx.matchTitle}
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                          {selectedCondition && (
+                            <span style={{ fontSize: 12.5, color: '#166534', display: 'flex', alignItems: 'center', gap: 5 }}>
+                              <Check size={12} strokeWidth={2.8} style={{ flexShrink: 0 }} />
+                              {tx.matchCondition(lang === 'el' ? selectedCondition.name_el : (selectedCondition.name_en || selectedCondition.name_el))}
+                            </span>
+                          )}
+                          {filterArea && (
+                            <span style={{ fontSize: 12.5, color: '#166534', display: 'flex', alignItems: 'center', gap: 5 }}>
+                              <Check size={12} strokeWidth={2.8} style={{ flexShrink: 0 }} />
+                              {tx.matchArea(filterArea)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Κάθε στοιχείο σε δική του γραμμή — το inline-flex τα
                         κολλούσε μεταξύ τους. */}

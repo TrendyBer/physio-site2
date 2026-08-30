@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
+import { FileText } from 'lucide-react';
 
 /**
  * Blog section για το homepage.
@@ -30,16 +31,16 @@ export default function Blog() {
 
   const t = {
     el: {
-      title: 'Συμβουλές & ',
-      titleEm: 'Πόροι Φυσιοθεραπείας',
-      desc: 'Εξερευνήστε εξειδικευμένες συμβουλές και πρακτική καθοδήγηση για να υποστηρίξετε την ανάρρωσή σας στο σπίτι.',
+      title: 'Χρήσιμες πληροφορίες για την ',
+      titleEm: 'αποκατάσταση',
+      desc: 'Κατανοήστε καλύτερα το πρόβλημά σας, πότε μπορεί να βοηθήσει η φυσικοθεραπεία και τι να περιμένετε από τη διαδικασία αποκατάστασης.',
       viewAll: 'Όλα τα Άρθρα',
       readMore: 'Διαβάστε περισσότερα →',
     },
     en: {
-      title: 'Tips & ',
-      titleEm: 'Physiotherapy Resources',
-      desc: 'Explore expert advice and practical guidance to support your recovery journey.',
+      title: 'Useful information about ',
+      titleEm: 'recovery',
+      desc: 'Understand your problem better, when physiotherapy can help, and what to expect from the recovery process.',
       viewAll: 'View All Articles',
       readMore: 'Read more →',
     },
@@ -79,7 +80,9 @@ export default function Blog() {
                   {post.image_url ? (
                     <img src={post.image_url} alt={title || ''} style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', display: 'block' }} />
                   ) : (
-                    <div style={{ aspectRatio: '16/9', background: 'linear-gradient(135deg, #d4e8ff, #b8d4f8)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2a6fdb', fontSize: 13 }}>📷</div>
+                    <div style={{ aspectRatio: '16/9', background: 'linear-gradient(135deg, #d4e8ff, #b8d4f8)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <FileText size={26} color="#2a6fdb" strokeWidth={1.8} />
+                    </div>
                   )}
                   <div style={{ padding: 20 }}>
                     {post.category && (

@@ -4,7 +4,7 @@ import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import BookingButton from '../../components/BookingButton';
 import { useLang } from '@/context/LanguageContext';
-import { CheckCircle2, ArrowRight } from 'lucide-react';
+import { CheckCircle2, ArrowRight, CreditCard } from 'lucide-react';
 
 const CONTENT = {
   el: {
@@ -15,12 +15,13 @@ const CONTENT = {
     tabPatient: 'Για ασθενείς',
     tabTherapist: 'Για φυσιοθεραπευτές',
     patient: {
-      title: 'Βρείτε φροντίδα σε 3 βήματα',
-      desc: 'Μια απλή, καθοδηγούμενη διαδικασία — από την ανάγκη σας μέχρι το αίτημα συνεδρίας.',
+      title: 'Από αυτό που σας ενοχλεί, στον κατάλληλο φυσικοθεραπευτή',
+      desc: 'Δεν χρειάζεται να γνωρίζετε ακριβώς τι θεραπεία χρειάζεστε. Ξεκινήστε από αυτό που σας ταλαιπωρεί και δείτε επαγγελματίες που ταιριάζουν στην ανάγκη και την περιοχή σας.',
       steps: [
-        { title: 'Περιγράφετε την ανάγκη σας', desc: 'Πείτε μας τι σας ταλαιπωρεί ή επιλέξτε πάθηση, ώστε να καταλάβουμε τι χρειάζεστε.' },
-        { title: 'Σας προτείνουμε κατάλληλους φυσιοθεραπευτές', desc: 'Βλέπετε επαγγελματίες με βάση την περιοχή, την εμπειρία, τη διαθεσιμότητα και τις αξιολογήσεις.' },
-        { title: 'Στέλνετε αίτημα συνεδρίας', desc: 'Επιλέγετε θεραπευτή, ώρα και πακέτο. Θα ενημερωθείτε μόλις ο φυσιοθεραπευτής επιβεβαιώσει το αίτημα.' },
+        { title: 'Πείτε μας τι σας ταλαιπωρεί', desc: 'Περιγράψτε με απλά λόγια το πρόβλημά σας. Δεν χρειάζεται να γνωρίζετε την ακριβή διάγνωση.' },
+        { title: 'Δείτε ποιοι φυσικοθεραπευτές ταιριάζουν', desc: 'Εμφανίζονται επαγγελματίες που αναλαμβάνουν το περιστατικό σας και εξυπηρετούν την περιοχή σας.' },
+        { title: 'Επιλέξτε ημέρα και ώρα', desc: 'Δείτε τις διαθέσιμες ώρες του θεραπευτή και επιλέξτε αυτή που σας εξυπηρετεί.' },
+        { title: 'Στείλτε το αίτημά σας', desc: 'Ο φυσικοθεραπευτής το επιβεβαιώνει και το ραντεβού σας κλείνεται.' },
       ],
       whyTitle: 'Γιατί να το χρησιμοποιήσω;',
       why: [
@@ -60,12 +61,13 @@ const CONTENT = {
     tabPatient: 'For patients',
     tabTherapist: 'For physiotherapists',
     patient: {
-      title: 'Find care in 3 steps',
-      desc: 'A simple, guided process — from your need to a session request.',
+      title: 'From what troubles you, to the right physiotherapist',
+      desc: 'You don\u2019t need to know exactly what therapy you need. Start from what troubles you and see professionals who match your need and area.',
       steps: [
-        { title: 'Describe your need', desc: 'Tell us what troubles you or pick a condition, so we understand what you need.' },
-        { title: 'We suggest suitable physiotherapists', desc: 'You see professionals based on area, experience, availability and reviews.' },
-        { title: 'Send a session request', desc: 'Choose a therapist, time and package. You will be notified once the physiotherapist confirms your request.' },
+        { title: 'Tell us what troubles you', desc: 'Describe your problem in simple words. You don\u2019t need to know an exact diagnosis.' },
+        { title: 'See which physiotherapists match', desc: 'You see professionals who handle your condition and serve your area.' },
+        { title: 'Pick a day and time', desc: 'See the therapist\u2019s available hours and choose what suits you.' },
+        { title: 'Send your request', desc: 'The physiotherapist confirms it and your appointment is booked.' },
       ],
       whyTitle: 'Why use it?',
       why: [
@@ -193,6 +195,17 @@ export default function HowItWorksPage() {
                 </div>
               ))}
             </div>
+
+            {isPatient && (
+              <div style={{ marginTop: 20, display: 'inline-flex', alignItems: 'center', gap: 10, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, padding: '13px 18px' }}>
+                <CreditCard size={17} color="#15803d" strokeWidth={2.1} />
+                <span style={{ fontSize: 14, color: '#15803d', fontWeight: 500, lineHeight: 1.5 }}>
+                  {lang === 'el'
+                    ? 'Δεν χρειάζεται κάρτα για να κλείσετε ραντεβού. Η πληρωμή γίνεται απευθείας στον φυσικοθεραπευτή μετά τη συνεδρία.'
+                    : 'No card needed to book. Payment goes directly to the physiotherapist after the session.'}
+                </span>
+              </div>
+            )}
 
             {/* Why + CTA */}
             {/* Ίδιο πρόβλημα με το TrustSection: sticky γραμμένο inline,
