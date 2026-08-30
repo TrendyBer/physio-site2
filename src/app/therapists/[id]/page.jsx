@@ -4,6 +4,7 @@ import { useParams } from 'next/navigation';
 import Navbar from '../../../components/Navbar';
 import Footer from '../../../components/Footer';
 import RatingDisplay from '../../../components/RatingDisplay';
+import VerifiedBadge from '../../../components/VerifiedBadge';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
 import { filterBookableSlots } from '@/lib/slots';
@@ -21,6 +22,7 @@ const TX = {
     breadcrumbHome: 'Αρχική',
     breadcrumbList: 'Θεραπευτές',
     verified: 'Ελεγμένο προφίλ από το PhysioHome',
+    verifiedSession: 'Από επαληθευμένη συνεδρία',
     chipLicense: 'Άδεια ασκήσεως ελεγμένη',
     chipFullProfile: 'Πλήρες προφίλ',
     chipReviews: (n) => `${n} ${n === 1 ? 'αξιολόγηση' : 'αξιολογήσεις'} από ασθενείς`,
@@ -82,6 +84,7 @@ const TX = {
     breadcrumbHome: 'Home',
     breadcrumbList: 'Therapists',
     verified: 'Profile vetted by PhysioHome',
+    verifiedSession: 'From a verified session',
     chipLicense: 'License verified',
     chipFullProfile: 'Complete profile',
     chipReviews: (n) => `${n} patient ${n === 1 ? 'review' : 'reviews'}`,
@@ -408,16 +411,16 @@ availableService: {
                         Το "Ελεγμένο προφίλ" εμφανίζεται μόνο αν η άδεια
                         έχει όντως ελεγχθεί — όχι επειδή φαίνεται η σελίδα. */}
                     <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid #f1f5f9' }}>
+                      {/* ΕΝΑ badge αντί για δύο.
+                          Υπήρχαν «Ελεγμένο προφίλ» και chip «Επαληθευμένη άδεια»
+                          δίπλα-δίπλα, που έλεγαν σχεδόν το ίδιο με διαφορετικά
+                          λόγια. Τώρα λέει ακριβώς τι εγγυάται η πλατφόρμα. */}
                       {therapist.license_verified && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
-                          <ShieldCheck size={15} color="#15803D" strokeWidth={2.2} />
-                          <span style={{ fontSize: 13, fontWeight: 700, color: '#15803D' }}>{tx.verified}</span>
+                        <div style={{ marginBottom: 12 }}>
+                          <VerifiedBadge lang={lang} size="md" />
                         </div>
                       )}
                       <div className="trust-chips">
-                        {therapist.license_verified && (
-                          <span className="trust-chip trust-chip-green">{tx.chipLicense}</span>
-                        )}
                         {therapist.education_school && (
                           <span className="trust-chip">
                             {therapist.education_school}
@@ -615,6 +618,12 @@ availableService: {
                             <div key={rv.id} style={{ background: '#f8fafb', border: '1px solid #e2e8f0', borderRadius: 12, padding: '14px 16px' }}>
                               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, gap: 10 }}>
                                 <RatingDisplay rating={rv.rating} count={1} variant="stars-only" size={14} />
+                                {/* Κάθε αξιολόγηση προέρχεται πλέον από
+                                    ολοκληρωμένη συνεδρία — το επιβάλλει η RLS. */}
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#15803D', background: '#F0FDF4', border: '1px solid #BBF7D0', padding: '2px 8px', borderRadius: 999, whiteSpace: 'nowrap' }}>
+                                  <ShieldCheck size={11} strokeWidth={2.4} />
+                                  {tx.verifiedSession}
+                                </span>
                                 <span style={{ fontSize: 11, color: '#94a3b8' }}>
                                   {new Date(rv.created_at).toLocaleDateString(loc, { year: 'numeric', month: 'short', day: 'numeric' })}
                                 </span>
