@@ -4,6 +4,7 @@ import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
 import { filterBookableSlots } from '@/lib/slots';
 import RatingDisplay from './RatingDisplay';
+import VerifiedBadge from './VerifiedBadge';
 import { MapPin, BadgeCheck, ShieldCheck, ArrowRight, CalendarCheck } from 'lucide-react';
 
 const DAYS_SHORT = {
@@ -239,16 +240,7 @@ export default function Therapists() {
 
                   {/* Trust row — το license_verified έρχεται από το view */}
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
-                    {th.license_verified && (
-                      <span style={{
-                        padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 500,
-                        background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0',
-                        display: 'inline-flex', alignItems: 'center', gap: 4,
-                      }}>
-                        <ShieldCheck size={12} strokeWidth={2.2} />
-                        {text.verified}
-                      </span>
-                    )}
+                    {th.license_verified && <VerifiedBadge lang={lang} compact />}
                     {th.is_profile_full && (
                       <span style={{
                         padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 500,

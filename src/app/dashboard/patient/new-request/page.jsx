@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Check, X, ChevronLeft, ChevronRight, Calendar, ArrowRight, MapPin, AlertCircle, Star, Heart, Banknote, Clock, ShieldCheck, Send } from 'lucide-react';
 import ConditionSearch from '@/components/ConditionSearch';
 import AreaInput from '@/components/AreaInput';
+import VerifiedBadge from '@/components/VerifiedBadge';
 import { areasMatch } from '@/lib/areas';
 import { filterBookableSlots } from '@/lib/slots';
 
@@ -131,7 +132,7 @@ export default function NewRequestPage() {
         if (cond) {
           setCondition({
             id: cond.id, slug: cond.slug,
-            name: lang === 'en' ? (cond.name_en || cond.name_el) : cond.name_el,
+            name: cond.name_el,
             related_specialties: cond.related_specialties,
           });
           // Το πρώτο βήμα είναι ήδη συμπληρωμένο — πάμε στην επιλογή θεραπευτή.
@@ -876,12 +877,10 @@ export default function NewRequestPage() {
                             {/* Όνομα + πιστοποίηση */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
                               <span style={{ fontWeight: 700, fontSize: 16, color: '#0F172A' }}>{t.name || '—'}</span>
-                              {t.license_verified && (
-                                <span style={{ fontSize: 11, fontWeight: 700, color: '#1D4ED8', background: '#EFF6FF', border: '1px solid #BFDBFE', padding: '2px 9px', borderRadius: 999, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                                  <ShieldCheck size={11} strokeWidth={2.5} />
-                                  Επαληθευμένος
-                                </span>
-                              )}
+                              {/* Ίδιο badge και ίδιο κείμενο με το υπόλοιπο site.
+                                  Εδώ έλεγε σκέτο «Επαληθευμένος», που δεν λέει
+                                  ΤΙ επαληθεύτηκε. */}
+                              {t.license_verified && <VerifiedBadge lang="el" compact />}
                               {noSlots && (
                                 <span style={{ fontSize: 11, fontWeight: 600, color: '#BE123C', background: '#FFF1F2', border: '1px solid #FECDD3', padding: '2px 9px', borderRadius: 999 }}>
                                   Χωρίς διαθέσιμες ώρες
@@ -1182,9 +1181,8 @@ export default function NewRequestPage() {
             </div>
 
             {profileModal.license_verified && (
-              <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 12.5, color: '#1D4ED8', display: 'flex', gap: 8, alignItems: 'center' }}>
-                <ShieldCheck size={14} strokeWidth={2.3} />
-                Η επαγγελματική άδεια έχει επαληθευτεί από την πλατφόρμα.
+              <div style={{ marginBottom: 16 }}>
+                <VerifiedBadge lang="el" size="md" />
               </div>
             )}
 
