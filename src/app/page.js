@@ -30,9 +30,33 @@ const AREAS_FALLBACK = [
 ];
 
 const FALLBACK_CHIPS = {
-  el: ['Οσφυαλγία', 'Αυχενικό σύνδρομο', 'Πόνος ώμου', 'Πόνος γόνατος', 'Ισχιαλγία'],
-  en: ['Low back pain', 'Neck pain', 'Shoulder pain', 'Knee pain', 'Sciatica'],
+  el: ['Πόνος στη μέση', 'Αυχενικό', 'Πόνος στο γόνατο', 'Αποκατάσταση μετά από εγχείρηση', 'Αθλητικός τραυματισμός'],
+  en: ['Low back pain', 'Neck pain', 'Knee pain', 'Rehabilitation after surgery', 'Sports injury'],
 };
+
+// ── ΣΕΙΡΑ ΔΗΜΟΦΙΛΩΝ ──
+// Οι έξι πρώτες θέσεις δίνονται σε όρους που ΓΡΑΦΕΙ ο κόσμος, όχι σε
+// ό,τι τυχαίνει να έχει display_order = 1 στη βάση.
+//
+// Το «Πυελικό έδαφος», η «Εγκεφαλική παράλυση» και η «ΧΑΠ» είναι
+// σημαντικά περιστατικά και υπάρχουν κανονικά στις Παθήσεις — απλά
+// δεν είναι αυτό που ψάχνει ο μέσος επισκέπτης στο πρώτο δευτερόλεπτο.
+const CHIP_PRIORITY = [
+  'μέση', 'οσφυ',
+  'αυχεν',
+  'γόνατ', 'γονατ',
+  'εγχείρη', 'εγχειρη', 'μετεγχειρ', 'επέμβαση', 'επεμβαση',
+  'αθλητ',
+  // «μετά εγκεφαλικό» και όχι σκέτο «εγκεφαλικ»: το δεύτερο πιάνει
+  // και την «Εγκεφαλική παράλυση», που είναι άλλο περιστατικό.
+  'μετα εγκεφαλικ', 'μετά εγκεφαλικ',
+];
+
+function rankChip(name) {
+  const n = String(name || '').toLowerCase();
+  const i = CHIP_PRIORITY.findIndex(k => n.includes(k));
+  return i === -1 ? 99 : i;
+}
 
 // Ίδιος μετασχηματισμός με τα SEO routes, ώστε τα links να ταιριάζουν.
 function slugify(s) {
@@ -75,7 +99,7 @@ const C = {
   muted: '#6b7a8d', faint: '#94a3b8', border: '#e5eaf0', line: '#f1f5f9',
   green: '#15803d', greenBg: '#f0fdf4', greenBr: '#bbf7d0',
 };
-const SERIF = "'EB Garamond', Georgia, serif";
+const SERIF = "'DM Serif Display', Georgia, serif";
 
 function Section({ children, bg, style, id }) {
   return (
@@ -114,11 +138,12 @@ const TX = {
   el: {
     heroTitle1: 'Εξειδικευμένη Φυσιοθεραπεία στην',
     heroTitle2: 'Άνεση του Σπιτιού σας',
-    heroDesc: 'Φυσικοθεραπευτές με επαληθευμένη επαγγελματική άδεια, που έρχονται σε εσάς στην Αθήνα και την Αττική.',
+    heroDesc: 'Επαληθευμένοι φυσικοθεραπευτές που αναλαμβάνουν το περιστατικό σας και έρχονται στον χώρο σας, σε Αθήνα και Αττική.',
     searchLabel: 'Τι σας ταλαιπωρεί;',
-    searchPh: 'π.χ. πόνος στη μέση, αυχενικό, εγχείρηση γόνατου',
+    searchPh: 'Π.χ. πόνος στη μέση, αυχενικό, αποκατάσταση μετά από εγχείρηση…',
     searchBtn: 'Βρες φυσικοθεραπευτή',
-    searchMicro: 'Δεν χρειάζεται να γνωρίζετε ακριβή διάγνωση · Η περιοχή ζητείται στο επόμενο βήμα',
+    searchHelp: 'Δεν χρειάζεται να γνωρίζετε την ακριβή διάγνωση. Πείτε μας απλώς τι σας ενοχλεί.',
+    searchNote: 'Θα σας ζητήσουμε την περιοχή σας στο επόμενο βήμα.',
     popular: 'Δημοφιλείς αναζητήσεις',
 
     stripTitle: 'Βρείτε τον κατάλληλο φυσικοθεραπευτή με μεγαλύτερη σιγουριά',
@@ -189,11 +214,12 @@ const TX = {
   en: {
     heroTitle1: 'Specialised Physiotherapy in the',
     heroTitle2: 'Comfort of Your Home',
-    heroDesc: 'Physiotherapists with a verified professional licence, coming to you across Athens and Attica.',
+    heroDesc: 'Verified physiotherapists who handle your condition and come to your space, across Athens and Attica.',
     searchLabel: 'What is troubling you?',
-    searchPh: 'e.g. back pain, neck pain, knee surgery',
+    searchPh: 'e.g. back pain, neck pain, rehabilitation after surgery…',
     searchBtn: 'Find a physiotherapist',
-    searchMicro: "You don't need to know an exact diagnosis · Your area is asked in the next step",
+    searchHelp: "You don't need to know an exact diagnosis. Just tell us what is bothering you.",
+    searchNote: 'We will ask for your area in the next step.',
     popular: 'Popular searches',
 
     stripTitle: 'Find the right physiotherapist with more confidence',
@@ -270,8 +296,10 @@ const TX = {
 function SearchBox({ compact, tx, problem, setProblem, onKey, searchHref, chips, suggestions = [], lang = 'el' }) {
   const [open, setOpen] = useState(false);
   return (
-    <div style={{ background: '#fff', borderRadius: 20, border: compact ? 'none' : `1px solid ${C.border}`, padding: compact ? '22px 20px' : '26px 24px', boxShadow: compact ? '0 8px 40px rgba(0,0,0,0.2)' : '0 4px 28px rgba(26,46,68,0.07)', textAlign: 'left' }}>
-      <div style={{ fontSize: 15, fontWeight: 600, color: C.navy, marginBottom: 12 }}>
+    <div style={{ background: '#fff', borderRadius: 20, border: compact ? 'none' : `1px solid ${C.border}`, padding: compact ? '20px 18px' : '22px 22px', boxShadow: compact ? '0 8px 40px rgba(0,0,0,0.2)' : '0 4px 28px rgba(26,46,68,0.07)', textAlign: 'left' }}>
+      {/* Το «Τι σας ταλαιπωρεί;» είναι το heading του search card,
+          όχι ετικέτα πεδίου — γι' αυτό μεγαλύτερο και πιο βαρύ. */}
+      <div style={{ fontSize: 16.5, fontWeight: 700, color: C.navy, marginBottom: 12, letterSpacing: '-0.01em' }}>
         {tx.searchLabel}
       </div>
 
@@ -324,11 +352,19 @@ function SearchBox({ compact, tx, problem, setProblem, onKey, searchHref, chips,
         </a>
       </div>
 
-      <div style={{ fontSize: 12.5, color: C.faint, marginTop: 10, lineHeight: 1.5 }}>
-        {tx.searchMicro}
+      {/* Δύο επίπεδα, σκόπιμα.
+          Το πρώτο ΒΟΗΘΑΕΙ: αφαιρεί τον φόβο ότι πρέπει να ξέρεις
+          ιατρικό όρο για να ψάξεις.
+          Το δεύτερο απλώς ΕΝΗΜΕΡΩΝΕΙ για τη διαδικασία, οπότε πάει
+          πιο πίσω οπτικά — αλλιώς μοιάζουν με system message. */}
+      <div style={{ fontSize: 13.5, color: C.muted, marginTop: 12, lineHeight: 1.55 }}>
+        {tx.searchHelp}
+      </div>
+      <div style={{ fontSize: 12, color: C.faint, marginTop: 4, lineHeight: 1.5 }}>
+        {tx.searchNote}
       </div>
 
-      <div style={{ fontSize: 11.5, fontWeight: 700, color: C.faint, textTransform: 'uppercase', letterSpacing: '.07em', margin: '18px 0 9px' }}>
+      <div style={{ fontSize: 11.5, fontWeight: 700, color: C.faint, textTransform: 'uppercase', letterSpacing: '.07em', margin: '16px 0 9px' }}>
         {tx.popular}
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -456,10 +492,13 @@ export default function HomePage() {
     .map(x => x.c);
 
   const chips = conditions.length > 0
-    ? conditions.slice(0, 6).map(c => ({
-        label: lang === 'en' ? (c.name_en || c.name_el) : c.name_el,
-        href: `/therapists?condition=${encodeURIComponent(c.slug)}`,
-      }))
+    ? [...conditions]
+        .sort((a, b) => rankChip(a.name_el) - rankChip(b.name_el))
+        .slice(0, 6)
+        .map(c => ({
+          label: lang === 'en' ? (c.name_en || c.name_el) : c.name_el,
+          href: `/therapists?condition=${encodeURIComponent(c.slug)}`,
+        }))
     : FALLBACK_CHIPS[lang].map(label => ({
         label,
         href: `/find-help?q=${encodeURIComponent(label)}`,
@@ -524,12 +563,19 @@ export default function HomePage() {
       <Navbar />
 
       {/* ══ 1. HERO ══ */}
-      <section style={{ background: `linear-gradient(160deg, ${C.soft} 0%, #f4f9ff 55%, ${C.off} 100%)`, padding: '64px 24px 52px' }}>
+      <section style={{ background: `linear-gradient(160deg, ${C.soft} 0%, #f4f9ff 55%, ${C.off} 100%)`, padding: '44px 24px 46px' }}>
         <div style={{ maxWidth: 820, margin: '0 auto', textAlign: 'center' }}>
-          <h1 className="pv-h1" style={{ fontFamily: SERIF, fontSize: 'clamp(27px, 4.6vw, 52px)', color: C.navy, lineHeight: 1.18, margin: '0 0 16px', fontWeight: 400 }}>
+          {/* Σφιχτότερο lineHeight ώστε οι δύο γραμμές να διαβάζονται
+              ως ΕΝΑ headline, όχι ως δύο ξεχωριστές φράσεις.
+              Το μέγεθος μένει ίδιο — η ιεραρχία βελτιώνεται από την
+              απόσταση, όχι από μεγαλύτερα γράμματα. */}
+          <h1 className="pv-h1" style={{ fontFamily: SERIF, fontSize: 'clamp(27px, 4.6vw, 52px)', color: C.navy, lineHeight: 1.1, margin: '0 0 14px', fontWeight: 400, letterSpacing: '-0.015em' }}>
             {tx.heroTitle1} <em style={{ fontStyle: 'italic', color: C.accent }}>{tx.heroTitle2}</em>
           </h1>
-          <p style={{ fontSize: 17, color: C.muted, lineHeight: 1.7, margin: '0 auto 34px', maxWidth: 580 }}>
+          {/* Τρία μηνύματα σε μία πρόταση: επαλήθευση, αντιστοίχιση,
+              κατ' οίκον. Περιορισμένο πλάτος ώστε να μη γίνει γραμμή
+              που το μάτι χάνει. */}
+          <p style={{ fontSize: 16.5, color: C.muted, lineHeight: 1.65, margin: '0 auto 28px', maxWidth: 560 }}>
             {tx.heroDesc}
           </p>
           <SearchBox tx={tx} problem={problem} setProblem={setProblem} onKey={onKey} searchHref={searchHref} chips={chips} suggestions={suggestions} lang={lang} />
@@ -537,9 +583,12 @@ export default function HomePage() {
       </section>
 
       {/* ══ 2. TRUST STRIP ══ */}
-      <section style={{ background: '#fff', borderBottom: `1px solid ${C.border}`, padding: '28px 24px' }}>
+      {/* ΣΥΝΕΧΕΙΑ ΤΟΥ HERO, όχι νέα ενότητα.
+          Το hero λέει ΤΙ προσφέρουμε· εδώ αποδεικνύεται ΓΙΑΤΙ αξίζει.
+          Γι' αυτό δεν υπάρχει κενό ανάμεσά τους — διαβάζονται μαζί. */}
+      <section style={{ background: '#fff', borderBottom: `1px solid ${C.border}`, padding: '26px 24px' }}>
         <div style={{ maxWidth: 1160, margin: '0 auto' }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: C.navy, textAlign: 'center', marginBottom: 18 }}>
+          <div style={{ fontSize: 14.5, fontWeight: 600, color: C.navy, textAlign: 'center', marginBottom: 18 }}>
             {tx.stripTitle}
           </div>
           <div className="pv-grid-4">
