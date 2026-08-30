@@ -7,7 +7,8 @@ import { useLang } from '@/context/LanguageContext';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import RescheduleModal from '@/components/RescheduleModal';
 import { C, R as RAD, T, F, MAX_WIDTH, card, btn, badge, input as inputStyle } from '@/lib/tokens';
-import { ClipboardList, Stethoscope, User, MapPin, Euro, Calendar, Star, Check, ArrowRight, Save, X, Hourglass, Wallet, AlertCircle, CheckCircle2, CalendarDays, List, ChevronLeft, ChevronRight, Clock, XCircle, Globe, CalendarClock, Home } from 'lucide-react';
+import ReportModal from '@/components/ReportModal';
+import { ClipboardList, Stethoscope, User, MapPin, Euro, Calendar, Star, Check, ArrowRight, Save, X, Hourglass, Wallet, AlertCircle, CheckCircle2, CalendarDays, List, ChevronLeft, ChevronRight, Clock, XCircle, Globe, CalendarClock, Home, UserX} from 'lucide-react';
 
 // ─── Locale data ──────────────────────────────────────────────────────
 const LOCALE = { el: 'el-GR', en: 'en-US' };
@@ -98,6 +99,8 @@ const TX = {
     at: 'στις',
     awaitingTherapist: 'Αναμονή επιβεβαίωσης από τον θεραπευτή',
     cancelAppointment: 'Ακύρωση ραντεβού',
+    noShow: 'Δεν ήρθε',
+    reportIssue: 'Αναφορά',
     reschedule: 'Αλλαγή ώρας',
     reschedulePending: 'Εκκρεμεί πρόταση αλλαγής',
     reschedulePendingYours: 'Στείλατε πρόταση αλλαγής',
@@ -224,6 +227,8 @@ const TX = {
     at: 'at',
     awaitingTherapist: 'Awaiting confirmation from your therapist',
     cancelAppointment: 'Cancel appointment',
+    noShow: 'Did not come',
+    reportIssue: 'Report',
     reschedule: 'Change time',
     reschedulePending: 'Reschedule proposal pending',
     reschedulePendingYours: 'You sent a reschedule proposal',
@@ -434,6 +439,7 @@ export default function PatientDashboard() {
   const [sessionRequests, setSessionRequests] = useState([]);
 
   const [rematches, setRematches] = useState({});
+  const [reportTarget, setReportTarget] = useState(null);
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('appointments');
@@ -1224,6 +1230,34 @@ export default function PatientDashboard() {
                               )}
                             </div>
 
+                            {/* Ο ασθενής μπορεί να δηλώσει ότι ο θεραπευτής
+                                δεν ήρθε — είναι η βαρύτερη περίπτωση για την
+                                πλατφόρμα και πρέπει να μπορεί να ειπωθεί. */}
+                            {apt.status === 'confirmed' && (
+                              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                <button
+                                  onClick={() => setReportTarget({ mode: 'noshow', booking: apt, otherName: apt.therapist?.name })}
+                                  style={{ padding: '6px 12px', borderRadius: 8, border: `1px solid ${C.warnBorder}`, background: 'transparent', color: C.warn, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
+                                  <UserX size={12} />
+                                  {tx.noShow}
+                                </button>
+                                <button
+                                  onClick={() => setReportTarget({ mode: 'issue', booking: apt, otherName: apt.therapist?.name })}
+                                  style={{ padding: '6px 12px', borderRadius: 8, border: `1px solid ${C.border}`, background: 'transparent', color: C.textMuted, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
+                                  <AlertCircle size={12} />
+                                  {tx.reportIssue}
+                                </button>
+                              </div>
+                            )}
+                            {apt.status === 'completed' && (
+                              <button
+                                onClick={() => setReportTarget({ mode: 'issue', booking: apt, otherName: apt.therapist?.name })}
+                                style={{ padding: '6px 12px', borderRadius: 8, border: `1px solid ${C.border}`, background: 'transparent', color: C.textMuted, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
+                                <AlertCircle size={12} />
+                                {tx.reportIssue}
+                              </button>
+                            )}
+
                             {isCancelled(apt.status) && apt.cancelled_reason && (
                               <div style={{ width: '100%', paddingTop: 8, marginTop: 4, borderTop: `1px solid ${C.borderSoft}`, fontSize: 12, color: C.danger }}>
                                 {apt.status === 'cancelled_by_therapist' ? tx.cancelledByTherapist
@@ -1887,6 +1921,18 @@ export default function PatientDashboard() {
           }}
         />
       )}
+
+      {reportTarget && (
+        <ReportModal
+          mode={reportTarget.mode}
+          booking={reportTarget.booking}
+          otherName={reportTarget.otherName}
+          lang={lang}
+          onClose={() => setReportTarget(null)}
+          onDone={() => { setReportTarget(null); if (user) loadRequests(user.id); }}
+        />
+      )}
+
     </div>
   );
 }

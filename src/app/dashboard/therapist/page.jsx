@@ -12,7 +12,7 @@ import { searchAreas, canonicalArea, phonetic } from '@/lib/areas';
 import ConditionPicker from '@/components/ConditionPicker';
 import { C, R as RAD, T, F, MAX_WIDTH, card, btn, badge } from '@/lib/tokens';
 import {
-  LayoutDashboard, ClipboardList, Calendar, MapPin, Target, Star, User, Clock, AlertTriangle,
+  LayoutDashboard, ClipboardList, Calendar, MapPin, Target, Star, User, Clock, AlertTriangle, UserX,
   Upload, Home, MessageSquare, Check, X, Lock, CalendarClock, ChevronLeft, ChevronRight,
   Plus, Lightbulb, Camera, Pencil, CheckCircle2, Save, FileText, GraduationCap, Award, Eye, Trash2,
   Wallet, Hourglass, CalendarDays, List, Globe, Info, Copy, Ban, Repeat, CreditCard,
@@ -377,6 +377,8 @@ const TX = {
     markDone: 'Mark as done',
     cancel: 'Cancel',
     reschedule: 'Change time',
+    noShow: 'No-show',
+    reportIssue: 'Report',
     reschedulePendingYours: 'Proposal sent',
     rescheduleReview: 'Review proposal',
     awaitingRelease: 'Awaiting confirmation from the patient',
@@ -3156,6 +3158,17 @@ export default function TherapistDashboard() {
           onDone={onCancelDone}
         />
       )}
+      {reportTarget && (
+        <ReportModal
+          mode={reportTarget.mode}
+          booking={reportTarget.booking}
+          otherName={reportTarget.otherName}
+          lang={lang}
+          onClose={() => setReportTarget(null)}
+          onDone={() => { setReportTarget(null); load(); }}
+        />
+      )}
+
     </div>
   );
 }
