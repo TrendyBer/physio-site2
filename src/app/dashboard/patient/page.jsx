@@ -47,6 +47,7 @@ const STATUS_MAP = {
   rejected:  { el: 'Απορρίφθηκε',    en: 'Rejected',  bg: C.dangerBg, color: C.danger },
   completed: { el: 'Ολοκληρώθηκε',   en: 'Completed', bg: C.infoBg, color: C.info },
   cancelled: { el: 'Ακυρώθηκε',      en: 'Cancelled', bg: C.borderSoft, color: C.textMuted },
+  expired:   { el: 'Έληξε',           en: 'Expired',   bg: C.borderSoft, color: C.textMuted },
 };
 
 const BOOKING_STATUS = {
@@ -118,12 +119,18 @@ const TX = {
     today: 'Σήμερα',
     hasAppointment: 'Έχει ραντεβού',
     noRequests: 'Δεν έχετε στείλει αίτημα ακόμα.',
+    deadEndRejected: 'Ο θεραπευτής δεν είναι διαθέσιμος για αυτό το ραντεβού.',
+    deadEndExpired: 'Ο θεραπευτής δεν απάντησε εγκαίρως.',
+    deadEndAction: 'Δείτε άλλους διαθέσιμους θεραπευτές — τα στοιχεία σας είναι ήδη συμπληρωμένα.',
+    deadEndBtn: 'Δες άλλους θεραπευτές',
     physiotherapy: 'Φυσικοθεραπεία',
     pendingApproval: (n) => `${n} προς έγκριση`,
     total: 'Κόστος συνεδρίας',
     sessions: (n) => `Συνεδρίες (${n})`,
     yourReview: 'Η αξιολόγησή σας',
     cancelledByTherapist: 'Ακυρώθηκε από τον θεραπευτή',
+    reviewVerifiedNote: 'Η αξιολόγησή σας θα φέρει την ένδειξη «Από επαληθευμένη συνεδρία».',
+    verifiedSession: 'Από επαληθευμένη συνεδρία',
     cancelledByYou: 'Ακυρώθηκε από εσάς',
     cancelledByAdmin: 'Ακυρώθηκε από την πλατφόρμα',
     cancelReason: 'Αιτιολογία:',
@@ -230,12 +237,18 @@ const TX = {
     today: 'Today',
     hasAppointment: 'Has appointment',
     noRequests: "You haven't sent a request yet.",
+    deadEndRejected: 'This therapist is not available for that appointment.',
+    deadEndExpired: 'The therapist did not reply in time.',
+    deadEndAction: 'See other available therapists — your details are already filled in.',
+    deadEndBtn: 'See other therapists',
     physiotherapy: 'Physiotherapy',
     pendingApproval: (n) => `${n} to approve`,
     total: 'Session cost',
     sessions: (n) => `Sessions (${n})`,
     yourReview: 'Your review',
     cancelledByTherapist: 'Cancelled by the therapist',
+    reviewVerifiedNote: 'Your review will be labelled "From a verified session".',
+    verifiedSession: 'From a verified session',
     cancelledByYou: 'Cancelled by you',
     cancelledByAdmin: 'Cancelled by the platform',
     cancelReason: 'Reason:',
@@ -1274,12 +1287,21 @@ export default function PatientDashboard() {
               </div>
             ) : sessionRequests.map(req => {
               const st = statusLabel(STATUS_MAP, req.status);
-              const hasCompletedBooking = req.bookings.some(b => b.status === 'completed');
-              // Αν ο θεραπευτής ακύρωσε, ο ασθενής εξακολουθεί να έχει
-              // εμπειρία να μοιραστεί — και είναι η πιο χρήσιμη
-              // πληροφορία για τους επόμενους ασθενείς.
-              const cancelledByTherapist = req.bookings.find(b => b.status === 'cancelled_by_therapist');
-              const canReview = (hasCompletedBooking || !!cancelledByTherapist) && !req.review;
+              // ΑΞΙΟΛΟΓΗΣΗ ΜΟΝΟ ΑΠΟ ΟΛΟΚΛΗΡΩΜΕΝΗ ΣΥΝΕΔΡΙΑ.
+              // Παλιά επιτρεπόταν και μετά από ακύρωση του θεραπευτή, με το
+              // σκεπτικό ότι είναι χρήσιμη πληροφορία. Δεν είναι αξιολόγηση
+              // υπηρεσίας όμως: ο ασθενής δεν είδε ποτέ τον θεραπευτή.
+              // Οι ακυρώσεις μετριούνται στα reliability metrics.
+              // Ο ίδιος κανόνας επιβάλλεται πλέον και στη βάση (RLS).
+              const completedBooking = req.bookings.find(b => b.status === 'completed');
+              const canReview = !!completedBooking && !req.review;
+
+              // ΑΔΙΕΞΟΔΟ: το αίτημα απορρίφθηκε ή έληξε.
+              // Χωρίς διέξοδο, ο ασθενής βλέπει «Απορρίφθηκε» και πρέπει να
+              // ξαναρχίσει από την αρχή — να ξαναγράψει πρόβλημα, διεύθυνση
+              // και ώρα. Τα περισσότεροι απλά φεύγουν.
+              const isDeadEnd = ['declined', 'rejected', 'expired'].includes(req.status);
+              const retryUrl = `/dashboard/patient/new-request?retry=${req.id}`;
               const reqHeldBookings = req.bookings.filter(b => b.payment_status === 'held');
 
               return (
@@ -1293,6 +1315,24 @@ export default function PatientDashboard() {
                       )}
                       <span style={{ fontSize: 12, color: C.textFaint, marginLeft: 'auto' }}>{new Date(req.created_at).toLocaleDateString(loc)}</span>
                     </div>
+
+                    {/* ΔΙΕΞΟΔΟΣ ΑΠΟ ΤΟ ΑΔΙΕΞΟΔΟ.
+                        Το ?retry= κρατάει περιστατικό, περιοχή και διεύθυνση,
+                        ώστε ο ασθενής να μη χρειαστεί να τα ξαναγράψει. */}
+                    {isDeadEnd && (
+                      <div style={{ background: C.surfaceAlt, border: `1px solid ${C.border}`, borderRadius: RAD.input, padding: '14px 16px', marginBottom: 14 }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 4 }}>
+                          {req.status === 'expired' ? tx.deadEndExpired : tx.deadEndRejected}
+                        </div>
+                        <div style={{ fontSize: 13, color: C.textMuted, marginBottom: 12, lineHeight: 1.6 }}>
+                          {tx.deadEndAction}
+                        </div>
+                        <a href={retryUrl} style={{ ...btn('primary', { padding: '10px 20px', fontSize: 13.5, textDecoration: 'none' }) }}>
+                          {tx.deadEndBtn}
+                          <ArrowRight size={15} />
+                        </a>
+                      </div>
+                    )}
 
                     {req.therapist?.name && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
@@ -1421,15 +1461,13 @@ export default function PatientDashboard() {
                     <div style={{ padding: '14px 20px', borderTop: `1px solid ${C.borderSoft}`, background: C.page, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                       <div style={{ fontSize: 14, color: C.textBody }}>
                         {tx.howWasIt(req.therapist?.name || tx.therapistFallback)}
-                        {cancelledByTherapist && (
-                          <div style={{ fontSize: 12.5, color: C.textFaint, marginTop: 3 }}>
-                            {tx.reviewAfterCancel}
-                          </div>
-                        )}
+                        <div style={{ fontSize: 12.5, color: C.textFaint, marginTop: 3 }}>
+                          {tx.reviewVerifiedNote}
+                        </div>
                       </div>
                       <button onClick={() => openReviewModal(req)}
-                        style={{ padding: '10px 20px', borderRadius: RAD.button, border: 'none', background: C.warn, color: C.surface, fontSize: 14, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
-                        <Star size={14} fill="#fff" strokeWidth={0} />
+                        style={btn('primary', { padding: '10px 20px', fontSize: 14 })}>
+                        <Star size={14} strokeWidth={2} />
                         {tx.leaveReview}
                       </button>
                     </div>

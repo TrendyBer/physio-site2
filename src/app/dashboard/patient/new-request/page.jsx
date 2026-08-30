@@ -85,12 +85,61 @@ export default function NewRequestPage() {
   const [calendarWeek, setCalendarWeek] = useState(0);
   const [loadingSlots, setLoadingSlots] = useState(false);
 
+  const [retryFrom, setRetryFrom] = useState(null);
+
   useEffect(() => {
     try {
-      const q = new URLSearchParams(window.location.search).get('therapist');
+      const params = new URLSearchParams(window.location.search);
+      const q = params.get('therapist');
       if (q) { setPreselectedId(q); setCameFromProfile(true); }
+
+      // ?retry=<request_id> — έρχεται από απορριφθέν ή ληγμένο αίτημα.
+      // Χωρίς αυτό, ο ασθενής θα ξανάγραφε πρόβλημα, διεύθυνση και ώρα
+      // από την αρχή. Οι περισσότεροι απλά φεύγουν.
+      const r = params.get('retry');
+      if (r) setRetryFrom(r);
     } catch (_) {}
   }, []);
+
+  // Προσυμπλήρωση από το προηγούμενο αίτημα.
+  // ΔΕΝ μεταφέρουμε τον θεραπευτή: αυτός ακριβώς αρνήθηκε ή δεν απάντησε.
+  useEffect(() => {
+    if (!retryFrom || !user) return;
+    (async () => {
+      const { data } = await supabase
+        .from('session_requests')
+        .select('problem_type, problem_description, condition_id, address, area, postal_code, floor_info, notes')
+        .eq('id', retryFrom)
+        .eq('patient_id', user.id)   // μόνο δικό του αίτημα
+        .maybeSingle();
+      if (!data) return;
+
+      if (data.problem_type) setProblemType(data.problem_type);
+      if (data.problem_description) setProblemDesc(data.problem_description);
+      if (data.address) { setAddress(data.address); setAddressConfirmed(true); }
+      if (data.area) setArea(data.area);
+      if (data.postal_code) setPostalCode(data.postal_code);
+      if (data.floor_info) setFloorInfo(data.floor_info);
+      if (data.notes) setNotes(data.notes);
+
+      if (data.condition_id) {
+        const { data: cond } = await supabase
+          .from('conditions')
+          .select('id, slug, name_el, name_en, related_specialties')
+          .eq('id', data.condition_id)
+          .maybeSingle();
+        if (cond) {
+          setCondition({
+            id: cond.id, slug: cond.slug,
+            name: lang === 'en' ? (cond.name_en || cond.name_el) : cond.name_el,
+            related_specialties: cond.related_specialties,
+          });
+          // Το πρώτο βήμα είναι ήδη συμπληρωμένο — πάμε στην επιλογή θεραπευτή.
+          setStep(2);
+        }
+      }
+    })();
+  }, [retryFrom, user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
