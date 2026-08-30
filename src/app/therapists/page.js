@@ -7,6 +7,7 @@ import RatingDisplay from '../../components/RatingDisplay';
 import ConditionSearch from '../../components/ConditionSearch';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
+import VerifiedBadge from '@/components/VerifiedBadge';
 import { filterBookableSlots } from '@/lib/slots';
 import { Search, MapPin, Star, SlidersHorizontal, X, Check, ArrowRight, Stethoscope, Users, ChevronDown, ChevronUp, Lightbulb, BadgeCheck, ShieldCheck, Info, CalendarCheck, Briefcase } from 'lucide-react';
 
@@ -687,16 +688,11 @@ export default function TherapistsPage() {
                         ΔΕΝ το υποθέτουμε: με το admin override μπορεί να
                         εμφανίζεται θεραπευτής χωρίς ελεγμένη άδεια. */}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 8 }}>
-                      {th.license_verified && (
-                        <span style={{
-                          padding: '3px 9px', borderRadius: 999, fontSize: 11, fontWeight: 500,
-                          background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0',
-                          display: 'inline-flex', alignItems: 'center', gap: 3,
-                        }}>
-                          <ShieldCheck size={11} strokeWidth={2.2} />
-                          {tx.verifiedLicense}
-                        </span>
-                      )}
+                      {/* Ένα κοινό badge, ένα κείμενο σε όλο το site.
+                          Εδώ έλεγε «Ελεγμένη άδεια», στην αρχική «Ελεγμένη
+                          άδεια», στον οδηγό «Επαληθευμένος» — τρία κείμενα
+                          για το ίδιο πράγμα. */}
+                      {th.license_verified && <VerifiedBadge lang={lang} compact />}
                       {th.is_profile_full && (
                         <span style={{
                           padding: '3px 9px', borderRadius: 999, fontSize: 11, fontWeight: 500,
