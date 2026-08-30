@@ -288,13 +288,19 @@ export default function HomePage() {
         .eq('is_publicly_visible', true);
 
       if (ths?.length) {
-        const set = new Set();
+        // Πλήθος ΟΡΑΤΩΝ θεραπευτών ανά περιοχή. Δείχνουμε μόνο όσες
+        // έχουν τουλάχιστον έναν — αλλιώς ο επισκέπτης πατάει και
+        // βρίσκει κενό, που είναι χειρότερο από το να μη δει τίποτα.
+        const tally = new Map();
         ths.forEach(t => {
-          if (t.area) set.add(t.area);
-          (t.service_areas || []).forEach(a => a && set.add(a));
+          const names = [t.area, ...(t.service_areas || [])].filter(Boolean);
+          new Set(names.map(n => String(n).trim())).forEach(n => {
+            tally.set(n, (tally.get(n) || 0) + 1);
+          });
         });
-        const cleaned = cleanAreas([...set]);
-        if (cleaned.length >= 4) setAreas(cleaned.slice(0, 12));
+        const withTherapists = [...tally.keys()];
+        const cleaned = cleanAreas(withTherapists);
+        if (cleaned.length >= 3) setAreas(cleaned.slice(0, 12));
 
         // Πραγματικός επαληθευμένος θεραπευτής, όχι mock.
         // Ένα ψεύτικο προφίλ θα ήταν ακριβώς το «social proof» που
@@ -597,7 +603,7 @@ export default function HomePage() {
           {(conditions.length ? conditions : FALLBACK_CHIPS[lang].map((n, i) => ({ id: i, slug: slugify(n), name_el: n, name_en: n }))).map(c => {
             const label = lang === 'en' ? (c.name_en || c.name_el) : c.name_el;
             return (
-              <a key={c.id} href={`/pathiseis/${c.slug || slugify(label)}`}
+              <a key={c.id} href={`/therapists?condition=${encodeURIComponent(c.slug || slugify(label))}`}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#fff', border: `1px solid ${C.border}`, borderRadius: 30, padding: '11px 20px', fontSize: 14.5, color: C.navy, textDecoration: 'none', fontWeight: 500 }}>
                 <Stethoscope size={15} color={C.accent} strokeWidth={2} />
                 {label}
@@ -642,7 +648,7 @@ export default function HomePage() {
         </div>
         <div className="pv-chips">
           {areas.map(a => (
-            <a key={a} href={`/fysiotherapeia-sto-spiti/${slugify(a)}`}
+            <a key={a} href={`/therapists?area=${encodeURIComponent(a)}`}
               style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#fff', border: `1px solid ${C.border}`, borderRadius: 30, padding: '10px 18px', fontSize: 14, color: C.navy, textDecoration: 'none', fontWeight: 500 }}>
               <MapPin size={14} color={C.faint} strokeWidth={2} />
               {a}

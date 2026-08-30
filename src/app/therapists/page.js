@@ -177,6 +177,21 @@ export default function TherapistsPage() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
+  // ── ΠΕΡΙΟΧΗ ΑΠΟ ΤΟ URL ──
+  // Η αρχική στέλνει ?area=Παγκράτι. Χωρίς αυτό, ο επισκέπτης πατούσε
+  // περιοχή και έβλεπε ΟΛΟΥΣ τους θεραπευτές — σαν να μην πάτησε τίποτα.
+  useEffect(() => {
+    const a = searchParams.get('area');
+    if (a) setFilterArea(a);
+  }, [searchParams]);
+
+  // ── ΕΛΕΥΘΕΡΗ ΑΝΑΖΗΤΗΣΗ ΑΠΟ ΤΟ URL ──
+  // Το ?q= έρχεται από το «Τι σας ταλαιπωρεί;» της αρχικής.
+  useEffect(() => {
+    const q = searchParams.get('q');
+    if (q) setSearch(q);
+  }, [searchParams]);
+
   useEffect(() => {
     const conditionSlug = searchParams.get('condition');
     if (!conditionSlug) return;
