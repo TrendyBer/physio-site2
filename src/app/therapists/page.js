@@ -7,7 +7,6 @@ import RatingDisplay from '../../components/RatingDisplay';
 import ConditionSearch from '../../components/ConditionSearch';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
-import VerifiedBadge from '@/components/VerifiedBadge';
 import { filterBookableSlots } from '@/lib/slots';
 import { Search, MapPin, Star, SlidersHorizontal, X, Check, ArrowRight, Stethoscope, Users, ChevronDown, ChevronUp, Lightbulb, BadgeCheck, ShieldCheck, Info, CalendarCheck, Briefcase } from 'lucide-react';
 
@@ -501,10 +500,21 @@ export default function TherapistsPage() {
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'DM Sans', sans-serif; background: #faf9f6; }
-        .th-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
-        @media (max-width: 1024px) { .th-grid { grid-template-columns: repeat(2, 1fr); } }
-        @media (max-width: 640px) { .th-grid { grid-template-columns: 1fr; } }
-        .th-card { background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; padding: 24px; transition: all .3s; cursor: pointer; display: block; text-decoration: none; }
+        .th-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+        @media (max-width: 1100px) { .th-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 680px) { .th-grid { grid-template-columns: 1fr; } }
+        .th-card { background: #fff; border-radius: 18px; border: 1px solid #e2e8f0; padding: 26px 24px; transition: all .3s; cursor: pointer; display: block; text-decoration: none; }
+
+        /* Το σήμα ΠΑΝΩ στη φωτογραφία, όχι ως ξεχωριστό chip από κάτω.
+           Έτσι το πρώτο πράγμα που βλέπει ο επισκέπτης είναι το πρόσωπο
+           μαζί με την επαλήθευση — δεν χρειάζεται να διαβάσει. */
+        .th-avatar { position: relative; display: inline-block; margin-bottom: 16px; }
+        .th-avatar-badge {
+          position: absolute; right: -2px; bottom: -2px;
+          width: 26px; height: 26px; border-radius: 50%;
+          display: flex; align-items: center; justify-content: center;
+          border: 3px solid #fff; box-sizing: content-box;
+        }
         .th-card:hover { box-shadow: 0 8px 32px rgba(26,46,68,0.12); transform: translateY(-4px); }
         .filters-bar { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
         @media (max-width: 768px) { .filters-bar > select, .filters-bar > div { width: 100%; } }
@@ -699,30 +709,47 @@ export default function TherapistsPage() {
                       </div>
                     )}
 
-                    {th.photo_url ? (
-                      <ImgWithSkeleton src={th.photo_url} alt={th.name}
-                        containerStyle={{ width: 72, height: 72, borderRadius: '50%', marginBottom: 16 }}
-                        style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover' }} />
-                    ) : (
-                      <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'linear-gradient(135deg, #c8dff9, #a0c4f4)', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, color: '#2a6fdb' }}>
-                        {th.name?.charAt(0)}
-                      </div>
-                    )}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 4 }}>
-                      <span style={{ fontSize: 15, fontWeight: 700, color: '#1a2e44' }}>{th.name}</span>
+                    <div className="th-avatar">
+                      {th.photo_url ? (
+                        <ImgWithSkeleton src={th.photo_url} alt={th.name}
+                          containerStyle={{ width: 84, height: 84, borderRadius: '50%' }}
+                          style={{ width: 84, height: 84, borderRadius: '50%', objectFit: 'cover' }} />
+                      ) : (
+                        <div style={{ width: 84, height: 84, borderRadius: '50%', background: 'linear-gradient(135deg, #c8dff9, #a0c4f4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, fontWeight: 700, color: '#2a6fdb' }}>
+                          {th.name?.charAt(0)}
+                        </div>
+                      )}
+
+                      {/* ΕΠΑΛΗΘΕΥΣΗ: πράσινο ✓ πάνω στη φωτογραφία.
+                          ΝΕΟΣ: γαλάζιο «Ν», αντί για τη φράση «Νέος
+                          θεραπευτής» που έπιανε ολόκληρη γραμμή και
+                          ακουγόταν σαν μειονέκτημα.
+                          Η επαλήθευση προηγείται — είναι το σημαντικότερο. */}
+                      {th.license_verified ? (
+                        <span className="th-avatar-badge" style={{ background: '#15803d' }} title="Επαληθευμένη επαγγελματική άδεια">
+                          <Check size={14} color="#fff" strokeWidth={3.2} />
+                        </span>
+                      ) : (th.review_count || 0) === 0 ? (
+                        <span className="th-avatar-badge" style={{ background: '#2a6fdb', fontSize: 13, fontWeight: 700, color: '#fff' }} title="Νέος στην πλατφόρμα">
+                          Ν
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 17, fontWeight: 700, color: '#1a2e44' }}>{th.name}</span>
                       {th.is_profile_full && <BadgeCheck size={15} color="#2a6fdb" strokeWidth={2.2} />}
                     </div>
-                    <div style={{ fontSize: 13, color: '#6b7a8d', marginBottom: 8 }}>{th.specialty}</div>
+                    <div style={{ fontSize: 13.5, color: '#6b7a8d', marginBottom: 10 }}>{th.specialty}</div>
 
                     {/* Trust chips — το license_verified έρχεται από το view.
                         ΔΕΝ το υποθέτουμε: με το admin override μπορεί να
                         εμφανίζεται θεραπευτής χωρίς ελεγμένη άδεια. */}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 8 }}>
-                      {/* Ένα κοινό badge, ένα κείμενο σε όλο το site.
-                          Εδώ έλεγε «Ελεγμένη άδεια», στην αρχική «Ελεγμένη
-                          άδεια», στον οδηγό «Επαληθευμένος» — τρία κείμενα
-                          για το ίδιο πράγμα. */}
-                      {th.license_verified && <VerifiedBadge lang={lang} compact />}
+                      {/* Η επαλήθευση φαίνεται πλέον ΠΑΝΩ στη φωτογραφία.
+                          Ένα δεύτερο chip εδώ θα ήταν επανάληψη και θα
+                          έσπρωχνε κάτω τα πραγματικά χρήσιμα: τιμή,
+                          περιοχή, διαθεσιμότητα. */}
                       {th.is_profile_full && (
                         <span style={{
                           padding: '3px 9px', borderRadius: 999, fontSize: 11, fontWeight: 500,
@@ -745,9 +772,14 @@ export default function TherapistsPage() {
                       )}
                     </div>
 
-                    <div style={{ marginBottom: 8 }}>
-                      <RatingDisplay rating={th.avg_rating} count={th.review_count} lang={lang} variant="compact" size={13} />
-                    </div>
+                    {/* Μόνο όταν ΥΠΑΡΧΟΥΝ αξιολογήσεις. Το «Νέος θεραπευτής»
+                        έπιανε ολόκληρη γραμμή για να πει κάτι που δεν
+                        βοηθάει τον επισκέπτη — και ακουγόταν σαν μειονέκτημα. */}
+                    {(th.review_count || 0) > 0 && (
+                      <div style={{ marginBottom: 10 }}>
+                        <RatingDisplay rating={th.avg_rating} count={th.review_count} lang={lang} variant="compact" size={14} />
+                      </div>
+                    )}
 
                     {/* ΓΙΑΤΙ ΒΛΕΠΕΙΣ ΑΥΤΟΝ.
                         Ο χρήστης δεν πρέπει να αναρωτιέται «γιατί μου τον
