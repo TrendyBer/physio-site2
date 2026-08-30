@@ -23,6 +23,15 @@ function fmtTime(iso) {
   });
 }
 
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('el-GR', {
+    weekday: 'long', day: '2-digit', month: 'long',
+    timeZone: 'Europe/Athens',
+  });
+}
+
 // ── Κέλυφος email ────────────────────────────────────────────
 function shell({ title, intro, rows = [], ctaLabel, ctaUrl, footNote, accent = '#2a6fdb' }) {
   const rowsHtml = rows
@@ -163,4 +172,210 @@ export function patientRequestSent({ patientName, request, therapistName, slaHou
   return { subject, html, sms };
 }
 
-export { fmtDateTime, fmtTime, SITE, ADMIN_SITE };
+
+// ═════════════════════════════════════════════════════════════
+// 4. ΑΠΟΔΟΧΗ → ΑΣΘΕΝΗΣ
+// Το πιο σημαντικό email της πλατφόρμας: επιβεβαιώνει ότι κάποιος
+// έρχεται στο σπίτι του. Πρέπει να έχει ΟΛΑ όσα χρειάζεται.
+// ═════════════════════════════════════════════════════════════
+export function patientRequestAccepted({ patientName, therapistName, request, booking }) {
+  const first = (patientName || '').split(' ')[0] || '';
+  const when = booking?.session_date
+    ? `${fmtDate(booking.session_date)}${booking.session_time ? `, ${String(booking.session_time).slice(0, 5)}` : ''}`
+    : null;
+
+  const subject = 'Το ραντεβού σας επιβεβαιώθηκε';
+
+  const html = shell({
+    accent: '#15803D',
+    title: 'Το ραντεβού σας επιβεβαιώθηκε',
+    intro: `${first ? first + ', ο' : 'Ο'}/η <strong>${therapistName || 'θεραπευτής'}</strong> αποδέχτηκε το αίτημά σας.`,
+    rows: [
+      { label: 'Ημερομηνία', value: when },
+      { label: 'Θεραπευτής', value: therapistName },
+      { label: 'Περιστατικό', value: request.problem_type },
+      { label: 'Διεύθυνση', value: request.address },
+      { label: 'Κόστος', value: request.total_cost ? `${request.total_cost}€` : null },
+    ],
+    ctaLabel: 'Δείτε το ραντεβού σας',
+    ctaUrl: `${SITE}/dashboard/patient`,
+    footNote: 'Η πληρωμή γίνεται σε μετρητά, απευθείας στον θεραπευτή, μετά τη συνεδρία. Αν χρειαστεί να ακυρώσετε, ενημερώστε μας εγκαίρως από τον πίνακά σας.',
+  });
+
+  const sms = `PhysioHome: Το ραντεβου σας επιβεβαιωθηκε${when ? ` για ${when}` : ''} με τον/την ${therapistName || '-'}. ${SITE}/dashboard/patient`;
+
+  return { subject, html, sms };
+}
+
+// ═════════════════════════════════════════════════════════════
+// 5. ΑΠΟΡΡΙΨΗ → ΑΣΘΕΝΗΣ
+// ΔΕΝ αφήνουμε τον ασθενή σε αδιέξοδο. Το κουμπί οδηγεί πίσω στον
+// οδηγό με τα στοιχεία του ήδη συμπληρωμένα.
+// ═════════════════════════════════════════════════════════════
+export function patientRequestRejected({ patientName, therapistName, request }) {
+  const first = (patientName || '').split(' ')[0] || '';
+  const subject = 'Ο θεραπευτής δεν είναι διαθέσιμος';
+
+  const html = shell({
+    accent: '#B45309',
+    title: 'Ο θεραπευτής δεν είναι διαθέσιμος',
+    intro: `${first ? first + ', δ' : 'Δ'}υστυχώς ο/η <strong>${therapistName || 'θεραπευτής'}</strong> δεν μπορεί να αναλάβει αυτό το ραντεβού. Υπάρχουν όμως κι άλλοι διαθέσιμοι θεραπευτές στην περιοχή σας.`,
+    rows: [
+      { label: 'Περιστατικό', value: request.problem_type },
+      { label: 'Περιοχή', value: request.area },
+    ],
+    ctaLabel: 'Δες άλλους θεραπευτές',
+    ctaUrl: `${SITE}/dashboard/patient/new-request?retry=${request.id}`,
+    footNote: 'Τα στοιχεία σας είναι ήδη συμπληρωμένα — χρειάζεται μόνο να διαλέξετε θεραπευτή και ώρα.',
+  });
+
+  const sms = `PhysioHome: Ο θεραπευτης δεν ειναι διαθεσιμος. Δειτε αλλους: ${SITE}/dashboard/patient/new-request?retry=${request.id}`;
+
+  return { subject, html, sms };
+}
+
+// ═════════════════════════════════════════════════════════════
+// 6. ΛΗΞΗ → ΑΣΘΕΝΗΣ
+// ═════════════════════════════════════════════════════════════
+export function patientRequestExpired({ patientName, therapistName, request, hours }) {
+  const first = (patientName || '').split(' ')[0] || '';
+  const subject = 'Το αίτημά σας έληξε — δείτε άλλους θεραπευτές';
+
+  const html = shell({
+    accent: '#B45309',
+    title: 'Ο θεραπευτής δεν απάντησε εγκαίρως',
+    intro: `${first ? first + ', τ' : 'Τ'}ο αίτημά σας προς τον/την <strong>${therapistName || 'θεραπευτή'}</strong> έμεινε αναπάντητο για ${hours || 24} ώρες, οπότε το κλείσαμε. Λυπούμαστε για την αναμονή.`,
+    rows: [
+      { label: 'Περιστατικό', value: request.problem_type },
+      { label: 'Περιοχή', value: request.area },
+    ],
+    ctaLabel: 'Δες άλλους θεραπευτές',
+    ctaUrl: `${SITE}/dashboard/patient/new-request?retry=${request.id}`,
+    footNote: 'Τα στοιχεία σας είναι ήδη συμπληρωμένα. Αυτή τη φορά θα προτείνουμε θεραπευτές με γρήγορη απόκριση.',
+  });
+
+  const sms = `PhysioHome: Το αιτημα σας εληξε χωρις απαντηση. Δειτε αλλους θεραπευτες: ${SITE}/dashboard/patient/new-request?retry=${request.id}`;
+
+  return { subject, html, sms };
+}
+
+// ═════════════════════════════════════════════════════════════
+// 7. ΥΠΕΝΘΥΜΙΣΗ → ΘΕΡΑΠΕΥΤΗΣ
+// Στέλνεται ΜΙΑ φορά. Λέει πόσος χρόνος απομένει, όχι πόσος πέρασε —
+// το δεύτερο ακούγεται σαν κατηγορία.
+// ═════════════════════════════════════════════════════════════
+export function therapistPendingReminder({ therapistName, request, hoursLeft }) {
+  const first = (therapistName || '').split(' ')[0] || 'συνάδελφε';
+  const subject = `Εκκρεμεί αίτημα — απομένουν ${hoursLeft} ώρες`;
+
+  const html = shell({
+    accent: '#B45309',
+    title: 'Ένα αίτημα περιμένει απάντηση',
+    intro: `${first}, ένας ασθενής στην περιοχή <strong>${request.area || '—'}</strong> περιμένει την απάντησή σας. Απομένουν <strong>${hoursLeft} ώρες</strong>.`,
+    rows: [
+      { label: 'Περιστατικό', value: request.problem_type },
+      { label: 'Περιοχή', value: request.area },
+      { label: 'Αμοιβή', value: request.total_cost ? `${request.total_cost}€` : null },
+    ],
+    ctaLabel: 'Απάντησε τώρα',
+    ctaUrl: `${SITE}/dashboard/therapist`,
+    footNote: 'Αν δεν σας βολεύει, μια γρήγορη απόρριψη βοηθάει τον ασθενή να βρει άλλον θεραπευτή νωρίτερα.',
+  });
+
+  const sms = `PhysioHome: Εκκρεμει αιτημα στην περιοχη ${request.area || '-'}. Απομενουν ${hoursLeft} ωρες. ${SITE}/dashboard/therapist`;
+
+  return { subject, html, sms };
+}
+
+// ═════════════════════════════════════════════════════════════
+// 8. ΑΚΥΡΩΣΗ
+// Ο παραλήπτης αλλάζει ανάλογα με το ποιος ακύρωσε.
+// ═════════════════════════════════════════════════════════════
+export function cancellationNotice({ toRole, recipientName, otherName, booking, reason }) {
+  const first = (recipientName || '').split(' ')[0] || '';
+  const when = booking?.session_date
+    ? `${fmtDate(booking.session_date)}${booking.session_time ? `, ${String(booking.session_time).slice(0, 5)}` : ''}`
+    : null;
+
+  const byPatient = toRole === 'therapist';
+  const subject = 'Ακύρωση ραντεβού';
+
+  const html = shell({
+    accent: '#BE123C',
+    title: 'Το ραντεβού ακυρώθηκε',
+    intro: byPatient
+      ? `${first ? first + ', τ' : 'Τ'}ο ραντεβού με <strong>${otherName || 'τον ασθενή'}</strong> ακυρώθηκε από τον ασθενή.`
+      : `${first ? first + ', τ' : 'Τ'}ο ραντεβού σας με <strong>${otherName || 'τον θεραπευτή'}</strong> ακυρώθηκε.`,
+    rows: [
+      { label: 'Ημερομηνία', value: when },
+      { label: byPatient ? 'Ασθενής' : 'Θεραπευτής', value: otherName },
+      { label: 'Αιτιολογία', value: reason },
+    ],
+    ctaLabel: byPatient ? 'Δες τα ραντεβού σου' : 'Βρες άλλον θεραπευτή',
+    ctaUrl: byPatient ? `${SITE}/dashboard/therapist` : `${SITE}/dashboard/patient/new-request`,
+    footNote: byPatient
+      ? 'Η ώρα ελευθερώθηκε αυτόματα στο πρόγραμμά σας.'
+      : 'Μπορείτε να κλείσετε νέο ραντεβού με άλλον θεραπευτή οποτεδήποτε.',
+  });
+
+  const sms = byPatient
+    ? `PhysioHome: Ακυρωθηκε ραντεβου${when ? ` (${when})` : ''} απο τον ασθενη.`
+    : `PhysioHome: Το ραντεβου σας${when ? ` (${when})` : ''} ακυρωθηκε. Βρειτε αλλον θεραπευτη: ${SITE}`;
+
+  return { subject, html, sms };
+}
+
+// ═════════════════════════════════════════════════════════════
+// 9. ΑΙΤΗΜΑ ΑΞΙΟΛΟΓΗΣΗΣ → ΑΣΘΕΝΗΣ
+// ═════════════════════════════════════════════════════════════
+export function patientReviewRequest({ patientName, therapistName, booking }) {
+  const first = (patientName || '').split(' ')[0] || '';
+  const subject = 'Πώς ήταν η συνεδρία σας;';
+
+  const html = shell({
+    title: 'Πώς ήταν η συνεδρία σας;',
+    intro: `${first ? first + ', η' : 'Η'} γνώμη σας για τον/την <strong>${therapistName || 'θεραπευτή'}</strong> βοηθάει τους επόμενους ασθενείς να διαλέξουν σωστά. Χρειάζεται λιγότερο από ένα λεπτό.`,
+    rows: [
+      { label: 'Θεραπευτής', value: therapistName },
+      { label: 'Ημερομηνία', value: booking?.session_date ? fmtDate(booking.session_date) : null },
+    ],
+    ctaLabel: 'Άφησε αξιολόγηση',
+    ctaUrl: `${SITE}/dashboard/patient`,
+    footNote: 'Η αξιολόγησή σας θα φέρει την ένδειξη «Από επαληθευμένη συνεδρία».',
+  });
+
+  const sms = `PhysioHome: Πως ηταν η συνεδρια με τον/την ${therapistName || '-'}; Αφηστε αξιολογηση: ${SITE}/dashboard/patient`;
+
+  return { subject, html, sms };
+}
+
+// ═════════════════════════════════════════════════════════════
+// 10. ΥΠΕΝΘΥΜΙΣΗ ΡΑΝΤΕΒΟΥ — και στους δύο
+// ═════════════════════════════════════════════════════════════
+export function appointmentReminder({ toRole, recipientName, otherName, booking, address }) {
+  const first = (recipientName || '').split(' ')[0] || '';
+  const time = booking?.session_time ? String(booking.session_time).slice(0, 5) : '';
+  const toTherapist = toRole === 'therapist';
+
+  const subject = 'Υπενθύμιση: ραντεβού αύριο';
+
+  const html = shell({
+    title: 'Το ραντεβού σας είναι αύριο',
+    intro: `${first ? first + ', υ' : 'Υ'}πενθύμιση για το ραντεβού${time ? ` στις <strong>${time}</strong>` : ''}${otherName ? ` με <strong>${otherName}</strong>` : ''}.`,
+    rows: [
+      { label: 'Ημερομηνία', value: booking?.session_date ? fmtDate(booking.session_date) : null },
+      { label: 'Ώρα', value: time || null },
+      { label: toTherapist ? 'Ασθενής' : 'Θεραπευτής', value: otherName },
+      { label: 'Διεύθυνση', value: address },
+    ],
+    ctaLabel: toTherapist ? 'Δες το πρόγραμμά σου' : 'Δες το ραντεβού σου',
+    ctaUrl: toTherapist ? `${SITE}/dashboard/therapist` : `${SITE}/dashboard/patient`,
+    footNote: 'Αν κάτι άλλαξε, ενημερώστε μας το συντομότερο ώστε να προλάβει να προσαρμοστεί ο άλλος.',
+  });
+
+  const sms = `PhysioHome: Υπενθυμιση ραντεβου αυριο${time ? ` στις ${time}` : ''}${otherName ? ` με ${otherName}` : ''}.`;
+
+  return { subject, html, sms };
+}
+
+export { fmtDateTime, fmtTime, fmtDate, SITE, ADMIN_SITE };
