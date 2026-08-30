@@ -125,7 +125,11 @@ export default function HowItWorksPage() {
         .hiw-steps { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
         @media (max-width: 720px) { .hiw-steps { grid-template-columns: 1fr; } }
         .hiw-body { display: grid; grid-template-columns: 1.4fr 1fr; gap: 48px; align-items: start; }
-        @media (max-width: 900px) { .hiw-body { grid-template-columns: 1fr; gap: 32px; } }
+        .hiw-why { position: sticky; top: 90px; }
+        @media (max-width: 900px) {
+          .hiw-body { grid-template-columns: 1fr; gap: 32px; }
+          .hiw-why { position: static; top: auto; }
+        }
       `}</style>
 
       <Navbar />
@@ -181,9 +185,9 @@ export default function HowItWorksPage() {
                   <div style={{ width: 38, height: 38, borderRadius: '50%', background: '#1a2e44', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 15, marginBottom: 14 }}>
                     {i + 1}
                   </div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: '#2a6fdb', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6 }}>
-                    {lang === 'el' ? `Βήμα ${i + 1}` : `Step ${i + 1}`}
-                  </div>
+                  {/* ΔΙΠΛΟ ΝΟΥΜΕΡΟ.
+                      Ο κύκλος από πάνω δείχνει ήδη τη σειρά· το «ΒΗΜΑ 1»
+                      από κάτω επαναλάμβανε τον ίδιο αριθμό. */}
                   <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1a2e44', marginBottom: 8 }}>{step.title}</h3>
                   <p style={{ fontSize: 14, color: '#6b7a8d', lineHeight: 1.6 }}>{step.desc}</p>
                 </div>
@@ -191,7 +195,10 @@ export default function HowItWorksPage() {
             </div>
 
             {/* Why + CTA */}
-            <div style={{ background: '#fff', border: '1px solid #dce6f0', borderRadius: 16, padding: 28, position: 'sticky', top: 90 }}>
+            {/* Ίδιο πρόβλημα με το TrustSection: sticky γραμμένο inline,
+                που το media query δεν μπορεί να ακυρώσει. Σε κινητό η
+                κάρτα κολλούσε και πατούσε πάνω στα βήματα. */}
+            <div className="hiw-why" style={{ background: '#fff', border: '1px solid #dce6f0', borderRadius: 16, padding: 28 }}>
               <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 22, color: '#1a2e44', marginBottom: 18 }}>{panel.whyTitle}</h3>
               <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 26 }}>
                 {panel.why.map((point, i) => (

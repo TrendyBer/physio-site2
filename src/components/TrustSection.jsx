@@ -47,14 +47,23 @@ export default function TrustSection() {
     <>
       <style>{`
         .trust-wrap { display: grid; grid-template-columns: 380px 1fr; gap: 48px; align-items: start; }
-        @media (max-width: 900px) { .trust-wrap { grid-template-columns: 1fr; gap: 32px; } }
+        /* ΕΠΙΚΑΛΥΨΗ ΣΕ ΚΙΝΗΤΟ.
+           Ο τίτλος ήταν position: sticky γραμμένο INLINE, οπότε το media
+           query δεν μπορούσε να το ακυρώσει — τα inline styles υπερισχύουν.
+           Σε μία στήλη ο τίτλος «κολλούσε» και οι κάρτες περνούσαν από
+           πάνω του. Το sticky ζει τώρα σε κλάση και σβήνει κάτω από 900px. */
+        .trust-intro { position: sticky; top: 100px; }
+        @media (max-width: 900px) {
+          .trust-wrap { grid-template-columns: 1fr; gap: 32px; }
+          .trust-intro { position: static; top: auto; }
+        }
         .trust-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         @media (max-width: 640px) { .trust-cards { grid-template-columns: 1fr; } }
       `}</style>
       <section id="trust" style={{ padding: '80px 24px', background: '#faf9f6' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div className="trust-wrap">
-            <div style={{ position: 'sticky', top: 100 }}>
+            <div className="trust-intro">
               <h2 style={{ fontFamily: 'Georgia, serif', fontSize: 'clamp(28px, 3vw, 40px)', color: '#1a2e44', lineHeight: 1.2, marginBottom: 16 }}>
                 {text.title} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{text.titleEm}</em>
               </h2>
