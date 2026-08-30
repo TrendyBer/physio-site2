@@ -110,7 +110,7 @@ export async function POST(req) {
 
   const { data: requests } = await db
     .from('session_requests')
-    .select('id, patient_id, therapist_id, problem_type, area, total_cost, status')
+    .select('id, patient_id, therapist_id, problem_type, area, total_cost, status, expires_at, is_same_day, appointment_starts_at')
     .in('id', ids);
 
   for (const r of requests || []) {
@@ -120,15 +120,26 @@ export async function POST(req) {
 
       const [pEmail, { data: p }, { data: t }] = await Promise.all([
         authEmail(db, r.patient_id),
-        db.from('patient_profiles').select('name').eq('id', r.patient_id).maybeSingle(),
+        db.from('patient_profiles').select('name, phone').eq('id', r.patient_id).maybeSingle(),
         db.from('therapist_profiles').select('name').eq('id', r.therapist_id).maybeSingle(),
       ]);
+
+      // ΣΥΓΚΕΚΡΙΜΕΝΕΣ ΠΡΟΤΑΣΕΙΣ, όχι «ξαναψάξε».
+      // Ο ασθενής μόλις περίμενε άδικα· το τελευταίο που θέλει είναι να
+      // ξαναρχίσει από την αρχή. Η rematch_therapists βρίσκει όσους
+      // καλύπτουν ίδια περιοχή, ίδιο περιστατικό, με ελεύθερη ώρα —
+      // και για αυθημερόν, ελεύθερη ώρα ΣΗΜΕΡΑ.
+      const { data: matches } = await db.rpc('rematch_therapists', {
+        p_request_id: r.id,
+        p_limit: 3,
+      });
 
       const msg = patientRequestExpired({
         patientName: p?.name,
         therapistName: t?.name,
         request: r,
         hours: expiryHours,
+        matches: matches || [],
       });
 
       if (pEmail) {
@@ -140,6 +151,18 @@ export async function POST(req) {
         done.push({ id: r.id, to: 'patient', ok: res.ok, err: res.error });
       } else {
         done.push({ id: r.id, to: 'patient', ok: false, err: 'χωρίς email' });
+      }
+
+      // SMS: για αυθημερόν είναι κρίσιμο. Ο ασθενής μπορεί να μη δει
+      // email εγκαίρως και να χάσει τη μέρα.
+      if (p?.phone) {
+        const sres = await sendSms({ to: p.phone, text: msg.sms });
+        if (!sres.skipped) {
+          await log(db, {
+            request_id: r.id, role: 'patient', recipient_id: r.patient_id,
+            channel: 'sms', template: 'patient_request_expired', to: p.phone, result: sres,
+          });
+        }
       }
     }
 
@@ -167,15 +190,10 @@ export async function POST(req) {
         done.push({ id: r.id, to: 'therapist', ok: res.ok, err: res.error });
       }
 
-      if (t?.phone) {
-        const res = await sendSms({ to: t.phone, text: msg.sms });
-        if (!res.skipped) {
-          await log(db, {
-            request_id: r.id, role: 'therapist', recipient_id: r.therapist_id,
-            channel: 'sms', template: 'therapist_pending_reminder', to: t.phone, result: res,
-          });
-        }
-      }
+      // ΧΩΡΙΣ SMS εδώ.
+      // Ο θεραπευτής έχει ήδη λάβει SMS όταν ήρθε το αίτημα. Δεύτερο
+      // SMS οκτώ ώρες μετά είναι πίεση, όχι εξυπηρέτηση — και κοστίζει
+      // σε κάθε εκκρεμές αίτημα της πλατφόρμας.
     }
   }
 

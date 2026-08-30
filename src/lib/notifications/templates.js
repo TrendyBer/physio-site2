@@ -24,6 +24,21 @@ function fmtTime(iso) {
 }
 
 
+// Ώρα προθεσμίας σε ανθρώπινη μορφή: «σήμερα στις 16:30» / «αύριο στις 09:00»
+function fmtDeadline(iso) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  const now = new Date();
+  const tz = { timeZone: 'Europe/Athens' };
+  const day = d.toLocaleDateString('el-GR', tz);
+  const today = now.toLocaleDateString('el-GR', tz);
+  const tomorrow = new Date(now.getTime() + 86400000).toLocaleDateString('el-GR', tz);
+  const time = d.toLocaleTimeString('el-GR', { ...tz, hour: '2-digit', minute: '2-digit' });
+  if (day === today) return `σήμερα στις ${time}`;
+  if (day === tomorrow) return `αύριο στις ${time}`;
+  return `${day} στις ${time}`;
+}
+
 function fmtDate(iso) {
   if (!iso) return '—';
   return new Date(iso).toLocaleDateString('el-GR', {
@@ -87,24 +102,43 @@ export function therapistNewRequest({ therapistName, request, slaDueAt, slaHours
   const url = `${SITE}/dashboard/therapist`;
   const first = (therapistName || '').split(' ')[0] || 'συνάδελφε';
 
-  const subject = `Νέο αίτημα — απάντηση εντός ${slaHours} ωρών`;
+  // Η προθεσμία έρχεται από το expires_at, που για αυθημερόν ραντεβού
+  // είναι ΠΟΛΥ νωρίτερα από 24 ώρες. Το μήνυμα προσαρμόζεται ανάλογα:
+  // «απαντήστε έως τις 16:30» έχει άλλο βάρος από «εντός 24 ωρών».
+  const deadline = request.expires_at || slaDueAt;
+  const sameDay = !!request.is_same_day;
+  const apptTime = request.appointment_starts_at
+    ? new Date(request.appointment_starts_at).toLocaleTimeString('el-GR', { timeZone: 'Europe/Athens', hour: '2-digit', minute: '2-digit' })
+    : null;
+
+  const subject = sameDay
+    ? `ΣΗΜΕΡΑ${apptTime ? ` στις ${apptTime}` : ''} — απαντήστε έως ${fmtTime(deadline)}`
+    : `Νέο αίτημα — απάντηση έως ${fmtTime(deadline)}`;
 
   const html = shell({
-    title: `Νέο αίτημα στην περιοχή ${request.area || '—'}`,
-    intro: `${first}, ένας ασθενής σας επέλεξε. Έχετε <strong>${slaHours} ώρες</strong> να απαντήσετε — έως τις <strong>${fmtDateTime(slaDueAt)}</strong>.`,
+    accent: sameDay ? '#B45309' : '#2a6fdb',
+    title: sameDay
+      ? `Αίτημα για ΣΗΜΕΡΑ στην περιοχή ${request.area || '—'}`
+      : `Νέο αίτημα στην περιοχή ${request.area || '—'}`,
+    intro: sameDay
+      ? `${first}, ένας ασθενής σας ζητάει <strong>σήμερα${apptTime ? ` στις ${apptTime}` : ''}</strong>. Απαντήστε <strong>έως ${fmtDeadline(deadline)}</strong> — μετά το αίτημα θα προωθηθεί σε άλλον.`
+      : `${first}, ένας ασθενής σας επέλεξε. Απαντήστε <strong>έως ${fmtDeadline(deadline)}</strong>.`,
     rows: [
       { label: 'Πρόβλημα', value: request.problem_type },
       { label: 'Περιοχή', value: request.area },
+      { label: 'Ώρα ραντεβού', value: request.appointment_starts_at ? fmtDateTime(request.appointment_starts_at) : null },
       { label: 'Αμοιβή', value: request.total_cost ? `${request.total_cost}€` : null },
     ],
-    ctaLabel: 'Δείτε το αίτημα',
+    ctaLabel: sameDay ? 'Απαντήστε τώρα' : 'Δείτε το αίτημα',
     ctaUrl: url,
-    footNote: `Αν δεν απαντήσετε μέχρι τις ${fmtTime(slaDueAt)}, το αίτημα θα ανατεθεί σε άλλον θεραπευτή. Η ακριβής διεύθυνση εμφανίζεται μόλις αποδεχτείτε.`,
+    footNote: `Αν δεν απαντήσετε μέχρι τις ${fmtTime(deadline)}, το αίτημα λήγει και ο ασθενής προωθείται σε άλλον θεραπευτή. Η ακριβής διεύθυνση εμφανίζεται μόλις αποδεχτείτε.`,
   });
 
-  const sms =
-    `PhysioHome: Νεο αιτημα στην περιοχη ${request.area || '-'} (${request.problem_type || 'Φυσιοθεραπεια'}). ` +
-    `Απαντηστε εως ${fmtTime(slaDueAt)} (${slaHours}h). ${url}`;
+  // Χωρίς τόνους: ελληνικά με τόνους χωρανε 70 χαρακτηρες αντι για 160
+  // και χρεωνονται διπλα.
+  const sms = sameDay
+    ? `PhysioHome: ΣΗΜΕΡΑ${apptTime ? ` ${apptTime}` : ''} στην ${request.area || '-'}. Απαντηστε εως ${fmtTime(deadline)} αλλιως χανεται. ${url}`
+    : `PhysioHome: Νεο αιτημα ${request.area || '-'} (${request.problem_type || 'Φυσιοθεραπεια'}). Απαντηστε εως ${fmtTime(deadline)}. ${url}`;
 
   return { subject, html, sms };
 }
@@ -148,25 +182,40 @@ export function adminNewRequest({ request, therapistName }) {
 export function patientRequestSent({ patientName, request, therapistName, slaHours }) {
   const first = (patientName || '').split(' ')[0] || '';
 
-  const subject = 'Το αίτημά σας εστάλη';
+  // ΔΕΝ λέμε σκέτο «στάλθηκε». Ο ασθενής πρέπει να ξέρει ΜΕΧΡΙ ΠΟΤΕ
+  // περιμένει και τι γίνεται αν δεν απαντήσει κανείς. Αλλιώς μένει στο
+  // κενό, υποθέτει ότι κάτι δεν πάει καλά, και φεύγει.
+  const deadline = request.expires_at || null;
+  const deadlineText = deadline ? fmtDeadline(deadline) : null;
+
+  const subject = deadlineText
+    ? `Το αίτημά σας εστάλη — απάντηση έως ${fmtTime(deadline)}`
+    : 'Το αίτημά σας εστάλη';
 
   const html = shell({
     title: 'Λάβαμε το αίτημά σας',
     intro: therapistName
-      ? `${first ? first + ', η' : 'Η'} αίτησή σας στάλθηκε στον/στην <strong>${therapistName}</strong>. Θα απαντήσει εντός ${slaHours} ωρών.`
+      ? `${first ? first + ', τ' : 'Τ'}ο αίτημά σας στάλθηκε στον/στην <strong>${therapistName}</strong>.` +
+        (deadlineText
+          ? ` Πρέπει να απαντήσει <strong>έως ${deadlineText}</strong>. Αν δεν απαντήσει, θα σας προτείνουμε αμέσως άλλους διαθέσιμους θεραπευτές.`
+          : ` Θα απαντήσει εντός ${slaHours} ωρών.`)
       : `${first ? first + ', λ' : 'Λ'}άβαμε το αίτημά σας. Η ομάδα μας θα σας βρει τον κατάλληλο θεραπευτή και θα επικοινωνήσουμε μαζί σας.`,
     rows: [
-      { label: 'Πρόβλημα', value: request.problem_type },
+      { label: 'Περιστατικό', value: request.problem_type },
       { label: 'Περιοχή', value: request.area },
+      { label: 'Ραντεβού', value: request.appointment_starts_at ? fmtDateTime(request.appointment_starts_at) : null },
       { label: 'Θεραπευτής', value: therapistName || 'Θα οριστεί από την ομάδα μας' },
+      { label: 'Απάντηση έως', value: deadline ? fmtDateTime(deadline) : null },
     ],
     ctaLabel: 'Δείτε το αίτημά σας',
     ctaUrl: `${SITE}/dashboard/patient`,
-    footNote: 'Δεν χρεώνεστε τίποτα μέχρι να επιβεβαιωθεί το ραντεβού.',
+    footNote: 'Δεν χρεώνεστε τίποτα μέχρι να επιβεβαιωθεί το ραντεβού. Η πληρωμή γίνεται σε μετρητά στον θεραπευτή, μετά τη συνεδρία.',
   });
 
   const sms = therapistName
-    ? `PhysioHome: Το αιτημα σας σταλθηκε στον/στην ${therapistName}. Θα απαντησει εντος ${slaHours}h.`
+    ? (deadline
+        ? `PhysioHome: Το αιτημα σας σταλθηκε στον/στην ${therapistName}. Απαντηση εως ${fmtTime(deadline)}.`
+        : `PhysioHome: Το αιτημα σας σταλθηκε στον/στην ${therapistName}.`)
     : `PhysioHome: Λαβαμε το αιτημα σας. Θα επικοινωνησουμε συντομα.`;
 
   return { subject, html, sms };
@@ -237,24 +286,47 @@ export function patientRequestRejected({ patientName, therapistName, request }) 
 // ═════════════════════════════════════════════════════════════
 // 6. ΛΗΞΗ → ΑΣΘΕΝΗΣ
 // ═════════════════════════════════════════════════════════════
-export function patientRequestExpired({ patientName, therapistName, request, hours }) {
+export function patientRequestExpired({ patientName, therapistName, request, hours, matches }) {
   const first = (patientName || '').split(' ')[0] || '';
-  const subject = 'Το αίτημά σας έληξε — δείτε άλλους θεραπευτές';
+  const list = Array.isArray(matches) ? matches : [];
+  const sameDay = !!request.is_same_day;
+
+  const subject = list.length > 0
+    ? `Βρήκαμε ${list.length} ${list.length === 1 ? 'διαθέσιμο θεραπευτή' : 'διαθέσιμους θεραπευτές'}`
+    : 'Το αίτημά σας έληξε — δείτε άλλους θεραπευτές';
+
+  // Συγκεκριμένες προτάσεις, όχι «ξαναψάξε». Ο ασθενής μόλις περίμενε
+  // άδικα· το τελευταίο που θέλει είναι να ξαναρχίσει από την αρχή.
+  const matchRows = list.map((m) => {
+    const when = m.next_slot_date
+      ? `${m.same_day ? 'σήμερα' : fmtDate(m.next_slot_date)}${m.next_slot_time ? ` στις ${String(m.next_slot_time).slice(0, 5)}` : ''}`
+      : null;
+    return {
+      label: m.name,
+      value: [when, m.price ? `${Math.round(Number(m.price))}€` : null].filter(Boolean).join(' · '),
+    };
+  });
 
   const html = shell({
     accent: '#B45309',
     title: 'Ο θεραπευτής δεν απάντησε εγκαίρως',
-    intro: `${first ? first + ', τ' : 'Τ'}ο αίτημά σας προς τον/την <strong>${therapistName || 'θεραπευτή'}</strong> έμεινε αναπάντητο για ${hours || 24} ώρες, οπότε το κλείσαμε. Λυπούμαστε για την αναμονή.`,
-    rows: [
+    intro: list.length > 0
+      ? `${first ? first + ', ο' : 'Ο'}/η <strong>${therapistName || 'θεραπευτής'}</strong> δεν απάντησε στην ώρα του. ` +
+        `Βρήκαμε <strong>${list.length}</strong> ${list.length === 1 ? 'θεραπευτή που μπορεί' : 'θεραπευτές που μπορούν'} να σας εξυπηρετήσουν` +
+        `${sameDay ? ' <strong>σήμερα</strong>' : ''}.`
+      : `${first ? first + ', τ' : 'Τ'}ο αίτημά σας προς τον/την <strong>${therapistName || 'θεραπευτή'}</strong> έμεινε αναπάντητο, οπότε το κλείσαμε. Λυπούμαστε για την αναμονή.`,
+    rows: matchRows.length > 0 ? matchRows : [
       { label: 'Περιστατικό', value: request.problem_type },
       { label: 'Περιοχή', value: request.area },
     ],
-    ctaLabel: 'Δες άλλους θεραπευτές',
+    ctaLabel: list.length > 0 ? 'Δες τους διαθέσιμους' : 'Δες άλλους θεραπευτές',
     ctaUrl: `${SITE}/dashboard/patient/new-request?retry=${request.id}`,
-    footNote: 'Τα στοιχεία σας είναι ήδη συμπληρωμένα. Αυτή τη φορά θα προτείνουμε θεραπευτές με γρήγορη απόκριση.',
+    footNote: 'Τα στοιχεία σας είναι ήδη συμπληρωμένα — χρειάζεται μόνο να διαλέξετε.',
   });
 
-  const sms = `PhysioHome: Το αιτημα σας εληξε χωρις απαντηση. Δειτε αλλους θεραπευτες: ${SITE}/dashboard/patient/new-request?retry=${request.id}`;
+  const sms = list.length > 0
+    ? `PhysioHome: Ο θεραπευτης δεν απαντησε. Βρηκαμε ${list.length} διαθεσιμους${sameDay ? ' για σημερα' : ''}: ${SITE}/dashboard/patient/new-request?retry=${request.id}`
+    : `PhysioHome: Το αιτημα σας εληξε. Δειτε αλλους: ${SITE}/dashboard/patient/new-request?retry=${request.id}`;
 
   return { subject, html, sms };
 }
