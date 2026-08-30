@@ -75,7 +75,7 @@ const C = {
   muted: '#6b7a8d', faint: '#94a3b8', border: '#e5eaf0', line: '#f1f5f9',
   green: '#15803d', greenBg: '#f0fdf4', greenBr: '#bbf7d0',
 };
-const SERIF = "'DM Serif Display', Georgia, serif";
+const SERIF = "'EB Garamond', Georgia, serif";
 
 function Section({ children, bg, style, id }) {
   return (

@@ -149,7 +149,7 @@ export default function CancelBookingModal({ bookingId, requestId, onClose, onDo
             </div>
 
             <h2 style={{
-              fontFamily: "'DM Serif Display', Georgia, serif",
+              fontFamily: "'EB Garamond', Georgia, serif",
               fontSize: 21, color: NAVY, marginBottom: 10,
             }}>
               {isRequest ? 'Το αίτημα ακυρώθηκε' : 'Το ραντεβού ακυρώθηκε'}
@@ -217,7 +217,7 @@ export default function CancelBookingModal({ bookingId, requestId, onClose, onDo
             }}>
               <AlertTriangle size={24} color="#be123c" strokeWidth={2.2} />
             </div>
-            <h2 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 19, color: NAVY, marginBottom: 8 }}>
+            <h2 style={{ fontFamily: "'EB Garamond', Georgia, serif", fontSize: 19, color: NAVY, marginBottom: 8 }}>
               Δεν είναι δυνατή η ακύρωση
             </h2>
             <p style={{ fontSize: 14, color: '#5a6b7d', lineHeight: 1.6, marginBottom: 24 }}>{error}</p>
@@ -250,7 +250,7 @@ export default function CancelBookingModal({ bookingId, requestId, onClose, onDo
         <div style={{ padding: '24px 30px 0', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
           <div style={{ flex: 1 }}>
             <h2 style={{
-              fontFamily: "'DM Serif Display', Georgia, serif",
+              fontFamily: "'EB Garamond', Georgia, serif",
               fontSize: 21, color: NAVY, marginBottom: 4,
             }}>
               {preview.is_rejection

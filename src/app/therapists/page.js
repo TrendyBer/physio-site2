@@ -545,7 +545,7 @@ export default function TherapistsPage() {
       <section style={{ background: 'linear-gradient(135deg, #e8f3ff 0%, #f0f7ff 100%)', padding: '80px 24px 60px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: '#2a6fdb', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 16 }}>{tx.badge}</div>
-          <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(28px, 4vw, 54px)', color: '#1a2e44', lineHeight: 1.15, marginBottom: 20 }}>
+          <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: 'clamp(28px, 4vw, 54px)', color: '#1a2e44', lineHeight: 1.15, marginBottom: 20 }}>
             {tx.hero} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{tx.heroEm}</em> {tx.heroEnd}
           </h1>
           <p style={{ fontSize: 17, color: '#6b7a8d', maxWidth: 580, margin: '0 auto 32px' }}>{tx.heroDesc}</p>
@@ -586,7 +586,7 @@ export default function TherapistsPage() {
       <section style={{ background: '#fff', padding: '40px 24px', borderBottom: '1px solid #f1f5f9' }}>
         <div style={{ maxWidth: 760, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 24 }}>
-            <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(22px, 3vw, 32px)', color: '#1a2e44', marginBottom: 8 }}>
+            <h2 style={{ fontFamily: "'EB Garamond', serif", fontSize: 'clamp(22px, 3vw, 32px)', color: '#1a2e44', marginBottom: 8 }}>
               {tx.findHelpTitle}
             </h2>
             <p style={{ fontSize: 14, color: '#6b7a8d', lineHeight: 1.6 }}>{tx.findHelpDesc}</p>
@@ -879,7 +879,7 @@ export default function TherapistsPage() {
       {!loadingTherapists && (
         <section style={{ background: '#fff', padding: '60px 24px' }}>
           <div style={{ maxWidth: 760, margin: '0 auto', textAlign: 'center', background: 'linear-gradient(135deg, #f0f6ff, #e8f0fb)', border: '1px solid #dce6f0', borderRadius: 20, padding: '40px 32px' }}>
-            <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(22px, 3vw, 28px)', color: '#1a2e44', marginBottom: 10 }}>{tx.notFoundTitle}</h3>
+            <h3 style={{ fontFamily: "'EB Garamond', serif", fontSize: 'clamp(22px, 3vw, 28px)', color: '#1a2e44', marginBottom: 10 }}>{tx.notFoundTitle}</h3>
             <p style={{ fontSize: 15, color: '#6b7a8d', marginBottom: 24, lineHeight: 1.6 }}>{tx.notFoundDesc}</p>
             <a href="/dashboard/patient/new-request" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#2a6fdb', color: '#fff', padding: '13px 32px', borderRadius: 30, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
               {tx.notFoundBtn}

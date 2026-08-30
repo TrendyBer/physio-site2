@@ -226,7 +226,7 @@ export default function ProfileChecklist({ onGoToTab, onOpenDocuments }) {
             <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.55)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>
               Εκκρεμεί
             </div>
-            <div style={{ fontSize: 19, fontWeight: 700, color: "#fff", marginBottom: 6, fontFamily: "'DM Serif Display', Georgia, serif" }}>
+            <div style={{ fontSize: 19, fontWeight: 700, color: "#fff", marginBottom: 6, fontFamily: "'EB Garamond', Georgia, serif" }}>
               Ολοκλήρωσε την εγγραφή σου
             </div>
             <div style={{ fontSize: 13.5, color: "rgba(255,255,255,0.75)", lineHeight: 1.6 }}>
@@ -281,7 +281,7 @@ export default function ProfileChecklist({ onGoToTab, onOpenDocuments }) {
             </div>
 
             <div style={{ flex: 1, minWidth: 200 }}>
-              <div style={{ fontSize: 17, fontWeight: 700, color: NAVY, fontFamily: "'DM Serif Display', Georgia, serif", marginBottom: 3 }}>
+              <div style={{ fontSize: 17, fontWeight: 700, color: NAVY, fontFamily: "'EB Garamond', Georgia, serif", marginBottom: 3 }}>
                 {isFull ? "Το προφίλ σου είναι πλήρες"
                   : isActive ? "Το προφίλ σου είναι ενεργό"
                   : "Το προφίλ σου δεν είναι ακόμη ορατό"}

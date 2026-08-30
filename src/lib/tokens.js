@@ -63,7 +63,7 @@ export const S = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32, huge: 48 };
 // Serif ΜΟΝΟ σε μεγάλα, ανθρώπινα headings. Ποτέ σε tables, tabs ή labels.
 export const F = {
   sans:  "'DM Sans', -apple-system, system-ui, sans-serif",
-  serif: "'DM Serif Display', Georgia, serif",
+  serif: "'EB Garamond', Georgia, serif",
 };
 
 export const T = {

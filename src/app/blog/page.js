@@ -88,7 +88,7 @@ export default function BlogPage() {
           <div style={{ fontSize: 13, fontWeight: 600, color: '#2a6fdb', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 16 }}>
             {tx.badge}
           </div>
-          <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(32px, 4vw, 52px)', color: '#1a2e44', lineHeight: 1.15, marginBottom: 20 }}>
+          <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: 'clamp(32px, 4vw, 52px)', color: '#1a2e44', lineHeight: 1.15, marginBottom: 20 }}>
             {tx.title} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{tx.titleItalic}</em>
           </h1>
           <p style={{ fontSize: 17, color: '#6b7a8d', maxWidth: 560, margin: '0 auto' }}>
@@ -156,7 +156,7 @@ export default function BlogPage() {
       {/* CTA — χρησιμοποιεί BookingButton με variant=assessment */}
       <section style={{ background: '#1a2e44', padding: '64px 24px', textAlign: 'center' }}>
         <div style={{ maxWidth: 600, margin: '0 auto' }}>
-          <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(24px, 3vw, 36px)', color: '#fff', marginBottom: 16 }}>
+          <h2 style={{ fontFamily: "'EB Garamond', serif", fontSize: 'clamp(24px, 3vw, 36px)', color: '#fff', marginBottom: 16 }}>
             {tx.ctaTitle}
           </h2>
           <p style={{ fontSize: 16, color: '#94a3b8', marginBottom: 32 }}>{tx.ctaSubtitle}</p>

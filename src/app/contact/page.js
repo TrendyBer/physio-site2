@@ -232,7 +232,7 @@ export default function ContactPage() {
 
             {/* ── LEFT: Info ── */}
             <div>
-              <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(32px, 4vw, 48px)', color: '#1a2e44', lineHeight: 1.2, marginBottom: 20 }}>
+              <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: 'clamp(32px, 4vw, 48px)', color: '#1a2e44', lineHeight: 1.2, marginBottom: 20 }}>
                 {tx.title} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{tx.titleEm}</em>
               </h1>
               <p style={{ fontSize: 15, color: '#6b7a8d', lineHeight: 1.7, marginBottom: 40 }}>{tx.desc}</p>
@@ -385,7 +385,7 @@ export default function ContactPage() {
             <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#D1FAE5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
               <Check size={28} color="#065F46" strokeWidth={3} />
             </div>
-            <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 22, color: '#1a2e44', marginBottom: 12 }}>{tx.okTitle}</h3>
+            <h3 style={{ fontFamily: "'EB Garamond', serif", fontSize: 22, color: '#1a2e44', marginBottom: 12 }}>{tx.okTitle}</h3>
             <p style={{ fontSize: 15, color: '#6b7a8d', lineHeight: 1.6, marginBottom: 26 }}>
               {tx.okDesc} <strong>{sentTo}</strong> {tx.okEnd}
             </p>

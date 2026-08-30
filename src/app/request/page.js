@@ -238,7 +238,7 @@ export default function RequestPage() {
 
       {/* Hero */}
       <section style={{ background: 'linear-gradient(135deg, #f0f7ff 0%, #e8f3ff 100%)', padding: '60px 24px 40px', textAlign: 'center' }}>
-        <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(32px, 4vw, 52px)', color: '#1a2e44', lineHeight: 1.15, marginBottom: 16 }}>
+        <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: 'clamp(32px, 4vw, 52px)', color: '#1a2e44', lineHeight: 1.15, marginBottom: 16 }}>
           {tx.pageTitle} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{tx.pageTitleEm}</em>
         </h1>
         <p style={{ fontSize: 16, color: '#6b7a8d', maxWidth: 600, margin: '0 auto' }}>{tx.pageDesc}</p>
@@ -324,7 +324,7 @@ export default function RequestPage() {
               <div style={{ padding: '40px 40px 32px', flex: 1 }}>
                 {step === 1 && (
                   <div>
-                    <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 24, color: '#1a2e44', marginBottom: 8, textAlign: 'center' }}>{tx.step1Title}</h2>
+                    <h2 style={{ fontFamily: "'EB Garamond', serif", fontSize: 24, color: '#1a2e44', marginBottom: 8, textAlign: 'center' }}>{tx.step1Title}</h2>
                     <p style={{ fontSize: 14, color: '#6b7a8d', marginBottom: 32, textAlign: 'center' }}>{tx.step1Desc}</p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                       <div><label style={labelStyle}>{tx.fullName}</label><input name="name" value={form.name} onChange={handleChange} style={inputStyle} placeholder={tx.fullNamePh} /></div>
@@ -336,7 +336,7 @@ export default function RequestPage() {
 
                 {step === 2 && (
                   <div>
-                    <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 24, color: '#1a2e44', marginBottom: 8, textAlign: 'center' }}>{tx.step2Title}</h2>
+                    <h2 style={{ fontFamily: "'EB Garamond', serif", fontSize: 24, color: '#1a2e44', marginBottom: 8, textAlign: 'center' }}>{tx.step2Title}</h2>
                     <p style={{ fontSize: 14, color: '#6b7a8d', marginBottom: 32, textAlign: 'center' }}>{tx.step2Desc}</p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                       <div>
@@ -357,7 +357,7 @@ export default function RequestPage() {
 
                 {step === 3 && (
                   <div>
-                    <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 24, color: '#1a2e44', marginBottom: 8, textAlign: 'center' }}>{tx.step3Title}</h2>
+                    <h2 style={{ fontFamily: "'EB Garamond', serif", fontSize: 24, color: '#1a2e44', marginBottom: 8, textAlign: 'center' }}>{tx.step3Title}</h2>
                     <p style={{ fontSize: 14, color: '#6b7a8d', marginBottom: 32, textAlign: 'center' }}>{tx.step3Desc}</p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                       <div>
@@ -378,7 +378,7 @@ export default function RequestPage() {
 
                 {step === 4 && (
                   <div>
-                    <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 24, color: '#1a2e44', marginBottom: 8, textAlign: 'center' }}>{tx.step4Title}</h2>
+                    <h2 style={{ fontFamily: "'EB Garamond', serif", fontSize: 24, color: '#1a2e44', marginBottom: 8, textAlign: 'center' }}>{tx.step4Title}</h2>
                     <p style={{ fontSize: 14, color: '#6b7a8d', marginBottom: 32, textAlign: 'center' }}>{tx.step4Desc}</p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
                       <div>
@@ -448,7 +448,7 @@ export default function RequestPage() {
           <div style={{ background: '#fff', borderRadius: 20, padding: '48px 40px', maxWidth: 520, width: '100%', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', position: 'relative' }}>
             <button onClick={() => setSubmitted(false)} style={{ position: 'absolute', top: 16, right: 20, background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#94a3b8', lineHeight: 0 }}><X size={20} /></button>
             <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#D1FAE5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', color: '#065F46' }}><Check size={28} strokeWidth={3} /></div>
-            <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 24, color: '#1a2e44', marginBottom: 16 }}>{tx.successTitle}</h3>
+            <h3 style={{ fontFamily: "'EB Garamond', serif", fontSize: 24, color: '#1a2e44', marginBottom: 16 }}>{tx.successTitle}</h3>
             <p style={{ fontSize: 15, color: '#6b7a8d', lineHeight: 1.7, marginBottom: 28 }}>
               {tx.successDesc} <strong>{form.email}</strong> {tx.successEnd}
             </p>

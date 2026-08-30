@@ -1,4 +1,4 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, EB_Garamond, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/context/LanguageContext";
 import CookieBanner from "@/components/CookieBanner";
@@ -15,6 +15,33 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+// ── ΓΡΑΜΜΑΤΟΣΕΙΡΕΣ ΜΕ ΕΛΛΗΝΙΚΑ ──
+//
+// ΤΟ ΠΡΟΒΛΗΜΑ ΠΟΥ ΛΥΝΕΙ:
+// Το EB Garamond ΔΕΝ έχει ελληνικούς χαρακτήρες. Όταν το κείμενο
+// ήταν ελληνικό, ο browser έπεφτε σιωπηλά στη Georgia — άλλη γραμματοσειρά,
+// άλλο ύφος, άλλο βάρος. Γι' αυτό τα αγγλικά φαίνονταν τελείως
+// διαφορετικά: εκεί έβλεπες το πραγματικό DM Serif, στα ελληνικά ποτέ.
+//
+// Το EB Garamond έχει πλήρη ελληνική στήριξη, οπότε ΤΟ ΙΔΙΟ σχήμα
+// εμφανίζεται και στις δύο γλώσσες.
+const serif = EB_Garamond({
+  variable: "--font-serif",
+  subsets: ["latin", "greek"],
+  weight: ["400", "500", "600"],
+  style: ["normal", "italic"],
+  display: "swap",
+});
+
+// Το ίδιο ισχύει για το σώμα κειμένου: χωρίς το greek subset, τα
+// ελληνικά έπαιρναν system font.
+const sans = DM_Sans({
+  variable: "--font-sans",
+  subsets: ["latin", "greek"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
 });
 
 export const metadata = {
@@ -36,6 +63,14 @@ export default function RootLayout({ children }) {
     <html lang="el" style={{ colorScheme: "light", background: "#faf9f6" }}>
       <head>
         <meta name="color-scheme" content="light" />
+
+        {/* Το next/font κατεβάζει τα αρχεία και τα σερβίρει από το δικό
+            μας domain — χωρίς αίτημα στη Google σε κάθε επίσκεψη, και
+            χωρίς το «flash of unstyled text» που βλέπεις με @import. */}
+        <style>{`
+          body { font-family: var(--font-sans), system-ui, sans-serif; }
+          h1, h2, h3, .serif { font-family: var(--font-serif), Georgia, serif; }
+        `}</style>
 
         {/* GOOGLE CONSENT MODE v2 — ΠΡΕΠΕΙ να τρέξει ΠΡΙΝ το GA script.
             Ορίζει τα πάντα σε 'denied' μέχρι ο χρήστης να αποφασίσει.
@@ -82,7 +117,7 @@ export default function RootLayout({ children }) {
         </Script>
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} min-h-full flex flex-col`}
+        className={`${geistSans.variable} ${geistMono.variable} ${serif.variable} ${sans.variable} min-h-full flex flex-col`}
         style={{ background: "#faf9f6", color: "#1a2e44", margin: 0, minHeight: "100vh" }}
       >
         <LanguageProvider>

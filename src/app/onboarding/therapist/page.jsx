@@ -267,7 +267,7 @@ export default function TherapistOnboardingPage() {
               <CheckCircle2 size={30} color="#15803D" strokeWidth={2.1} />
             </div>
 
-            <h1 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 'clamp(21px, 3vw, 27px)', color: '#1a2e44', marginBottom: 12 }}>
+            <h1 style={{ fontFamily: "'EB Garamond', Georgia, serif", fontSize: 'clamp(21px, 3vw, 27px)', color: '#1a2e44', marginBottom: 12 }}>
               {tx.doneTitle}
             </h1>
 
@@ -298,7 +298,7 @@ export default function TherapistOnboardingPage() {
         <>
         {/* Καλωσόρισμα */}
         <div style={{ marginBottom: 24 }}>
-          <h1 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 'clamp(24px, 3vw, 32px)', color: '#1a2e44', marginBottom: 8 }}>
+          <h1 style={{ fontFamily: "'EB Garamond', Georgia, serif", fontSize: 'clamp(24px, 3vw, 32px)', color: '#1a2e44', marginBottom: 8 }}>
             {tx.welcome(firstName)}
           </h1>
           <p style={{ fontSize: 15, color: '#6b7a8d', lineHeight: 1.6 }}>{tx.intro}</p>

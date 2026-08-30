@@ -212,7 +212,7 @@ export default function BecomeTherapistPage() {
       <section style={{ background: 'linear-gradient(135deg, #e8f3ff 0%, #f0f7ff 100%)', padding: '80px 24px 60px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: '#2a6fdb', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 16 }}>{hero.badge}</div>
-          <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(28px, 4vw, 54px)', color: '#1a2e44', lineHeight: 1.15, marginBottom: 20 }}>
+          <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: 'clamp(28px, 4vw, 54px)', color: '#1a2e44', lineHeight: 1.15, marginBottom: 20 }}>
             {hero.hero} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{hero.heroEm}</em>
           </h1>
           <p style={{ fontSize: 17, color: '#6b7a8d', maxWidth: 620, margin: '0 auto 32px' }}>{hero.heroDesc}</p>
@@ -250,7 +250,7 @@ export default function BecomeTherapistPage() {
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 44 }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: '#2a6fdb', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 14 }}>{tx.priceBadge}</div>
-            <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(26px, 3vw, 40px)', color: '#1a2e44', marginBottom: 12 }}>
+            <h2 style={{ fontFamily: "'EB Garamond', serif", fontSize: 'clamp(26px, 3vw, 40px)', color: '#1a2e44', marginBottom: 12 }}>
               {tx.priceTitle} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{tx.priceTitleEm}</em>
             </h2>
             <p style={{ fontSize: 16, color: '#6b7a8d', maxWidth: 540, margin: '0 auto' }}>{tx.priceDesc}</p>
@@ -320,7 +320,7 @@ export default function BecomeTherapistPage() {
       <section style={{ background: '#f8fafb', padding: '72px 24px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
-            <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(26px, 3vw, 40px)', color: '#1a2e44', marginBottom: 12 }}>
+            <h2 style={{ fontFamily: "'EB Garamond', serif", fontSize: 'clamp(26px, 3vw, 40px)', color: '#1a2e44', marginBottom: 12 }}>
               {whywork.title} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{whywork.titleEm}</em>
             </h2>
             <p style={{ fontSize: 16, color: '#6b7a8d', maxWidth: 520, margin: '0 auto' }}>{whywork.desc}</p>
@@ -352,7 +352,7 @@ export default function BecomeTherapistPage() {
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div className="workflow-layout">
             <div>
-              <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(26px, 3vw, 40px)', color: '#1a2e44', lineHeight: 1.2, marginBottom: 16 }}>
+              <h2 style={{ fontFamily: "'EB Garamond', serif", fontSize: 'clamp(26px, 3vw, 40px)', color: '#1a2e44', lineHeight: 1.2, marginBottom: 16 }}>
                 {workflow.title} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{workflow.titleEm}</em>
               </h2>
               <p style={{ fontSize: 15, color: '#6b7a8d', lineHeight: 1.7, marginBottom: 32 }}>{workflow.desc}</p>
@@ -380,7 +380,7 @@ export default function BecomeTherapistPage() {
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div className="platform-layout">
             <div>
-              <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(26px, 3vw, 40px)', color: '#1a2e44', lineHeight: 1.2, marginBottom: 16 }}>
+              <h2 style={{ fontFamily: "'EB Garamond', serif", fontSize: 'clamp(26px, 3vw, 40px)', color: '#1a2e44', lineHeight: 1.2, marginBottom: 16 }}>
                 {platform.title} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{platform.titleEm}</em>
               </h2>
               <p style={{ fontSize: 15, color: '#6b7a8d', lineHeight: 1.7, marginBottom: 32 }}>{platform.desc}</p>
@@ -406,7 +406,7 @@ export default function BecomeTherapistPage() {
       {/* FAQ — οι ερωτήσεις που κρατούν τον θεραπευτή πίσω */}
       <section style={{ background: '#f8fafb', padding: '72px 24px' }}>
         <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-          <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(26px, 3vw, 36px)', color: '#1a2e44', marginBottom: 36, textAlign: 'center' }}>
+          <h2 style={{ fontFamily: "'EB Garamond', serif", fontSize: 'clamp(26px, 3vw, 36px)', color: '#1a2e44', marginBottom: 36, textAlign: 'center' }}>
             {tx.faqTitle}
           </h2>
           <div className="faq-grid">
@@ -423,7 +423,7 @@ export default function BecomeTherapistPage() {
       {/* CTA */}
       <section style={{ background: 'linear-gradient(135deg, #1a2e44 0%, #2a3e54 100%)', padding: '80px 24px' }}>
         <div style={{ maxWidth: 720, margin: '0 auto', textAlign: 'center' }}>
-          <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(28px, 4vw, 42px)', color: '#fff', marginBottom: 16 }}>
+          <h2 style={{ fontFamily: "'EB Garamond', serif", fontSize: 'clamp(28px, 4vw, 42px)', color: '#fff', marginBottom: 16 }}>
             {tx.ctaTitle}
           </h2>
           <p style={{ fontSize: 17, color: 'rgba(255,255,255,0.85)', lineHeight: 1.6, maxWidth: 560, margin: '0 auto 32px' }}>

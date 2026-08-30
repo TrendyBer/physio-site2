@@ -194,7 +194,7 @@ export default async function FindHelpPage({ searchParams }) {
               <Search size={14} strokeWidth={2.5} />
               {tx.badge}
             </div>
-            <h1 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 'clamp(32px, 5vw, 56px)', color: '#1a2e44', lineHeight: 1.15, marginBottom: 20 }}>
+            <h1 style={{ fontFamily: "'EB Garamond', Georgia, serif", fontSize: 'clamp(32px, 5vw, 56px)', color: '#1a2e44', lineHeight: 1.15, marginBottom: 20 }}>
               {tx.title1} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{tx.titleEm}</em> {tx.titleEnd}
             </h1>
             <p style={{ fontSize: 17, color: '#6b7a8d', lineHeight: 1.6, margin: '0 auto', maxWidth: 580 }}>
@@ -208,7 +208,7 @@ export default async function FindHelpPage({ searchParams }) {
       {q && (
         <section style={{ background: '#fff', padding: '48px 24px 20px' }}>
           <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-            <h2 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 'clamp(22px, 3vw, 32px)', color: '#1a2e44', marginBottom: 8 }}>
+            <h2 style={{ fontFamily: "'EB Garamond', Georgia, serif", fontSize: 'clamp(22px, 3vw, 32px)', color: '#1a2e44', marginBottom: 8 }}>
               {tx.resultsFor(q)}
             </h2>
             {matchedConditions.length > 0 ? (
@@ -254,7 +254,7 @@ export default async function FindHelpPage({ searchParams }) {
       <section style={{ background: '#fff', padding: '60px 24px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 8 }}>
-            <h2 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 'clamp(24px, 3vw, 36px)', color: '#1a2e44', display: 'inline-flex', alignItems: 'center', gap: 12 }}>
+            <h2 style={{ fontFamily: "'EB Garamond', Georgia, serif", fontSize: 'clamp(24px, 3vw, 36px)', color: '#1a2e44', display: 'inline-flex', alignItems: 'center', gap: 12 }}>
               <Star size={28} color="#2a6fdb" fill="#2a6fdb" strokeWidth={0} />
               {tx.popularTitle}
             </h2>
@@ -289,7 +289,7 @@ export default async function FindHelpPage({ searchParams }) {
       <section style={{ background: '#f8fafb', padding: '60px 24px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 8 }}>
-            <h2 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 'clamp(24px, 3vw, 36px)', color: '#1a2e44', display: 'inline-flex', alignItems: 'center', gap: 12 }}>
+            <h2 style={{ fontFamily: "'EB Garamond', Georgia, serif", fontSize: 'clamp(24px, 3vw, 36px)', color: '#1a2e44', display: 'inline-flex', alignItems: 'center', gap: 12 }}>
               <Tag size={26} color="#2a6fdb" strokeWidth={2} />
               {tx.allTitle}
             </h2>
@@ -364,7 +364,7 @@ export default async function FindHelpPage({ searchParams }) {
             padding: '40px 32px',
           }}
         >
-          <h3 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 'clamp(22px, 3vw, 28px)', color: '#1a2e44', marginBottom: 10 }}>
+          <h3 style={{ fontFamily: "'EB Garamond', Georgia, serif", fontSize: 'clamp(22px, 3vw, 28px)', color: '#1a2e44', marginBottom: 10 }}>
             {tx.notSure}
           </h3>
           <p style={{ fontSize: 15, color: '#6b7a8d', marginBottom: 24, lineHeight: 1.6 }}>{tx.notSureDesc}</p>
