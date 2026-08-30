@@ -6,8 +6,8 @@ import Footer from '@/components/Footer';
 import ConditionSearch from '@/components/ConditionSearch';
 import VerifiedBadge from '@/components/VerifiedBadge';
 import {
-  ShieldCheck, Target, MapPin, Tag, ArrowRight,
-  Star, Lock, Stethoscope, Clock, CreditCard,
+  ShieldCheck, Target, MapPin, Tag, ArrowRight, Search,
+  Star, Lock, CheckCircle2, Stethoscope, Clock, CreditCard,
 } from 'lucide-react';
 
 /**
@@ -32,6 +32,43 @@ const AREAS_FALLBACK = [
 
 // Ο ίδιος μετασχηματισμός με τα SEO routes, ώστε τα links να δείχνουν
 // σε πραγματικές διευθύνσεις όταν φτιαχτούν οι σελίδες.
+// ΚΑΘΑΡΙΣΜΟΣ ΠΕΡΙΟΧΩΝ.
+// Οι περιοχές γράφονται ελεύθερα από τους θεραπευτές, οπότε μαζεύονται
+// δοκιμαστικές εγγραφές («dsa»), διπλότυπα με διαφορετικά κεφαλαία
+// («Νέα σμυρνη» vs «Νέα Σμύρνη») και λάθος τονισμοί.
+//
+// Χωρίς αυτό, το site δείχνει δύο φορές την ίδια περιοχή με διαφορετικό
+// slug — δηλαδή δύο SEO σελίδες που ανταγωνίζονται μεταξύ τους.
+
+// Κλειδί σύγκρισης: χωρίς τόνους, χωρίς κεφαλαία.
+function areaKey(s) {
+  return String(s || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function cleanAreas(list) {
+  const seen = new Map();
+  (list || []).forEach(raw => {
+    const name = String(raw || '').trim();
+    // Πολύ κοντό ή χωρίς ελληνικά γράμματα = δοκιμαστική εγγραφή
+    if (name.length < 4) return;
+    if (!/[α-ωΑ-Ω]/.test(name)) return;
+
+    const key = areaKey(name);
+    const prev = seen.get(key);
+    // Κρατάμε τη γραφή με τους περισσότερους τόνους και σωστά κεφαλαία —
+    // «Νέα Σμύρνη» αντί για «Νέα σμυρνη».
+    const score = (name.match(/[άέήίόύώΐΰ]/g) || []).length * 2
+                + (name.match(/[Α-Ω]/g) || []).length;
+    if (!prev || score > prev.score) seen.set(key, { name, score });
+  });
+  return [...seen.values()].map(v => v.name).sort((a, b) => a.localeCompare(b, 'el'));
+}
+
 function slugify(s) {
   const map = {
     α:'a',ά:'a',β:'v',γ:'g',δ:'d',ε:'e',έ:'e',ζ:'z',η:'i',ή:'i',θ:'th',
@@ -83,7 +120,7 @@ function Eyebrow({ children }) {
 
 function H2({ children, style }) {
   return (
-    <h2 style={{ fontFamily: SERIF, fontSize: 'clamp(26px, 3.4vw, 40px)', color: C.navy, lineHeight: 1.22, margin: 0, fontWeight: 400, ...style }}>
+    <h2 className="pv-h2" style={{ fontFamily: SERIF, fontSize: 'clamp(23px, 3.4vw, 40px)', color: C.navy, lineHeight: 1.24, margin: 0, fontWeight: 400, ...style }}>
       {children}
     </h2>
   );
@@ -128,7 +165,8 @@ export default function PreviewHomePage() {
           if (t.area) set.add(t.area);
           (t.service_areas || []).forEach(a => a && set.add(a));
         });
-        if (set.size >= 4) setAreas([...set].slice(0, 12));
+        const cleaned = cleanAreas([...set]);
+        if (cleaned.length >= 4) setAreas(cleaned.slice(0, 12));
 
         // Ένας πραγματικός επαληθευμένος θεραπευτής για την ενότητα
         // εμπιστοσύνης. Ένα ψεύτικο προφίλ θα ήταν ακριβώς το είδος
@@ -165,7 +203,7 @@ export default function PreviewHomePage() {
     {
       Icon: MapPin,
       title: 'Εξυπηρετεί την περιοχή σας',
-      desc: 'Δεν χρειάζεται να ψάχνετε ποιος πραγματοποιεί κατ\u2019 οίκον συνεδρίες στην περιοχή σας.',
+      desc: 'Δεν χρειάζεται να ψάχνετε ποιος πραγματοποιεί κατ’ οίκον συνεδρίες στην περιοχή σας.',
     },
     {
       Icon: Tag,
@@ -217,6 +255,17 @@ export default function PreviewHomePage() {
         }
         @media (max-width: 620px) {
           .pv-grid-4 { grid-template-columns: 1fr 1fr; }
+          /* Το clamp με vw δεν αρκεί: στα 380px οι μεγάλες ελληνικές
+             λέξεις σε serif σπάνε άσχημα και το heading κυριαρχεί την
+             οθόνη. Ρητά μικρότερα μεγέθη και σφιχτότερο lineHeight. */
+          .pv-h1 { font-size: 26px !important; line-height: 1.22 !important; }
+          .pv-h2 { font-size: 22px !important; line-height: 1.3 !important; }
+          section { padding-left: 18px !important; padding-right: 18px !important; }
+        }
+        @media (max-width: 400px) {
+          .pv-h1 { font-size: 24px !important; }
+          .pv-h2 { font-size: 20px !important; }
+          .pv-grid-4 { grid-template-columns: 1fr; }
         }
       `}</style>
 
@@ -228,11 +277,12 @@ export default function PreviewHomePage() {
           όχι να διαβάσει γιατί υπάρχουμε. */}
       <section style={{ background: `linear-gradient(160deg, ${C.soft} 0%, #f4f9ff 55%, ${C.off} 100%)`, padding: '64px 24px 52px' }}>
         <div style={{ maxWidth: 820, margin: '0 auto', textAlign: 'center' }}>
-          <h1 style={{ fontFamily: SERIF, fontSize: 'clamp(30px, 4.6vw, 52px)', color: C.navy, lineHeight: 1.14, margin: '0 0 16px', fontWeight: 400 }}>
+          <h1 className="pv-h1" style={{ fontFamily: SERIF, fontSize: 'clamp(27px, 4.6vw, 52px)', color: C.navy, lineHeight: 1.18, margin: '0 0 16px', fontWeight: 400 }}>
             Εξειδικευμένη Φυσιοθεραπεία στην <em style={{ fontStyle: 'italic', color: C.accent }}>Άνεση του Σπιτιού σας</em>
           </h1>
           <p style={{ fontSize: 17, color: C.muted, lineHeight: 1.7, margin: '0 auto 34px', maxWidth: 560 }}>
-            Ελεγμένοι φυσικοθεραπευτές που έρχονται σε εσάς, στην Αθήνα και την Αττική.
+            Φυσικοθεραπευτές με επαληθευμένη επαγγελματική άδεια, που έρχονται σε εσάς
+            στην Αθήνα και την Αττική.
           </p>
 
           <div style={{ background: '#fff', borderRadius: 20, border: `1px solid ${C.border}`, padding: '26px 24px', boxShadow: '0 4px 28px rgba(26,46,68,0.07)', textAlign: 'left' }}>
@@ -278,7 +328,7 @@ export default function PreviewHomePage() {
             και εξυπηρετεί την περιοχή σας.
           </Lead>
           <Lead style={{ maxWidth: 700 }}>
-            Γι\u2019 αυτό δημιουργήσαμε έναν πιο απλό και ξεκάθαρο τρόπο να βρίσκετε τον
+            Γι’ αυτό δημιουργήσαμε έναν πιο απλό και ξεκάθαρο τρόπο να βρίσκετε τον
             κατάλληλο φυσικοθεραπευτή για εσάς.
           </Lead>
         </div>
@@ -494,15 +544,14 @@ export default function PreviewHomePage() {
       {/* ══ 10. ΤΕΛΙΚΟ ══
           Η σελίδα κλείνει όπως άνοιξε: ίδια ερώτηση, ίδια αναζήτηση.
           Όποιος διάβασε τα πάντα δεν πρέπει να ψάξει πού να πατήσει. */}
-      <section style={{ background: C.navy, padding: '76px 24px' }}>
-        <div style={{ maxWidth: 760, margin: '0 auto', textAlign: 'center' }}>
-          <h2 style={{ fontFamily: SERIF, fontSize: 'clamp(24px, 3.2vw, 36px)', color: '#fff', lineHeight: 1.3, margin: '0 0 18px', fontWeight: 400 }}>
+      <section style={{ background: C.navy, padding: '52px 24px' }}>
+        <div style={{ maxWidth: 680, margin: '0 auto', textAlign: 'center' }}>
+          <h2 style={{ fontFamily: SERIF, fontSize: 'clamp(21px, 2.6vw, 30px)', color: '#fff', lineHeight: 1.35, margin: '0 0 14px', fontWeight: 400 }}>
             Η φροντίδα είναι προσωπική. Η επιλογή της δεν πρέπει να είναι τυχαία.
           </h2>
-          <p style={{ fontSize: 16.5, color: 'rgba(255,255,255,0.78)', lineHeight: 1.75, margin: '0 auto 36px', maxWidth: 620 }}>
-            Θέλουμε κάθε άνθρωπος που χρειάζεται φυσιοθεραπεία στο σπίτι να μπορεί να βρει
-            τον κατάλληλο επαγγελματία με περισσότερη σιγουριά, λιγότερη ταλαιπωρία και
-            ξεκάθαρη πληροφόρηση.
+          <p style={{ fontSize: 15.5, color: 'rgba(255,255,255,0.75)', lineHeight: 1.7, margin: '0 auto 26px', maxWidth: 540 }}>
+            Βρείτε τον κατάλληλο επαγγελματία με περισσότερη σιγουριά και ξεκάθαρη
+            πληροφόρηση.
           </p>
 
           <div style={{ background: '#fff', borderRadius: 20, padding: '24px 22px', textAlign: 'left', boxShadow: '0 8px 40px rgba(0,0,0,0.2)' }}>
