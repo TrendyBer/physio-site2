@@ -304,7 +304,7 @@ function SearchBox({ compact, tx, problem, setProblem, onKey, searchHref, chips,
               boxShadow: '0 8px 32px rgba(26,46,68,0.14)', overflow: 'hidden', zIndex: 40,
             }}>
               {suggestions.map(c => (
-                <a key={c.id} href={`/therapists?condition=${encodeURIComponent(c.slug)}`}
+                <a key={c.id} href={`/find-help/${encodeURIComponent(c.slug)}`}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 10,
                     padding: '11px 15px', fontSize: 14.5, color: C.navy,
@@ -412,7 +412,7 @@ export default function HomePage() {
     // Αν υπάρχει ταίριασμα, πάει σε φιλτραρισμένους θεραπευτές — πιο
     // χρήσιμο από ελεύθερη αναζήτηση που μπορεί να μη βρει τίποτα.
     if (suggestions.length > 0) {
-      window.location.href = `/therapists?condition=${encodeURIComponent(suggestions[0].slug)}`;
+      window.location.href = `/find-help/${encodeURIComponent(suggestions[0].slug)}`;
       return;
     }
     window.location.href = searchHref;
@@ -684,7 +684,7 @@ export default function HomePage() {
           {(conditions.length ? conditions : FALLBACK_CHIPS[lang].map((n, i) => ({ id: i, slug: slugify(n), name_el: n, name_en: n }))).map(c => {
             const label = lang === 'en' ? (c.name_en || c.name_el) : c.name_el;
             return (
-              <a key={c.id} href={`/pathiseis/${c.slug || slugify(label)}`}
+              <a key={c.id} href={`/find-help/${c.slug || slugify(label)}`}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#fff', border: `1px solid ${C.border}`, borderRadius: 30, padding: '11px 20px', fontSize: 14.5, color: C.navy, textDecoration: 'none', fontWeight: 500 }}>
                 <Stethoscope size={15} color={C.accent} strokeWidth={2} />
                 {label}

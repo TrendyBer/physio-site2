@@ -290,6 +290,18 @@ export default function TherapistProfilePage() {
     ? `/dashboard/patient/new-request?therapist=${encodeURIComponent(therapist.id)}`
     : '/dashboard/patient/new-request';
 
+  // ── ΕΠΙΣΤΡΟΦΗ ΜΕΤΑ ΤΗ ΣΥΝΔΕΣΗ ──
+  // Ο ασθενής διαλέγει θεραπευτή, πατάει «Κλείσε ραντεβού», και επειδή
+  // δεν είναι συνδεδεμένος πάει στο login. Χωρίς αυτό, μετά τη σύνδεση
+  // κατέληγε στον πίνακά του — έχανε τον θεραπευτή που μόλις διάλεξε
+  // και έπρεπε να τον ξαναβρεί από την αρχή.
+  //
+  // Το login και η εγγραφή διαβάζουν ήδη αυτό το κλειδί· απλά κανείς
+  // δεν το έγραφε.
+  function rememberDestination() {
+    try { localStorage.setItem('pendingRedirect', bookHref); } catch (_) {}
+  }
+
   // Οι περιοχές εξυπηρέτησης ζουν στο service_areas (jsonb array).
   // Το `area` είναι μόνο η ΕΔΡΑ. Παλιά δείχναμε μόνο την έδρα, οπότε
   // θεραπευτής με 8 δηλωμένες περιοχές φαινόταν να καλύπτει μία.
@@ -504,7 +516,7 @@ availableService: {
                             <Clock size={14} color="#94a3b8" />
                             {tx.availPickPrompt}
                           </span>
-                          <a href={bookHref} style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 6, background: '#eaf2fc', color: '#2a6fdb', border: '1px solid #c8dff9', padding: '8px 18px', borderRadius: 20, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
+                          <a href={bookHref} onClick={rememberDestination} style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 6, background: '#eaf2fc', color: '#2a6fdb', border: '1px solid #c8dff9', padding: '8px 18px', borderRadius: 20, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
                             {tx.availSeeAll}
                             <ArrowRight size={14} />
                           </a>
@@ -694,7 +706,7 @@ availableService: {
                       </div>
                     )}
 
-                    <a href={bookHref} style={{ display: 'inline-flex', width: '100%', boxSizing: 'border-box', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#1a2e44', color: '#fff', padding: '14px', borderRadius: 30, fontSize: 15, fontWeight: 600, textDecoration: 'none', marginBottom: 16 }}>
+                    <a href={bookHref} onClick={rememberDestination} style={{ display: 'inline-flex', width: '100%', boxSizing: 'border-box', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#1a2e44', color: '#fff', padding: '14px', borderRadius: 30, fontSize: 15, fontWeight: 600, textDecoration: 'none', marginBottom: 16 }}>
                       {tx.bookCta}
                       <ArrowRight size={18} />
                     </a>

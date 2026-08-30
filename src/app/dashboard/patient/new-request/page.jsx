@@ -149,7 +149,22 @@ export default function NewRequestPage() {
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) { router.push('/auth/login'); return; }
+      if (!user) {
+        // ΘΥΜΗΣΟΥ ΠΟΥ ΠΗΓΑΙΝΕ.
+        // Ο ασθενής διάλεξε θεραπευτή, πάτησε «Κλείσε ραντεβού», και
+        // επειδή δεν ήταν συνδεδεμένος κατέληγε εδώ. Μετά τη σύνδεση
+        // πήγαινε στον πίνακά του — έχανε τον θεραπευτή που μόλις
+        // διάλεξε και έπρεπε να τον ξαναβρεί από την αρχή.
+        //
+        // Το login και η εγγραφή διαβάζουν ήδη το pendingRedirect·
+        // απλά κανείς δεν το έγραφε. Εδώ καλύπτονται ΟΛΑ τα σημεία
+        // εισόδου στον οδηγό, όχι μόνο το κουμπί του προφίλ.
+        try {
+          localStorage.setItem('pendingRedirect', window.location.pathname + window.location.search);
+        } catch (_) {}
+        router.push('/auth/login');
+        return;
+      }
       setUser(user);
 
       const { data: prof } = await supabase
