@@ -1324,7 +1324,10 @@ export default function TherapistDashboard() {
   async function loadRequests(therapistId) {
     const { data: reqs } = await supabase
       .from('session_requests')
-      .select('*')
+      // ΡΗΤΗ λίστα πεδίων, ΟΧΙ select('*').
+      // Ο πίνακας έχει contact_phone και contact_email — με αστερίσκο
+      // ταξίδευαν στον browser του θεραπευτή χωρίς να τα ζητήσει κανείς.
+      .select('id, patient_id, therapist_id, problem_type, problem_description, condition_id, address, area, postal_code, floor_info, notes, session_type, package_size, total_cost, status, type, contact_name, assigned_at, notified_at, responded_at, sla_due_at, created_at, needs_support')
       .eq('therapist_id', therapistId)
       .eq('type', 'booking')
       .order('created_at', { ascending: false });
@@ -1338,14 +1341,15 @@ export default function TherapistDashboard() {
       .in('request_id', requestIds)
       .order('session_date', { ascending: true });
 
-    const patientIds = [...new Set(reqs.map(r => r.patient_id).filter(Boolean))];
-    const { data: patients } = await supabase
-      .from('patient_profiles')
-      // ΤΟ ΤΗΛΕΦΩΝΟ ΤΟΥ ΑΣΘΕΝΗ ΔΕΝ ΖΗΤΕΙΤΑΙ ΚΑΝ.
-      // Δεν αρκεί να το κρύψουμε στην οθόνη: με select('phone') το νούμερο
-      // ταξιδεύει στον browser του θεραπευτή και φαίνεται στα DevTools.
-      .select('id, name')
-      .in('id', patientIds);
+    // ΣΤΟΙΧΕΙΑ ΑΣΘΕΝΗ ΜΕΣΩ RPC, ΟΧΙ ΑΠΕΥΘΕΙΑΣ ΑΠΟ ΤΟΝ ΠΙΝΑΚΑ.
+    // Η therapist_patient_info επιστρέφει ΜΟΝΟ όσα επιτρέπονται:
+    // όνομα πάντα, πλήρη διεύθυνση μόνο μετά την αποδοχή, τηλέφωνο ποτέ.
+    // Έτσι η προστασία ζει στη βάση και δεν παρακάμπτεται από την κονσόλα.
+    const { data: pinfo } = await supabase.rpc('therapist_patient_info', {
+      p_request_ids: reqs.map(r => r.id),
+    });
+    const infoMap = {};
+    (pinfo || []).forEach(i => { infoMap[i.request_id] = i; });
 
     const bookingIds = (bks || []).map(b => b.id);
     if (bookingIds.length > 0) {
@@ -1361,11 +1365,15 @@ export default function TherapistDashboard() {
 
     const combined = reqs.map(req => {
       const reqBookings = (bks || []).filter(b => b.request_id === req.id);
-      const patient = (patients || []).find(p => p.id === req.patient_id);
+      const info = infoMap[req.id];
       return {
         ...req,
         bookings: reqBookings,
-        patient_name: patient?.name || null,
+        patient_name: info?.patient_name || req.contact_name || null,
+        // Η διεύθυνση έρχεται από το RPC: null όσο το αίτημα εκκρεμεί.
+        address: info?.address ?? null,
+        floor_info: info?.floor_info ?? null,
+        address_revealed: !!info?.is_revealed,
       };
     });
 
