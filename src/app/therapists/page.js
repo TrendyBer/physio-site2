@@ -69,6 +69,9 @@ const TX = {
     crossLinkText: 'Δεν είστε σίγουροι ποιον χρειάζεστε;',
     crossLinkBtn: 'Δείτε κατά πάθηση',
     perSession: 'συνεδρία',
+    aboutTherapist: 'Σχετικά με τον θεραπευτή',
+    visit: 'Επίσκεψη',
+    seeCost: 'Δείτε το κόστος',
     fromTime: 'από',
     yearsShort: (n) => `${n} χρ. εμπειρία`,
     nextFree: 'Πρώτη ώρα',
@@ -124,6 +127,9 @@ const TX = {
     crossLinkText: 'Not sure who you need?',
     crossLinkBtn: 'Browse by condition',
     perSession: 'session',
+    aboutTherapist: 'About the therapist',
+    visit: 'Visit',
+    seeCost: 'See the cost',
     fromTime: 'from',
     yearsShort: (n) => `${n} yrs experience`,
     nextFree: 'Next slot',
@@ -205,6 +211,8 @@ export default function TherapistsPage() {
   const [selectedCondition, setSelectedCondition] = useState(null);
   const [search, setSearch] = useState('');
   const [filterArea, setFilterArea] = useState('');
+  const [expandedBio, setExpandedBio] = useState({});
+  const [isLoggedIn, setIsLoggedIn] = useState(null);
   const [filterSpecialty, setFilterSpecialty] = useState('');
   const [filterMinPrice, setFilterMinPrice] = useState(null);
   const [filterMaxPrice, setFilterMaxPrice] = useState(null);
@@ -415,6 +423,27 @@ export default function TherapistsPage() {
     if (diff === 1) return tx.tomorrow;
     const d = new Date(dateStr + 'T12:00:00');
     return `${String(d.getDate()).padStart(2, '0')} ${MONTHS_SHORT[lang][d.getMonth()]}`;
+  }
+
+  // ── ΕΙΝΑΙ ΣΥΝΔΕΔΕΜΕΝΟΣ; ──
+  // Το πλήρες προφίλ με τιμές και διαθεσιμότητα είναι για εγγεγραμμένους.
+  // Ελέγχουμε ΜΙΑ φορά και κρατάμε την απάντηση, αντί να ρωτάμε σε κάθε
+  // κλικ — η καθυστέρηση θα φαινόταν σαν να μην απαντά το κουμπί.
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setIsLoggedIn(!!data?.user));
+  }, []);
+
+  // Όσο δεν ξέρουμε ακόμα, στέλνουμε στο προφίλ: καλύτερα μια περιττή
+  // φόρτωση παρά να διώξουμε συνδεδεμένο χρήστη στη σύνδεση.
+  function profileHref(id) {
+    return isLoggedIn === false ? '/auth/login' : `/therapists/${id}`;
+  }
+
+  // Θυμάται πού πήγαινε, ώστε μετά τη σύνδεση να επιστρέψει εκεί και
+  // όχι στον πίνακά του. Ίδιος μηχανισμός με τον οδηγό κράτησης.
+  function rememberProfile(id) {
+    if (isLoggedIn !== false) return;
+    try { localStorage.setItem('pendingRedirect', `/therapists/${id}`); } catch (_) {}
   }
 
   const uniqueAreas = useMemo(() => {
@@ -779,7 +808,7 @@ export default function TherapistsPage() {
                 const matchType = getMatchType(th);
                 const areas = allAreasOf(th);
                 return (
-                  <a key={th.id} href={`/therapists/${th.id}`} className="th-card">
+                  <div key={th.id} className="th-card">
                     <div className="th-card-main">
                     {matchType && (
                       <div style={{
@@ -823,7 +852,7 @@ export default function TherapistsPage() {
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: 17, fontWeight: 700, color: '#1a2e44' }}>{th.name}</span>
+                      <a href={profileHref(th.id)} onClick={() => rememberProfile(th.id)} style={{ fontSize: 18, fontWeight: 700, color: '#1a2e44', textDecoration: 'none' }}>{th.name}</a>
                       {th.is_profile_full && <BadgeCheck size={15} color="#2a6fdb" strokeWidth={2.2} />}
                     </div>
                     <div style={{ fontSize: 13.5, color: '#6b7a8d', marginBottom: 10 }}>{th.specialty}</div>
@@ -904,9 +933,50 @@ export default function TherapistsPage() {
                         </div>
                       )}
 
-                      <div style={{ fontSize: 13, color: '#2a6fdb', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
-                        {tx.viewProfile}
-                        <ArrowRight size={13} />
+                      {/* ── ΣΧΕΤΙΚΑ ΜΕ ΤΟΝ ΘΕΡΑΠΕΥΤΗ ──
+                          Κλειστό στις δύο γραμμές. Ο ασθενής σαρώνει
+                          τη λίστα· αν ανοίγαμε τα πάντα, κάθε κάρτα θα
+                          είχε άλλο ύψος και η σύγκριση θα γινόταν
+                          αδύνατη. */}
+                      {th.bio && String(th.bio).trim() && (
+                        <div style={{ background: '#f8fafb', border: '1px solid #eef2f7', borderRadius: 12, padding: '13px 15px', marginBottom: 12 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 7 }}>
+                            <Info size={13} color="#94a3b8" strokeWidth={2.2} />
+                            <span style={{ fontSize: 12.5, fontWeight: 600, color: '#475569' }}>{tx.aboutTherapist}</span>
+                            <button
+                              onClick={() => setExpandedBio(prev => ({ ...prev, [th.id]: !prev[th.id] }))}
+                              aria-label={tx.aboutTherapist}
+                              style={{ marginLeft: 'auto', background: 'transparent', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 2, display: 'flex' }}>
+                              {expandedBio[th.id] ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                            </button>
+                          </div>
+                          <p style={{
+                            fontSize: 13.5, color: '#64748b', lineHeight: 1.6, margin: 0,
+                            display: expandedBio[th.id] ? 'block' : '-webkit-box',
+                            WebkitLineClamp: expandedBio[th.id] ? 'none' : 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: expandedBio[th.id] ? 'visible' : 'hidden',
+                          }}>
+                            {th.bio}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* ── ΕΠΙΣΚΕΨΗ / ΚΟΣΤΟΣ ──
+                          Η τιμή υπάρχει δεξιά, αλλά εδώ είναι το σημείο
+                          που κοιτάει ο ασθενής όταν διαβάζει το προφίλ.
+                          Ο σύνδεσμος οδηγεί στο πλήρες προφίλ — ή στη
+                          σύνδεση, αν δεν είναι συνδεδεμένος. */}
+                      <div style={{ background: '#f8fafb', border: '1px solid #eef2f7', borderRadius: 12, padding: '13px 15px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 5 }}>
+                          <Stethoscope size={13} color="#94a3b8" strokeWidth={2.2} />
+                          <span style={{ fontSize: 12.5, fontWeight: 600, color: '#475569' }}>{tx.visit}</span>
+                        </div>
+                        <a href={profileHref(th.id)} onClick={() => rememberProfile(th.id)}
+                          style={{ fontSize: 13.5, color: '#2a6fdb', fontWeight: 600, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                          {tx.seeCost}
+                          <ArrowRight size={13} />
+                        </a>
                       </div>
                     </div>
 
@@ -952,17 +1022,17 @@ export default function TherapistsPage() {
                             <span style={{ fontWeight: 500, color: '#94a3b8', fontSize: 13 }}> / {tx.perSession}</span>
                           </div>
                         )}
-                        <span style={{
+                        <a href={profileHref(th.id)} onClick={() => rememberProfile(th.id)} style={{
                           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
                           background: '#1a2e44', color: '#fff', padding: '13px 20px',
-                          borderRadius: 10, fontSize: 14.5, fontWeight: 600,
+                          borderRadius: 10, fontSize: 14.5, fontWeight: 600, textDecoration: 'none',
                         }}>
                           {tx.bookCta}
                           <ArrowRight size={16} />
-                        </span>
+                        </a>
                       </div>
                     </div>
-                  </a>
+                  </div>
                 );
               })}
             </div>
