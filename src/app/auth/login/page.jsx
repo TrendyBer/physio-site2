@@ -12,14 +12,30 @@ export default function LoginPage() {
     let pending = null;
     try { pending = localStorage.getItem('pendingRedirect'); } catch (_) {}
 
-    // Default destinations βάσει role
     const defaultDest = role === 'therapist' ? '/dashboard/therapist' : '/dashboard/patient';
 
     if (pending) {
-      // Καθάρισε το pendingRedirect ΠΡΙΝ το navigation
       try { localStorage.removeItem('pendingRedirect'); } catch (_) {}
 
-      // Έλεγξε αν το pending route ταιριάζει με το role του user
+      // ── ΜΟΝΟ ΕΣΩΤΕΡΙΚΟΙ ΠΡΟΟΡΙΣΜΟΙ ──
+      // Το pendingRedirect ζει στο localStorage, που ο χρήστης μπορεί να
+      // επεξεργαστεί. Μια τιμή σαν «https://κακόβουλο.gr» θα τον έστελνε
+      // εκτός του site αμέσως μετά τη σύνδεση — σε σελίδα που θα μπορούσε
+      // να μιμηθεί το PhysioHome και να ζητήσει ξανά κωδικό.
+      //
+      // Το «//» αποκλείεται ξεχωριστά: το «//κακόβουλο.gr» είναι έγκυρη
+      // απόλυτη διεύθυνση για τον browser, παρότι ξεκινά με κάθετο.
+      const internal = typeof pending === 'string'
+        && pending.startsWith('/')
+        && !pending.startsWith('//');
+
+      if (!internal) {
+        window.location.href = defaultDest;
+        return;
+      }
+
+      // Οι πίνακες αφορούν συγκεκριμένο ρόλο — ένας ασθενής δεν έχει
+      // λόγο να καταλήξει στον πίνακα θεραπευτή.
       const isPatientRoute   = pending.startsWith('/dashboard/patient') || pending.startsWith('/free-assessment');
       const isTherapistRoute = pending.startsWith('/dashboard/therapist');
 
@@ -57,15 +73,11 @@ export default function LoginPage() {
 
     await new Promise(r => setTimeout(r, 500));
 
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile } = await supabase
       .from('user_profiles')
       .select('role')
       .eq('id', data.user.id)
       .single();
-
-    console.log('User ID:', data.user.id);
-    console.log('Profile:', profile);
-    console.log('Profile error:', profileError);
 
     if (profile?.role === 'therapist' || profile?.role === 'patient') {
       redirectAfterLogin(profile.role);
@@ -73,7 +85,6 @@ export default function LoginPage() {
     }
 
     const { data: { session } } = await supabase.auth.getSession();
-    console.log('Session:', session);
 
     if (session) {
       const { data: profile2 } = await supabase
@@ -81,8 +92,6 @@ export default function LoginPage() {
         .select('role')
         .eq('id', session.user.id)
         .single();
-
-      console.log('Profile2:', profile2);
 
       if (profile2?.role === 'therapist' || profile2?.role === 'patient') {
         redirectAfterLogin(profile2.role);

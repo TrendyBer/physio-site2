@@ -180,7 +180,26 @@ export default function RegisterPage() {
     let pending = null;
     try { pending = localStorage.getItem('pendingRedirect'); } catch (_) {}
 
-    if (pending && (pending.startsWith('/dashboard/patient') || pending.startsWith('/free-assessment'))) {
+    // ── ΠΟΥ ΕΠΙΣΤΡΕΦΕΙ ΜΕΤΑ ΤΗΝ ΕΓΓΡΑΦΗ ──
+    //
+    // Ήταν λίστα ΕΠΙΤΡΕΠΤΩΝ με δύο μόνο διαδρομές. Κάθε άλλος
+    // προορισμός — π.χ. το προφίλ θεραπευτή που μόλις διάβαζε —
+    // πεταγόταν σιωπηλά και ο χρήστης κατέληγε στον πίνακα, χωρίς να
+    // καταλαβαίνει γιατί έχασε αυτό που κοίταζε.
+    //
+    // Τώρα είναι λίστα ΑΠΟΚΛΕΙΣΜΟΥ, όπως και στη σύνδεση: δεκτός κάθε
+    // εσωτερικός προορισμός εκτός από τον πίνακα του θεραπευτή, που δεν
+    // αφορά ασθενή.
+    //
+    // Ο έλεγχος «ξεκινά με μονή κάθετο» είναι κρίσιμος: χωρίς αυτόν,
+    // μια τιμή σαν «https://κακόβουλο.gr» στο localStorage θα έστελνε
+    // τον χρήστη εκτός του site αμέσως μετά την εγγραφή.
+    const safe = typeof pending === 'string'
+      && pending.startsWith('/')
+      && !pending.startsWith('//')
+      && !pending.startsWith('/dashboard/therapist');
+
+    if (safe) {
       try { localStorage.removeItem('pendingRedirect'); } catch (_) {}
       window.location.href = pending;
       return;
