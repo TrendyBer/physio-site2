@@ -94,6 +94,13 @@ function cleanAreas(list) {
   return [...seen.values()].map(v => v.name).sort((a, b) => a.localeCompare(b, 'el'));
 }
 
+// Οι ενότητες που ΟΝΤΩΣ υπάρχουν στη σελίδα. Ό,τι έχει μείνει στη
+// βάση από παλιότερη δομή αγνοείται.
+const KNOWN_SECTIONS = [
+  'hero', 'strip', 'why', 'what', 'how',
+  'verify', 'conditions', 'principles', 'areas', 'final',
+];
+
 const C = {
   navy: '#1a2e44', accent: '#2a6fdb', soft: '#eaf2fc', off: '#faf9f6',
   muted: '#6b7a8d', faint: '#94a3b8', border: '#e5eaf0', line: '#f1f5f9',
@@ -404,14 +411,32 @@ export default function HomePage() {
     if (!cms) return base;
     const key = lang === 'en' ? 'content_en' : 'content_el';
     const merged = { ...base };
+
     cms.forEach(row => {
+      // ΜΟΝΟ ΓΝΩΣΤΕΣ ΕΝΟΤΗΤΕΣ.
+      // Η βάση κρατάει και γραμμές από την προηγούμενη δομή της
+      // σελίδας. Χωρίς αυτό το φίλτρο, κλειδιά άσχετης ενότητας
+      // μπαίνουν στον ίδιο χώρο ονομάτων και σκεπάζουν τα σωστά.
+      if (!KNOWN_SECTIONS.includes(row.section)) return;
+
       const c = row[key];
       if (!c || typeof c !== 'object') return;
+
       Object.entries(c).forEach(([k, v]) => {
-        // Κενό πεδίο ΔΕΝ σβήνει το προεπιλεγμένο κείμενο. Αλλιώς ένα
-        // κατά λάθος άδειασμα στο admin θα άφηνε το site με κενά.
         if (v === null || v === undefined || v === '') return;
         if (Array.isArray(v) && v.length === 0) return;
+
+        // ΕΛΕΓΧΟΣ ΤΥΠΟΥ.
+        // Το παλιό hero είχε κλειδί «how» ως κείμενο (το δεύτερο
+        // κουμπί), ενώ εδώ το «how» είναι πίνακας βημάτων. Το string
+        // σκέπασε τον πίνακα και το .map έριξε ολόκληρη τη σελίδα.
+        //
+        // Ένα πεδίο που δεν ταιριάζει σε τύπο αγνοείται — καλύτερα
+        // παλιό κείμενο παρά λευκή οθόνη.
+        const d = base[k];
+        if (d !== undefined && Array.isArray(d) !== Array.isArray(v)) return;
+        if (typeof d === 'function') return;
+
         merged[k] = v;
       });
     });

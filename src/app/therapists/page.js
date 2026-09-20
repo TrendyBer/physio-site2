@@ -172,11 +172,18 @@ export default function TherapistsPage() {
     const key = lang === 'en' ? 'content_en' : 'content_el';
     const merged = { ...base };
     cms.forEach(row => {
+      // Μόνο η ενότητα που υπάρχει πραγματικά στη σελίδα.
+      if (row.section !== 'hero') return;
       const c = row[key];
       if (!c || typeof c !== 'object') return;
       Object.entries(c).forEach(([k, v]) => {
         if (v === null || v === undefined || v === '') return;
         if (Array.isArray(v) && v.length === 0) return;
+        // Έλεγχος τύπου: ένα παλιό string δεν επιτρέπεται να
+        // αντικαταστήσει πίνακα — το .map θα έριχνε τη σελίδα.
+        const d = base[k];
+        if (d !== undefined && Array.isArray(d) !== Array.isArray(v)) return;
+        if (typeof d === 'function') return;
         merged[k] = v;
       });
     });

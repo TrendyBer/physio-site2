@@ -133,6 +133,11 @@ export default function HowItWorksPage() {
       Object.entries(obj).forEach(([k, v]) => {
         if (v === null || v === undefined || v === '') return;
         if (Array.isArray(v) && v.length === 0) return;
+        // Έλεγχος τύπου: ένα παλιό string δεν επιτρέπεται να
+        // αντικαταστήσει πίνακα — το .map θα έριχνε τη σελίδα.
+        const d = target[k];
+        if (d !== undefined && Array.isArray(d) !== Array.isArray(v)) return;
+        if (typeof d === 'function') return;
         target[k] = v;
       });
     };
