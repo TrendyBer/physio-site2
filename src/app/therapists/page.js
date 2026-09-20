@@ -1018,13 +1018,12 @@ export default function TherapistsPage() {
                         </div>
                       )}
 
-                      <div style={{ marginTop: 'auto' }}>
-                        {th.price_per_session > 0 && (
-                          <div style={{ fontSize: 14, color: '#1a2e44', fontWeight: 700, marginBottom: 12 }}>
-                            {Math.round(Number(th.price_per_session))}€
-                            <span style={{ fontWeight: 500, color: '#94a3b8', fontSize: 13 }}> / {tx.perSession}</span>
-                          </div>
-                        )}
+                      {/* Η ΤΙΜΗ ΔΕΝ ΜΠΑΙΝΕΙ ΕΔΩ.
+                          Αριστερά γράφει «Δείτε το κόστος», που υπονοεί
+                          ότι η τιμή αποκαλύπτεται στο προφίλ. Το να τη
+                          δείχναμε δίπλα ακύρωνε το ίδιο το κάλεσμα —
+                          και γέμιζε τη στήλη με κενό. */}
+                      <div style={{ marginTop: 14 }}>
                         <a href={profileHref(th.id)} onClick={() => rememberProfile(th.id)} style={{
                           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
                           background: '#1a2e44', color: '#fff', padding: '13px 20px',
