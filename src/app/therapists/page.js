@@ -604,20 +604,23 @@ export default function TherapistsPage() {
            χωρίς να ανοίξει το προφίλ. */
         .th-grid { display: flex; flex-direction: column; gap: 18px; }
         .th-card {
-          background: #fff; border-radius: 18px; border: 1px solid #e2e8f0;
-          display: grid; grid-template-columns: 1fr 380px;
-          text-decoration: none; transition: all .25s; overflow: hidden;
+          background: #fff; border-radius: 16px; border: 1px solid #e2e8f0;
+          display: grid; grid-template-columns: minmax(0, 1.15fr) 360px;
+          transition: all .25s; overflow: hidden;
         }
-        .th-card-main { padding: 24px 26px; min-width: 0; }
+        .th-card-main { padding: 20px 22px; min-width: 0; }
         .th-card-side {
-          padding: 22px 24px; border-left: 1px solid #f1f5f9;
+          padding: 18px 20px; border-left: 1px solid #f1f5f9;
           background: #fcfdff; display: flex; flex-direction: column;
         }
-        .th-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+        .th-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin-bottom: 14px; }
         .th-slot {
-          border: 1px solid #dce6f0; border-radius: 10px;
-          padding: 9px 6px; text-align: center; background: #fff;
+          border: 1px solid #dce6f0; border-radius: 9px;
+          padding: 7px 5px; text-align: center; background: #fff;
         }
+        /* Τα εσωτερικά πλαίσια δεν χρειάζεται να φτάνουν ως την άκρη —
+           το κείμενο διαβάζεται καλύτερα σε στενότερη στήλη. */
+        .th-box { max-width: 560px; }
         @media (max-width: 900px) {
           .th-card { grid-template-columns: 1fr; }
           .th-card-side { border-left: none; border-top: 1px solid #f1f5f9; }
@@ -629,7 +632,7 @@ export default function TherapistsPage() {
         /* Το σήμα ΠΑΝΩ στη φωτογραφία, όχι ως ξεχωριστό chip από κάτω.
            Έτσι το πρώτο πράγμα που βλέπει ο επισκέπτης είναι το πρόσωπο
            μαζί με την επαλήθευση — δεν χρειάζεται να διαβάσει. */
-        .th-avatar { position: relative; display: inline-block; margin-bottom: 16px; }
+        .th-avatar { position: relative; display: inline-block; margin-bottom: 12px; }
         .th-avatar-badge {
           position: absolute; right: -2px; bottom: -2px;
           width: 26px; height: 26px; border-radius: 50%;
@@ -827,10 +830,10 @@ export default function TherapistsPage() {
                     <div className="th-avatar">
                       {th.photo_url ? (
                         <ImgWithSkeleton src={th.photo_url} alt={th.name}
-                          containerStyle={{ width: 84, height: 84, borderRadius: '50%' }}
-                          style={{ width: 84, height: 84, borderRadius: '50%', objectFit: 'cover' }} />
+                          containerStyle={{ width: 72, height: 72, borderRadius: '50%' }}
+                          style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover' }} />
                       ) : (
-                        <div style={{ width: 84, height: 84, borderRadius: '50%', background: 'linear-gradient(135deg, #c8dff9, #a0c4f4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, fontWeight: 700, color: '#2a6fdb' }}>
+                        <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'linear-gradient(135deg, #c8dff9, #a0c4f4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 25, fontWeight: 700, color: '#2a6fdb' }}>
                           {th.name?.charAt(0)}
                         </div>
                       )}
@@ -855,7 +858,7 @@ export default function TherapistsPage() {
                       <a href={profileHref(th.id)} onClick={() => rememberProfile(th.id)} style={{ fontSize: 18, fontWeight: 700, color: '#1a2e44', textDecoration: 'none' }}>{th.name}</a>
                       {th.is_profile_full && <BadgeCheck size={15} color="#2a6fdb" strokeWidth={2.2} />}
                     </div>
-                    <div style={{ fontSize: 13.5, color: '#6b7a8d', marginBottom: 10 }}>{th.specialty}</div>
+                    <div style={{ fontSize: 13.5, color: '#6b7a8d', marginBottom: 8 }}>{th.specialty}</div>
 
                     {/* Trust chips — το license_verified έρχεται από το view.
                         ΔΕΝ το υποθέτουμε: με το admin override μπορεί να
@@ -891,7 +894,7 @@ export default function TherapistsPage() {
                         έπιανε ολόκληρη γραμμή για να πει κάτι που δεν
                         βοηθάει τον επισκέπτη — και ακουγόταν σαν μειονέκτημα. */}
                     {(th.review_count || 0) > 0 && (
-                      <div style={{ marginBottom: 10 }}>
+                      <div style={{ marginBottom: 9 }}>
                         <RatingDisplay rating={th.avg_rating} count={th.review_count} lang={lang} variant="compact" size={14} />
                       </div>
                     )}
@@ -927,7 +930,7 @@ export default function TherapistsPage() {
                       {/* Περιοχή, διαθεσιμότητα και τιμή ζουν πλέον στη
                           δεξιά στήλη. Εδώ μένει μόνο η εμπειρία. */}
                       {th.years_experience > 0 && (
-                        <div style={{ fontSize: 12.5, color: '#64748b', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+                        <div style={{ fontSize: 12.5, color: '#64748b', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
                           <Briefcase size={13} style={{ flexShrink: 0 }} />
                           <span>{tx.yearsShort(th.years_experience)}</span>
                         </div>
@@ -939,8 +942,8 @@ export default function TherapistsPage() {
                           είχε άλλο ύψος και η σύγκριση θα γινόταν
                           αδύνατη. */}
                       {th.bio && String(th.bio).trim() && (
-                        <div style={{ background: '#f8fafb', border: '1px solid #eef2f7', borderRadius: 12, padding: '13px 15px', marginBottom: 12 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 7 }}>
+                        <div className="th-box" style={{ background: '#f8fafb', border: '1px solid #eef2f7', borderRadius: 10, padding: '11px 13px', marginBottom: 10 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 5 }}>
                             <Info size={13} color="#94a3b8" strokeWidth={2.2} />
                             <span style={{ fontSize: 12.5, fontWeight: 600, color: '#475569' }}>{tx.aboutTherapist}</span>
                             <button
@@ -967,8 +970,8 @@ export default function TherapistsPage() {
                           που κοιτάει ο ασθενής όταν διαβάζει το προφίλ.
                           Ο σύνδεσμος οδηγεί στο πλήρες προφίλ — ή στη
                           σύνδεση, αν δεν είναι συνδεδεμένος. */}
-                      <div style={{ background: '#f8fafb', border: '1px solid #eef2f7', borderRadius: 12, padding: '13px 15px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 5 }}>
+                      <div className="th-box" style={{ background: '#f8fafb', border: '1px solid #eef2f7', borderRadius: 10, padding: '11px 13px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
                           <Stethoscope size={13} color="#94a3b8" strokeWidth={2.2} />
                           <span style={{ fontSize: 12.5, fontWeight: 600, color: '#475569' }}>{tx.visit}</span>
                         </div>
