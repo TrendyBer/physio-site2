@@ -4,7 +4,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Cookie, Shield, BarChart3, Megaphone, Settings as SettingsIcon, Mail } from 'lucide-react';
 
-const COOKIE_PREFS_KEY = 'Theralivo_cookie_prefs';
+const COOKIE_PREFS_KEY = 'theralivo_cookie_prefs';
 
 export default function CookiesPage() {
   const [currentPrefs, setCurrentPrefs] = useState(null);
@@ -145,7 +145,7 @@ export default function CookiesPage() {
             examples={[
               { name: 'sb-access-token', purpose: 'Authentication με Supabase', duration: 'Session' },
               { name: 'sb-refresh-token', purpose: 'Διατήρηση login session', duration: '7 μέρες' },
-              { name: 'Theralivo_cookie_prefs', purpose: 'Αποθήκευση των επιλογών σας για cookies', duration: '1 χρόνος' },
+              { name: 'theralivo_cookie_prefs', purpose: 'Αποθήκευση των επιλογών σας για cookies', duration: '1 χρόνος' },
             ]}
           />
 

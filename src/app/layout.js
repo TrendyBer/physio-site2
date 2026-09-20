@@ -143,7 +143,7 @@ export default function RootLayout({ children }) {
             // αποθηκεύει ΞΕΧΩΡΙΣΤΑ analytics και marketing, οπότε
             // διαβάζουμε το ίδιο σχήμα και όχι ένα ενιαίο ναι/όχι.
             try {
-              var raw = localStorage.getItem('Theralivo_cookie_prefs');
+              var raw = localStorage.getItem('theralivo_cookie_prefs');
               if (raw) {
                 var p = JSON.parse(raw);
                 gtag('consent', 'update', {

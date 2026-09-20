@@ -19,7 +19,7 @@ import { ArrowLeft, Eye } from 'lucide-react';
  * γυρίζει στον λογαριασμό του.
  */
 
-export const VIEW_SITE_KEY = 'Theralivo_view_site';
+export const VIEW_SITE_KEY = 'theralivo_view_site';
 
 // Σελίδες που ΔΕΝ πιάνει ο guard.
 // Το /onboarding είναι κρίσιμο: χωρίς αυτό, ο νεοεγγεγραμμένος θεραπευτής

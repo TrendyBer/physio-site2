@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Cookie, X, Check, Shield, BarChart3, Megaphone } from 'lucide-react';
 
-const COOKIE_PREFS_KEY = 'Theralivo_cookie_prefs';
+const COOKIE_PREFS_KEY = 'theralivo_cookie_prefs';
 const COOKIE_PREFS_VERSION = '1.0';
 
 // Default preferences
