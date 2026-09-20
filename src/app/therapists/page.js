@@ -10,6 +10,11 @@ import { supabase } from '@/lib/supabase';
 import { filterBookableSlots } from '@/lib/slots';
 import { Search, MapPin, Star, SlidersHorizontal, X, Check, ArrowRight, Stethoscope, Users, ChevronDown, ChevronUp, Lightbulb, BadgeCheck, ShieldCheck, Info, CalendarCheck, Briefcase } from 'lucide-react';
 
+const MONTHS_SHORT = {
+  el: ['Ιαν','Φεβ','Μαρ','Απρ','Μαΐ','Ιουν','Ιουλ','Αυγ','Σεπ','Οκτ','Νοε','Δεκ'],
+  en: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+};
+
 const DAYS_SHORT = {
   el: ['Κυρ', 'Δευ', 'Τρι', 'Τετ', 'Πεμ', 'Παρ', 'Σαβ'],
   en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
@@ -64,6 +69,7 @@ const TX = {
     crossLinkText: 'Δεν είστε σίγουροι ποιον χρειάζεστε;',
     crossLinkBtn: 'Δείτε κατά πάθηση',
     perSession: 'συνεδρία',
+    fromTime: 'από',
     yearsShort: (n) => `${n} χρ. εμπειρία`,
     nextFree: 'Πρώτη ώρα',
     noFreeSlots: 'Χωρίς ανοιχτές ώρες',
@@ -118,6 +124,7 @@ const TX = {
     crossLinkText: 'Not sure who you need?',
     crossLinkBtn: 'Browse by condition',
     perSession: 'session',
+    fromTime: 'from',
     yearsShort: (n) => `${n} yrs experience`,
     nextFree: 'Next slot',
     noFreeSlots: 'No open times',
@@ -359,9 +366,16 @@ export default function TherapistsPage() {
           // «πρώτη ελεύθερη ώρα» ούτε στο σύνολο.
           filterBookableSlots(slotData).forEach(s => {
             if (!slotMap[s.therapist_id]) {
-              slotMap[s.therapist_id] = { next: { date: s.date, start_time: s.start_time }, count: 0 };
+              slotMap[s.therapist_id] = { next: { date: s.date, start_time: s.start_time }, count: 0, days: [] };
             }
-            slotMap[s.therapist_id].count += 1;
+            const m = slotMap[s.therapist_id];
+            m.count += 1;
+            // ΠΡΩΤΗ ΕΛΕΥΘΕΡΗ ΩΡΑ ΑΝΑ ΜΕΡΑ.
+            // Ο ασθενής δεν θέλει λίστα με σαράντα ώρες — θέλει να δει
+            // με μια ματιά ποιες μέρες μπορεί. Έξι μέρες αρκούν.
+            if (m.days.length < 6 && !m.days.some(d => d.date === s.date)) {
+              m.days.push({ date: s.date, start_time: s.start_time });
+            }
           });
         }
       }
@@ -378,6 +392,7 @@ export default function TherapistsPage() {
           featured: rank ? rank.featured : false,
           next_slot: sl ? sl.next : null,
           free_slots: sl ? sl.count : 0,
+          slot_days: sl ? sl.days : [],
         };
       });
       setTherapists(enriched);
@@ -390,16 +405,16 @@ export default function TherapistsPage() {
     setLoadingTherapists(false);
   }
 
-  function slotLabel(slot) {
-    if (!slot) return null;
+  // Μόνο η μέρα, για τα πλακίδια διαθεσιμότητας. Το «Σήμερα» και το
+  // «Αύριο» διαβάζονται πιο γρήγορα από ημερομηνία.
+  function dayLabel(dateStr) {
     const today = new Date(); today.setHours(0, 0, 0, 0);
-    const target = new Date(slot.date + 'T12:00:00'); target.setHours(0, 0, 0, 0);
+    const target = new Date(dateStr + 'T12:00:00'); target.setHours(0, 0, 0, 0);
     const diff = Math.round((target - today) / 86400000);
-    const time = slot.start_time?.slice(0, 5);
-    if (diff === 0) return `${tx.today} ${time}`;
-    if (diff === 1) return `${tx.tomorrow} ${time}`;
-    const d = new Date(slot.date + 'T12:00:00');
-    return `${DAYS_SHORT[lang][d.getDay()]} ${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')} ${time}`;
+    if (diff === 0) return tx.today;
+    if (diff === 1) return tx.tomorrow;
+    const d = new Date(dateStr + 'T12:00:00');
+    return `${String(d.getDate()).padStart(2, '0')} ${MONTHS_SHORT[lang][d.getMonth()]}`;
   }
 
   const uniqueAreas = useMemo(() => {
@@ -553,10 +568,34 @@ export default function TherapistsPage() {
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'DM Sans', sans-serif; background: #faf9f6; }
-        .th-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
-        @media (max-width: 1100px) { .th-grid { grid-template-columns: repeat(2, 1fr); } }
-        @media (max-width: 680px) { .th-grid { grid-template-columns: 1fr; } }
-        .th-card { background: #fff; border-radius: 18px; border: 1px solid #e2e8f0; padding: 26px 24px; transition: all .3s; cursor: pointer; display: block; text-decoration: none; }
+        /* ΟΡΙΖΟΝΤΙΕΣ ΚΑΡΤΕΣ.
+           Σε τρεις στήλες κάθε κάρτα είχε ~350px — δεν χωρούσε ούτε η
+           διαθεσιμότητα ούτε το κουμπί. Μία στήλη με χωρισμένη κάρτα
+           δίνει χώρο και στα δύο, και ο ασθενής βλέπει «πότε μπορεί»
+           χωρίς να ανοίξει το προφίλ. */
+        .th-grid { display: flex; flex-direction: column; gap: 18px; }
+        .th-card {
+          background: #fff; border-radius: 18px; border: 1px solid #e2e8f0;
+          display: grid; grid-template-columns: 1fr 380px;
+          text-decoration: none; transition: all .25s; overflow: hidden;
+        }
+        .th-card-main { padding: 24px 26px; min-width: 0; }
+        .th-card-side {
+          padding: 22px 24px; border-left: 1px solid #f1f5f9;
+          background: #fcfdff; display: flex; flex-direction: column;
+        }
+        .th-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+        .th-slot {
+          border: 1px solid #dce6f0; border-radius: 10px;
+          padding: 9px 6px; text-align: center; background: #fff;
+        }
+        @media (max-width: 900px) {
+          .th-card { grid-template-columns: 1fr; }
+          .th-card-side { border-left: none; border-top: 1px solid #f1f5f9; }
+        }
+        @media (max-width: 460px) {
+          .th-slots { grid-template-columns: repeat(2, 1fr); }
+        }
 
         /* Το σήμα ΠΑΝΩ στη φωτογραφία, όχι ως ξεχωριστό chip από κάτω.
            Έτσι το πρώτο πράγμα που βλέπει ο επισκέπτης είναι το πρόσωπο
@@ -745,9 +784,9 @@ export default function TherapistsPage() {
               {filteredTherapists.map(th => {
                 const matchType = getMatchType(th);
                 const areas = allAreasOf(th);
-                const nextLabel = slotLabel(th.next_slot);
                 return (
                   <a key={th.id} href={`/therapists/${th.id}`} className="th-card">
+                    <div className="th-card-main">
                     {matchType && (
                       <div style={{
                         display: 'inline-flex', alignItems: 'center', gap: 4, marginBottom: 12,
@@ -862,48 +901,72 @@ export default function TherapistsPage() {
 
                     {/* Κάθε στοιχείο σε δική του γραμμή — το inline-flex τα
                         κολλούσε μεταξύ τους. */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 12 }}>
-                      {areas.length > 0 && (
-                        <div style={{ fontSize: 12, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 5 }}>
-                          <MapPin size={12} style={{ flexShrink: 0 }} />
-                          <span>
-                            {areas.slice(0, 2).join(', ')}
-                            {areas.length > 2 ? ` +${areas.length - 2}` : ''}
-                          </span>
-                        </div>
-                      )}
+                      {/* Περιοχή, διαθεσιμότητα και τιμή ζουν πλέον στη
+                          δεξιά στήλη. Εδώ μένει μόνο η εμπειρία. */}
                       {th.years_experience > 0 && (
-                        <div style={{ fontSize: 12, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 5 }}>
-                          <Briefcase size={12} style={{ flexShrink: 0 }} />
+                        <div style={{ fontSize: 12.5, color: '#64748b', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+                          <Briefcase size={13} style={{ flexShrink: 0 }} />
                           <span>{tx.yearsShort(th.years_experience)}</span>
                         </div>
                       )}
 
-                      {/* Η πρώτη ελεύθερη ώρα. Χωρίς αυτό ο ασθενής έπρεπε
-                          να ανοίξει το προφίλ για να μάθει αν είναι καν
-                          διαθέσιμος αυτή την εβδομάδα. */}
-                      {nextLabel ? (
-                        <div style={{ fontSize: 12, color: '#15803D', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5 }}>
-                          <CalendarCheck size={12} style={{ flexShrink: 0 }} />
-                          <span>{tx.nextFree}: {nextLabel}</span>
-                        </div>
-                      ) : (
-                        <div style={{ fontSize: 12, color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: 5 }}>
-                          <CalendarCheck size={12} style={{ flexShrink: 0 }} />
-                          <span>{tx.noFreeSlots}</span>
-                        </div>
-                      )}
-
-                      {th.price_per_session && (
-                        <div style={{ fontSize: 13, color: '#2a6fdb', fontWeight: 600, marginTop: 2 }}>
-                          {th.price_per_session}€ / {tx.perSession}
-                        </div>
-                      )}
+                      <div style={{ fontSize: 13, color: '#2a6fdb', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        {tx.viewProfile}
+                        <ArrowRight size={13} />
+                      </div>
                     </div>
 
-                    <div style={{ fontSize: 13, color: '#2a6fdb', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
-                      {tx.viewProfile}
-                      <ArrowRight size={13} />
+                    {/* ── ΔΕΞΙΑ: ΠΟΤΕ ΚΑΙ ΠΟΣΟ ──
+                        Τα δύο που ρωτάει πρώτα ο ασθενής, χωρίς να
+                        χρειαστεί να ανοίξει το προφίλ. */}
+                    <div className="th-card-side">
+                      {areas.length > 0 && (
+                        <div style={{ fontSize: 13, color: '#475569', display: 'flex', alignItems: 'flex-start', gap: 7, marginBottom: 16 }}>
+                          <MapPin size={14} color="#94a3b8" style={{ flexShrink: 0, marginTop: 1 }} />
+                          <span>{areas.slice(0, 3).join(' · ')}{areas.length > 3 ? ` +${areas.length - 3}` : ''}</span>
+                        </div>
+                      )}
+
+                      <div style={{ fontSize: 12.5, fontWeight: 600, color: '#1a2e44', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+                        <CalendarCheck size={14} color="#2a6fdb" />
+                        {tx.nextFree}
+                      </div>
+
+                      {(th.slot_days || []).length > 0 ? (
+                        <div className="th-slots">
+                          {th.slot_days.map(d => (
+                            <div key={d.date} className="th-slot">
+                              <div style={{ fontSize: 12.5, fontWeight: 700, color: '#2a6fdb' }}>
+                                {dayLabel(d.date)}
+                              </div>
+                              <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 2 }}>
+                                {tx.fromTime} {String(d.start_time).slice(0, 5)}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 16 }}>
+                          {tx.noFreeSlots}
+                        </div>
+                      )}
+
+                      <div style={{ marginTop: 'auto' }}>
+                        {th.price_per_session > 0 && (
+                          <div style={{ fontSize: 14, color: '#1a2e44', fontWeight: 700, marginBottom: 12 }}>
+                            {Math.round(Number(th.price_per_session))}€
+                            <span style={{ fontWeight: 500, color: '#94a3b8', fontSize: 13 }}> / {tx.perSession}</span>
+                          </div>
+                        )}
+                        <span style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                          background: '#1a2e44', color: '#fff', padding: '13px 20px',
+                          borderRadius: 10, fontSize: 14.5, fontWeight: 600,
+                        }}>
+                          {tx.bookCta}
+                          <ArrowRight size={16} />
+                        </span>
+                      </div>
                     </div>
                   </a>
                 );
