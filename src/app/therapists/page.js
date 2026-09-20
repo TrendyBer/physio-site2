@@ -8,7 +8,7 @@ import ConditionSearch from '../../components/ConditionSearch';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
 import { filterBookableSlots } from '@/lib/slots';
-import { Search, MapPin, Star, SlidersHorizontal, X, Check, ArrowRight, Stethoscope, Users, ChevronDown, ChevronUp, Lightbulb, BadgeCheck, ShieldCheck, Info, CalendarCheck, Briefcase } from 'lucide-react';
+import { Search, MapPin, Star, SlidersHorizontal, X, Check, ArrowRight, Stethoscope, Users, ChevronDown, ChevronUp, BadgeCheck, Info, CalendarCheck, Briefcase } from 'lucide-react';
 
 const MONTHS_SHORT = {
   el: ['Ιαν','Φεβ','Μαρ','Απρ','Μαΐ','Ιουν','Ιουλ','Αυγ','Σεπ','Οκτ','Νοε','Δεκ'],
@@ -618,26 +618,25 @@ export default function TherapistsPage() {
 
       <Navbar />
 
-      {/* HERO */}
-      <section style={{ background: 'linear-gradient(135deg, #e8f3ff 0%, #f0f7ff 100%)', padding: '80px 24px 60px' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: '#2a6fdb', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 16 }}>{tx.badge}</div>
-          <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(28px, 4vw, 54px)', color: '#1a2e44', lineHeight: 1.15, marginBottom: 20 }}>
+      {/* ── ΣΥΜΠΑΓΗΣ ΚΕΦΑΛΙΔΑ ──
+          Ο επισκέπτης ήρθε εδώ για να ΔΕΙ ΘΕΡΑΠΕΥΤΕΣ. Ένα hero 140
+          pixel ύψους τον ανάγκαζε να κυλήσει πριν δει έναν.
+
+          Ο τίτλος μένει — χρειάζεται για SEO και για να ξέρει πού
+          βρίσκεται — αλλά μικρός, αριστερά, χωρίς CTA που ανταγωνίζεται
+          τα κουμπιά των καρτών. Η γραμμή εμπιστοσύνης γίνεται μία
+          διακριτική σειρά. */}
+      <section style={{ background: 'linear-gradient(135deg, #f2f8ff 0%, #f8fbff 100%)', borderBottom: '1px solid #e2e8f0', padding: '26px 24px 22px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(22px, 2.6vw, 30px)', color: '#1a2e44', lineHeight: 1.25, margin: '0 0 6px' }}>
             {tx.hero} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{tx.heroEm}</em> {tx.heroEnd}
           </h1>
-          <p style={{ fontSize: 17, color: '#6b7a8d', maxWidth: 580, margin: '0 auto 32px' }}>{tx.heroDesc}</p>
-          <a href="/dashboard/patient/new-request" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#1a2e44', color: '#fff', padding: '14px 36px', borderRadius: 30, fontSize: 15, fontWeight: 600, textDecoration: 'none' }}>
-            {tx.bookCta}
-            <ArrowRight size={18} />
-          </a>
+          <p style={{ fontSize: 14.5, color: '#6b7a8d', margin: '0 0 14px', maxWidth: 620, lineHeight: 1.55 }}>{tx.heroDesc}</p>
 
-          {/* Τι θα δει σε κάθε προφίλ, ΠΡΙΝ κατέβει στα αποτελέσματα.
-              Θέτει την προσδοκία: δεν είναι κατάλογος, είναι επιλογή
-              με βάση συγκεκριμένα κριτήρια. */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 18, justifyContent: 'center', marginTop: 30 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, rowGap: 7 }}>
             {(tx.trustLine || []).map(item => (
-              <span key={item} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13.5, color: '#6b7a8d' }}>
-                <Check size={14} color="#15803d" strokeWidth={2.6} />
+              <span key={item} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12.5, color: '#64748b' }}>
+                <Check size={12} color="#15803d" strokeWidth={2.8} />
                 {item}
               </span>
             ))}
@@ -645,28 +644,23 @@ export default function TherapistsPage() {
         </div>
       </section>
 
-      {/* CROSS-LINK BANNER */}
-      <section style={{ background: '#FFFBEB', borderTop: '1px solid #FDE68A', borderBottom: '1px solid #FDE68A', padding: '16px 24px' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, flexWrap: 'wrap', textAlign: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#92400E', fontSize: 14, fontWeight: 600 }}>
-            <Lightbulb size={18} color="#F59E0B" strokeWidth={2} />
-            {tx.crossLinkText}
-          </div>
-          <a href="/find-help" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', color: '#92400E', border: '1px solid #FDE68A', padding: '7px 16px', borderRadius: 20, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
-            {tx.crossLinkBtn}
-            <ArrowRight size={14} />
-          </a>
-        </div>
-      </section>
+      {/* ── ΑΝΑΖΗΤΗΣΗ ΠΑΘΗΣΗΣ ──
+          Ήταν τρεις ξεχωριστές ενότητες πριν τα αποτελέσματα: κίτρινο
+          banner, τίτλος, αναζήτηση. Μαζί έσπρωχναν τον πρώτο θεραπευτή
+          εκτός οθόνης.
 
-      {/* CONDITION-BASED SEARCH */}
-      <section style={{ background: '#fff', padding: '40px 24px', borderBottom: '1px solid #f1f5f9' }}>
-        <div style={{ maxWidth: 760, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 24 }}>
-            <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(22px, 3vw, 32px)', color: '#1a2e44', marginBottom: 8 }}>
+          Τώρα μία συμπαγής γραμμή: ετικέτα, αναζήτηση, και ο σύνδεσμος
+          προς τις παθήσεις δίπλα αντί για ολόκληρο banner. */}
+      <section style={{ background: '#fff', padding: '18px 24px', borderBottom: '1px solid #f1f5f9' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap', marginBottom: 12 }}>
+            <div style={{ fontSize: 13.5, fontWeight: 600, color: '#1a2e44' }}>
               {tx.findHelpTitle}
-            </h2>
-            <p style={{ fontSize: 14, color: '#6b7a8d', lineHeight: 1.6 }}>{tx.findHelpDesc}</p>
+            </div>
+            <a href="/find-help" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 13, fontWeight: 600, color: '#2a6fdb', textDecoration: 'none' }}>
+              {tx.crossLinkBtn}
+              <ArrowRight size={13} />
+            </a>
           </div>
           <ConditionSearch
             lang={lang}
@@ -678,7 +672,7 @@ export default function TherapistsPage() {
       </section>
 
       {/* THERAPISTS + FILTERS */}
-      <section style={{ background: '#f8fafb', padding: '60px 24px' }}>
+      <section style={{ background: '#f8fafb', padding: '24px 24px 60px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
 
           {!loadingTherapists && therapists.length > 0 && (
