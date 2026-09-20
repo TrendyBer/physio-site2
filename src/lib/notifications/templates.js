@@ -47,6 +47,11 @@ function fmtDate(iso) {
   });
 }
 
+// ΤΟ ΟΝΟΜΑ ΣΕ ΕΝΑ ΣΗΜΕΙΟ.
+// Ήταν γραμμένο δεκαέξι φορές μέσα στα templates. Μια αλλαγή
+// σήμαινε δεκαέξι σημεία να θυμηθείς — και ένα να ξεχάσεις.
+const BRAND = 'Theralivo';
+
 // ── Κέλυφος email ────────────────────────────────────────────
 function shell({ title, intro, rows = [], ctaLabel, ctaUrl, footNote, accent = '#2a6fdb' }) {
   const rowsHtml = rows
@@ -66,7 +71,7 @@ function shell({ title, intro, rows = [], ctaLabel, ctaUrl, footNote, accent = '
 
         <tr><td style="background:#1a2e44;padding:20px 28px;">
           <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${accent};margin-right:8px;"></span>
-          <span style="color:#ffffff;font-family:Georgia,serif;font-size:18px;font-weight:700;">PhysioHome</span>
+          <span style="color:#ffffff;font-size:19px;font-weight:800;letter-spacing:-0.02em;">${BRAND}</span>
         </td></tr>
 
         <tr><td style="padding:28px;">
@@ -86,7 +91,7 @@ function shell({ title, intro, rows = [], ctaLabel, ctaUrl, footNote, accent = '
         </td></tr>
 
         <tr><td style="padding:16px 28px;background:#faf9f6;border-top:1px solid #eef2f7;">
-          <p style="margin:0;font-size:12px;color:#94a3b8;">PhysioHome — Φυσιοθεραπεία κατ' οίκον</p>
+          <p style="margin:0;font-size:12px;color:#94a3b8;">${BRAND} — Φυσιοθεραπεία κατ' οίκον</p>
         </td></tr>
 
       </table>
@@ -137,8 +142,8 @@ export function therapistNewRequest({ therapistName, request, slaDueAt, slaHours
   // Χωρίς τόνους: ελληνικά με τόνους χωρανε 70 χαρακτηρες αντι για 160
   // και χρεωνονται διπλα.
   const sms = sameDay
-    ? `PhysioHome: ΣΗΜΕΡΑ${apptTime ? ` ${apptTime}` : ''} στην ${request.area || '-'}. Απαντηστε εως ${fmtTime(deadline)} αλλιως χανεται. ${url}`
-    : `PhysioHome: Νεο αιτημα ${request.area || '-'} (${request.problem_type || 'Φυσιοθεραπεια'}). Απαντηστε εως ${fmtTime(deadline)}. ${url}`;
+    ? `${BRAND}: ΣΗΜΕΡΑ${apptTime ? ` ${apptTime}` : ''} στην ${request.area || '-'}. Απαντηστε εως ${fmtTime(deadline)} αλλιως χανεται. ${url}`
+    : `${BRAND}: Νεο αιτημα ${request.area || '-'} (${request.problem_type || 'Φυσιοθεραπεια'}). Απαντηστε εως ${fmtTime(deadline)}. ${url}`;
 
   return { subject, html, sms };
 }
@@ -214,9 +219,9 @@ export function patientRequestSent({ patientName, request, therapistName, slaHou
 
   const sms = therapistName
     ? (deadline
-        ? `PhysioHome: Το αιτημα σας σταλθηκε στον/στην ${therapistName}. Απαντηση εως ${fmtTime(deadline)}.`
-        : `PhysioHome: Το αιτημα σας σταλθηκε στον/στην ${therapistName}.`)
-    : `PhysioHome: Λαβαμε το αιτημα σας. Θα επικοινωνησουμε συντομα.`;
+        ? `${BRAND}: Το αιτημα σας σταλθηκε στον/στην ${therapistName}. Απαντηση εως ${fmtTime(deadline)}.`
+        : `${BRAND}: Το αιτημα σας σταλθηκε στον/στην ${therapistName}.`)
+    : `${BRAND}: Λαβαμε το αιτημα σας. Θα επικοινωνησουμε συντομα.`;
 
   return { subject, html, sms };
 }
@@ -251,7 +256,7 @@ export function patientRequestAccepted({ patientName, therapistName, request, bo
     footNote: 'Η πληρωμή γίνεται σε μετρητά, απευθείας στον θεραπευτή, μετά τη συνεδρία. Αν χρειαστεί να ακυρώσετε, ενημερώστε μας εγκαίρως από τον πίνακά σας.',
   });
 
-  const sms = `PhysioHome: Το ραντεβου σας επιβεβαιωθηκε${when ? ` για ${when}` : ''} με τον/την ${therapistName || '-'}. ${SITE}/dashboard/patient`;
+  const sms = `${BRAND}: Το ραντεβου σας επιβεβαιωθηκε${when ? ` για ${when}` : ''} με τον/την ${therapistName || '-'}. ${SITE}/dashboard/patient`;
 
   return { subject, html, sms };
 }
@@ -278,7 +283,7 @@ export function patientRequestRejected({ patientName, therapistName, request }) 
     footNote: 'Τα στοιχεία σας είναι ήδη συμπληρωμένα — χρειάζεται μόνο να διαλέξετε θεραπευτή και ώρα.',
   });
 
-  const sms = `PhysioHome: Ο θεραπευτης δεν ειναι διαθεσιμος. Δειτε αλλους: ${SITE}/dashboard/patient/new-request?retry=${request.id}`;
+  const sms = `${BRAND}: Ο θεραπευτης δεν ειναι διαθεσιμος. Δειτε αλλους: ${SITE}/dashboard/patient/new-request?retry=${request.id}`;
 
   return { subject, html, sms };
 }
@@ -325,8 +330,8 @@ export function patientRequestExpired({ patientName, therapistName, request, hou
   });
 
   const sms = list.length > 0
-    ? `PhysioHome: Ο θεραπευτης δεν απαντησε. Βρηκαμε ${list.length} διαθεσιμους${sameDay ? ' για σημερα' : ''}: ${SITE}/dashboard/patient/new-request?retry=${request.id}`
-    : `PhysioHome: Το αιτημα σας εληξε. Δειτε αλλους: ${SITE}/dashboard/patient/new-request?retry=${request.id}`;
+    ? `${BRAND}: Ο θεραπευτης δεν απαντησε. Βρηκαμε ${list.length} διαθεσιμους${sameDay ? ' για σημερα' : ''}: ${SITE}/dashboard/patient/new-request?retry=${request.id}`
+    : `${BRAND}: Το αιτημα σας εληξε. Δειτε αλλους: ${SITE}/dashboard/patient/new-request?retry=${request.id}`;
 
   return { subject, html, sms };
 }
@@ -354,7 +359,7 @@ export function therapistPendingReminder({ therapistName, request, hoursLeft }) 
     footNote: 'Αν δεν σας βολεύει, μια γρήγορη απόρριψη βοηθάει τον ασθενή να βρει άλλον θεραπευτή νωρίτερα.',
   });
 
-  const sms = `PhysioHome: Εκκρεμει αιτημα στην περιοχη ${request.area || '-'}. Απομενουν ${hoursLeft} ωρες. ${SITE}/dashboard/therapist`;
+  const sms = `${BRAND}: Εκκρεμει αιτημα στην περιοχη ${request.area || '-'}. Απομενουν ${hoursLeft} ωρες. ${SITE}/dashboard/therapist`;
 
   return { subject, html, sms };
 }
@@ -391,8 +396,8 @@ export function cancellationNotice({ toRole, recipientName, otherName, booking, 
   });
 
   const sms = byPatient
-    ? `PhysioHome: Ακυρωθηκε ραντεβου${when ? ` (${when})` : ''} απο τον ασθενη.`
-    : `PhysioHome: Το ραντεβου σας${when ? ` (${when})` : ''} ακυρωθηκε. Βρειτε αλλον θεραπευτη: ${SITE}`;
+    ? `${BRAND}: Ακυρωθηκε ραντεβου${when ? ` (${when})` : ''} απο τον ασθενη.`
+    : `${BRAND}: Το ραντεβου σας${when ? ` (${when})` : ''} ακυρωθηκε. Βρειτε αλλον θεραπευτη: ${SITE}`;
 
   return { subject, html, sms };
 }
@@ -416,7 +421,7 @@ export function patientReviewRequest({ patientName, therapistName, booking }) {
     footNote: 'Η αξιολόγησή σας θα φέρει την ένδειξη «Από επαληθευμένη συνεδρία».',
   });
 
-  const sms = `PhysioHome: Πως ηταν η συνεδρια με τον/την ${therapistName || '-'}; Αφηστε αξιολογηση: ${SITE}/dashboard/patient`;
+  const sms = `${BRAND}: Πως ηταν η συνεδρια με τον/την ${therapistName || '-'}; Αφηστε αξιολογηση: ${SITE}/dashboard/patient`;
 
   return { subject, html, sms };
 }
@@ -445,7 +450,7 @@ export function appointmentReminder({ toRole, recipientName, otherName, booking,
     footNote: 'Αν κάτι άλλαξε, ενημερώστε μας το συντομότερο ώστε να προλάβει να προσαρμοστεί ο άλλος.',
   });
 
-  const sms = `PhysioHome: Υπενθυμιση ραντεβου αυριο${time ? ` στις ${time}` : ''}${otherName ? ` με ${otherName}` : ''}.`;
+  const sms = `${BRAND}: Υπενθυμιση ραντεβου αυριο${time ? ` στις ${time}` : ''}${otherName ? ` με ${otherName}` : ''}.`;
 
   return { subject, html, sms };
 }

@@ -5,6 +5,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useLang } from '@/context/LanguageContext';
+import Logo, { BRAND } from '@/components/Logo';
 import { Mail, Phone, MapPin, ArrowRight } from 'lucide-react';
 
 const CACHE_KEY = 'cms_platform_settings';
@@ -12,7 +13,7 @@ const CONDITIONS_CACHE_KEY = 'cms_popular_conditions';
 const CACHE_TTL = 5 * 60 * 1000;
 
 const DEFAULTS = {
-  platform_name: 'PhysioHome',
+  platform_name: BRAND,
   email: 'info@physiohome.gr',
   phone: '+30 210 123 4567',
   address: 'Αθήνα & Αττική, Ελλάδα',
@@ -186,9 +187,8 @@ export default function Footer() {
 
             {/* Brand */}
             <div>
-              <div style={{ fontFamily: 'Georgia, serif', fontSize: 22, fontWeight: 700, color: '#fff', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#2a6fdb', display: 'inline-block' }} />
-                {settings.platform_name}
+              <div style={{ marginBottom: 14 }}>
+                <Logo variant="full" tone="light" lang={lang} size={44} />
               </div>
               <p style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 16 }}>{tx.desc}</p>
               <a href="/find-help" className="footer-cta-btn">

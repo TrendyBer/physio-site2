@@ -1,5 +1,6 @@
 'use client';
 import { useLang } from '@/context/LanguageContext';
+import Logo, { BRAND } from '@/components/Logo';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { X } from 'lucide-react';
@@ -245,10 +246,12 @@ export default function Navbar() {
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', height: 68 }}>
 
           {/* ΑΡΙΣΤΕΡΑ: λογότυπο + links, κολλητά μεταξύ τους */}
-          <a href="/" style={{ fontFamily: 'Georgia, serif', fontSize: 22, fontWeight: 700, color: TH.logo, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: TH.dot, display: 'inline-block' }} />
-            PhysioHome
-          </a>
+          <Logo
+            variant="compact"
+            tone={TH.logo === '#ffffff' ? 'light' : 'dark'}
+            lang={lang}
+            style={{ flexShrink: 0 }}
+          />
 
           <ul className="nav-links-desktop" style={{ alignItems: 'center', gap: 22, listStyle: 'none', margin: 0, marginLeft: 32, padding: 0 }}>
             {activeLinks.map(item => {
@@ -337,7 +340,7 @@ export default function Navbar() {
           onClick={e => { if (e.target === e.currentTarget) setRoleModal(false); }}>
           <div style={{ background: '#fff', borderRadius: 20, padding: '36px 32px', width: '100%', maxWidth: 480, boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
             <div style={{ textAlign: 'center', marginBottom: 28 }}>
-              <div style={{ fontFamily: 'Georgia, serif', fontSize: 22, fontWeight: 700, color: '#1a2e44', marginBottom: 8 }}>Εγγραφή στο PhysioHome</div>
+              <div style={{ fontSize: 21, fontWeight: 700, color: '#0f2a52', marginBottom: 8 }}>Εγγραφή στο {BRAND}</div>
               <p style={{ fontSize: 14, color: '#6b7a8d' }}>Τι θέλετε να κάνετε;</p>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
@@ -401,7 +404,7 @@ export default function Navbar() {
       {menuOpen && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: '#fff', display: 'flex', flexDirection: 'column', padding: '20px 24px', overflowY: 'auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
-            <span style={{ fontFamily: 'Georgia, serif', fontSize: 20, fontWeight: 700, color: '#1a2e44' }}>PhysioHome</span>
+            <Logo variant="compact" tone="dark" lang={lang} asLink={false} size={30} />
             <button onClick={() => setMenuOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1a2e44', padding: 4, lineHeight: 0 }}><X size={22} /></button>
           </div>
           <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>

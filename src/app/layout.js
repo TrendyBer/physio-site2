@@ -41,9 +41,28 @@ const sans = Manrope({
   display: "swap",
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://physio-site2.vercel.app";
+
 export const metadata = {
-  title: "PhysioHome – Φυσιοθεραπεία στο Σπίτι σας",
-  description: "Επαγγελματική φυσιοθεραπεία στην Αθήνα & Αττική",
+  // Το template βάζει αυτόματα «| Theralivo» σε κάθε σελίδα που ορίζει
+  // δικό της title. Χωρίς αυτό, κάθε σελίδα θα έπρεπε να θυμάται να
+  // προσθέσει το όνομα — και κάποια θα το ξεχνούσε.
+  title: {
+    default: "Theralivo – Φυσιοθεραπεία στο σπίτι σας | Αθήνα & Αττική",
+    template: "%s | Theralivo",
+  },
+  description:
+    "Επαληθευμένοι φυσικοθεραπευτές που αναλαμβάνουν το περιστατικό σας και έρχονται στον χώρο σας, σε Αθήνα και Αττική.",
+  applicationName: "Theralivo",
+  metadataBase: new URL(SITE_URL),
+  openGraph: {
+    type: "website",
+    locale: "el_GR",
+    siteName: "Theralivo",
+    title: "Theralivo – Φυσιοθεραπεία στο σπίτι σας",
+    description:
+      "Επαληθευμένοι φυσικοθεραπευτές που αναλαμβάνουν το περιστατικό σας και έρχονται στον χώρο σας.",
+  },
 };
 
 // Force light theme — αποτρέπει iOS Safari από auto dark mode invert
