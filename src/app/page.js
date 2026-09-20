@@ -379,7 +379,44 @@ function SearchBox({ compact, tx, problem, setProblem, onKey, searchHref, chips,
 // ════════════════════════════════════════════════════════════════════════
 export default function HomePage() {
   const { lang } = useLang();
-  const tx = TX[lang] || TX.el;
+  const [cms, setCms] = useState(null);
+
+  // ── ΚΕΙΜΕΝΑ ΑΠΟ ΤΟ ADMIN ──
+  //
+  // Τα TX παραπάνω είναι ΠΡΟΕΠΙΛΟΓΗ, όχι η μοναδική αλήθεια. Ό,τι έχει
+  // γραφτεί στο admin το σκεπάζει· ό,τι λείπει πέφτει πίσω στο κείμενο
+  // του κώδικα.
+  //
+  // Έτσι μια άδεια βάση δεν αφήνει το site χωρίς λόγια, και μια μισή
+  // συμπλήρωση δεν αφήνει κενές ενότητες.
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from('site_content')
+        .select('section, content_el, content_en')
+        .eq('page', 'homepage');
+      if (data?.length) setCms(data);
+    })();
+  }, []);
+
+  const tx = (() => {
+    const base = TX[lang] || TX.el;
+    if (!cms) return base;
+    const key = lang === 'en' ? 'content_en' : 'content_el';
+    const merged = { ...base };
+    cms.forEach(row => {
+      const c = row[key];
+      if (!c || typeof c !== 'object') return;
+      Object.entries(c).forEach(([k, v]) => {
+        // Κενό πεδίο ΔΕΝ σβήνει το προεπιλεγμένο κείμενο. Αλλιώς ένα
+        // κατά λάθος άδειασμα στο admin θα άφηνε το site με κενά.
+        if (v === null || v === undefined || v === '') return;
+        if (Array.isArray(v) && v.length === 0) return;
+        merged[k] = v;
+      });
+    });
+    return merged;
+  })();
 
   const [problem, setProblem] = useState('');
   const [conditions, setConditions] = useState([]);
