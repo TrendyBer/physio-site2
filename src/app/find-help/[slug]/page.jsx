@@ -38,8 +38,8 @@ export async function generateMetadata({ params, searchParams }) {
   const desc = lang === 'el' ? condition.description_el : condition.description_en;
 
   const titles = {
-    el: `${name} - Φυσιοθεραπεία στο Σπίτι | PhysioHome`,
-    en: `${name} - Home Physiotherapy | PhysioHome`,
+    el: `${name} - Φυσιοθεραπεία στο Σπίτι | Theralivo`,
+    en: `${name} - Home Physiotherapy | Theralivo`,
   };
 
   const descriptions = {

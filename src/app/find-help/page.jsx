@@ -13,11 +13,11 @@ export async function generateMetadata({ searchParams }) {
 
   const meta = {
     el: {
-      title: 'Βρες τη φυσιοθεραπεία που χρειάζεσαι | PhysioHome',
+      title: 'Βρες τη φυσιοθεραπεία που χρειάζεσαι | Theralivo',
       description: 'Επιλέξτε την πάθησή σας και βρείτε τον κατάλληλο φυσιοθεραπευτή στην Αθήνα. Οσφυαλγία, αυχενικό, πόνος γόνατου, μετεγχειρητική αποκατάσταση και πολλά άλλα.',
     },
     en: {
-      title: 'Find the physiotherapy you need | PhysioHome',
+      title: 'Find the physiotherapy you need | Theralivo',
       description: 'Choose your condition and find the right physiotherapist in Athens. Back pain, neck pain, knee pain, post-surgery rehabilitation and many more.',
     },
   };

@@ -31,15 +31,15 @@ function buildContent({ fee, resetMonths, plans, graceDays }) {
     el: {
       title: 'Όροι Χρήσης',
       lastUpdated: 'Τελευταία ενημέρωση: 3 Αυγούστου 2026',
-      intro: 'Καλώς ήρθατε στο PhysioHome. Οι παρόντες Όροι Χρήσης διέπουν τη χρήση της πλατφόρμας. Με την εγγραφή και χρήση της Πλατφόρμας, αποδέχεστε τους παρόντες όρους.',
+      intro: 'Καλώς ήρθατε στο Theralivo. Οι παρόντες Όροι Χρήσης διέπουν τη χρήση της πλατφόρμας. Με την εγγραφή και χρήση της Πλατφόρμας, αποδέχεστε τους παρόντες όρους.',
       sections: [
         {
           h: '1. Γενικά Στοιχεία',
           p: [
             'Πάροχος: {ΟΝΟΜΑ ΕΠΙΧΕΙΡΗΣΗΣ}, ατομική επιχείρηση με έδρα στην Αθήνα, Ελλάδα.',
             'ΑΦΜ: {ΑΦΜ} · ΔΟΥ: {ΔΟΥ} · Έδρα: {ΔΙΕΥΘΥΝΣΗ ΕΔΡΑΣ}',
-            'Επικοινωνία: support@physiohome.gr',
-            'Η PhysioHome (εφεξής "η Πλατφόρμα") είναι μια διαδικτυακή πλατφόρμα που συνδέει ασθενείς με αδειούχους θεραπευτές φυσιοθεραπείας στην Αθήνα.',
+            'Επικοινωνία: support@theralivo.com',
+            'Η Theralivo (εφεξής "η Πλατφόρμα") είναι μια διαδικτυακή πλατφόρμα που συνδέει ασθενείς με αδειούχους θεραπευτές φυσιοθεραπείας στην Αθήνα.',
           ],
         },
         {
@@ -125,7 +125,7 @@ function buildContent({ fee, resetMonths, plans, graceDays }) {
             'Η ηλεκτρονική πληρωμή μέσω παρόχου πληρωμών βρίσκεται υπό ενεργοποίηση. Μέχρι τότε, οι εκκαθαρίσεις γίνονται εκτός πλατφόρμας βάσει των καταγεγραμμένων ποσών',
             'Ο θεραπευτής βλέπει ανά πάσα στιγμή τι κρατά ανά συνεδρία και τι οφείλει στην Πλατφόρμα',
           ],
-          p2: ['Οι όροι επιστροφών θα οριστικοποιηθούν με την ενεργοποίηση της ηλεκτρονικής πληρωμής και θα ανακοινωθούν πριν τεθούν σε ισχύ. Έως τότε, κάθε αίτημα εξετάζεται μεμονωμένα στο support@physiohome.gr.'],
+          p2: ['Οι όροι επιστροφών θα οριστικοποιηθούν με την ενεργοποίηση της ηλεκτρονικής πληρωμής και θα ανακοινωθούν πριν τεθούν σε ισχύ. Έως τότε, κάθε αίτημα εξετάζεται μεμονωμένα στο support@theralivo.com.'],
         },
         {
           h: '10. Ακυρώσεις',
@@ -192,7 +192,7 @@ function buildContent({ fee, resetMonths, plans, graceDays }) {
         {
           h: '16. Λύση Διαφορών — Δικαιοδοσία',
           p: [
-            'Πρώτα προσπάθεια: φιλικός διακανονισμός μέσω support@physiohome.gr',
+            'Πρώτα προσπάθεια: φιλικός διακανονισμός μέσω support@theralivo.com',
             'Καταναλωτές δύνανται να προσφύγουν στην πλατφόρμα Ηλεκτρονικής Επίλυσης Διαφορών της ΕΕ ή στον Συνήγορο του Καταναλωτή.',
             'Σε περίπτωση μη επίλυσης: αρμόδια δικαστήρια Αθηνών, Ελλάδα.',
             'Εφαρμοστέο δίκαιο: ελληνικό.',
@@ -200,7 +200,7 @@ function buildContent({ fee, resetMonths, plans, graceDays }) {
         },
         {
           h: '17. Επικοινωνία',
-          p: ['Για ερωτήσεις σχετικά με τους όρους: support@physiohome.gr'],
+          p: ['Για ερωτήσεις σχετικά με τους όρους: support@theralivo.com'],
         },
       ],
     },
@@ -208,15 +208,15 @@ function buildContent({ fee, resetMonths, plans, graceDays }) {
     en: {
       title: 'Terms of Service',
       lastUpdated: 'Last updated: August 3, 2026',
-      intro: 'Welcome to PhysioHome. These Terms of Service govern your use of the platform. By registering and using the Platform, you accept these terms.',
+      intro: 'Welcome to Theralivo. These Terms of Service govern your use of the platform. By registering and using the Platform, you accept these terms.',
       sections: [
         {
           h: '1. General Information',
           p: [
             'Provider: {BUSINESS NAME}, sole proprietorship based in Athens, Greece.',
             'VAT: {VAT NUMBER} · Tax Office: {TAX OFFICE} · Address: {REGISTERED ADDRESS}',
-            'Contact: support@physiohome.gr',
-            'PhysioHome (the "Platform") is an online platform connecting patients with licensed physiotherapists in Athens.',
+            'Contact: support@theralivo.com',
+            'Theralivo (the "Platform") is an online platform connecting patients with licensed physiotherapists in Athens.',
           ],
         },
         {
@@ -302,7 +302,7 @@ function buildContent({ fee, resetMonths, plans, graceDays }) {
             'Online payment through a payment provider is being activated. Until then, settlements occur off-platform based on the recorded amounts',
             'Therapists can see at any time what they keep per session and what they owe the Platform',
           ],
-          p2: ['Refund terms will be finalized upon activation of online payments and announced before taking effect. Until then, each request is reviewed individually at support@physiohome.gr.'],
+          p2: ['Refund terms will be finalized upon activation of online payments and announced before taking effect. Until then, each request is reviewed individually at support@theralivo.com.'],
         },
         {
           h: '10. Cancellations',
@@ -369,7 +369,7 @@ function buildContent({ fee, resetMonths, plans, graceDays }) {
         {
           h: '16. Dispute Resolution — Jurisdiction',
           p: [
-            'First attempt: amicable settlement via support@physiohome.gr',
+            'First attempt: amicable settlement via support@theralivo.com',
             'Consumers may also use the EU Online Dispute Resolution platform or the Greek Consumer Ombudsman.',
             'If unresolved: competent courts of Athens, Greece.',
             'Applicable law: Greek.',
@@ -377,7 +377,7 @@ function buildContent({ fee, resetMonths, plans, graceDays }) {
         },
         {
           h: '17. Contact',
-          p: ['For questions about the terms: support@physiohome.gr'],
+          p: ['For questions about the terms: support@theralivo.com'],
         },
       ],
     },
@@ -426,7 +426,7 @@ export default function TermsOfServicePage() {
       <nav style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', padding: '0 24px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'Georgia, serif', fontSize: 18, fontWeight: 700, color: '#1a2e44', textDecoration: 'none' }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#2a6fdb', display: 'inline-block' }} />
-          PhysioHome
+          Theralivo
         </a>
         <a href="/" style={{ fontSize: 13, color: '#64748b', textDecoration: 'none' }}>← {lang === 'el' ? 'Επιστροφή' : 'Back'}</a>
       </nav>

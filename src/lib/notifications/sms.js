@@ -8,7 +8,7 @@
 // ─────────────────────────────────────────────────────────────
 
 const PROVIDER = (process.env.SMS_PROVIDER || 'none').toLowerCase();
-const SENDER = process.env.SMS_SENDER || 'PhysioHome';
+const SENDER = process.env.SMS_SENDER || 'Theralivo';
 
 /**
  * Μετατροπή ελληνικού κινητού σε E.164.

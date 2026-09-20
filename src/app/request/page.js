@@ -88,7 +88,7 @@ export default function RequestPage() {
   const howHeardOptions = lang === 'el' ? HOW_HEARD_EL : HOW_HEARD_EN;
 
   const [settings, setSettings] = useState({
-    email: 'info@physiohome.gr',
+    email: 'info@theralivo.com',
     phone: '+30 210 123 4567',
     address: 'Αθήνα & Αττική, Ελλάδα',
   });

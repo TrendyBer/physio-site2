@@ -34,8 +34,8 @@ import { createClient } from '@supabase/supabase-js';
 const FROM =
   process.env.CONTACT_FROM_EMAIL ||
   process.env.RESEND_FROM ||
-  'PhysioHome <onboarding@resend.dev>';
-const FALLBACK_TO = 'info@physiohome.gr';
+  'Theralivo <onboarding@resend.dev>';
+const FALLBACK_TO = 'info@theralivo.com';
 
 // Απλό in-memory rate limit ανά IP. Χάνεται σε cold start — αρκεί για
 // να μπλοκάρει bots χωρίς εξωτερική υποδομή.
@@ -113,7 +113,7 @@ export async function POST(req) {
 
     // ── Παραλήπτης από τη βάση ─────────────────────────────────────
     let to = FALLBACK_TO;
-    let platformName = 'PhysioHome';
+    let platformName = 'Theralivo';
 
     try {
       const supabase = createClient(

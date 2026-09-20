@@ -41,7 +41,7 @@ export default function ForgotPasswordPage() {
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{ fontFamily: 'Georgia, serif', fontSize: 24, fontWeight: 700, color: '#1a2e44', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
             <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#2a6fdb', display: 'inline-block' }} />
-            PhysioHome
+            Theralivo
           </div>
         </div>
 

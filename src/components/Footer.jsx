@@ -14,7 +14,7 @@ const CACHE_TTL = 5 * 60 * 1000;
 
 const DEFAULTS = {
   platform_name: BRAND,
-  email: 'info@physiohome.gr',
+  email: 'info@theralivo.com',
   phone: '+30 210 123 4567',
   address: 'Αθήνα & Αττική, Ελλάδα',
 };

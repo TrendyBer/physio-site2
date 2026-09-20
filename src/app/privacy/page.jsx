@@ -6,21 +6,21 @@ import { useState } from 'react';
 // - {ΟΝΟΜΑ ΕΠΙΧΕΙΡΗΣΗΣ}     → πλήρες όνομα ιδιώτη/ατομικής επιχείρησης
 // - {ΑΦΜ}                    → ΑΦΜ
 // - {ΔΟΥ}                    → αρμόδια ΔΟΥ
-// - support@physiohome.gr    → πραγματικό email επικοινωνίας
-// - dpo@physiohome.gr        → email υπευθύνου προστασίας δεδομένων (αν διαφέρει)
+// - support@theralivo.com    → πραγματικό email επικοινωνίας
+// - dpo@theralivo.com        → email υπευθύνου προστασίας δεδομένων (αν διαφέρει)
 
 const CONTENT = {
   el: {
     title: 'Πολιτική Απορρήτου',
     lastUpdated: 'Τελευταία ενημέρωση: 29 Απριλίου 2026',
-    intro: 'Η παρούσα Πολιτική Απορρήτου περιγράφει τον τρόπο με τον οποίο η PhysioHome (εφεξής "η Πλατφόρμα") συλλέγει, χρησιμοποιεί και προστατεύει τα προσωπικά σας δεδομένα σύμφωνα με τον Γενικό Κανονισμό Προστασίας Δεδομένων (GDPR — ΕΕ 2016/679) και τη σχετική ελληνική νομοθεσία (Ν. 4624/2019).',
+    intro: 'Η παρούσα Πολιτική Απορρήτου περιγράφει τον τρόπο με τον οποίο η Theralivo (εφεξής "η Πλατφόρμα") συλλέγει, χρησιμοποιεί και προστατεύει τα προσωπικά σας δεδομένα σύμφωνα με τον Γενικό Κανονισμό Προστασίας Δεδομένων (GDPR — ΕΕ 2016/679) και τη σχετική ελληνική νομοθεσία (Ν. 4624/2019).',
     sections: [
       {
         h: '1. Υπεύθυνος Επεξεργασίας Δεδομένων',
         p: [
           'Υπεύθυνος Επεξεργασίας: {ΟΝΟΜΑ ΕΠΙΧΕΙΡΗΣΗΣ}, ατομική επιχείρηση με έδρα στην Αθήνα, Ελλάδα.',
           'ΑΦΜ: {ΑΦΜ} | ΔΟΥ: {ΔΟΥ}',
-          'Επικοινωνία: support@physiohome.gr',
+          'Επικοινωνία: support@theralivo.com',
         ],
       },
       {
@@ -89,7 +89,7 @@ const CONTENT = {
           'Ανάκλησης συγκατάθεσης ανά πάσα στιγμή',
           'Υποβολής καταγγελίας στην Αρχή Προστασίας Δεδομένων Προσωπικού Χαρακτήρα (www.dpa.gr)',
         ],
-        p2: ['Για άσκηση των δικαιωμάτων σας, επικοινωνήστε στο support@physiohome.gr. Θα απαντήσουμε εντός 30 ημερών.'],
+        p2: ['Για άσκηση των δικαιωμάτων σας, επικοινωνήστε στο support@theralivo.com. Θα απαντήσουμε εντός 30 ημερών.'],
       },
       {
         h: '8. Ασφάλεια Δεδομένων',
@@ -113,8 +113,8 @@ const CONTENT = {
       {
         h: '10. Επικοινωνία',
         p: [
-          'Για ερωτήσεις σχετικά με την παρούσα Πολιτική: support@physiohome.gr',
-          'Υπεύθυνος Προστασίας Δεδομένων (DPO): dpo@physiohome.gr',
+          'Για ερωτήσεις σχετικά με την παρούσα Πολιτική: support@theralivo.com',
+          'Υπεύθυνος Προστασίας Δεδομένων (DPO): dpo@theralivo.com',
         ],
       },
     ],
@@ -122,14 +122,14 @@ const CONTENT = {
   en: {
     title: 'Privacy Policy',
     lastUpdated: 'Last updated: April 29, 2026',
-    intro: 'This Privacy Policy describes how PhysioHome (the "Platform") collects, uses, and protects your personal data in accordance with the General Data Protection Regulation (GDPR — EU 2016/679) and applicable Greek law (L. 4624/2019).',
+    intro: 'This Privacy Policy describes how Theralivo (the "Platform") collects, uses, and protects your personal data in accordance with the General Data Protection Regulation (GDPR — EU 2016/679) and applicable Greek law (L. 4624/2019).',
     sections: [
       {
         h: '1. Data Controller',
         p: [
           'Data Controller: {BUSINESS NAME}, sole proprietorship based in Athens, Greece.',
           'VAT ID: {VAT ID} | Tax Office: {TAX OFFICE}',
-          'Contact: support@physiohome.gr',
+          'Contact: support@theralivo.com',
         ],
       },
       {
@@ -198,7 +198,7 @@ const CONTENT = {
           'Withdrawal of consent at any time',
           'Lodging a complaint with the Hellenic Data Protection Authority (www.dpa.gr)',
         ],
-        p2: ['To exercise your rights, contact support@physiohome.gr. We will respond within 30 days.'],
+        p2: ['To exercise your rights, contact support@theralivo.com. We will respond within 30 days.'],
       },
       {
         h: '8. Data Security',
@@ -220,8 +220,8 @@ const CONTENT = {
       {
         h: '10. Contact',
         p: [
-          'For questions about this Policy: support@physiohome.gr',
-          'Data Protection Officer (DPO): dpo@physiohome.gr',
+          'For questions about this Policy: support@theralivo.com',
+          'Data Protection Officer (DPO): dpo@theralivo.com',
         ],
       },
     ],
@@ -240,7 +240,7 @@ export default function PrivacyPolicyPage() {
       <nav style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', padding: '0 24px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'Georgia, serif', fontSize: 18, fontWeight: 700, color: '#1a2e44', textDecoration: 'none' }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#2a6fdb', display: 'inline-block' }} />
-          PhysioHome
+          Theralivo
         </a>
         <a href="/" style={{ fontSize: 13, color: '#64748b', textDecoration: 'none' }}>← {lang === 'el' ? 'Επιστροφή' : 'Back'}</a>
       </nav>

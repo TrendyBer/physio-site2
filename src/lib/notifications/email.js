@@ -7,7 +7,7 @@
 // ─────────────────────────────────────────────────────────────
 
 const API_KEY = process.env.RESEND_API_KEY;
-const FROM = process.env.RESEND_FROM || 'PhysioHome <onboarding@resend.dev>';
+const FROM = process.env.RESEND_FROM || 'Theralivo <onboarding@resend.dev>';
 
 /**
  * @returns {Promise<{ok: boolean, provider: string, providerId?: string, error?: string, skipped?: boolean}>}

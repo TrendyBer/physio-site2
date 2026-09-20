@@ -8,7 +8,7 @@ const CACHE_KEY = 'cms_platform_settings';
 const CACHE_TTL = 5 * 60 * 1000;
 
 const DEFAULTS = {
-  email: 'info@physiohome.gr',
+  email: 'info@theralivo.com',
   phone: '+30 210 123 4567',
   address: 'Αθήνα & Αττική',
 };

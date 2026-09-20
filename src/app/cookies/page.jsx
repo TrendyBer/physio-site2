@@ -4,7 +4,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Cookie, Shield, BarChart3, Megaphone, Settings as SettingsIcon, Mail } from 'lucide-react';
 
-const COOKIE_PREFS_KEY = 'physiohome_cookie_prefs';
+const COOKIE_PREFS_KEY = 'Theralivo_cookie_prefs';
 
 export default function CookiesPage() {
   const [currentPrefs, setCurrentPrefs] = useState(null);
@@ -51,7 +51,7 @@ export default function CookiesPage() {
             Πολιτική Cookies
           </h1>
           <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.85)', lineHeight: 1.6 }}>
-            Πώς και γιατί χρησιμοποιούμε cookies στο PhysioHome.
+            Πώς και γιατί χρησιμοποιούμε cookies στο Theralivo.
           </p>
           <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', marginTop: 8 }}>
             Τελευταία ενημέρωση: {lastUpdated}
@@ -123,7 +123,7 @@ export default function CookiesPage() {
           </p>
         </Section>
 
-        <Section title="Πώς χρησιμοποιούμε τα cookies στο PhysioHome;">
+        <Section title="Πώς χρησιμοποιούμε τα cookies στο Theralivo;">
           <p>Χρησιμοποιούμε cookies για 3 βασικούς σκοπούς:</p>
           <ul style={{ marginTop: 12, paddingLeft: 24 }}>
             <li style={{ marginBottom: 8 }}><strong>Λειτουργικότητα:</strong> Διατήρηση session login, προτιμήσεις γλώσσας, ασφάλεια.</li>
@@ -145,7 +145,7 @@ export default function CookiesPage() {
             examples={[
               { name: 'sb-access-token', purpose: 'Authentication με Supabase', duration: 'Session' },
               { name: 'sb-refresh-token', purpose: 'Διατήρηση login session', duration: '7 μέρες' },
-              { name: 'physiohome_cookie_prefs', purpose: 'Αποθήκευση των επιλογών σας για cookies', duration: '1 χρόνος' },
+              { name: 'Theralivo_cookie_prefs', purpose: 'Αποθήκευση των επιλογών σας για cookies', duration: '1 χρόνος' },
             ]}
           />
 
@@ -178,7 +178,7 @@ export default function CookiesPage() {
           <p>Μπορείτε να ελέγξετε τα cookies με 3 τρόπους:</p>
           <ol style={{ marginTop: 12, paddingLeft: 24 }}>
             <li style={{ marginBottom: 8 }}>
-              <strong>Στο PhysioHome:</strong> Πατήστε "Αλλαγή Ρυθμίσεων" παραπάνω για να
+              <strong>Στο Theralivo:</strong> Πατήστε "Αλλαγή Ρυθμίσεων" παραπάνω για να
               αλλάξετε τις προτιμήσεις σας.
             </li>
             <li style={{ marginBottom: 8 }}>
@@ -215,7 +215,7 @@ export default function CookiesPage() {
 
         <Section title="Επικοινωνία">
           <p>
-            Αν έχετε ερωτήσεις σχετικά με την Πολιτική Cookies ή τη χρήση cookies στο PhysioHome,
+            Αν έχετε ερωτήσεις σχετικά με την Πολιτική Cookies ή τη χρήση cookies στο Theralivo,
             μπορείτε να επικοινωνήσετε μαζί μας:
           </p>
           <div style={{
@@ -229,8 +229,8 @@ export default function CookiesPage() {
             gap: 10,
           }}>
             <Mail size={16} color="#2a6fdb" />
-            <a href="mailto:info@physiohome.gr" style={{ color: '#2a6fdb', fontWeight: 600, textDecoration: 'none' }}>
-              info@physiohome.gr
+            <a href="mailto:info@theralivo.com" style={{ color: '#2a6fdb', fontWeight: 600, textDecoration: 'none' }}>
+              info@theralivo.com
             </a>
           </div>
         </Section>
