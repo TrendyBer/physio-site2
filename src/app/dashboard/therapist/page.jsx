@@ -11,6 +11,7 @@ import RescheduleModal from '@/components/RescheduleModal';
 import { searchAreas, canonicalArea, phonetic } from '@/lib/areas';
 import ConditionPicker from '@/components/ConditionPicker';
 import { C, R as RAD, T, F, MAX_WIDTH, card, btn, badge } from '@/lib/tokens';
+import ReportModal from '@/components/ReportModal';
 import {
   LayoutDashboard, ClipboardList, Calendar, MapPin, Target, Star, User, Clock, AlertTriangle, UserX,
   Upload, Home, MessageSquare, Check, X, Lock, CalendarClock, ChevronLeft, ChevronRight,
@@ -140,6 +141,8 @@ const TX = {
     markDone: 'Ολοκληρώθηκε',
     cancel: 'Ακύρωση',
     reschedule: 'Αλλαγή ώρας',
+    noShow: 'Δεν εμφανίστηκε',
+    reportIssue: 'Αναφορά',
     reschedulePendingYours: 'Στείλατε πρόταση',
     rescheduleReview: 'Δες την πρόταση',
     awaitingRelease: 'Αναμονή επιβεβαίωσης από τον ασθενή',
@@ -1256,6 +1259,7 @@ export default function TherapistDashboard() {
   const [savingBilling, setSavingBilling] = useState(false);
   const [billingMsg, setBillingMsg] = useState(null);
 
+  const [reportTarget, setReportTarget] = useState(null);
   const [areaInput, setAreaInput] = useState('');
   const [savingAreas, setSavingAreas] = useState(false);
   const [areaSuggestions, setAreaSuggestions] = useState([]);
@@ -2294,6 +2298,9 @@ export default function TherapistDashboard() {
                           const friendly = friendlyDateLabel(apt.session_date);
                           const isPast = new Date(apt.session_date + 'T' + (apt.session_time || '00:00')) < new Date();
                           const canMarkDone = apt.status === 'confirmed' && isPast && apt.payment_status !== 'held';
+                          // Το no-show δηλώνεται μόνο σε ραντεβού που ΠΕΡΑΣΕ.
+                          // Ο ακριβής φραγμός (15 λεπτά μετά) επιβάλλεται στη βάση.
+                          const canReport = apt.status === 'confirmed' && isPast;
 
                           return (
                             <div key={apt.id} style={{
@@ -2345,6 +2352,22 @@ export default function TherapistDashboard() {
                                 </div>
 
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
+                                  {canReport && (
+                                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                                      <button
+                                        onClick={() => setReportTarget({ mode: 'noshow', booking: apt, otherName: apt.request?.patient_name })}
+                                        style={{ padding: '7px 12px', borderRadius: 8, border: `1px solid ${C.warnBorder}`, background: 'transparent', color: C.warn, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
+                                        <UserX size={13} />
+                                        {tx.noShow}
+                                      </button>
+                                      <button
+                                        onClick={() => setReportTarget({ mode: 'issue', booking: apt, otherName: apt.request?.patient_name })}
+                                        style={{ padding: '7px 12px', borderRadius: 8, border: `1px solid ${C.border}`, background: 'transparent', color: C.textMuted, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
+                                        <AlertTriangle size={13} />
+                                        {tx.reportIssue}
+                                      </button>
+                                    </div>
+                                  )}
                                   {canMarkDone && (
                                     <button onClick={() => openDoneModal(apt, apt.request)}
                                       style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: C.success, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
