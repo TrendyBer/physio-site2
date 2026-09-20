@@ -187,8 +187,10 @@ export default function Footer() {
 
             {/* Brand */}
             <div>
-              <div style={{ marginBottom: 14 }}>
-                <Logo variant="full" tone="light" lang={lang} size={44} />
+              {/* Footer → lockup με το tagline. Είναι το σημείο όπου ο
+                  επισκέπτης σταματάει και υπάρχει χώρος να διαβαστεί. */}
+              <div style={{ marginBottom: 18 }}>
+                <Logo variant="lockup" tone="light" size={46} />
               </div>
               <p style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 16 }}>{tx.desc}</p>
               <a href="/find-help" className="footer-cta-btn">

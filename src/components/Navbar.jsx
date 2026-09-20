@@ -247,10 +247,9 @@ export default function Navbar() {
 
           {/* ΑΡΙΣΤΕΡΑ: λογότυπο + links, κολλητά μεταξύ τους */}
           <Logo
-            variant="compact"
+            variant="primary"
             tone={TH.logo === '#ffffff' ? 'light' : 'dark'}
-            lang={lang}
-            style={{ flexShrink: 0 }}
+            size={34}
           />
 
           <ul className="nav-links-desktop" style={{ alignItems: 'center', gap: 22, listStyle: 'none', margin: 0, marginLeft: 32, padding: 0 }}>
@@ -404,7 +403,7 @@ export default function Navbar() {
       {menuOpen && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: '#fff', display: 'flex', flexDirection: 'column', padding: '20px 24px', overflowY: 'auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
-            <Logo variant="compact" tone="dark" lang={lang} asLink={false} size={30} />
+            <Logo variant="primary" tone="dark" asLink={false} size={32} />
             <button onClick={() => setMenuOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1a2e44', padding: 4, lineHeight: 0 }}><X size={22} /></button>
           </div>
           <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>

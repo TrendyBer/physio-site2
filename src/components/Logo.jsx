@@ -2,44 +2,54 @@
 import Image from 'next/image';
 
 /**
- * ΤΟ ΣΗΜΑ ΤΟΥ THERALIVO
+ * ΤΟ ΛΟΓΟΤΥΠΟ ΤΟΥ THERALIVO
  *
- * ΓΙΑΤΙ ΧΩΡΙΣΤΟ ΣΗΜΑ ΑΠΟ ΤΟ ΟΝΟΜΑ:
- * Στο πρωτότυπο λογότυπο το «Theralivo» είναι navy — αόρατο πάνω στο
- * σκούρο navbar. Αν βάζαμε ολόκληρη την εικόνα, θα χρειαζόμασταν δύο
- * εκδόσεις και θα ξεχνούσαμε να ενημερώσουμε τη μία.
+ * ΔΥΟ ΕΠΙΠΕΔΑ, ΟΧΙ ΕΝΑ:
  *
- * Εδώ η εικόνα είναι ΜΟΝΟ η φιγούρα — που έχει γαλάζιο και λειτουργεί
- * σε κάθε φόντο — και το όνομα γράφεται ως κείμενο, οπότε αλλάζει χρώμα
- * ελεύθερα.
+ *   primary  σύμβολο + Theralivo
+ *            Το «κανονικό» λογότυπο. Navbar, favicon, κινητό, social,
+ *            κάρτες, κάθε μικρή επιφάνεια.
  *
- * ΠΑΡΑΛΛΑΓΕΣ
- *   variant="full"    σήμα + όνομα + υπότιτλος   (αρχική, footer)
- *   variant="compact" σήμα + όνομα               (navbar, admin)
- *   variant="mark"    μόνο η φιγούρα             (avatar, μικρά σημεία)
- *   variant="image"   ολόκληρο το λογότυπο       (μόνο σε ανοιχτό φόντο)
+ *   lockup   σύμβολο + Theralivo + tagline
+ *            Παρουσιάσεις, hero, footer, έντυπα. Όπου υπάρχει χώρος να
+ *            διαβαστεί και λόγος να εξηγηθεί η μάρκα.
  *
- *   tone="dark"  για ανοιχτό φόντο  (προεπιλογή)
- *   tone="light" για σκούρο φόντο
+ * Το tagline ΔΕΝ είναι μέρος του λογοτύπου. Είναι brand message που
+ * μπορεί να ζήσει και μόνο του — κάτω από τον τίτλο του hero, σε ένα
+ * About, σε splash screen.
+ *
+ * ΓΙΑΤΙ ΤΟ TAGLINE ΕΙΝΑΙ ΚΕΙΜΕΝΟ ΚΑΙ ΟΧΙ ΕΙΚΟΝΑ:
+ * Στο αρχικό σχέδιο ήταν «ψημένο» μέσα στο PNG. Κάθε αλλαγή διατύπωσης
+ * θα απαιτούσε νέο σχέδιο, και κάθε σκούρο φόντο δεύτερο αρχείο.
+ * Τώρα αλλάζει με μία γραμμή και προσαρμόζει χρώμα μόνο του.
+ *
+ * ΔΥΟ ΕΚΔΟΣΕΙΣ ΕΙΚΟΝΑΣ:
+ * Το «Theralivo» στο σχέδιο είναι navy — αόρατο σε σκούρο navbar. Η
+ * λευκή έκδοση έχει το κείμενο αντιστραμμένο και τη φιγούρα ανέπαφη.
  */
 
 export const BRAND = 'Theralivo';
-export const TAGLINE = 'Your path to better life.';
-export const TAGLINE_EL = 'Ο δρόμος σου προς μια καλύτερη ζωή.';
+export const TAGLINE = 'Better movement. Better life.';
 
-const MARK = '/brand/logo-mark.png';
-const FULL = '/brand/logo-full.png';
+const WORDMARK_DARK  = '/brand/logo-wordmark.png';
+const WORDMARK_LIGHT = '/brand/logo-wordmark-light.png';
+const MARK           = '/brand/logo-mark.png';
+
+// Αναλογίες του πρωτότυπου — το πλάτος προκύπτει από το ύψος, ώστε να
+// μη παραμορφώνεται σε κανένα μέγεθος.
+const WORDMARK_RATIO = 587 / 180;
+const MARK_RATIO     = 225 / 256;
+
+// Το «T» ξεκινά στο 27% του πλάτους. Το tagline στοιχίζεται εκεί, κάτω
+// από το όνομα — όχι κάτω από το σύμβολο.
+const TEXT_OFFSET = 0.27;
 
 export function LogoMark({ size = 32, style }) {
   return (
     <span style={{ display: 'inline-flex', flexShrink: 0, ...style }}>
       <Image
-        src={MARK}
-        alt=""
-        width={size}
-        height={size}
-        // Η φιγούρα είναι ψηλότερη από φαρδιά· το contain κρατάει τις
-        // αναλογίες χωρίς να την παραμορφώνει σε τετράγωνο πλαίσιο.
+        src={MARK} alt=""
+        width={Math.round(size * MARK_RATIO)} height={size}
         style={{ width: 'auto', height: size, objectFit: 'contain' }}
         priority
       />
@@ -47,66 +57,63 @@ export function LogoMark({ size = 32, style }) {
   );
 }
 
+/** Το brand message, αυτόνομα. Για hero, About, splash. */
+export function Tagline({ tone = 'dark', size = 13, style }) {
+  return (
+    <span style={{
+      fontSize: size,
+      fontWeight: 500,
+      letterSpacing: '.06em',
+      color: tone === 'light' ? 'rgba(255,255,255,0.7)' : '#5b7699',
+      whiteSpace: 'nowrap',
+      ...style,
+    }}>
+      {TAGLINE}
+    </span>
+  );
+}
+
 export default function Logo({
-  variant = 'compact',
+  variant = 'primary',
   tone = 'dark',
   size,
   href = '/',
   asLink = true,
-  lang = 'el',
-  showTagline,
   style,
 }) {
   const light = tone === 'light';
-  const wordColor    = light ? '#ffffff' : '#0f2a52';
-  const taglineColor = light ? 'rgba(255,255,255,0.62)' : '#5b7699';
-
-  const markSize = size || (variant === 'full' ? 48 : variant === 'mark' ? 32 : 34);
-  const wordSize = variant === 'full' ? 27 : 21;
-
-  // Ο υπότιτλος μόνο στην πλήρη μορφή: στο navbar θα ήταν δυσανάγνωστος
-  // και θα έκλεβε ύψος από τη γραμμή.
-  const withTagline = showTagline ?? (variant === 'full');
-  const tagline = lang === 'el' ? TAGLINE_EL : TAGLINE;
-
-  const wrap = (inner) => asLink
-    ? <a href={href} aria-label={BRAND} style={{ display: 'inline-flex', textDecoration: 'none', ...style }}>{inner}</a>
-    : <span style={{ display: 'inline-flex', ...style }}>{inner}</span>;
+  const height = size || (variant === 'lockup' ? 44 : variant === 'mark' ? 32 : 36);
+  const width = Math.round(height * WORDMARK_RATIO);
 
   if (variant === 'mark') {
-    return wrap(<LogoMark size={markSize} />);
+    const m = <LogoMark size={height} />;
+    return asLink
+      ? <a href={href} aria-label={BRAND} style={{ display: 'inline-flex', ...style }}>{m}</a>
+      : <span style={{ display: 'inline-flex', ...style }}>{m}</span>;
   }
 
-  // Ολόκληρη η εικόνα. Χρησιμοποιείται μόνο όπου το φόντο είναι σίγουρα
-  // ανοιχτό — π.χ. σε email ή σε έντυπο.
-  if (variant === 'image') {
-    const h = size || 56;
-    return wrap(
-      <Image src={FULL} alt={BRAND} width={h * 3} height={h}
-        style={{ width: 'auto', height: h, objectFit: 'contain' }} priority />
-    );
-  }
-
-  return wrap(
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: variant === 'full' ? 13 : 10 }}>
-      <LogoMark size={markSize} />
-      <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
-        <span style={{
-          fontSize: wordSize, fontWeight: 800, color: wordColor,
-          letterSpacing: '-0.025em', whiteSpace: 'nowrap',
-        }}>
-          {BRAND}
-        </span>
-        {withTagline && (
-          <span style={{
-            fontSize: variant === 'full' ? 11 : 9.5,
-            fontWeight: 500, color: taglineColor,
-            letterSpacing: '.05em', marginTop: 5, whiteSpace: 'nowrap',
-          }}>
-            {tagline}
-          </span>
-        )}
-      </span>
-    </span>
+  const wordmark = (
+    <Image
+      src={light ? WORDMARK_LIGHT : WORDMARK_DARK}
+      alt={BRAND}
+      width={width} height={height}
+      style={{ width: 'auto', height, objectFit: 'contain', display: 'block' }}
+      priority
+    />
   );
+
+  const inner = variant === 'lockup' ? (
+    <span style={{ display: 'inline-flex', flexDirection: 'column' }}>
+      {wordmark}
+      <Tagline
+        tone={tone}
+        size={Math.max(10, Math.round(height * 0.23))}
+        style={{ marginTop: Math.round(height * 0.14), marginLeft: Math.round(width * TEXT_OFFSET) }}
+      />
+    </span>
+  ) : wordmark;
+
+  return asLink
+    ? <a href={href} aria-label={BRAND} style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none', flexShrink: 0, ...style }}>{inner}</a>
+    : <span style={{ display: 'inline-flex', alignItems: 'center', flexShrink: 0, ...style }}>{inner}</span>;
 }
