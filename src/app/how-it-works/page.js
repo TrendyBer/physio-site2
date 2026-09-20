@@ -4,6 +4,7 @@ import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import BookingButton from '../../components/BookingButton';
 import { useLang } from '@/context/LanguageContext';
+import { supabase } from '@/lib/supabase';
 import { CheckCircle2, ArrowRight, CreditCard } from 'lucide-react';
 
 const CONTENT = {
@@ -105,7 +106,45 @@ const REGISTER_THERAPIST_HREF = '/auth/register?role=therapist';
 
 export default function HowItWorksPage() {
   const { lang } = useLang();
-  const t = CONTENT[lang] || CONTENT.el;
+  const [cms, setCms] = useState(null);
+
+  // ── ΚΕΙΜΕΝΑ ΑΠΟ ΤΟ ADMIN ──
+  // Το hero γράφεται σε ένα επίπεδο· τα «Για ασθενείς» και «Για
+  // θεραπευτές» είναι ένθετα αντικείμενα, γι' αυτό συγχωνεύονται
+  // ξεχωριστά. Ό,τι μένει κενό κρατάει το κείμενο του κώδικα.
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from('site_content')
+        .select('section, content_el, content_en')
+        .eq('page', 'howitworks');
+      if (data?.length) setCms(data);
+    })();
+  }, []);
+
+  const t = (() => {
+    const base = CONTENT[lang] || CONTENT.el;
+    if (!cms) return base;
+    const key = lang === 'en' ? 'content_en' : 'content_el';
+    const out = { ...base, patient: { ...base.patient }, therapist: { ...base.therapist } };
+
+    const apply = (target, obj) => {
+      if (!obj || typeof obj !== 'object') return;
+      Object.entries(obj).forEach(([k, v]) => {
+        if (v === null || v === undefined || v === '') return;
+        if (Array.isArray(v) && v.length === 0) return;
+        target[k] = v;
+      });
+    };
+
+    cms.forEach(row => {
+      const c = row[key];
+      if (row.section === 'hero') apply(out, c);
+      else if (row.section === 'patient') apply(out.patient, c);
+      else if (row.section === 'therapist') apply(out.therapist, c);
+    });
+    return out;
+  })();
   const [tab, setTab] = useState('patient');
 
   useEffect(() => {
@@ -140,7 +179,7 @@ export default function HowItWorksPage() {
       <section style={{ background: 'linear-gradient(135deg, #e8f3ff 0%, #f0f7ff 100%)', padding: '72px 24px 48px' }}>
         <div style={{ maxWidth: 1000, margin: '0 auto', textAlign: 'center' }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: '#2a6fdb', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 16 }}>{t.badge}</div>
-          <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: 'clamp(30px, 4vw, 50px)', color: '#1a2e44', lineHeight: 1.15, marginBottom: 18 }}>
+          <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(30px, 4vw, 50px)', color: '#1a2e44', lineHeight: 1.15, marginBottom: 18 }}>
             {t.heroTitle} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{t.heroTitleEm}</em>
           </h1>
           <p style={{ fontSize: 17, color: '#6b7a8d', maxWidth: 640, margin: '0 auto 32px', lineHeight: 1.7 }}>{t.heroDesc}</p>
@@ -173,7 +212,7 @@ export default function HowItWorksPage() {
       <section style={{ padding: '64px 24px 72px' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <div style={{ marginBottom: 40, maxWidth: 640 }}>
-            <h2 style={{ fontFamily: "'EB Garamond', serif", fontSize: 'clamp(26px, 3vw, 38px)', color: '#1a2e44', lineHeight: 1.2, marginBottom: 12 }}>
+            <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(26px, 3vw, 38px)', color: '#1a2e44', lineHeight: 1.2, marginBottom: 12 }}>
               {panel.title}
             </h2>
             <p style={{ fontSize: 16, color: '#6b7a8d', lineHeight: 1.7 }}>{panel.desc}</p>
@@ -212,7 +251,7 @@ export default function HowItWorksPage() {
                 που το media query δεν μπορεί να ακυρώσει. Σε κινητό η
                 κάρτα κολλούσε και πατούσε πάνω στα βήματα. */}
             <div className="hiw-why" style={{ background: '#fff', border: '1px solid #dce6f0', borderRadius: 16, padding: 28 }}>
-              <h3 style={{ fontFamily: "'EB Garamond', serif", fontSize: 22, color: '#1a2e44', marginBottom: 18 }}>{panel.whyTitle}</h3>
+              <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 22, color: '#1a2e44', marginBottom: 18 }}>{panel.whyTitle}</h3>
               <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 26 }}>
                 {panel.why.map((point, i) => (
                   <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 14, color: '#475569', lineHeight: 1.5 }}>
