@@ -1,0 +1,16 @@
+[33mcommit 21e5b5cddf3eff74501f688312f512e347ada1a1[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m
+Author: Nick Kyriakopoulos <nkyriakopoulos120@outlook.com>
+Date:   Sun Sep 20 12:09:49 2026 +0300
+
+    brand: rename to Theralivo, new logo
+
+ public/brand/logo-full.png         |   0
+ public/brand/logo-mark.png         |   0
+ src/app/favicon.ico                | Bin [31m25931[m -> [32m0[m bytes
+ src/app/icon.png                   |   0
+ src/app/layout.js                  |  23 [32m+++++++[m[31m-[m
+ src/components/Footer.jsx          |   8 [32m+[m[31m--[m
+ src/components/Logo.jsx            | 112 [32m+++++++++++++++++++++++++++++++++++++[m
+ src/components/Navbar.jsx          |  15 [32m+++[m[31m--[m
+ src/lib/notifications/templates.js |  37 [32m++++++[m[31m------[m
+ 9 files changed, 167 insertions(+), 28 deletions(-)
