@@ -6,6 +6,7 @@ import { Check, X, ChevronLeft, ChevronRight, Calendar, ArrowRight, MapPin, Aler
 import ConditionSearch from '@/components/ConditionSearch';
 import AreaInput from '@/components/AreaInput';
 import VerifiedBadge from '@/components/VerifiedBadge';
+import Logo from '@/components/Logo';
 import { track, EV, getClientId, getUtm, captureUtm } from '@/lib/analytics';
 import { areasMatch } from '@/lib/areas';
 import { filterBookableSlots } from '@/lib/slots';
@@ -654,10 +655,7 @@ export default function NewRequestPage() {
 
       {/* Header */}
       <nav style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', padding: '0 24px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
-        <a href="/dashboard/patient" style={{ fontFamily: 'Georgia, serif', fontSize: 18, fontWeight: 700, color: '#1a2e44', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#2a6fdb', display: 'inline-block' }} />
-          PhysioHome
-        </a>
+        <Logo variant="primary" tone="dark" size={28} href="/dashboard/patient" />
         <a href="/dashboard/patient" style={{ fontSize: 13, color: '#64748b', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
           <ChevronLeft size={14} />
           Πίσω στον πίνακά μου

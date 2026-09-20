@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import Logo from '@/components/Logo';
 import { useSearchParams } from 'next/navigation';
 import { useLang } from '@/context/LanguageContext';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
@@ -303,10 +304,11 @@ export default function RegisterPage() {
         </div>
 
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <a href="/" style={{ fontFamily: 'Georgia, serif', fontSize: 24, fontWeight: 700, color: '#1a2e44', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#2a6fdb', display: 'inline-block' }} />
-            PhysioHome
-          </a>
+          {/* Λευκή κάρτα → σκούρα έκδοση. Το lockup μπαίνει εδώ γιατί
+              είναι σελίδα εισόδου: ο επισκέπτης βλέπει μόνο αυτό. */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}>
+            <Logo variant="lockup" tone="dark" size={40} />
+          </div>
           <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a2e44', margin: 0 }}>{tx.brandTitle}</h1>
           {roleLabel && (
             <div style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 6, background: '#EFF6FF', color: '#2a6fdb', padding: '5px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600 }}>

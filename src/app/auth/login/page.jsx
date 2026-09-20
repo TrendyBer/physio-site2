@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import Logo from '@/components/Logo';
 
 export default function LoginPage() {
   const [form, setForm] = useState({ email: '', password: '' });
@@ -21,7 +22,7 @@ export default function LoginPage() {
       // Το pendingRedirect ζει στο localStorage, που ο χρήστης μπορεί να
       // επεξεργαστεί. Μια τιμή σαν «https://κακόβουλο.gr» θα τον έστελνε
       // εκτός του site αμέσως μετά τη σύνδεση — σε σελίδα που θα μπορούσε
-      // να μιμηθεί το PhysioHome και να ζητήσει ξανά κωδικό.
+      // να μιμηθεί το Theralivo και να ζητήσει ξανά κωδικό.
       //
       // Το «//» αποκλείεται ξεχωριστά: το «//κακόβουλο.gr» είναι έγκυρη
       // απόλυτη διεύθυνση για τον browser, παρότι ξεκινά με κάθετο.
@@ -107,9 +108,10 @@ export default function LoginPage() {
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #e8f3ff 0%, #f0f7ff 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div style={{ background: '#fff', borderRadius: 20, padding: '40px', width: '100%', maxWidth: 440, boxShadow: '0 8px 40px rgba(26,46,68,0.12)' }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ fontFamily: 'Georgia, serif', fontSize: 24, fontWeight: 700, color: '#1a2e44', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#2a6fdb', display: 'inline-block' }} />
-            PhysioHome
+          {/* Λευκή κάρτα → σκούρα έκδοση. Το lockup μπαίνει εδώ γιατί
+              είναι σελίδα εισόδου: ο επισκέπτης βλέπει μόνο αυτό. */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}>
+            <Logo variant="lockup" tone="dark" size={40} asLink={false} />
           </div>
           <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a2e44', margin: 0 }}>Σύνδεση</h1>
           <p style={{ fontSize: 14, color: '#6b7a8d', marginTop: 6 }}>Καλώς ήρθατε πίσω</p>

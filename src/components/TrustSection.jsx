@@ -5,7 +5,7 @@ import { CheckCircle2, Shield, Star, Lock, Heart } from 'lucide-react';
 const CONTENT = {
   el: {
     title: 'Γιατί μπορείτε να',
-    titleEm: 'εμπιστευτείτε το PhysioHome',
+    titleEm: 'εμπιστευτείτε το Theralivo',
     desc: 'Η φροντίδα στο σπίτι απαιτεί σιγουριά. Γι\u2019 αυτό δίνουμε έμφαση στον έλεγχο των επαγγελματιών, στη διαφάνεια των προφίλ και στην υποστήριξη κάθε ασθενή πριν και μετά τη συνεδρία.',
     cta: 'Δείτε τους φυσιοθεραπευτές',
     cards: [
@@ -18,7 +18,7 @@ const CONTENT = {
   },
   en: {
     title: 'Why you can',
-    titleEm: 'trust PhysioHome',
+    titleEm: 'trust Theralivo',
     desc: 'Home care requires confidence. That is why we focus on vetting professionals, keeping profiles transparent, and supporting every patient before and after a session.',
     cta: 'Browse physiotherapists',
     cards: [

@@ -11,6 +11,7 @@ import StepLicense from '@/components/onboarding/StepLicense';
 import StepPlan from '@/components/onboarding/StepPlan';
 import { Check, Cloud, LogOut, CheckCircle2, Clock, ArrowRight } from 'lucide-react';
 import { track, EV } from '@/lib/analytics';
+import Logo from '@/components/Logo';
 
 /*
   ONBOARDING ΘΕΡΑΠΕΥΤΗ — φάση 2 από 2
@@ -238,10 +239,7 @@ export default function TherapistOnboardingPage() {
       {/* Header */}
       <div style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', padding: '0 24px' }}>
         <div style={{ maxWidth: 780, margin: '0 auto', height: 62, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-          <span style={{ fontFamily: 'Georgia, serif', fontSize: 19, fontWeight: 700, color: '#1a2e44', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#2a6fdb', display: 'inline-block' }} />
-            PhysioHome
-          </span>
+          <Logo variant="primary" tone="dark" size={28} asLink={false} />
           <div className="ob-actions">
             {saveState && (
               <span style={{ fontSize: 12, color: saveState === 'saved' ? '#15803D' : '#94a3b8', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
@@ -267,7 +265,7 @@ export default function TherapistOnboardingPage() {
               <CheckCircle2 size={30} color="#15803D" strokeWidth={2.1} />
             </div>
 
-            <h1 style={{ fontFamily: "'EB Garamond', Georgia, serif", fontSize: 'clamp(21px, 3vw, 27px)', color: '#1a2e44', marginBottom: 12 }}>
+            <h1 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 'clamp(21px, 3vw, 27px)', color: '#1a2e44', marginBottom: 12 }}>
               {tx.doneTitle}
             </h1>
 
@@ -298,7 +296,7 @@ export default function TherapistOnboardingPage() {
         <>
         {/* Καλωσόρισμα */}
         <div style={{ marginBottom: 24 }}>
-          <h1 style={{ fontFamily: "'EB Garamond', Georgia, serif", fontSize: 'clamp(24px, 3vw, 32px)', color: '#1a2e44', marginBottom: 8 }}>
+          <h1 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 'clamp(24px, 3vw, 32px)', color: '#1a2e44', marginBottom: 8 }}>
             {tx.welcome(firstName)}
           </h1>
           <p style={{ fontSize: 15, color: '#6b7a8d', lineHeight: 1.6 }}>{tx.intro}</p>

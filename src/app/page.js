@@ -163,7 +163,7 @@ const TX = {
 
     whyEyebrow: 'Γιατί',
     whyTitle1: 'Γιατί δημιουργήσαμε το',
-    whyTitle2: 'PhysioHome',
+    whyTitle2: 'Theralivo',
     whyLead: 'Η επιλογή φυσικοθεραπευτή για το σπίτι δεν θα έπρεπε να γίνεται στα τυφλά.',
     whyP1: 'Όταν χρειάζεστε φυσιοθεραπεία, θέλετε να γνωρίζετε ότι ο επαγγελματίας που θα έρθει στον χώρο σας είναι επαληθευμένος, αναλαμβάνει το συγκεκριμένο περιστατικό και εξυπηρετεί την περιοχή σας.',
     whyP2: 'Γι’ αυτό δημιουργήσαμε έναν πιο απλό και ξεκάθαρο τρόπο να βρίσκετε τον κατάλληλο φυσικοθεραπευτή για εσάς.',
@@ -239,7 +239,7 @@ const TX = {
 
     whyEyebrow: 'Why',
     whyTitle1: 'Why we built',
-    whyTitle2: 'PhysioHome',
+    whyTitle2: 'Theralivo',
     whyLead: 'Choosing a physiotherapist for your home should not be done blindly.',
     whyP1: 'When you need physiotherapy, you want to know that the professional coming into your space is verified, handles your specific condition and serves your area.',
     whyP2: "That's why we built a simpler, clearer way to find the right physiotherapist for you.",

@@ -11,8 +11,8 @@ const CONTENT = {
   el: {
     badge: 'Πώς Λειτουργεί',
     heroTitle: 'Πώς λειτουργεί το',
-    heroTitleEm: 'PhysioHome',
-    heroDesc: 'Το PhysioHome συνδέει ασθενείς που χρειάζονται φυσιοθεραπεία στο σπίτι με ελεγμένους φυσιοθεραπευτές στην περιοχή τους. Διαλέξτε τον ρόλο σας για να δείτε τη διαδικασία.',
+    heroTitleEm: 'Theralivo',
+    heroDesc: 'Το Theralivo συνδέει ασθενείς που χρειάζονται φυσιοθεραπεία στο σπίτι με ελεγμένους φυσιοθεραπευτές στην περιοχή τους. Διαλέξτε τον ρόλο σας για να δείτε τη διαδικασία.',
     tabPatient: 'Για ασθενείς',
     tabTherapist: 'Για φυσιοθεραπευτές',
     patient: {
@@ -57,8 +57,8 @@ const CONTENT = {
   en: {
     badge: 'How It Works',
     heroTitle: 'How',
-    heroTitleEm: 'PhysioHome works',
-    heroDesc: 'PhysioHome connects patients who need physiotherapy at home with vetted physiotherapists in their area. Choose your role to see the process.',
+    heroTitleEm: 'Theralivo works',
+    heroDesc: 'Theralivo connects patients who need physiotherapy at home with vetted physiotherapists in their area. Choose your role to see the process.',
     tabPatient: 'For patients',
     tabTherapist: 'For physiotherapists',
     patient: {

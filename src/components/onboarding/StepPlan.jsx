@@ -21,7 +21,7 @@ import { ArrowLeft, Check, Tag, X, Info, Star, Send } from 'lucide-react';
 const AGREEMENT_VERSION = 'v1';
 
 const CONTRACTS = {
-  el: ({ planName, price, fee, promo }) => `ΣΥΜΒΑΣΗ ΣΥΝΕΡΓΑΣΙΑΣ — PhysioHome (έκδοση ${AGREEMENT_VERSION})
+  el: ({ planName, price, fee, promo }) => `ΣΥΜΒΑΣΗ ΣΥΝΕΡΓΑΣΙΑΣ — Theralivo (έκδοση ${AGREEMENT_VERSION})
 
 1. ΠΑΚΕΤΟ: Ο θεραπευτής εντάσσεται στο πακέτο «${planName}»${price > 0 ? ` με μηνιαία συνδρομή €${price}.` : ' — χωρίς μηνιαία χρέωση.'}
 
@@ -43,7 +43,7 @@ ${promo ? '9' : '8'}. ΑΠΑΓΟΡΕΥΣΗ ΠΑΡΑΚΑΜΨΗΣ: Απαγορε�
 
 ${promo ? '10' : '9'}. GDPR: Ο θεραπευτής δεσμεύεται να τηρεί τον κανονισμό GDPR για τα δεδομένα των ασθενών.`,
 
-  en: ({ planName, price, fee, promo }) => `PARTNERSHIP AGREEMENT — PhysioHome (version ${AGREEMENT_VERSION})
+  en: ({ planName, price, fee, promo }) => `PARTNERSHIP AGREEMENT — Theralivo (version ${AGREEMENT_VERSION})
 
 1. PLAN: The therapist joins the "${planName}" plan${price > 0 ? ` with a monthly subscription of €${price}.` : ' — with no monthly charge.'}
 

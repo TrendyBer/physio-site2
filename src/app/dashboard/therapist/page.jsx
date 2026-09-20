@@ -12,6 +12,7 @@ import { searchAreas, canonicalArea, phonetic } from '@/lib/areas';
 import ConditionPicker from '@/components/ConditionPicker';
 import { C, R as RAD, T, F, MAX_WIDTH, card, btn, badge } from '@/lib/tokens';
 import ReportModal from '@/components/ReportModal';
+import Logo, { BRAND } from '@/components/Logo';
 import {
   LayoutDashboard, ClipboardList, Calendar, MapPin, Target, Star, User, Clock, AlertTriangle, UserX,
   Upload, Home, MessageSquare, Check, X, Lock, CalendarClock, ChevronLeft, ChevronRight,
@@ -201,7 +202,7 @@ const TX = {
     secBilling: 'Οικονομικά στοιχεία',
     billingTitle: 'Οικονομικά στοιχεία',
     billingDesc: 'Χρειάζονται μόνο αν εκδίδεις παραστατικό ή θέλεις να λαμβάνεις πληρωμές μέσω τραπέζης. Δεν είναι απαραίτητα για να δέχεσαι ραντεβού.',
-    billingPrivacy: 'Τα στοιχεία αυτά δεν εμφανίζονται ποτέ δημόσια. Τα βλέπει μόνο η ομάδα του PhysioHome.',
+    billingPrivacy: 'Τα στοιχεία αυτά δεν εμφανίζονται ποτέ δημόσια. Τα βλέπει μόνο η ομάδα του Theralivo.',
     fIban: 'IBAN',
     fIbanPh: 'GR00 0000 0000 0000 0000 0000 000',
     fPayoutName: 'Δικαιούχος λογαριασμού',
@@ -440,7 +441,7 @@ const TX = {
     secBilling: 'Billing details',
     billingTitle: 'Billing details',
     billingDesc: 'Only needed if you issue invoices or want to receive bank payments. Not required to accept appointments.',
-    billingPrivacy: 'These details are never shown publicly. Only the PhysioHome team can see them.',
+    billingPrivacy: 'These details are never shown publicly. Only the Theralivo team can see them.',
     fIban: 'IBAN',
     fIbanPh: 'GR00 0000 0000 0000 0000 0000 000',
     fPayoutName: 'Account holder',
@@ -1857,10 +1858,9 @@ export default function TherapistDashboard() {
 
       {/* Ίδια διόρθωση overflow με τον πίνακα ασθενή */}
       <nav style={{ background: '#fff', borderBottom: `1px solid ${C.border}`, padding: '10px 16px', minHeight: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', position: 'sticky', top: 0, zIndex: 100, maxWidth: '100%', boxSizing: 'border-box' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'Georgia, serif', fontSize: 18, fontWeight: 700, color: C.brand, minWidth: 0, flexShrink: 1 }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.accent, display: 'inline-block' }} />
-          PhysioHome
-          <span style={{ fontSize: 12, fontWeight: 500, color: C.textMuted, marginLeft: 8, background: C.borderSoft, padding: '2px 10px', borderRadius: RAD.pill }}>{tx.roleBadge}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flexShrink: 1 }}>
+          <Logo variant="primary" tone="dark" size={28} />
+          <span style={{ fontSize: 12, fontWeight: 500, color: C.textMuted, background: C.borderSoft, padding: '2px 10px', borderRadius: RAD.pill, whiteSpace: 'nowrap' }}>{tx.roleBadge}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', minWidth: 0 }}>
           {!profile?.is_approved && hasLicense && (

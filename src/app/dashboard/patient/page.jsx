@@ -8,6 +8,7 @@ import LanguageSwitcher from '@/components/LanguageSwitcher';
 import RescheduleModal from '@/components/RescheduleModal';
 import { C, R as RAD, T, F, MAX_WIDTH, card, btn, badge, input as inputStyle } from '@/lib/tokens';
 import ReportModal from '@/components/ReportModal';
+import Logo from '@/components/Logo';
 import { ClipboardList, Stethoscope, User, MapPin, Euro, Calendar, Star, Check, ArrowRight, Save, X, Hourglass, Wallet, AlertCircle, CheckCircle2, CalendarDays, List, ChevronLeft, ChevronRight, Clock, XCircle, Globe, CalendarClock, Home, UserX} from 'lucide-react';
 
 // ─── Locale data ──────────────────────────────────────────────────────
@@ -801,11 +802,10 @@ export default function PatientDashboard() {
           δεξιά. Τώρα τυλίγει, το ύψος είναι ελάχιστο αντί για σταθερό,
           και το minWidth: 0 επιτρέπει στα παιδιά να συρρικνωθούν. */}
       <nav style={{ background: C.surface, borderBottom: `1px solid ${C.border}`, padding: '10px 16px', minHeight: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', position: 'sticky', top: 0, zIndex: 100, maxWidth: '100%', boxSizing: 'border-box' }}>
-        <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'Georgia, serif', fontSize: 19, fontWeight: 700, color: C.brand, textDecoration: 'none', minWidth: 0, flexShrink: 1 }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.accent, display: 'inline-block' }} />
-          PhysioHome
-          <span style={{ fontSize: 13, fontWeight: 500, color: C.textMuted, marginLeft: 8, background: C.borderSoft, padding: '3px 12px', borderRadius: RAD.pill }}>{tx.roleBadge}</span>
-        </a>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flexShrink: 1 }}>
+          <Logo variant="primary" tone="dark" size={30} />
+          <span style={{ fontSize: 13, fontWeight: 500, color: C.textMuted, background: C.borderSoft, padding: '3px 12px', borderRadius: RAD.pill, whiteSpace: 'nowrap' }}>{tx.roleBadge}</span>
+        </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', minWidth: 0 }}>
           <LanguageSwitcher color={C.textMuted} hoverColor={C.brand} navHeight={64} />
           <a href="/"

@@ -50,7 +50,7 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const p = await getPage(slug);
-  if (!p) return { title: 'Δεν βρέθηκε — PhysioHome' };
+  if (!p) return { title: 'Δεν βρέθηκε — Theralivo' };
 
   const title = p.seo_title || `Φυσικοθεραπεία στο σπίτι στην περιοχή ${p.name}`;
   const description = p.seo_description
@@ -59,11 +59,11 @@ export async function generateMetadata({ params }) {
   const url = `${SITE}/fysiotherapeia-sto-spiti/${p.slug}`;
 
   return {
-    title: `${title} | PhysioHome`,
+    title: `${title} | Theralivo`,
     description,
     alternates: { canonical: url },
     robots: p.should_index ? { index: true, follow: true } : { index: false, follow: true },
-    openGraph: { title, description, url, type: 'website', locale: 'el_GR', siteName: 'PhysioHome' },
+    openGraph: { title, description, url, type: 'website', locale: 'el_GR', siteName: 'Theralivo' },
   };
 }
 

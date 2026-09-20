@@ -53,7 +53,7 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const p = await getPage(slug);
-  if (!p) return { title: 'Δεν βρέθηκε — PhysioHome' };
+  if (!p) return { title: 'Δεν βρέθηκε — Theralivo' };
 
   const title = p.seo_title || `Φυσικοθεραπεία στο σπίτι για ${p.name}`;
   const description = p.seo_description
@@ -62,13 +62,13 @@ export async function generateMetadata({ params }) {
   const url = `${SITE}/pathiseis/${p.slug}`;
 
   return {
-    title: `${title} | PhysioHome`,
+    title: `${title} | Theralivo`,
     description,
     alternates: { canonical: url },
     // Ο φραγμός κατά των thin pages. Μια σελίδα χωρίς θεραπευτές και
     // χωρίς κείμενο βλάπτει ΟΛΟ το domain, όχι μόνο τον εαυτό της.
     robots: p.should_index ? { index: true, follow: true } : { index: false, follow: true },
-    openGraph: { title, description, url, type: 'article', locale: 'el_GR', siteName: 'PhysioHome' },
+    openGraph: { title, description, url, type: 'article', locale: 'el_GR', siteName: 'Theralivo' },
   };
 }
 
