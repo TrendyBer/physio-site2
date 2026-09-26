@@ -13,11 +13,11 @@ export async function generateMetadata({ searchParams }) {
 
   const meta = {
     el: {
-      title: 'Βρες τη φυσιοθεραπεία που χρειάζεσαι | Theralivo',
+      title: 'Βρες τη φυσιοθεραπεία που χρειάζεσαι',
       description: 'Επιλέξτε την πάθησή σας και βρείτε τον κατάλληλο φυσιοθεραπευτή στην Αθήνα. Οσφυαλγία, αυχενικό, πόνος γόνατου, μετεγχειρητική αποκατάσταση και πολλά άλλα.',
     },
     en: {
-      title: 'Find the physiotherapy you need | Theralivo',
+      title: 'Find the physiotherapy you need',
       description: 'Choose your condition and find the right physiotherapist in Athens. Back pain, neck pain, knee pain, post-surgery rehabilitation and many more.',
     },
   };
@@ -220,7 +220,7 @@ export default async function FindHelpPage({ searchParams }) {
                     const desc = lang === 'el' ? c.description_el : c.description_en;
                     const reach = reachByCondition[c.id] || 0;
                     return (
-                      <Link key={c.id} href={`/find-help/${c.slug}${langSuffix}`} className="fh-card">
+                      <Link key={c.id} href={`/pathiseis/${c.slug}${langSuffix}`} className="fh-card">
                         <div style={{ fontSize: 16, fontWeight: 700, color: '#1a2e44', marginBottom: 6 }}>{name}</div>
                         {desc && (
                           <div style={{ fontSize: 13, color: '#64748b', lineHeight: 1.5, marginBottom: 10 }}>{desc}</div>
@@ -267,7 +267,7 @@ export default async function FindHelpPage({ searchParams }) {
               const desc = lang === 'el' ? c.description_el : c.description_en;
               const reach = reachByCondition[c.id] || 0;
               return (
-                <Link key={c.id} href={`/find-help/${c.slug}${langSuffix}`} className="fh-card">
+                <Link key={c.id} href={`/pathiseis/${c.slug}${langSuffix}`} className="fh-card">
                   <div style={{ fontSize: 16, fontWeight: 700, color: '#1a2e44', marginBottom: 6 }}>{name}</div>
                   {desc && (
                     <div style={{ fontSize: 13, color: '#64748b', lineHeight: 1.5, marginBottom: 10 }}>{desc}</div>
@@ -329,7 +329,7 @@ export default async function FindHelpPage({ searchParams }) {
                       const desc = lang === 'el' ? c.description_el : c.description_en;
                       const reach = reachByCondition[c.id] || 0;
                       return (
-                        <Link key={c.id} href={`/find-help/${c.slug}${langSuffix}`} className="fh-card">
+                        <Link key={c.id} href={`/pathiseis/${c.slug}${langSuffix}`} className="fh-card">
                           <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2e44', marginBottom: 6 }}>{name}</div>
                           {desc && (
                             <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.5, marginBottom: 10 }}>{desc}</div>

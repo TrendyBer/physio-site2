@@ -48,11 +48,11 @@ const TX = {
       ['/cookies', 'Cookies'],
     ],
     fallbackConditions: [
-      ['/find-help/low_back_pain', 'Οσφυαλγία'],
-      ['/find-help/neck_pain', 'Αυχενικό σύνδρομο'],
-      ['/find-help/knee_pain', 'Πόνος γόνατου'],
-      ['/find-help/sciatica', 'Ισχιαλγία'],
-      ['/find-help/sports_injury', 'Αθλητικός τραυματισμός'],
+      ['/pathiseis/low_back_pain', 'Οσφυαλγία'],
+      ['/pathiseis/neck_pain', 'Αυχενικό σύνδρομο'],
+      ['/pathiseis/knee_pain', 'Πόνος γόνατου'],
+      ['/pathiseis/sciatica', 'Ισχιαλγία'],
+      ['/pathiseis/sports_injury', 'Αθλητικός τραυματισμός'],
     ],
   },
   en: {
@@ -83,11 +83,11 @@ const TX = {
       ['/cookies', 'Cookies'],
     ],
     fallbackConditions: [
-      ['/find-help/low_back_pain', 'Low back pain'],
-      ['/find-help/neck_pain', 'Neck pain'],
-      ['/find-help/knee_pain', 'Knee pain'],
-      ['/find-help/sciatica', 'Sciatica'],
-      ['/find-help/sports_injury', 'Sports injury'],
+      ['/pathiseis/low_back_pain', 'Low back pain'],
+      ['/pathiseis/neck_pain', 'Neck pain'],
+      ['/pathiseis/knee_pain', 'Knee pain'],
+      ['/pathiseis/sciatica', 'Sciatica'],
+      ['/pathiseis/sports_injury', 'Sports injury'],
     ],
   },
 };
@@ -218,7 +218,7 @@ export default function Footer() {
                 {popularConditions.length > 0
                   ? popularConditions.map(c => (
                     <li key={c.slug}>
-                      <a href={`/find-help/${c.slug}`} className="footer-link-small">
+                      <a href={`/pathiseis/${c.slug}${lang === 'en' ? '?lang=en' : ''}`} className="footer-link-small">
                         {lang === 'el' ? c.name_el : (c.name_en || c.name_el)}
                       </a>
                     </li>

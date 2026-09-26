@@ -42,11 +42,39 @@ export function Breadcrumbs({ items }) {
   );
 }
 
-export function TherapistCard({ t }) {
+// Κείμενα της κάρτας — η σελίδα πάθησης είναι πλέον δίγλωσση.
+const CARD_TX = {
+  el: {
+    verified: 'Επαληθευμένη άδεια', years: 'χρόνια εμπειρίας', session: 'συνεδρία',
+    exact: 'Εξειδικεύεται', specialty: 'Σχετική ειδικότητα', reviews: 'αξιολογήσεις', review: 'αξιολόγηση',
+  },
+  en: {
+    verified: 'Verified licence', years: 'years of experience', session: 'session',
+    exact: 'Specialised', specialty: 'Related specialty', reviews: 'reviews', review: 'review',
+  },
+};
+
+export function TherapistCard({ t, lang = 'el' }) {
+  const tx = CARD_TX[lang] || CARD_TX.el;
   const areas = Array.isArray(t.service_areas) ? t.service_areas : [];
+  const exact = t.match === 'exact';
+  const reviewCount = Number(t.review_count) || 0;
   return (
     <a href={`/therapists/${t.id}`}
       style={{ display: 'block', background: '#fff', border: `1px solid ${S.border}`, borderRadius: 16, padding: 20, textDecoration: 'none' }}>
+      {/* Γιατί εμφανίζεται εδώ: δήλωσε την πάθηση ή ταιριάζει η ειδικότητα.
+          Ο ασθενής πρέπει να ξέρει τη διαφορά — δεν είναι το ίδιο. */}
+      {t.match && (
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: 5, marginBottom: 12,
+          padding: '3px 10px', borderRadius: 30, fontSize: 11, fontWeight: 700,
+          background: exact ? S.greenBg : S.soft, color: exact ? S.green : S.accent,
+          border: `1px solid ${exact ? S.greenBr : '#bfdbfe'}`,
+        }}>
+          {exact ? tx.exact : tx.specialty}
+        </div>
+      )}
+
       <div style={{ display: 'flex', alignItems: 'center', gap: 13, marginBottom: 13 }}>
         {t.photo_url ? (
           <img src={t.photo_url} alt="" style={{ width: 52, height: 52, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
@@ -64,14 +92,21 @@ export function TherapistCard({ t }) {
       {t.verified && (
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: S.greenBg, color: S.green, border: `1px solid ${S.greenBr}`, borderRadius: 30, padding: '4px 10px', fontSize: 11.5, fontWeight: 600, marginBottom: 12 }}>
           <ShieldCheck size={12} strokeWidth={2.3} />
-          Επαληθευμένη άδεια
+          {tx.verified}
         </div>
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 13, color: S.muted }}>
+        {reviewCount > 0 && (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Star size={13} color="#f59e0b" fill="#f59e0b" />
+            <strong style={{ color: S.navy }}>{Number(t.rating).toFixed(1)}</strong>
+            ({reviewCount} {reviewCount === 1 ? tx.review : tx.reviews})
+          </span>
+        )}
         {t.years_experience > 0 && (
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            <Clock size={13} color={S.faint} />{t.years_experience} χρόνια εμπειρίας
+            <Clock size={13} color={S.faint} />{t.years_experience} {tx.years}
           </span>
         )}
         {(t.area || areas.length > 0) && (
@@ -82,7 +117,7 @@ export function TherapistCard({ t }) {
         )}
         {t.price > 0 && (
           <span style={{ fontWeight: 700, color: S.navy, fontSize: 15, marginTop: 4 }}>
-            {Math.round(Number(t.price))}€ / συνεδρία
+            {Math.round(Number(t.price))}€ / {tx.session}
           </span>
         )}
       </div>
@@ -90,12 +125,13 @@ export function TherapistCard({ t }) {
   );
 }
 
-export function ChipLinks({ items, base, icon: Icon }) {
+// suffix: π.χ. '?lang=en', ώστε η γλώσσα να ακολουθεί τον επισκέπτη.
+export function ChipLinks({ items, base, icon: Icon, suffix = '' }) {
   if (!items?.length) return null;
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 9 }}>
       {items.map(it => (
-        <a key={it.slug} href={`${base}/${it.slug}`}
+        <a key={it.slug} href={`${base}/${it.slug}${suffix}`}
           style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#fff', border: `1px solid ${S.border}`, borderRadius: 30, padding: '9px 17px', fontSize: 14, color: S.navy, textDecoration: 'none', fontWeight: 500 }}>
           {Icon && <Icon size={14} color={S.faint} strokeWidth={2} />}
           {it.name}
@@ -152,4 +188,4 @@ export function H2({ children }) {
       {children}
     </h2>
   );
-}
+}
