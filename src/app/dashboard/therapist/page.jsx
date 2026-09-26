@@ -12,6 +12,7 @@ import { searchAreas, canonicalArea, phonetic } from '@/lib/areas';
 import ConditionPicker from '@/components/ConditionPicker';
 import { C, R as RAD, T, F, MAX_WIDTH, card, btn, badge } from '@/lib/tokens';
 import ReportModal from '@/components/ReportModal';
+import StepPlan from '@/components/onboarding/StepPlan';
 import Logo, { BRAND } from '@/components/Logo';
 import {
   LayoutDashboard, ClipboardList, Calendar, MapPin, Target, Star, User, Clock, AlertTriangle, UserX,
@@ -147,6 +148,21 @@ const TX = {
     activating: 'Μεταφορά στην πληρωμή...',
     activateWaiting: (plan) => `Διάλεξες το πακέτο «${plan}». Η πληρωμή γίνεται μόλις εγκριθεί το προφίλ σου — δεν χρεώνεσαι τίποτα μέχρι τότε.`,
     dismiss: 'Κλείσιμο',
+    secPlan: 'Πακέτο',
+    planTitle: 'Το πακέτο σου',
+    planName: 'Πακέτο',
+    planMonthly: 'Μηνιαία συνδρομή',
+    planFee: 'Τέλος νέου ασθενή',
+    planStatus: 'Κατάσταση',
+    planSince: 'Τρέχουσα περίοδος από',
+    planStatuses: { active: 'Ενεργό', trialing: 'Δοκιμαστική περίοδος', past_due: 'Ληξιπρόθεσμη πληρωμή', exempt: 'Εξαίρεση' },
+    planFree: 'Δωρεάν',
+    changePlan: 'Αλλαγή πακέτου',
+    choosePlan: 'Επιλογή πακέτου',
+    noActivePlan: 'Δεν έχεις ενεργό πακέτο. Διάλεξε ένα για να εμφανίζεσαι στους ασθενείς.',
+    planChanged: 'Το πακέτο σου άλλαξε.',
+    planPendingNote: (name) => `Έχεις επιλέξει το πακέτο «${name}». Ενεργοποιείται με την ολοκλήρωση της πληρωμής — ως τότε ισχύει το τρέχον.`,
+    billingSave: 'Αποθήκευση στοιχείων',
 
     nextAppointment: 'Επόμενο Ραντεβού',
     at: 'στις',
@@ -407,6 +423,21 @@ const TX = {
     activating: 'Opening payment...',
     activateWaiting: (plan) => `You chose the "${plan}" plan. Payment opens once your profile is approved — nothing is charged until then.`,
     dismiss: 'Dismiss',
+    secPlan: 'Plan',
+    planTitle: 'Your plan',
+    planName: 'Plan',
+    planMonthly: 'Monthly subscription',
+    planFee: 'New patient fee',
+    planStatus: 'Status',
+    planSince: 'Current period since',
+    planStatuses: { active: 'Active', trialing: 'Trial', past_due: 'Payment overdue', exempt: 'Exempt' },
+    planFree: 'Free',
+    changePlan: 'Change plan',
+    choosePlan: 'Choose a plan',
+    noActivePlan: 'You have no active plan. Pick one to appear to patients.',
+    planChanged: 'Your plan has been changed.',
+    planPendingNote: (name) => `You have chosen the "${name}" plan. It activates once the payment is complete — until then your current plan applies.`,
+    billingSave: 'Save details',
 
     nextAppointment: 'Next Appointment',
     at: 'at',
@@ -1281,6 +1312,7 @@ export default function TherapistDashboard() {
   const [payNotice, setPayNotice] = useState(null);
   const [pendingSub, setPendingSub] = useState(null);
   const [activating, setActivating] = useState(false);
+  const [changingPlan, setChangingPlan] = useState(false);
 
   const [cancelTarget, setCancelTarget] = useState(null);
   const [rescheduleTarget, setRescheduleTarget] = useState(null);
@@ -1427,6 +1459,19 @@ export default function TherapistDashboard() {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${session?.access_token || ''}`,
     };
+  }
+
+  // Μετά την «Επιβεβαίωση αλλαγής» στο StepPlan.
+  // Πληρωμένο πακέτο → ανοίγει αμέσως η πληρωμή (το τρέχον μένει ενεργό
+  // μέχρι να πληρωθεί). Δωρεάν πακέτο → η αλλαγή ισχύει ήδη.
+  async function onPlanChanged(result) {
+    setChangingPlan(false);
+    await loadSubscription(user.id);
+    if (result?.status === 'pending_payment' && profile?.is_approved) {
+      await activatePlan();
+      return;
+    }
+    setPayNotice({ type: 'success', text: tx.planChanged });
   }
 
   async function activatePlan() {
@@ -1978,6 +2023,7 @@ export default function TherapistDashboard() {
 
   const PROFILE_SECTIONS = [
     { id: 'basics', label: tx.secBasics, Icon: User },
+    { id: 'plan', label: tx.secPlan, Icon: Wallet },
     { id: 'billing', label: tx.secBilling, Icon: CreditCard },
     { id: 'areas', label: tx.secAreas, Icon: MapPin },
     { id: 'conditions', label: tx.secConditions, Icon: Target },
@@ -2919,6 +2965,137 @@ export default function TherapistDashboard() {
                   )}
                 </>
               )}
+
+              {/* ═══ ΠΑΚΕΤΟ ═══
+                  Η αλλαγή χρησιμοποιεί την ΙΔΙΑ οθόνη με την εγγραφή
+                  (StepPlan), ώστε κανόνες, προσφορές και σύμβαση να είναι
+                  πάντα ίδια. */}
+              {profileSection === 'plan' && (
+                changingPlan ? (
+                  <StepPlan
+                    lang={lang}
+                    userId={user?.id}
+                    mode="change"
+                    currentPlanId={subscription?.plan_id || null}
+                    onBack={() => setChangingPlan(false)}
+                    onDone={onPlanChanged}
+                  />
+                ) : (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 18 }}>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: C.text, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                        <Wallet size={15} color={C.accent} />
+                        {tx.planTitle}
+                      </div>
+                      <button onClick={() => setChangingPlan(true)}
+                        style={{ padding: '9px 20px', borderRadius: RAD.button, border: 'none', background: C.brand, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        <Repeat size={14} />
+                        {subscription ? tx.changePlan : tx.choosePlan}
+                      </button>
+                    </div>
+
+                    {pendingSub && (
+                      <div style={{ background: C.warnBg, border: `1px solid ${C.warnBorder}`, borderRadius: 10, padding: '11px 15px', marginBottom: 16, fontSize: 13, color: C.warn, lineHeight: 1.55, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                        <Hourglass size={14} style={{ flexShrink: 0, marginTop: 2 }} />
+                        <span>{tx.planPendingNote(
+                          (lang === 'en'
+                            ? (pendingSub.plan_snapshot?.name_en || pendingSub.plan_snapshot?.name_el)
+                            : pendingSub.plan_snapshot?.name_el) || ''
+                        )}</span>
+                      </div>
+                    )}
+
+                    {!subscription ? (
+                      <div style={{ padding: 20, textAlign: 'center', background: C.page, borderRadius: 10, color: C.textMuted, fontSize: 13.5 }}>
+                        {tx.noActivePlan}
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        {[
+                          [tx.planName, (lang === 'en'
+                            ? (subscription.subscription_plans?.name_en || subscription.subscription_plans?.name_el)
+                            : subscription.subscription_plans?.name_el) || '—'],
+                          [tx.planStatus, tx.planStatuses[subscription.status] || subscription.status],
+                          [tx.planMonthly, monthlyPrice > 0 ? `${monthlyPrice.toFixed(2)}€` : tx.planFree],
+                          [tx.planFee, `${firstSessionFee.toFixed(2)}€`],
+                          ...(subscription.current_period_start
+                            ? [[tx.planSince, new Date(subscription.current_period_start).toLocaleDateString(loc)]]
+                            : []),
+                          ...(promoActive
+                            ? [[tx.payModalPromo, `${subscription.promo_code_text}${subscription.promo_ends_at ? ' ' + tx.payModalPromoUntil(new Date(subscription.promo_ends_at).toLocaleDateString(loc)) : ''}`]]
+                            : []),
+                        ].map(([label, value]) => (
+                          <div key={label} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '11px 0', borderBottom: `1px solid ${C.borderSoft}`, fontSize: 14 }}>
+                            <span style={{ color: C.textMuted }}>{label}</span>
+                            <span style={{ fontWeight: 600, color: C.text, textAlign: 'right' }}>{value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )
+              )}
+
+              {/* ═══ ΟΙΚΟΝΟΜΙΚΑ ΣΤΟΙΧΕΙΑ ═══
+                  Τα κείμενα, το state και η saveBilling υπήρχαν ήδη·
+                  έλειπε μόνο το έντυπο. */}
+              {profileSection === 'billing' && (() => {
+                const field = (key, label, placeholder, extra = {}) => (
+                  <div key={key}>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: C.textMuted, display: 'block', marginBottom: 5 }}>{label}</label>
+                    <input
+                      value={billingForm[key] || ''}
+                      onChange={e => setBillingForm(f => ({ ...f, [key]: e.target.value }))}
+                      placeholder={placeholder || ''}
+                      {...extra}
+                      style={{ width: '100%', padding: '10px 14px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: C.text, boxSizing: 'border-box' }}
+                    />
+                  </div>
+                );
+                return (
+                  <>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: C.text, marginBottom: 4, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                      <CreditCard size={15} color={C.accent} />
+                      {tx.billingTitle}
+                    </div>
+                    <div style={{ fontSize: 13, color: C.textMuted, marginBottom: 14, lineHeight: 1.55 }}>{tx.billingDesc}</div>
+
+                    <div style={{ background: C.infoBg, border: `1px solid ${C.infoBorder}`, borderRadius: 10, padding: '10px 14px', marginBottom: 20, fontSize: 12.5, color: C.info, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                      <Lock size={13} style={{ flexShrink: 0, marginTop: 2 }} />
+                      <span>{tx.billingPrivacy}</span>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 20 }}>
+                      {field('payout_name', tx.fPayoutName, tx.fPayoutNamePh)}
+                      {field('iban', tx.fIban, tx.fIbanPh, { autoComplete: 'off' })}
+                      {field('tax_id', tx.fTaxId, '', { inputMode: 'numeric', maxLength: 11 })}
+                      {field('tax_office', tx.fTaxOffice, '')}
+                      {field('legal_name', tx.fLegalName, tx.fLegalNamePh)}
+                      {field('billing_address', tx.fBillingAddress, tx.fBillingAddressPh)}
+                      {kadKey && field(kadKey, tx.fKad, tx.fKadPh)}
+                    </div>
+
+                    {billingMsg && (
+                      <div style={{
+                        background: billingMsg.type === 'success' ? C.successBg : C.dangerBg,
+                        border: `1px solid ${billingMsg.type === 'success' ? C.successBorder : C.dangerBorder}`,
+                        color: billingMsg.type === 'success' ? C.success : C.danger,
+                        borderRadius: 8, padding: '9px 14px', fontSize: 13, fontWeight: 600, marginBottom: 14,
+                        display: 'flex', alignItems: 'center', gap: 7,
+                      }}>
+                        {billingMsg.type === 'success' ? <Check size={14} strokeWidth={3} /> : <AlertTriangle size={14} />}
+                        {billingMsg.text}
+                      </div>
+                    )}
+
+                    <button onClick={saveBilling} disabled={savingBilling}
+                      style={{ padding: '10px 24px', borderRadius: RAD.button, border: 'none', background: savingBilling ? C.textFaint : C.brand, color: '#fff', fontSize: 14, fontWeight: 600, cursor: savingBilling ? 'wait' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
+                      <Save size={14} />
+                      {savingBilling ? tx.saving : tx.billingSave}
+                    </button>
+                  </>
+                );
+              })()}
 
               {profileSection === 'areas' && (
                 <>

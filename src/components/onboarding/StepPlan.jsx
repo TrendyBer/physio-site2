@@ -107,6 +107,13 @@ const TX = {
     sAfter: (m, price) => `Μετά τους ${m} μήνες: ${price}€/μήνα`,
     sAfterFee: (m, fee) => `Μετά τους ${m} μήνες: ${fee}€ ανά νέο ασθενή`,
     payLater: 'Δεν χρεώνεσαι τώρα. Η πληρωμή του πρώτου μήνα γίνεται με κάρτα μόλις εγκριθεί το προφίλ σου.',
+    changeTitle: 'Αλλαγή πακέτου',
+    changeDesc: 'Διάλεξε το νέο σου πακέτο. Το τρέχον παραμένει ενεργό μέχρι να ολοκληρωθεί η αλλαγή.',
+    changeSubmit: 'Επιβεβαίωση αλλαγής',
+    cancel: 'Άκυρο',
+    currentBadge: 'Τρέχον',
+    sameAsCurrent: 'Αυτό είναι ήδη το πακέτο σου. Διάλεξε άλλο για να αλλάξεις.',
+    payOnChange: 'Το τρέχον πακέτο σου μένει ενεργό. Το νέο ενεργοποιείται μόλις ολοκληρώσεις την πληρωμή του πρώτου μήνα, αμέσως μετά την επιβεβαίωση.',
     feeByCard: 'Το τέλος νέου ασθενή πληρώνεται με κάρτα τη στιγμή που αποδέχεσαι το αίτημα.',
     forMonths: (m) => `για ${m} μήνες`,
 
@@ -159,6 +166,13 @@ const TX = {
     sAfter: (m, price) => `After ${m} months: €${price}/month`,
     sAfterFee: (m, fee) => `After ${m} months: €${fee} per new patient`,
     payLater: 'You are not charged now. The first month is paid by card once your profile is approved.',
+    changeTitle: 'Change plan',
+    changeDesc: 'Pick your new plan. Your current plan stays active until the change is complete.',
+    changeSubmit: 'Confirm change',
+    cancel: 'Cancel',
+    currentBadge: 'Current',
+    sameAsCurrent: 'This is already your plan. Pick another one to change.',
+    payOnChange: 'Your current plan stays active. The new one activates as soon as you pay the first month, right after you confirm.',
     feeByCard: 'The new patient fee is paid by card when you accept the request.',
     forMonths: (m) => `for ${m} months`,
 
@@ -175,8 +189,12 @@ const TX = {
   },
 };
 
-export default function StepPlan({ lang, userId, onDone, onBack }) {
+// mode: 'onboarding' (βήμα εγγραφής, όπως πάντα) ή 'change' (αλλαγή
+// πακέτου από τον πίνακα του θεραπευτή). Η ΙΔΙΑ οθόνη και η ΙΔΙΑ
+// activate_subscription και στα δύο — μία υλοποίηση, όχι δύο που αποκλίνουν.
+export default function StepPlan({ lang, userId, onDone, onBack, mode = 'onboarding', currentPlanId = null }) {
   const tx = TX[lang] || TX.el;
+  const isChange = mode === 'change';
 
   const [plans, setPlans] = useState([]);
   const [planId, setPlanId] = useState(null);
@@ -201,7 +219,10 @@ export default function StepPlan({ lang, userId, onDone, onBack }) {
         .order('display_order', { ascending: true });
       const list = data || [];
       setPlans(list);
-      if (list.length > 0) setPlanId(list[0].id);
+      if (list.length > 0) {
+        const hasCurrent = currentPlanId && list.some(p => p.id === currentPlanId);
+        setPlanId(hasCurrent ? currentPlanId : list[0].id);
+      }
       setLoading(false);
     })();
   }, []);
@@ -263,12 +284,13 @@ export default function StepPlan({ lang, userId, onDone, onBack }) {
 
   async function submit() {
     if (!planId) { setError(tx.errPlan); return; }
+    if (isChange && planId === currentPlanId) { setError(tx.sameAsCurrent); return; }
     if (!accepted) { setError(tx.errContract); return; }
 
     setSubmitting(true); setError('');
 
     // Η βάση ξαναελέγχει τον κωδικό και παγώνει τους όρους.
-    const { error: err } = await supabase.rpc('activate_subscription', {
+    const { data: result, error: err } = await supabase.rpc('activate_subscription', {
       p_plan_id: planId,
       p_promo_code: promo ? promo.code : null,
       p_agreement_version: AGREEMENT_VERSION,
@@ -285,7 +307,9 @@ export default function StepPlan({ lang, userId, onDone, onBack }) {
       .eq('id', userId);
 
     setSubmitting(false);
-    onDone();
+    // Το αποτέλεσμα (π.χ. status: 'pending_payment') περνά στον πίνακα,
+    // ώστε να ανοίξει αμέσως η πληρωμή όπου χρειάζεται.
+    onDone(result);
   }
 
   const buildContract = CONTRACTS[lang] || CONTRACTS.el;
@@ -316,8 +340,8 @@ export default function StepPlan({ lang, userId, onDone, onBack }) {
         @media (max-width: 480px) { .promo-row { flex-direction: column; } .promo-row button { width: 100%; } }
       `}</style>
 
-      <h2 style={{ fontSize: 19, fontWeight: 700, color: '#1a2e44', marginBottom: 6 }}>{tx.title}</h2>
-      <p style={{ fontSize: 14, color: '#6b7a8d', marginBottom: 22 }}>{tx.desc}</p>
+      <h2 style={{ fontSize: 19, fontWeight: 700, color: '#1a2e44', marginBottom: 6 }}>{isChange ? tx.changeTitle : tx.title}</h2>
+      <p style={{ fontSize: 14, color: '#6b7a8d', marginBottom: 22 }}>{isChange ? tx.changeDesc : tx.desc}</p>
 
       {/* ── ΠΑΚΕΤΑ ── */}
       <div className="plan-grid">
@@ -339,7 +363,14 @@ export default function StepPlan({ lang, userId, onDone, onBack }) {
               )}
 
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
-                <span style={{ fontSize: 16, fontWeight: 700, color: '#1a2e44' }}>{label(p)}</span>
+                <span style={{ fontSize: 16, fontWeight: 700, color: '#1a2e44', display: 'inline-flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
+                  {label(p)}
+                  {isChange && p.id === currentPlanId && (
+                    <span style={{ fontSize: 10, fontWeight: 700, color: '#15803D', background: '#F0FDF4', border: '1px solid #BBF7D0', padding: '2px 8px', borderRadius: 999, textTransform: 'uppercase', letterSpacing: '.04em' }}>
+                      {tx.currentBadge}
+                    </span>
+                  )}
+                </span>
                 {isSel && <Check size={17} color="#2a6fdb" strokeWidth={3} />}
               </div>
 
@@ -490,7 +521,7 @@ export default function StepPlan({ lang, userId, onDone, onBack }) {
         <div style={{ marginTop: 12, background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 12, padding: '12px 16px', fontSize: 12.5, color: '#1D4ED8', lineHeight: 1.6, display: 'flex', gap: 9, alignItems: 'flex-start' }}>
           <Info size={15} style={{ flexShrink: 0, marginTop: 2 }} />
           <div>
-            {finalPrice > 0 && <div>{tx.payLater}</div>}
+            {finalPrice > 0 && <div>{isChange ? tx.payOnChange : tx.payLater}</div>}
             {finalFee > 0 && <div>{tx.feeByCard}</div>}
           </div>
         </div>
@@ -519,11 +550,11 @@ export default function StepPlan({ lang, userId, onDone, onBack }) {
         <button onClick={onBack} type="button"
           style={{ background: 'transparent', color: '#64748b', border: '1.5px solid #e2e8f0', padding: '13px 24px', borderRadius: 30, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
           <ArrowLeft size={15} />
-          {tx.back}
+          {isChange ? tx.cancel : tx.back}
         </button>
         <button onClick={submit} disabled={submitting}
           style={{ background: '#1a2e44', color: '#fff', border: 'none', padding: '13px 32px', borderRadius: 30, fontSize: 14.5, fontWeight: 700, cursor: submitting ? 'wait' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-          {submitting ? tx.submitting : tx.submit}
+          {submitting ? tx.submitting : (isChange ? tx.changeSubmit : tx.submit)}
           {!submitting && <Send size={15} />}
         </button>
       </div>
