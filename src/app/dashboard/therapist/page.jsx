@@ -105,7 +105,7 @@ const TX = {
     payModalSubscription: 'Μηνιαία συνδρομή',
     payModalFirstFee: 'Τέλος νέου ασθενή',
     payModalPerNewPatient: 'ανά νέο ασθενή',
-    payModalFeeExplain: 'Χρεώνεσαι μία φορά για κάθε νέο ασθενή. Στις επόμενες συνεδρίες με τον ίδιο ασθενή δεν χρεώνεσαι ξανά.',
+    payModalFeeExplain: 'Χρεώνεσαι μία φορά για κάθε νέο ασθενή, με κάρτα, τη στιγμή που αποδέχεσαι το αίτημα. Στις επόμενες συνεδρίες με τον ίδιο ασθενή δεν χρεώνεσαι ξανά.',
     payModalOpen: 'Ανεξόφλητα αυτή τη στιγμή',
     payModalPromo: 'Κωδικός προσφοράς',
     payModalPromoUntil: (d) => `έως ${d}`,
@@ -126,6 +126,27 @@ const TX = {
     cancelWholeRequest: 'Ακύρωση ραντεβού',
     youEarn: 'Εισπράττεις',
     respondFast: 'Απάντησε γρήγορα — ο ασθενής περιμένει.',
+    acceptWithFee: (fee) => `Αποδοχή · ${fee}€`,
+    feeNotice: (fee) => `Νέος ασθενής: τέλος ${fee}€, με κάρτα κατά την αποδοχή.`,
+    acceptErr: {
+      expired: 'Η προθεσμία απάντησης έληξε. Το αίτημα δεν μπορεί πλέον να γίνει αποδεκτό.',
+      too_late: 'Η ώρα του ραντεβού έχει ήδη περάσει.',
+      not_pending: 'Το αίτημα δεν περιμένει πλέον απάντηση.',
+      forbidden: 'Δεν έχεις πρόσβαση σε αυτό το αίτημα.',
+      not_approved: 'Η πληρωμή γίνεται μόλις εγκριθεί το προφίλ σου.',
+      payments_unavailable: 'Οι πληρωμές δεν είναι διαθέσιμες αυτή τη στιγμή. Δοκίμασε σε λίγο.',
+      generic: 'Κάτι πήγε στραβά. Δοκίμασε ξανά.',
+    },
+    paySuccessFee: 'Η πληρωμή ολοκληρώθηκε. Το ραντεβού επιβεβαιώνεται...',
+    paySuccessFeeDone: 'Η πληρωμή ολοκληρώθηκε και το ραντεβού επιβεβαιώθηκε. Θα λάβεις απόδειξη στο email σου.',
+    paySuccessPlan: 'Η πληρωμή ολοκληρώθηκε. Το πακέτο σου ενεργοποιήθηκε και το προφίλ σου εμφανίζεται στους ασθενείς.',
+    payCancel: 'Η πληρωμή ακυρώθηκε. Δεν χρεώθηκες τίποτα.',
+    activateTitle: 'Ενεργοποίηση λογαριασμού',
+    activateDesc: (plan, price) => `Το προφίλ σου εγκρίθηκε. Για να εμφανίζεσαι στους ασθενείς, ολοκλήρωσε την πληρωμή του πακέτου «${plan}» (${price}€ για τον πρώτο μήνα).`,
+    activateBtn: 'Πληρωμή & ενεργοποίηση',
+    activating: 'Μεταφορά στην πληρωμή...',
+    activateWaiting: (plan) => `Διάλεξες το πακέτο «${plan}». Η πληρωμή γίνεται μόλις εγκριθεί το προφίλ σου — δεν χρεώνεσαι τίποτα μέχρι τότε.`,
+    dismiss: 'Κλείσιμο',
 
     nextAppointment: 'Επόμενο Ραντεβού',
     at: 'στις',
@@ -344,7 +365,7 @@ const TX = {
     payModalSubscription: 'Monthly subscription',
     payModalFirstFee: 'New patient fee',
     payModalPerNewPatient: 'per new patient',
-    payModalFeeExplain: 'You are charged once per new patient. Follow-up sessions with the same patient are not charged again.',
+    payModalFeeExplain: 'You are charged once per new patient, by card, when you accept the request. Follow-up sessions with the same patient are not charged again.',
     payModalOpen: 'Currently outstanding',
     payModalPromo: 'Promo code',
     payModalPromoUntil: (d) => `until ${d}`,
@@ -365,6 +386,27 @@ const TX = {
     cancelWholeRequest: 'Cancel appointment',
     youEarn: 'You earn',
     respondFast: 'Reply quickly — the patient is waiting.',
+    acceptWithFee: (fee) => `Accept · €${fee}`,
+    feeNotice: (fee) => `New patient: €${fee} fee, paid by card when you accept.`,
+    acceptErr: {
+      expired: 'The reply deadline has passed. This request can no longer be accepted.',
+      too_late: 'The appointment time has already passed.',
+      not_pending: 'This request is no longer awaiting a reply.',
+      forbidden: 'You do not have access to this request.',
+      not_approved: 'Payment opens as soon as your profile is approved.',
+      payments_unavailable: 'Payments are unavailable right now. Please try again shortly.',
+      generic: 'Something went wrong. Please try again.',
+    },
+    paySuccessFee: 'Payment complete. Confirming the appointment...',
+    paySuccessFeeDone: 'Payment complete and the appointment is confirmed. A receipt is on its way to your email.',
+    paySuccessPlan: 'Payment complete. Your plan is active and your profile is now visible to patients.',
+    payCancel: 'Payment cancelled. You have not been charged.',
+    activateTitle: 'Activate your account',
+    activateDesc: (plan, price) => `Your profile has been approved. To appear to patients, complete the payment for the "${plan}" plan (€${price} for the first month).`,
+    activateBtn: 'Pay & activate',
+    activating: 'Opening payment...',
+    activateWaiting: (plan) => `You chose the "${plan}" plan. Payment opens once your profile is approved — nothing is charged until then.`,
+    dismiss: 'Dismiss',
 
     nextAppointment: 'Next Appointment',
     at: 'at',
@@ -1233,6 +1275,12 @@ export default function TherapistDashboard() {
   const [requestFilter, setRequestFilter] = useState('pending');
   const [expandedRequest, setExpandedRequest] = useState(null);
   const [accepting, setAccepting] = useState(null);
+  // Πληρωμές (Stripe)
+  const [fees, setFees] = useState({});            // requestId → τέλος νέου ασθενή
+  const [actionError, setActionError] = useState(null);
+  const [payNotice, setPayNotice] = useState(null);
+  const [pendingSub, setPendingSub] = useState(null);
+  const [activating, setActivating] = useState(false);
 
   const [cancelTarget, setCancelTarget] = useState(null);
   const [rescheduleTarget, setRescheduleTarget] = useState(null);
@@ -1300,16 +1348,7 @@ export default function TherapistDashboard() {
       .order('created_at', { ascending: false });
     setReviews(revs || []);
 
-    // Συνδρομή — για το ποσό μηνιαίας χρέωσης και το τέλος νέου ασθενή
-    const { data: sub } = await supabase
-      .from('therapist_subscriptions')
-      .select('*, subscription_plans(name_el, name_en, price_monthly, first_session_fee)')
-      .eq('therapist_id', user.id)
-      .in('status', ['trialing', 'active', 'past_due', 'exempt'])
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    setSubscription(sub || null);
+    await loadSubscription(user.id);
 
     const { data: charges } = await supabase
       .from('payments')
@@ -1319,6 +1358,98 @@ export default function TherapistDashboard() {
     setOpenCharges(charges || []);
 
     setLoading(false);
+
+    // Επιστροφή από τη σελίδα πληρωμής του Stripe (χωρίς await: η
+    // σελίδα εμφανίζεται αμέσως, η επιβεβαίωση έρχεται σε λίγα δευτ.)
+    handleReturnFromPayment(user.id);
+  }
+
+  async function loadSubscription(uid) {
+    // Συνδρομή — για το ποσό μηνιαίας χρέωσης και το τέλος νέου ασθενή
+    const { data: sub } = await supabase
+      .from('therapist_subscriptions')
+      .select('*, subscription_plans(name_el, name_en, price_monthly, first_session_fee)')
+      .eq('therapist_id', uid)
+      .in('status', ['trialing', 'active', 'past_due', 'exempt'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    setSubscription(sub || null);
+
+    // Πακέτο που επιλέχθηκε αλλά περιμένει πληρωμή
+    const { data: psub } = await supabase
+      .from('therapist_subscriptions')
+      .select('id, effective_price, plan_snapshot')
+      .eq('therapist_id', uid)
+      .eq('status', 'pending_payment')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    setPendingSub(psub || null);
+  }
+
+  async function handleReturnFromPayment(uid) {
+    const params = new URLSearchParams(window.location.search);
+    const result = params.get('payment');
+    const kind = params.get('kind');
+    if (!result) return;
+
+    // Καθαρίζουμε τη διεύθυνση — ένα refresh δεν πρέπει να ξαναδείχνει το μήνυμα
+    window.history.replaceState(null, '', window.location.pathname);
+
+    if (result === 'cancel') {
+      setPayNotice({ type: 'info', text: tx.payCancel });
+      return;
+    }
+
+    if (kind === 'plan_activation') {
+      setPayNotice({ type: 'success', text: tx.paySuccessPlan });
+    } else {
+      setActiveTab('requests');
+      setPayNotice({ type: 'success', text: tx.paySuccessFee });
+    }
+
+    // Το Stripe ειδοποιεί τον server σε λίγα δευτερόλεπτα. Ανανεώνουμε
+    // μερικές φορές ώστε ο θεραπευτής να δει το αποτέλεσμα χωρίς refresh.
+    for (let i = 0; i < 5; i++) {
+      await new Promise(r => setTimeout(r, 2000));
+      await loadRequests(uid);
+      if (kind === 'plan_activation') await loadSubscription(uid);
+    }
+    if (kind !== 'plan_activation') {
+      setPayNotice({ type: 'success', text: tx.paySuccessFeeDone });
+    }
+  }
+
+  async function authHeaders() {
+    const { data: { session } } = await supabase.auth.getSession();
+    return {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session?.access_token || ''}`,
+    };
+  }
+
+  async function activatePlan() {
+    setActivating(true);
+    setPayNotice(null);
+    try {
+      const res = await fetch('/api/stripe/activate-plan', {
+        method: 'POST',
+        headers: await authHeaders(),
+        body: JSON.stringify({ lang }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (json.url) { window.location.href = json.url; return; }
+      if (json.activated) {
+        await loadSubscription(user.id);
+        setPayNotice({ type: 'success', text: tx.paySuccessPlan });
+      } else {
+        setPayNotice({ type: 'error', text: tx.acceptErr[json.error] || tx.acceptErr.generic });
+      }
+    } catch (_) {
+      setPayNotice({ type: 'error', text: tx.acceptErr.generic });
+    }
+    setActivating(false);
   }
 
   async function reloadSlots(uid) {
@@ -1385,6 +1516,21 @@ export default function TherapistDashboard() {
     });
 
     setRequests(combined);
+
+    // Τέλος νέου ασθενή για κάθε αίτημα που περιμένει απάντηση, ώστε ο
+    // θεραπευτής να το ξέρει ΠΡΙΝ πατήσει «Αποδοχή». Μόνο όταν οι
+    // πληρωμές είναι ενεργές — αλλιώς δεν χρεώνεται τίποτα.
+    const pend = combined.filter(r => r.status === 'pending');
+    const { data: mode } = await supabase.rpc('stripe_mode');
+    if (mode && mode !== 'off' && pend.length > 0) {
+      const entries = await Promise.all(pend.map(async r => {
+        const { data } = await supabase.rpc('new_patient_fee_for_request', { p_request_id: r.id });
+        return [r.id, Number(data || 0)];
+      }));
+      setFees(Object.fromEntries(entries));
+    } else {
+      setFees({});
+    }
   }
 
   async function uploadPhoto(e) {
@@ -1597,17 +1743,31 @@ export default function TherapistDashboard() {
   // Κάθε αίτημα αφορά ΜΙΑ συνεδρία. Η αποδοχή επιβεβαιώνει και το
   // ραντεβού — ο θεραπευτής δεν χρειάζεται δεύτερη οθόνη για να
   // διαλέξει ώρα, γιατί η ώρα είναι ήδη μία.
+  //
+  // Η αποδοχή γίνεται πλέον ΑΠΟ ΤΟΝ SERVER. Αν ο ασθενής είναι νέος και
+  // το πακέτο έχει τέλος, ο server επιστρέφει σελίδα πληρωμής και η
+  // αποδοχή ολοκληρώνεται αμέσως μετά την πληρωμή. Ο browser δεν
+  // αποφασίζει ποτέ αν ή πόσο πληρώνει ο θεραπευτής.
   async function confirmRequest(request) {
     setAccepting(request.id);
-    const bookingIds = request.bookings.map(b => b.id);
-    if (bookingIds.length > 0) {
-      await supabase.from('session_bookings').update({ status: 'confirmed' }).in('id', bookingIds);
+    setActionError(null);
+    try {
+      const res = await fetch('/api/stripe/accept-request', {
+        method: 'POST',
+        headers: await authHeaders(),
+        body: JSON.stringify({ requestId: request.id, lang }),
+      });
+      const json = await res.json().catch(() => ({}));
+
+      if (json.url) { window.location.href = json.url; return; }
+
+      if (!res.ok || !json.accepted) {
+        setActionError({ id: request.id, text: tx.acceptErr[json.error] || tx.acceptErr.generic });
+      }
+      await loadRequests(user.id);
+    } catch (_) {
+      setActionError({ id: request.id, text: tx.acceptErr.generic });
     }
-    await supabase.from('session_requests').update({
-      status: 'confirmed',
-      responded_at: new Date().toISOString(),
-    }).eq('id', request.id);
-    await loadRequests(user.id);
     setAccepting(null);
   }
 
@@ -1895,6 +2055,56 @@ export default function TherapistDashboard() {
           onOpenDocuments={() => setDocsModal(true)}
         />
 
+        {payNotice && (() => {
+          const tone = payNotice.type === 'success'
+            ? { bg: C.successBg, br: C.successBorder, fg: C.success, Icon: CheckCircle2 }
+            : payNotice.type === 'error'
+              ? { bg: C.dangerBg, br: C.dangerBorder, fg: C.danger, Icon: AlertTriangle }
+              : { bg: C.infoBg, br: C.infoBorder, fg: C.info, Icon: Info };
+          return (
+            <div style={{ background: tone.bg, border: `1px solid ${tone.br}`, borderRadius: 12, padding: '13px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5, color: tone.fg, fontWeight: 600 }}>
+              <tone.Icon size={17} style={{ flexShrink: 0 }} />
+              <span style={{ flex: 1 }}>{payNotice.text}</span>
+              <button onClick={() => setPayNotice(null)} title={tx.dismiss}
+                style={{ background: 'transparent', border: 'none', color: tone.fg, cursor: 'pointer', display: 'flex', padding: 2 }}>
+                <X size={16} />
+              </button>
+            </div>
+          );
+        })()}
+
+        {/* Πακέτο που περιμένει πληρωμή. Πριν την έγκριση: μόνο ενημέρωση.
+            Μετά την έγκριση: κουμπί πληρωμής — χωρίς αυτή δεν εμφανίζεται
+            στους ασθενείς. */}
+        {pendingSub && (() => {
+          const planName = (lang === 'en'
+            ? (pendingSub.plan_snapshot?.name_en || pendingSub.plan_snapshot?.name_el)
+            : pendingSub.plan_snapshot?.name_el) || '';
+          const price = Number(pendingSub.effective_price || 0);
+          const priceTxt = price % 1 === 0 ? price.toFixed(0) : price.toFixed(2);
+          const approved = !!profile?.is_approved;
+          return (
+            <div style={{ background: approved ? C.warnBg : C.infoBg, border: `1px solid ${approved ? C.warnBorder : C.infoBorder}`, borderRadius: RAD.card, padding: '18px 20px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+              <CreditCard size={22} color={approved ? C.warn : C.info} style={{ flexShrink: 0 }} />
+              <div style={{ flex: 1, minWidth: 220 }}>
+                {approved && (
+                  <div style={{ fontSize: 15, fontWeight: 700, color: C.warn, marginBottom: 3 }}>{tx.activateTitle}</div>
+                )}
+                <div style={{ fontSize: 13.5, color: approved ? C.warn : C.info, lineHeight: 1.55 }}>
+                  {approved ? tx.activateDesc(planName, priceTxt) : tx.activateWaiting(planName)}
+                </div>
+              </div>
+              {approved && (
+                <button onClick={activatePlan} disabled={activating}
+                  style={{ padding: '11px 22px', borderRadius: RAD.button, border: 'none', background: activating ? C.textFaint : C.brand, color: '#fff', fontSize: 14, fontWeight: 700, cursor: activating ? 'wait' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 7, whiteSpace: 'nowrap' }}>
+                  <CreditCard size={15} />
+                  {activating ? tx.activating : tx.activateBtn}
+                </button>
+              )}
+            </div>
+          );
+        })()}
+
         <div ref={tabsRef} className="tabs-scroll" style={{ marginBottom: 24, scrollMarginTop: 76 }}>
           <div style={{ display: 'flex', gap: 4, background: C.border, padding: 4, borderRadius: 12, width: 'fit-content', minWidth: 'min-content' }}>
             {TABS.map(t => {
@@ -2074,6 +2284,8 @@ export default function TherapistDashboard() {
                   const booking = req.bookings[0];
                   const amount = req.bookings.reduce((s, b) => s + bookingAmount(b), 0) || Number(req.total_cost || 0);
                   const isOpen = expandedRequest === req.id;
+                  const fee = Number(fees[req.id] || 0);
+                  const feeTxt = fee % 1 === 0 ? fee.toFixed(0) : fee.toFixed(2);
 
                   return (
                     <div key={req.id} style={{
@@ -2156,7 +2368,9 @@ export default function TherapistDashboard() {
                         <div className="req-actions" style={{ padding: '14px 20px', borderTop: `1px solid ${C.borderSoft}`, background: isPending ? C.warnBg : C.page, display: 'flex', gap: 10, alignItems: 'center', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                           {isPending && (
                             <>
-                              <span className="req-hint" style={{ fontSize: 12.5, color: C.warn, marginRight: 'auto' }}>{tx.respondFast}</span>
+                              <span className="req-hint" style={{ fontSize: 12.5, color: C.warn, marginRight: 'auto' }}>
+                                {fee > 0 ? tx.feeNotice(feeTxt) : tx.respondFast}
+                              </span>
                               <button onClick={() => openCancelRequestModal(req)}
                                 style={{ padding: '10px 20px', borderRadius: 8, border: `1px solid ${C.dangerBorder}`, background: '#fff', color: C.danger, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'inherit' }}>
                                 <X size={14} strokeWidth={2.5} />
@@ -2165,7 +2379,7 @@ export default function TherapistDashboard() {
                               <button onClick={() => confirmRequest(req)} disabled={accepting === req.id}
                                 style={{ padding: '10px 26px', borderRadius: 8, border: 'none', background: accepting === req.id ? C.textFaint : C.success, color: '#fff', fontSize: 13, fontWeight: 700, cursor: accepting === req.id ? 'wait' : 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'inherit' }}>
                                 <Check size={14} strokeWidth={3} />
-                                {accepting === req.id ? tx.accepting : tx.acceptRequest}
+                                {accepting === req.id ? tx.accepting : (fee > 0 ? tx.acceptWithFee(feeTxt) : tx.acceptRequest)}
                               </button>
                             </>
                           )}
@@ -2175,6 +2389,13 @@ export default function TherapistDashboard() {
                               {tx.cancelWholeRequest}
                             </button>
                           )}
+                        </div>
+                      )}
+
+                      {actionError?.id === req.id && (
+                        <div style={{ padding: '11px 20px', borderTop: `1px solid ${C.dangerBorder}`, background: C.dangerBg, color: C.danger, fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <AlertTriangle size={14} style={{ flexShrink: 0 }} />
+                          {actionError.text}
                         </div>
                       )}
                     </div>
