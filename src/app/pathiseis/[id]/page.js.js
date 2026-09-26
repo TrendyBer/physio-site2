@@ -10,6 +10,10 @@
 // ΔΕΝ είναι σελίδα ιατρικής διάγνωσης. Είναι informational landing
 // page ενός marketplace: εξηγεί πότε βοηθά η φυσικοθεραπεία και δείχνει
 // ποιος μπορεί να την κάνει — χωρίς υποσχέσεις θεραπείας.
+//
+// ΑΥΤΗ είναι η επίσημη (canonical) σελίδα κάθε πάθησης. Το παλιό
+// /find-help/[slug] δείχνει εδώ, γι' αυτό η σελίδα αυτή πρέπει να έχει
+// ΟΛΟ το περιεχόμενο: intro, «Πώς βοηθά η φυσικοθεραπεία», συμπτώματα.
 // ═══════════════════════════════════════════════════════════════════
 
 import { createClient } from '@supabase/supabase-js';
@@ -23,7 +27,7 @@ import { MapPin, Stethoscope } from 'lucide-react';
 
 export const revalidate = 3600;
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://physio-site2.vercel.app';
+const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://theralivo.com';
 
 function db() {
   return createClient(
@@ -78,7 +82,9 @@ export default async function ConditionPage({ params }) {
   if (!p) notFound();
 
   const therapists = p.therapists || [];
-  const hasContent = Array.isArray(p.content) && p.content.length > 0;
+  // «about» είναι ΚΕΙΜΕΝΟ (conditions.content_el), όχι λίστα ενοτήτων.
+  const about = typeof p.about === 'string' && p.about.trim() ? p.about : null;
+  const symptoms = Array.isArray(p.symptoms) ? p.symptoms.filter(s => typeof s === 'string' && s.trim()) : [];
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -134,19 +140,30 @@ export default async function ConditionPage({ params }) {
         </div>
       </section>
 
-      {/* Το ενημερωτικό περιεχόμενο. Γράφεται από το admin — χωρίς αυτό
-          η σελίδα μένει noindex και δεν εμφανίζεται στη Google. */}
-      {hasContent && (
+      {/* Το ενημερωτικό περιεχόμενο — ίδιο με του /find-help/[slug],
+          ώστε η canonical σελίδα να μην είναι φτωχότερη από το αντίγραφο. */}
+      {(about || symptoms.length > 0) && (
         <Section>
           <div style={{ maxWidth: 720, display: 'flex', flexDirection: 'column', gap: 34 }}>
-            {p.content.map((sec, i) => (
-              <div key={i}>
-                <H2>{sec.title}</H2>
+            {about && (
+              <div>
+                <H2>Πώς βοηθά η φυσικοθεραπεία</H2>
                 <p style={{ fontSize: 16, color: S.muted, lineHeight: 1.8, margin: 0, whiteSpace: 'pre-line' }}>
-                  {sec.body}
+                  {about}
                 </p>
               </div>
-            ))}
+            )}
+
+            {symptoms.length > 0 && (
+              <div>
+                <H2>Συχνά συμπτώματα</H2>
+                <ul style={{ margin: 0, paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {symptoms.map((s, i) => (
+                    <li key={i} style={{ fontSize: 16, color: S.muted, lineHeight: 1.7 }}>{s}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </Section>
       )}

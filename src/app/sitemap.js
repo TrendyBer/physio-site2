@@ -4,10 +4,14 @@ import { supabase } from '@/lib/supabase';
 // Next.js αυτόματα το serves στο /sitemap.xml
 // Docs: https://nextjs.org/docs/app/api-reference/file-conventions/metadata/sitemap
 
-// Cache για 1 ώρα — αρκετό για να μην χτυπάει συνέχεια το DB
-export const revalidate = 3600;
+// ΠΑΝΤΑ ΦΡΕΣΚΟ.
+// Με revalidate = 3600 το sitemap έμενε κολλημένο στην έκδοση του
+// τελευταίου deploy: οι σελίδες που γίνονταν indexable από το admin δεν
+// εμφανίζονταν ποτέ. Το κόστος του force-dynamic είναι τρία μικρά
+// queries ανά επίσκεψη crawler — αμελητέο.
+export const dynamic = 'force-dynamic';
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://physio-site2.vercel.app';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://theralivo.com';
 
 export default async function sitemap() {
   const now = new Date();
@@ -119,29 +123,10 @@ export default async function sitemap() {
     console.error('Sitemap: failed to load SEO pages', err);
   }
 
-  // ============== DYNAMIC: CONDITION FILTER PAGES ==============
-  // Το /find-help/[slug] παραμένει ως φίλτρο της εφαρμογής.
-  // ΧΩΡΙΣ τα ?lang=en διπλότυπα: το ίδιο περιεχόμενο σε δύο URL
-  // ανταγωνίζεται τον εαυτό του στα αποτελέσματα.
-  let conditionPages = [];
-
-  try {
-    const { data: conditions } = await supabase
-      .from('conditions')
-      .select('slug, is_popular')
-      .eq('is_active', true);
-
-    if (conditions && conditions.length > 0) {
-      conditionPages = conditions.map((c) => ({
-        url: `${SITE_URL}/find-help/${c.slug}`,
-        lastModified: now,
-        changeFrequency: 'monthly',
-        priority: c.is_popular ? 0.6 : 0.5,
-      }));
-    }
-  } catch (err) {
-    console.error('Sitemap: failed to load conditions', err);
-  }
+  // ============== /find-help/[slug] — ΣΚΟΠΙΜΑ ΕΚΤΟΣ ==============
+  // Οι σελίδες αυτές δηλώνουν canonical την /pathiseis/[slug]. Ένα URL
+  // που λέει «η επίσημη εκδοχή μου είναι αλλού» δεν ανήκει στο sitemap:
+  // θα έδινε στη Google αντικρουόμενα σήματα για το ποια σελίδα μετράει.
 
   // ============== DYNAMIC: BLOG POSTS (αν υπάρχουν) ==============
   let blogPages = [];
@@ -163,5 +148,5 @@ export default async function sitemap() {
     // Αν δεν υπάρχει blog_posts table, σιωπηλά skip
   }
 
-  return [...staticPages, ...seoPages, ...conditionPages, ...blogPages];
+  return [...staticPages, ...seoPages, ...blogPages];
 }
