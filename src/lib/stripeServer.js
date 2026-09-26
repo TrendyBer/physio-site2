@@ -123,6 +123,13 @@ export async function createCheckout({
     customer: customerId,
     locale: lang === 'en' ? 'en' : 'el',
     client_reference_id: row.id,
+    // ΜΟΝΟ ΚΑΡΤΑ (Apple Pay / Google Pay εμφανίζονται αυτόματα, είναι κάρτες).
+    // Klarna, Bancontact, MB WAY κ.λπ. αποκλείονται σκόπιμα: μερικοί
+    // επιβεβαιώνουν την πληρωμή ώρες ή μέρες μετά — ως τότε θα είχε
+    // λήξει η προθεσμία του αιτήματος. Η αποδοχή πρέπει να κρίνεται
+    // ΑΜΕΣΑ. Ορίζεται εδώ και όχι στο Dashboard, για να μην ξαναανοίξει
+    // κατά λάθος στη μετάβαση σε live.
+    payment_method_types: ['card'],
     line_items: [{
       quantity: 1,
       price_data: {
