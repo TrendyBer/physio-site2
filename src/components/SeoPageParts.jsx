@@ -1,4 +1,10 @@
-'use client';
+// ΧΩΡΙΣ 'use client' — ΣΚΟΠΙΜΑ.
+// Κανένα component εδώ δεν χρειάζεται browser: χωρίς state, χωρίς
+// onClick, το FAQ ανοίγει με το <details> της HTML. Με 'use client' οι
+// σελίδες δεν μπορούσαν να περάσουν εικονίδια (icon={MapPin}) και το
+// build έσπαγε: «Functions cannot be passed directly to Client Components».
+// Ως server components, το Google παίρνει έτοιμο HTML χωρίς επιπλέον JS.
+// Αν ποτέ χρειαστεί διαδραστικό κομμάτι, μπαίνει σε ΞΕΧΩΡΙΣΤΟ αρχείο.
 import { MapPin, ShieldCheck, Clock, ArrowRight, ChevronRight, Star } from 'lucide-react';
 
 /**
