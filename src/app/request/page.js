@@ -5,6 +5,7 @@ import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
+import { fetchPublicSettings } from '@/lib/publicSettings';
 import { Mail, Phone, MapPin, Star, Check, X } from 'lucide-react';
 
 const SERVICES = ['Not sure/Need guidance','Musculoskeletal Physiotherapy','Post-Surgery Rehabilitation','Sports Injury Recovery','Elderly Care and Mobility Support','Back Pain','Neck and Shoulder Pain','Joint Pain','Sports Injury','Balance Issues','Reduced Mobility','Neurological Physiotherapy'];
@@ -96,7 +97,7 @@ function RequestPageInner() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from('platform_settings').select('key, value');
+      const { data } = await fetchPublicSettings();
       if (!data) return;
       const s = {};
       data.forEach((row) => { s[row.key] = row.value; });

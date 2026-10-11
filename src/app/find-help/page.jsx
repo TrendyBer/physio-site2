@@ -109,23 +109,27 @@ export default async function FindHelpPage({ searchParams }) {
     .from('therapist_conditions')
     .select('condition_id, therapist_id');
 
-  // Μόνο θεραπευτές με πλήρες προφίλ μετράνε — αλλιώς οι μετρητές
-  // θα έλεγαν "5 θεραπευτές" και ο ασθενής θα έβρισκε 0 στη λίστα.
+  // Μετράνε ΜΟΝΟ οι θεραπευτές που φαίνονται δημόσια — ίδια πηγή με τη
+  // σελίδα κάθε πάθησης και τη λίστα θεραπευτών. Πριν, εδώ μετρούσαν και
+  // θεραπευτές που δεν εμφανίζονται, οπότε η «Οσφυαλγία» έλεγε 3 και η
+  // σελίδα της έδειχνε 1.
   const { data: therapists } = await supabase
-    .from('therapist_profiles')
+    .from('v_public_therapists')
     .select('id, specialty')
-    .eq('is_approved', true)
-    .eq('is_profile_complete', true);
+    .eq('is_publicly_visible', true);
+  const visibleIds = new Set((therapists || []).map((t) => t.id));
 
   const reachByCondition = {};
   (conditions || []).forEach((c) => {
     const taggedIds = new Set();
     (tcData || []).forEach((tc) => {
-      if (tc.condition_id === c.id) taggedIds.add(tc.therapist_id);
+      if (tc.condition_id === c.id && visibleIds.has(tc.therapist_id)) taggedIds.add(tc.therapist_id);
     });
-    const related = (c.related_specialties || []).map((s) => (s || '').toLowerCase());
+    const related = (c.related_specialties || []).map((s) => (s || '').trim().toLowerCase()).filter(Boolean);
     (therapists || []).forEach((t) => {
-      const spec = (t.specialty || '').toLowerCase();
+      const spec = (t.specialty || '').trim().toLowerCase();
+      // Κενή ειδικότητα δεν ταιριάζει με τίποτα (πριν ταίριαζε με όλα).
+      if (!spec) return;
       if (related.some((rs) => spec.includes(rs) || rs.includes(spec))) {
         taggedIds.add(t.id);
       }

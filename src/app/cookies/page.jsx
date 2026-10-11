@@ -8,7 +8,7 @@ const COOKIE_PREFS_KEY = 'theralivo_cookie_prefs';
 
 export default function CookiesPage() {
   const [currentPrefs, setCurrentPrefs] = useState(null);
-  const [lastUpdated] = useState('1 Μαΐου 2026'); // Update when policy changes
+  const [lastUpdated] = useState('11 Οκτωβρίου 2026'); // Update when policy changes
 
   useEffect(() => {
     // Load current preferences
@@ -143,9 +143,9 @@ export default function CookiesPage() {
             alwaysOn
             description="Είναι απαραίτητα για τη βασική λειτουργία του site. Χωρίς αυτά, δεν μπορείτε να συνδεθείτε ή να κάνετε κρατήσεις."
             examples={[
-              { name: 'sb-access-token', purpose: 'Authentication με Supabase', duration: 'Session' },
-              { name: 'sb-refresh-token', purpose: 'Διατήρηση login session', duration: '7 μέρες' },
-              { name: 'theralivo_cookie_prefs', purpose: 'Αποθήκευση των επιλογών σας για cookies', duration: '1 χρόνος' },
+              { name: 'sb-…-auth-token', purpose: 'Σύνδεση στον λογαριασμό σας (τοπική αποθήκευση του browser)', duration: 'Μέχρι την αποσύνδεση' },
+              { name: 'theralivo_cookie_prefs', purpose: 'Οι επιλογές σας για τα cookies', duration: 'Μέχρι να τις αλλάξετε' },
+              { name: 'lang', purpose: 'Η γλώσσα που επιλέξατε', duration: 'Μέχρι να την αλλάξετε' },
             ]}
           />
 
@@ -155,9 +155,10 @@ export default function CookiesPage() {
             bg="#EFF6FF"
             border="#BFDBFE"
             title="Analytics Cookies"
-            description="Μας βοηθούν να καταλάβουμε πώς χρησιμοποιείτε το site (πχ ποιες σελίδες επισκέπτεστε, πόσο χρόνο μένετε, από πού μας βρήκατε). Όλα τα δεδομένα είναι ανώνυμα."
+            description="Μας βοηθούν να καταλάβουμε πώς χρησιμοποιείτε το site (πχ ποιες σελίδες επισκέπτεστε, από πού μας βρήκατε). Χρησιμοποιούμε το Google Analytics 4. Τα cookies του τοποθετούνται ΜΟΝΟ αν τα αποδεχτείτε· χωρίς συγκατάθεση στέλνονται μόνο ανώνυμα σήματα χωρίς cookies (Google Consent Mode)."
             examples={[
-              { name: '(προαιρετικά)', purpose: 'Δεν τρέχουμε ακόμα analytics tools', duration: '—' },
+              { name: '_ga', purpose: 'Google Analytics — διάκριση επισκεπτών', duration: '2 χρόνια' },
+              { name: '_ga_<ID>', purpose: 'Google Analytics — διατήρηση της επίσκεψης', duration: '2 χρόνια' },
             ]}
           />
 
@@ -169,13 +170,13 @@ export default function CookiesPage() {
             title="Marketing Cookies"
             description="Επιτρέπουν εξατομικευμένο περιεχόμενο και διαφημίσεις βασισμένες στα ενδιαφέροντά σας (πχ remarketing, social media tracking)."
             examples={[
-              { name: '(προαιρετικά)', purpose: 'Δεν τρέχουμε ακόμα marketing tools', duration: '—' },
+              { name: '—', purpose: 'Αυτή τη στιγμή δεν χρησιμοποιούμε marketing cookies. Αν προστεθούν (π.χ. Google Ads), θα ενεργοποιούνται μόνο με τη συγκατάθεσή σας.', duration: '—' },
             ]}
           />
         </Section>
 
         <Section title="Πώς μπορείτε να ελέγξετε τα cookies;">
-          <p>Μπορείτε να ελέγξετε τα cookies με 3 τρόπους:</p>
+          <p>Μπορείτε να ελέγξετε τα cookies με 2 τρόπους:</p>
           <ol style={{ marginTop: 12, paddingLeft: 24 }}>
             <li style={{ marginBottom: 8 }}>
               <strong>Στο Theralivo:</strong> Πατήστε "Αλλαγή Ρυθμίσεων" παραπάνω για να
@@ -185,10 +186,6 @@ export default function CookiesPage() {
               <strong>Στον browser σας:</strong> Όλοι οι σύγχρονοι browsers (Chrome, Firefox,
               Safari, Edge) σας επιτρέπουν να διαχειρίζεστε τα cookies στις ρυθμίσεις τους.
               Μπορείτε να τα διαγράψετε ή να τα μπλοκάρετε.
-            </li>
-            <li style={{ marginBottom: 8 }}>
-              <strong>Με DNT (Do Not Track):</strong> Σεβόμαστε το Do Not Track signal αν είναι
-              ενεργό στον browser σας.
             </li>
           </ol>
           <div style={{

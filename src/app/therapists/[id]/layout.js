@@ -26,7 +26,8 @@ export async function generateMetadata({ params }) {
       : `${name}${th.specialty ? `, ${th.specialty}` : ''}. Φυσικοθεραπεία στο σπίτι σε Αθήνα και Αττική μέσω Theralivo.`;
 
     return {
-      title,
+      // absolute: το «| Theralivo» μπαίνει εδώ ρητά, μία φορά.
+      title: { absolute: `${title} | Theralivo` },
       description,
       alternates: { canonical: `/therapists/${id}` },
       openGraph: {

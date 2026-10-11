@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { fetchPublicSettings } from '@/lib/publicSettings';
 import { useRouter } from 'next/navigation';
 import { Check, X, ChevronLeft, ChevronRight, Calendar, ArrowRight, MapPin, AlertCircle, Star, Heart, Banknote, Clock, ShieldCheck, Send } from 'lucide-react';
 import ConditionSearch from '@/components/ConditionSearch';
@@ -295,8 +296,9 @@ export default function NewRequestPage() {
     // ── 2β. ΕΠΙΒΟΛΗ ΣΥΝΔΡΟΜΗΣ ──
     if (pool.length > 0) {
       const [{ data: cfg }, { data: exempt }] = await Promise.all([
-        supabase.from('platform_settings').select('key, value')
-          .in('key', ['subscription_enforcement', 'subscription_grace_days']),
+        // Μέσω της δημόσιας RPC: ο ασθενής δεν έχει πρόσβαση στον πίνακα,
+        // οπότε πριν ο έλεγχος συνδρομής δεν ενεργοποιούνταν ποτέ.
+        fetchPublicSettings(['subscription_enforcement', 'subscription_grace_days']),
         supabase.from('therapist_subscriptions')
           .select('therapist_id, current_period_end, status')
           .in('therapist_id', pool.map((t) => t.id))

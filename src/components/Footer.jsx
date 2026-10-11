@@ -4,6 +4,7 @@
 // Αν χρειαστεί αλλαγή σε link, γίνεται ΕΔΩ και μόνο εδώ.
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { fetchPublicSettings } from '@/lib/publicSettings';
 import { useLang } from '@/context/LanguageContext';
 import Logo, { BRAND } from '@/components/Logo';
 import { Mail, Phone, MapPin, ArrowRight } from 'lucide-react';
@@ -114,7 +115,7 @@ export default function Footer() {
         }
       } catch (_) {}
 
-      const { data } = await supabase.from('platform_settings').select('key, value');
+      const { data } = await fetchPublicSettings();
       if (data) {
         const s = {};
         data.forEach(row => { s[row.key] = row.value; });

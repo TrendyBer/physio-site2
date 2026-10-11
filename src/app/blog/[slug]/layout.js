@@ -24,7 +24,8 @@ export async function generateMetadata({ params }) {
     const description = post.excerpt_el ? String(post.excerpt_el).slice(0, 160) : undefined;
 
     return {
-      title,
+      // absolute: το «| Theralivo» μπαίνει εδώ ρητά, μία φορά.
+      title: { absolute: `${title} | Theralivo` },
       description,
       alternates: { canonical: `/blog/${post.slug}` },
       openGraph: {

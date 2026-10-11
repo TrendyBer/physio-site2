@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { fetchPublicSettings } from '@/lib/publicSettings';
 import { useLang } from '@/context/LanguageContext';
 import { Mail, Phone, MapPin, ArrowRight, Check, X, AlertCircle } from 'lucide-react';
 
@@ -133,7 +134,7 @@ export default function Contact() {
         }
       } catch (_) {}
 
-      const { data } = await supabase.from('platform_settings').select('key, value');
+      const { data } = await fetchPublicSettings();
       if (data) {
         const s = {};
         data.forEach((row) => { s[row.key] = row.value; });

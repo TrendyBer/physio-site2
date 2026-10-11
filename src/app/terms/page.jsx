@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { fetchPublicSettings } from '@/lib/publicSettings';
 
 // Φορέας: Κυριακόπουλος Νικόλαος, ατομική επιχείρηση (Ναύπλιο).
 // Συνιστάται έλεγχος από νομικό.
@@ -197,7 +198,7 @@ function buildContent({ fee, resetMonths, plans, graceDays }) {
           h: '16. Λύση Διαφορών — Δικαιοδοσία',
           p: [
             'Πρώτα προσπάθεια: φιλικός διακανονισμός μέσω info@theralivo.com',
-            'Καταναλωτές δύνανται να προσφύγουν στην πλατφόρμα Ηλεκτρονικής Επίλυσης Διαφορών της ΕΕ ή στον Συνήγορο του Καταναλωτή.',
+            'Καταναλωτές δύνανται επίσης να απευθυνθούν στον Συνήγορο του Καταναλωτή ή σε άλλο φορέα εναλλακτικής επίλυσης καταναλωτικών διαφορών.',
             'Σε περίπτωση μη επίλυσης: αρμόδια δικαστήρια Ναυπλίου, Ελλάδα, με την επιφύλαξη των δικαιωμάτων που έχουν οι καταναλωτές να προσφύγουν στα δικαστήρια του τόπου κατοικίας τους.',
             'Εφαρμοστέο δίκαιο: ελληνικό.',
           ],
@@ -378,7 +379,7 @@ function buildContent({ fee, resetMonths, plans, graceDays }) {
           h: '16. Dispute Resolution — Jurisdiction',
           p: [
             'First attempt: amicable settlement via info@theralivo.com',
-            'Consumers may also use the EU Online Dispute Resolution platform or the Greek Consumer Ombudsman.',
+            'Consumers may also contact the Greek Consumer Ombudsman or another alternative consumer dispute resolution body.',
             'If unresolved: competent courts of Nafplio, Greece, without prejudice to consumers\' right to bring proceedings in the courts of their place of residence.',
             'Applicable law: Greek.',
           ],
@@ -404,10 +405,7 @@ export default function TermsOfServicePage() {
   useEffect(() => {
     (async () => {
       const [{ data: cfg }, { data: planRows }] = await Promise.all([
-        supabase
-          .from('platform_settings')
-          .select('key, value')
-          .in('key', ['first_session_fee_default', 'first_session_reset_months', 'subscription_grace_days']),
+        fetchPublicSettings(['first_session_fee_default', 'first_session_reset_months', 'subscription_grace_days']),
         supabase
           .from('subscription_plans')
           .select('name_el, name_en, price_monthly, first_session_fee, display_order')

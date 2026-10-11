@@ -4,6 +4,7 @@ import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
+import { fetchPublicSettings } from '@/lib/publicSettings';
 import { Mail, Phone, MapPin, Check, X, AlertCircle, ArrowRight } from 'lucide-react';
 
 const CACHE_KEY = 'cms_platform_settings';
@@ -116,7 +117,7 @@ export default function ContactPage() {
         }
       } catch (_) {}
 
-      const { data } = await supabase.from('platform_settings').select('key, value');
+      const { data } = await fetchPublicSettings();
       if (data) {
         const s = {};
         data.forEach((row) => { s[row.key] = row.value; });
