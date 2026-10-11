@@ -176,7 +176,9 @@ const TX = {
     past: (n) => `Παλαιότερα (${n})`,
     noUpcoming: 'Δεν έχεις επερχόμενα ραντεβού.',
     noPast: 'Δεν υπάρχουν παλαιότερα ραντεβού.',
-    markDone: 'Ολοκληρώθηκε',
+    markDone: 'Η συνεδρία έγινε',
+    toConfirmTitle: (n) => n === 1 ? '1 συνεδρία περιμένει επιβεβαίωση' : `${n} συνεδρίες περιμένουν επιβεβαίωση`,
+    toConfirmSub: 'Πάτησε «Η συνεδρία έγινε» για να περάσει από τα αναμενόμενα στα εισπραγμένα.',
     cancel: 'Ακύρωση',
     reschedule: 'Αλλαγή ώρας',
     noShow: 'Δεν εμφανίστηκε',
@@ -451,7 +453,9 @@ const TX = {
     past: (n) => `Past (${n})`,
     noUpcoming: 'No upcoming appointments.',
     noPast: 'No past appointments.',
-    markDone: 'Mark as done',
+    markDone: 'Session done',
+    toConfirmTitle: (n) => n === 1 ? '1 session awaiting confirmation' : `${n} sessions awaiting confirmation`,
+    toConfirmSub: 'Tap “Session done” to move it from expected to collected.',
     cancel: 'Cancel',
     reschedule: 'Change time',
     noShow: 'No-show',
@@ -1932,18 +1936,34 @@ export default function TherapistDashboard() {
 
   const now = new Date();
 
+  // Μια ΕΠΙΒΕΒΑΙΩΜΕΝΗ συνεδρία που πέρασε μένει εδώ μέχρι ο θεραπευτής να
+  // πατήσει «Η συνεδρία έγινε» (ή να δηλώσει μη εμφάνιση). Πριν, περνούσε
+  // αμέσως στα «Παλαιότερα», όπου δεν υπάρχουν κουμπιά: το «έγινε» δεν
+  // εμφανιζόταν ποτέ και τα έσοδα έμεναν για πάντα «αναμενόμενα».
   const upcomingAppointments = sortedAppointments.filter(a => {
     if (isCancelled(a.status)) return false;
     const d = new Date(a.session_date + 'T' + (a.session_time || '00:00'));
-    return d >= now || a.payment_status === 'held';
+    return d >= now || a.payment_status === 'held' || a.status === 'confirmed';
   });
 
   const pastAppointments = sortedAppointments.filter(a => {
     const d = new Date(a.session_date + 'T' + (a.session_time || '00:00'));
-    return d < now && a.payment_status !== 'held' && a.status !== 'pending' && !(a.status === 'confirmed' && d >= now);
+    return d < now && a.payment_status !== 'held' && a.status !== 'pending' && a.status !== 'confirmed';
   }).reverse();
 
-  const nextAppointment = upcomingAppointments.find(a => a.status === 'confirmed' || a.status === 'pending');
+  // Το «επόμενο» είναι πάντα ΜΕΛΛΟΝΤΙΚΟ — όχι κάποιο που πέρασε και
+  // περιμένει επιβεβαίωση.
+  const nextAppointment = upcomingAppointments.find(a =>
+    (a.status === 'confirmed' || a.status === 'pending')
+    && new Date(a.session_date + 'T' + (a.session_time || '00:00')) >= now
+  );
+
+  // Συνεδρίες που ΠΕΡΑΣΑΝ και περιμένουν «Η συνεδρία έγινε»
+  const toConfirm = upcomingAppointments.filter(a =>
+    a.status === 'confirmed'
+    && a.payment_status !== 'held'
+    && new Date(a.session_date + 'T' + (a.session_time || '00:00')) < now
+  );
 
   const todayStr = todayISO();
 
@@ -2184,7 +2204,7 @@ export default function TherapistDashboard() {
                 <span style={{ fontSize: 13, color: C.textFaint, marginLeft: 'auto' }}>{formatFullDate(todayStr)}</span>
               </div>
 
-              {pendingCount === 0 && todaysAppointments.length === 0 && incomingReschedules.length === 0 ? (
+              {pendingCount === 0 && todaysAppointments.length === 0 && incomingReschedules.length === 0 && toConfirm.length === 0 ? (
                 <div style={{ padding: '32px 24px', textAlign: 'center' }}>
                   <CheckCircle2 size={34} color={C.successBorder} style={{ margin: '0 auto 10px' }} />
                   <div style={{ fontSize: 15, fontWeight: 600, color: C.textBody, marginBottom: 4 }}>{tx.todayNothing}</div>
@@ -2201,6 +2221,23 @@ export default function TherapistDashboard() {
                       <button onClick={() => setActiveTab('requests')}
                         style={{ marginLeft: 'auto', padding: '8px 18px', borderRadius: RAD.button, border: 'none', background: C.warn, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                         {tx.seeRequests}
+                        <ChevronRight size={14} />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Συνεδρίες που πέρασαν: χωρίς «έγινε» τα έσοδα μένουν
+                      «αναμενόμενα» και δεν περνούν ποτέ στα εισπραγμένα. */}
+                  {toConfirm.length > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', background: C.successBg, border: `1px solid ${C.successBorder}`, borderRadius: 12, flexWrap: 'wrap' }}>
+                      <CheckCircle2 size={18} color={C.success} />
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1, minWidth: 200 }}>
+                        <span style={{ fontSize: 15, fontWeight: 700, color: C.success }}>{tx.toConfirmTitle(toConfirm.length)}</span>
+                        <span style={{ fontSize: 12.5, color: C.success }}>{tx.toConfirmSub}</span>
+                      </div>
+                      <button onClick={() => { setActiveTab('appointments'); setAppointmentsView('upcoming'); }}
+                        style={{ padding: '8px 18px', borderRadius: RAD.button, border: 'none', background: C.success, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        {tx.tabAppointments}
                         <ChevronRight size={14} />
                       </button>
                     </div>
