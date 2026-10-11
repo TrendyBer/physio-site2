@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { fetchPublicSettings } from '@/lib/publicSettings';
+import { rankScore, weightsFromSettings } from '@/lib/ranking';
 import { useRouter } from 'next/navigation';
 import { Check, X, ChevronLeft, ChevronRight, Calendar, ArrowRight, MapPin, AlertCircle, Star, Heart, Banknote, Clock, ShieldCheck, Send } from 'lucide-react';
 import ConditionSearch from '@/components/ConditionSearch';
@@ -244,31 +245,16 @@ export default function NewRequestPage() {
    * Η πάθηση ΔΕΝ βαθμολογείται — είναι σκληρό φίλτρο.
    * Όποιος δεν τη δήλωσε, δεν μπαίνει καν στην κύρια λίστα.
    */
-  function matchScore(t) {
-    let score = 0;
-
-    if (t.freeSlots >= 5) score += 30;
-    else if (t.freeSlots >= 1) score += 15 + t.freeSlots * 3;
-
-    if (t.reviewCount > 0) {
-      score += Math.round((t.avgRating / 5) * 20);
-      if (t.reviewCount >= 5) score += 5;
-      else score += t.reviewCount;
-    } else {
-      score += 8;   // νέος θεραπευτής — ουδέτερο, όχι τιμωρία
-    }
-
-    score += Math.min(20, t.completedCount * 2);
-
-    if (t.is_profile_full) score += 15;
-    else score += 5;
-
-    const h = t.response_time_hours || 24;
-    if (h <= 6) score += 10;
-    else if (h <= 12) score += 7;
-    else if (h <= 24) score += 5;
-
-    return Math.min(100, score);
+  // Βαθμολογία κατάταξης — ίδια με τη λίστα θεραπευτών (lib/ranking.js):
+  // αξιολογήσεις, συνδρομή, διαθεσιμότητα, εμπειρία. Εφαρμόζεται ΜΟΝΟ
+  // ανάμεσα σε όσους έχουν ήδη περάσει τα φίλτρα (περιοχή, πάθηση).
+  function matchScore(t, weights) {
+    return rankScore({
+      avg_rating: t.avgRating,
+      review_count: t.reviewCount,
+      rank_weight: t.rankWeight,
+      free_slots: t.freeSlots,
+    }, weights);
   }
 
   async function fetchTherapists() {
@@ -331,13 +317,18 @@ export default function NewRequestPage() {
     // ── 3. Δεδομένα κατάταξης, όλα μαζί ──
     // Τα slots έρχονται ταξινομημένα ώστε το πρώτο κάθε θεραπευτή να
     // είναι η επόμενη διαθέσιμη ώρα του — μπαίνει στην κάρτα.
-    const [{ data: revs }, { data: reqs }, { data: freeSlots }] = await Promise.all([
+    const [{ data: revs }, { data: reqs }, { data: freeSlots }, { data: rankRows }, { data: cfgRows }] = await Promise.all([
       supabase.from('reviews').select('therapist_id, rating').eq('is_published', true).in('therapist_id', ids),
       supabase.from('session_requests').select('therapist_id, status').in('therapist_id', ids),
       supabase.from('availability_slots').select('therapist_id, date, start_time')
         .eq('is_blocked', false).gte('date', todayStr).in('therapist_id', ids)
         .order('date', { ascending: true }).order('start_time', { ascending: true }),
+      supabase.from('v_therapist_ranking').select('therapist_id, rank_weight').in('therapist_id', ids),
+      fetchPublicSettings(),
     ]);
+    const weights = weightsFromSettings(cfgRows || []);
+    const rankMap = {};
+    (rankRows || []).forEach((r) => { rankMap[r.therapist_id] = Number(r.rank_weight) || 0; });
 
     const stats = {};
     ids.forEach((id) => { stats[id] = { sum: 0, count: 0, completed: 0, slots: 0, next: null }; });
@@ -359,6 +350,7 @@ export default function NewRequestPage() {
         completedCount: st.completed,
         freeSlots: st.slots,
         nextSlot: st.next,
+        rankWeight: rankMap[t.id] || 0,
       };
     };
 
@@ -366,15 +358,15 @@ export default function NewRequestPage() {
     const primary = pool
       .filter((t) => declaredIds.includes(t.id) && servesArea(t, area))
       .map(enrich)
-      .map((t) => ({ ...t, matchLevel: 'exact', score: matchScore(t) }))
-      .sort((a, b) => b.score - a.score);
+      .map((t) => ({ ...t, matchLevel: 'exact', score: matchScore(t, weights) }))
+      .sort((a, b) => (b.score - a.score) || ((b.is_profile_full ? 1 : 0) - (a.is_profile_full ? 1 : 0)));
 
     // ── 5. ΣΤΟ ΤΕΛΟΣ: εξυπηρετεί την περιοχή αλλά ΔΕΝ δήλωσε την πάθηση ──
     const secondary = pool
       .filter((t) => !declaredIds.includes(t.id) && servesArea(t, area))
       .map(enrich)
-      .map((t) => ({ ...t, matchLevel: 'area', score: matchScore(t) }))
-      .sort((a, b) => b.score - a.score);
+      .map((t) => ({ ...t, matchLevel: 'area', score: matchScore(t, weights) }))
+      .sort((a, b) => (b.score - a.score) || ((b.is_profile_full ? 1 : 0) - (a.is_profile_full ? 1 : 0)));
 
     const combined = [...primary, ...secondary];
 

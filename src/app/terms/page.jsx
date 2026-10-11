@@ -146,10 +146,10 @@ function buildContent({ fee, resetMonths, plans, graceDays }) {
           h: '11. Κατάταξη και Προβολή',
           p: ['Θέλουμε να ξέρετε πώς προκύπτει η σειρά που βλέπετε.'],
           list: [
-            'Η προεπιλεγμένη σειρά λαμβάνει υπόψη τη βαθμολογία, τη διαθεσιμότητα, την πληρότητα του προφίλ και το πακέτο συνδρομής του θεραπευτή',
-            'Θεραπευτές σε ανώτερα πακέτα ενδέχεται να εμφανίζονται υψηλότερα στην προεπιλεγμένη σειρά',
+            'Πρώτα εμφανίζονται ΜΟΝΟ οι θεραπευτές που ταιριάζουν με τα κριτήριά σας (περιοχή, πάθηση, ειδικότητα και όσα άλλα φίλτρα επιλέξετε). Κανένα συνδρομητικό πακέτο δεν παρακάμπτει αυτά τα κριτήρια',
+            'Ανάμεσα σε αυτούς, η προτεινόμενη σειρά προκύπτει από βαθμολογία που συνδυάζει τις αξιολογήσεις ασθενών, το συνδρομητικό πακέτο του θεραπευτή, τη διαθεσιμότητά του και την εμπειρία του στην Πλατφόρμα',
+            'Θεραπευτές σε ανώτερα πακέτα αποκτούν πλεονέκτημα στην προτεινόμενη σειρά, χωρίς εγγύηση συγκεκριμένης θέσης. Θεραπευτής με καλύτερες αξιολογήσεις μπορεί να προηγείται θεραπευτή σε ανώτερο πακέτο',
             'Όταν επιλέγετε ρητή ταξινόμηση (βαθμολογία, τιμή, εμπειρία), το πακέτο συνδρομής ΔΕΝ επηρεάζει τη σειρά',
-            'Η αντιστοίχιση βάσει πάθησης προηγείται πάντα κάθε εμπορικού κριτηρίου',
           ],
         },
         {
@@ -327,10 +327,10 @@ function buildContent({ fee, resetMonths, plans, graceDays }) {
           h: '11. Ranking and Visibility',
           p: ['We want you to know how the order you see is produced.'],
           list: [
-            'The default order considers rating, availability, profile completeness, and the therapist\'s subscription plan',
-            'Therapists on higher plans may appear higher in the default order',
+            'Only therapists who match your criteria (area, condition, specialty and any other filters you choose) are shown. No subscription plan overrides these criteria',
+            'Among them, the recommended order comes from a score combining patient reviews, the therapist\'s subscription plan, availability and platform experience',
+            'Therapists on higher plans gain an advantage in the recommended order, with no guarantee of a specific position. A therapist with better reviews may rank above one on a higher plan',
             'When you choose an explicit sort (rating, price, experience), the subscription plan does NOT affect the order',
-            'Condition-based matching always takes precedence over any commercial criterion',
           ],
         },
         {

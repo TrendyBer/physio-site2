@@ -7,6 +7,8 @@ import ConditionSearch from '../../components/ConditionSearch';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
 import { loadTherapistList } from '@/lib/therapistList';
+import { compareByRank, weightsFromSettings, DEFAULT_WEIGHTS } from '@/lib/ranking';
+import { fetchPublicSettings } from '@/lib/publicSettings';
 import { Search, MapPin, Star, SlidersHorizontal, X, Check, ArrowRight, Stethoscope, Users, ChevronDown, ChevronUp, BadgeCheck, Info, CalendarCheck, Briefcase } from 'lucide-react';
 
 const MONTHS_SHORT = {
@@ -54,7 +56,7 @@ const TX = {
     sortRelevance: 'Σχετικότητα',
     clearFilters: 'Καθαρισμός φίλτρων',
     resultsCount: (n) => `${n} ${n === 1 ? 'θεραπευτής' : 'θεραπευτές'}`,
-    rankingNote: 'Η προτεινόμενη σειρά επηρεάζεται από το συνδρομητικό πλάνο του θεραπευτή. Για καθαρά αντικειμενική κατάταξη, επιλέξτε ταξινόμηση κατά βαθμολογία.',
+    rankingNote: 'Εμφανίζονται μόνο θεραπευτές που ταιριάζουν με τα κριτήριά σας. Η προτεινόμενη σειρά συνδυάζει αξιολογήσεις, διαθεσιμότητα, εμπειρία στην πλατφόρμα και το συνδρομητικό πακέτο του θεραπευτή. Για σειρά μόνο κατά βαθμολογία, επιλέξτε «Υψηλότερη βαθμολογία».',
     notFoundTitle: 'Δεν βρίσκετε αυτό που ψάχνετε;',
     notFoundDesc: 'Συμπληρώστε το αίτημά σας και θα σας προτείνουμε τους κατάλληλους θεραπευτές.',
     notFoundBtn: 'Στείλτε αίτημα',
@@ -112,7 +114,7 @@ const TX = {
     sortRelevance: 'Relevance',
     clearFilters: 'Clear filters',
     resultsCount: (n) => `${n} ${n === 1 ? 'therapist' : 'therapists'}`,
-    rankingNote: "Recommended order is influenced by the therapist's subscription plan. For a purely objective ranking, sort by rating.",
+    rankingNote: "Only therapists who match your criteria are shown. The recommended order combines reviews, availability, platform experience and the therapist's subscription plan. To sort by rating only, choose “Highest rated”.",
     notFoundTitle: "Can't find what you're looking for?",
     notFoundDesc: "Submit a request and we'll recommend therapists for you.",
     notFoundBtn: 'Send a request',
@@ -207,6 +209,13 @@ export default function TherapistsClient({ initialData = null, initialCms = null
   const [therapists, setTherapists] = useState(initialData?.therapists || []);
   const [therapistConditionsMap, setTherapistConditionsMap] = useState(initialData?.conditionsMap || {});
   const [loadingTherapists, setLoadingTherapists] = useState(!initialData);
+
+  // Βάρη κατάταξης από το admin (ranking_weight_*). Μέχρι να έρθουν,
+  // ισχύουν οι προεπιλογές — ίδιες σε server και browser.
+  const [rankWeights, setRankWeights] = useState(DEFAULT_WEIGHTS);
+  useEffect(() => {
+    fetchPublicSettings().then(({ data }) => { if (data) setRankWeights(weightsFromSettings(data)); });
+  }, []);
 
   // Οι παράμετροι του URL διαβάζονται από το window (όχι με το hook
   // του Next), ώστε η σελίδα να αποδίδεται ολόκληρη στον server.
@@ -352,12 +361,6 @@ export default function TherapistsClient({ initialData = null, initialCms = null
     return Array.from(set).sort();
   }, [therapists]);
 
-  // Αν κανένα πλάνο δεν δίνει βάρος, δεν έχει νόημα να μιλάμε
-  // για «προτεινόμενη σειρά» — η κατάταξη είναι ήδη αντικειμενική.
-  const hasPaidRanking = useMemo(
-    () => therapists.some(t => (t.rank_weight || 0) > 0),
-    [therapists]
-  );
 
   const priceRange = useMemo(() => {
     const prices = therapists
@@ -382,10 +385,11 @@ export default function TherapistsClient({ initialData = null, initialCms = null
 
     if (hasExactTag) return 'exact';
 
-    const relatedSpecs = selectedCondition.related_specialties || [];
-    const therapistSpec = (therapist.specialty || '').toLowerCase();
-    const hasSpecialtyMatch = relatedSpecs.some(
-      (rs) => therapistSpec.includes((rs || '').toLowerCase()) || (rs || '').toLowerCase().includes(therapistSpec)
+    const relatedSpecs = (selectedCondition.related_specialties || []).map((rs) => (rs || '').trim().toLowerCase()).filter(Boolean);
+    const therapistSpec = (therapist.specialty || '').trim().toLowerCase();
+    // Κενή ειδικότητα δεν ταιριάζει με τίποτα (πριν ταίριαζε με όλα).
+    const hasSpecialtyMatch = !!therapistSpec && relatedSpecs.some(
+      (rs) => therapistSpec.includes(rs) || rs.includes(therapistSpec)
     );
 
     if (hasSpecialtyMatch) return 'specialty';
@@ -396,15 +400,8 @@ export default function TherapistsClient({ initialData = null, initialCms = null
     let result = [...therapists];
 
     if (selectedCondition) {
-      const relatedSpecs = (selectedCondition.related_specialties || []).map((s) => (s || '').toLowerCase());
-      result = result.filter((t) => {
-        const therapistConditionIds = therapistConditionsMap[t.id] || [];
-        if (therapistConditionIds.includes(selectedCondition.id)) return true;
-        const therapistSpec = (t.specialty || '').toLowerCase();
-        return relatedSpecs.some(
-          (rs) => therapistSpec.includes(rs) || rs.includes(therapistSpec)
-        );
-      });
+      // ΣΤΑΔΙΟ 1 της κατάταξης: μένουν ΜΟΝΟ όσοι ταιριάζουν.
+      result = result.filter((t) => getMatchType(t) !== null);
     }
 
     if (search.trim()) {
@@ -428,13 +425,11 @@ export default function TherapistsClient({ initialData = null, initialCms = null
       });
     }
 
-    // Τα πλήρη προφίλ ανεβαίνουν: κίνητρο για τον θεραπευτή, ποιότητα για τον ασθενή
-    const fullBoost = (a, b) => (b.is_profile_full ? 1 : 0) - (a.is_profile_full ? 1 : 0);
-
-    // Η συνδρομή. Εφαρμόζεται ΜΟΝΟ στην προτεινόμενη σειρά και στη
-    // σχετικότητα. Αν ο ασθενής ζητήσει ρητά «υψηλότερη βαθμολογία»
-    // ή «φθηνότερος», παίρνει ακριβώς αυτό — χωρίς παρέμβαση.
-    const rankBoost = (a, b) => (b.rank_weight || 0) - (a.rank_weight || 0);
+    // ΣΤΑΔΙΟ 2: βαθμολογία (αξιολογήσεις, συνδρομή, διαθεσιμότητα,
+    // εμπειρία) — βλ. lib/ranking.js. Εφαρμόζεται ΜΟΝΟ στην προτεινόμενη
+    // σειρά και στη σχετικότητα. Αν ο ασθενής ζητήσει ρητά «υψηλότερη
+    // βαθμολογία» ή «φθηνότερος», παίρνει ακριβώς αυτό.
+    const byRank = compareByRank(rankWeights);
 
     const slotKey = (t) => (t.next_slot ? `${t.next_slot.date}T${t.next_slot.start_time}` : '9999');
 
@@ -443,13 +438,11 @@ export default function TherapistsClient({ initialData = null, initialCms = null
         const aType = getMatchType(a);
         const bType = getMatchType(b);
         const score = (type) => (type === 'exact' ? 2 : type === 'specialty' ? 1 : 0);
+        // Όσοι δήλωσαν ρητά την πάθηση πριν από όσους ταιριάζουν μόνο
+        // στην ειδικότητα· μέσα σε κάθε ομάδα, η βαθμολογία κατάταξης.
         const diff = score(bType) - score(aType);
         if (diff !== 0) return diff;
-        const rank = rankBoost(a, b);
-        if (rank !== 0) return rank;
-        const boost = fullBoost(a, b);
-        if (boost !== 0) return boost;
-        return (b.avg_rating || 0) - (a.avg_rating || 0);
+        return byRank(a, b);
       });
     } else if (sortBy === 'rating-desc') result.sort((a, b) => (b.avg_rating || 0) - (a.avg_rating || 0));
     else if (sortBy === 'price-asc') result.sort((a, b) => (Number(a.price_per_session) || 0) - (Number(b.price_per_session) || 0));
@@ -457,16 +450,11 @@ export default function TherapistsClient({ initialData = null, initialCms = null
     else if (sortBy === 'experience-desc') result.sort((a, b) => (b.years_experience || 0) - (a.years_experience || 0));
     else if (sortBy === 'soonest') result.sort((a, b) => slotKey(a).localeCompare(slotKey(b)));
     else {
-      result.sort((a, b) =>
-        rankBoost(a, b) ||
-        fullBoost(a, b) ||
-        ((b.avg_rating || 0) - (a.avg_rating || 0)) ||
-        (new Date(b.created_at) - new Date(a.created_at))
-      );
+      result.sort(byRank);
     }
 
     return result;
-  }, [therapists, therapistConditionsMap, selectedCondition, search, filterArea, filterSpecialty, filterMinPrice, filterMaxPrice, sortBy]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [therapists, therapistConditionsMap, selectedCondition, search, filterArea, filterSpecialty, filterMinPrice, filterMaxPrice, sortBy, rankWeights]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function clearFilters() {
     setSelectedCondition(null);
@@ -665,7 +653,7 @@ export default function TherapistsClient({ initialData = null, initialCms = null
                 </div>
 
                 {/* Διαφάνεια κατάταξης — υποχρέωση απέναντι στον ασθενή */}
-                {hasPaidRanking && (sortBy === 'newest' || sortBy === 'relevance') && (
+                {(sortBy === 'newest' || sortBy === 'relevance') && (
                   <div style={{ marginTop: 12, display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 11.5, color: '#94a3b8', lineHeight: 1.55 }}>
                     <Info size={13} strokeWidth={2} style={{ marginTop: 1, flexShrink: 0 }} />
                     <span>{tx.rankingNote}</span>
