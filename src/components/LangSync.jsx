@@ -16,14 +16,19 @@ import { useLang } from '@/context/LanguageContext';
     <LangSync urlLang={lang} />
 
   Δεν αποδίδει τίποτα — μόνο κάνει router.replace όταν χρειάζεται.
+
+  ΠΕΡΙΜΕΝΕΙ ΤΟ «ready»: η γλώσσα ξεκινά προσωρινά ως 'el' (ίδια σε
+  server και browser) και παίρνει την πραγματική τιμή αμέσως μετά. Αν
+  το LangSync αποφάσιζε πριν από αυτό, θα έσβηνε το ?lang=en από έναν
+  αγγλικό σύνδεσμο πριν προλάβει να διαβαστεί.
 */
 
 export default function LangSync({ urlLang }) {
-  const { lang } = useLang();
+  const { lang, ready } = useLang();
   const router = useRouter();
 
   useEffect(() => {
-    if (!lang || lang === urlLang) return;
+    if (!ready || !lang || lang === urlLang) return;
 
     // Χρησιμοποιούμε window.location αντί για useSearchParams επίτηδες:
     // το useSearchParams απαιτεί Suspense boundary σε στατικά rendered
@@ -33,7 +38,7 @@ export default function LangSync({ urlLang }) {
     else url.searchParams.delete('lang');
 
     router.replace(url.pathname + url.search, { scroll: false });
-  }, [lang, urlLang, router]);
+  }, [lang, ready, urlLang, router]);
 
   return null;
 }
