@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
@@ -161,7 +161,7 @@ function allAreasOf(t) {
   return t.area ? [t.area] : [];
 }
 
-export default function TherapistsPage() {
+function TherapistsPageInner() {
   const { lang } = useLang();
   const [cms, setCms] = useState(null);
 
@@ -1075,5 +1075,16 @@ export default function TherapistsPage() {
 
       <Footer />
     </>
+  );
+}
+
+// Το useSearchParams θέλει Suspense boundary για να περάσει το build.
+// Μπαίνει ΜΟΝΟ εδώ (και όχι σε όλο το site) ώστε οι υπόλοιπες σελίδες
+// να στέλνονται ορατές από τον server.
+export default function TherapistsPage() {
+  return (
+    <Suspense fallback={null}>
+      <TherapistsPageInner />
+    </Suspense>
   );
 }

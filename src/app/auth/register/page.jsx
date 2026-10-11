@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
 import Logo from '@/components/Logo';
 import { useSearchParams } from 'next/navigation';
@@ -122,7 +122,7 @@ const TX = {
   },
 };
 
-export default function RegisterPage() {
+function RegisterPageInner() {
   const searchParams = useSearchParams();
   const preRole = searchParams.get('role');
   const { lang } = useLang();
@@ -457,5 +457,16 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Το useSearchParams θέλει Suspense boundary για να περάσει το build.
+// Μπαίνει ΜΟΝΟ εδώ (και όχι σε όλο το site) ώστε οι υπόλοιπες σελίδες
+// να στέλνονται ορατές από τον server.
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={null}>
+      <RegisterPageInner />
+    </Suspense>
   );
 }

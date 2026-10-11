@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
@@ -78,7 +78,7 @@ const t = {
   },
 };
 
-export default function RequestPage() {
+function RequestPageInner() {
   const { lang } = useLang();
   const tx = t[lang];
   const searchParams = useSearchParams();
@@ -461,5 +461,16 @@ export default function RequestPage() {
 
       <Footer />
     </>
+  );
+}
+
+// Το useSearchParams θέλει Suspense boundary για να περάσει το build.
+// Μπαίνει ΜΟΝΟ εδώ (και όχι σε όλο το site) ώστε οι υπόλοιπες σελίδες
+// να στέλνονται ορατές από τον server.
+export default function RequestPage() {
+  return (
+    <Suspense fallback={null}>
+      <RequestPageInner />
+    </Suspense>
   );
 }
