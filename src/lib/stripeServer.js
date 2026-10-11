@@ -75,10 +75,16 @@ async function ensureCustomer(stripe, db, mode, therapistId, email) {
 // Δημιουργεί (ή ξαναδίνει) σελίδα πληρωμής.
 // Αν υπάρχει ήδη ανοιχτή πληρωμή για το ίδιο πράγμα, επιστρέφεται αυτή —
 // δύο κλικ στο «Αποδοχή» δεν πρέπει ποτέ να σημαίνουν δύο χρεώσεις.
+//
+// recurring (μόνο για πακέτα): { listAmount, discount: { amountOff, months } | null }
+//   → Checkout σε mode 'subscription': η κάρτα χρεώνεται αυτόματα κάθε
+//     μήνα μέχρι να σταματήσει ο θεραπευτής (επιλογή δωρεάν πακέτου).
+//     Η τυχόν προσφορά εφαρμόζεται ως κουπόνι για τους πρώτους μήνες.
 export async function createCheckout({
   stripe, db, mode, user, kind, amount,
   requestId = null, subscriptionId = null,
   productName, description, statementSuffix, lang = 'el',
+  recurring = null,
 }) {
   const reuse = db
     .from('stripe_checkouts')
@@ -118,8 +124,7 @@ export async function createCheckout({
   if (insErr) throw new Error('checkout_record_failed: ' + insErr.message);
 
   const back = `${SITE}/dashboard/therapist`;
-  const session = await stripe.checkout.sessions.create({
-    mode: 'payment',
+  const common = {
     customer: customerId,
     locale: lang === 'en' ? 'en' : 'el',
     client_reference_id: row.id,
@@ -130,27 +135,77 @@ export async function createCheckout({
     // ΑΜΕΣΑ. Ορίζεται εδώ και όχι στο Dashboard, για να μην ξαναανοίξει
     // κατά λάθος στη μετάβαση σε live.
     payment_method_types: ['card'],
-    line_items: [{
-      quantity: 1,
-      price_data: {
-        currency: 'eur',
-        unit_amount: Math.round(Number(amount) * 100),
-        product_data: { name: productName, description: description || undefined },
-      },
-    }],
-    // Το τσεκάρισμα «Αποθήκευση κάρτας για επόμενη φορά»
-    saved_payment_method_options: { payment_method_save: 'enabled' },
-    payment_intent_data: {
-      description: productName,
-      statement_descriptor_suffix: statementSuffix,
-      metadata: { checkout_id: row.id, kind },
-    },
     metadata: { checkout_id: row.id, kind },
     // Το ελάχιστο που επιτρέπει το Stripe είναι 30 λεπτά
     expires_at: Math.floor(Date.now() / 1000) + 31 * 60,
     success_url: `${back}?payment=success&kind=${kind}`,
     cancel_url: `${back}?payment=cancel&kind=${kind}`,
-  });
+  };
+
+  let session;
+  if (recurring) {
+    // ── ΣΥΝΔΡΟΜΗ: αυτόματη χρέωση κάθε μήνα ──
+    let discounts;
+    if (recurring.discount && recurring.discount.amountOff > 0) {
+      // months = null → η έκπτωση ισχύει για πάντα (προσφορά χωρίς λήξη)
+      const months = recurring.discount.months;
+      const coupon = await stripe.coupons.create({
+        amount_off: Math.round(Number(recurring.discount.amountOff) * 100),
+        currency: 'eur',
+        ...(months > 0 ? { duration: 'repeating', duration_in_months: months } : { duration: 'forever' }),
+        max_redemptions: 1,
+        name: lang === 'en' ? 'Theralivo offer' : 'Προσφορά Theralivo',
+        metadata: { checkout_id: row.id },
+      });
+      discounts = [{ coupon: coupon.id }];
+    }
+    session = await stripe.checkout.sessions.create({
+      ...common,
+      mode: 'subscription',
+      line_items: [{
+        quantity: 1,
+        price_data: {
+          currency: 'eur',
+          unit_amount: Math.round(Number(recurring.listAmount) * 100),
+          recurring: { interval: 'month' },
+          product_data: { name: productName },
+        },
+      }],
+      ...(discounts ? { discounts } : {}),
+      subscription_data: {
+        description: productName,
+        metadata: { checkout_id: row.id, kind, subscription_id: subscriptionId || '' },
+      },
+      // Ρητή ενημέρωση ακριβώς πάνω από το κουμπί πληρωμής
+      custom_text: {
+        submit: {
+          message: lang === 'en'
+            ? 'Your card will be charged automatically every month until you switch to the free plan from your dashboard. Stopping takes effect at the end of the month already paid.'
+            : 'Η κάρτα σου θα χρεώνεται αυτόματα κάθε μήνα, μέχρι να επιλέξεις το δωρεάν πακέτο από τον πίνακά σου. Η διακοπή ισχύει από το τέλος του μήνα που έχεις ήδη πληρώσει.',
+        },
+      },
+    });
+  } else {
+    session = await stripe.checkout.sessions.create({
+      ...common,
+      mode: 'payment',
+      line_items: [{
+        quantity: 1,
+        price_data: {
+          currency: 'eur',
+          unit_amount: Math.round(Number(amount) * 100),
+          product_data: { name: productName, description: description || undefined },
+        },
+      }],
+      // Το τσεκάρισμα «Αποθήκευση κάρτας για επόμενη φορά»
+      saved_payment_method_options: { payment_method_save: 'enabled' },
+      payment_intent_data: {
+        description: productName,
+        statement_descriptor_suffix: statementSuffix,
+        metadata: { checkout_id: row.id, kind },
+      },
+    });
+  }
 
   await db
     .from('stripe_checkouts')

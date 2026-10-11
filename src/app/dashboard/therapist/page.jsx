@@ -162,6 +162,13 @@ const TX = {
     choosePlan: 'Επιλογή πακέτου',
     noActivePlan: 'Δεν έχεις ενεργό πακέτο. Διάλεξε ένα για να εμφανίζεσαι στους ασθενείς.',
     planChanged: 'Το πακέτο σου άλλαξε.',
+    planNextCharge: 'Επόμενη αυτόματη χρέωση',
+    planEndsOn: 'Λήγει στις',
+    planEndsNote: (d) => `Η αυτόματη χρέωση έχει σταματήσει. Το πακέτο σου ισχύει μέχρι τις ${d} και μετά περνάς αυτόματα στο δωρεάν πακέτο.`,
+    planResume: 'Συνέχιση πακέτου',
+    planResumed: 'Η συνδρομή σου συνεχίζεται κανονικά.',
+    planDowngradeScheduled: (d) => d ? `Η αυτόματη χρέωση σταμάτησε. Το πακέτο σου ισχύει μέχρι τις ${d} και μετά περνάς στο δωρεάν.` : 'Η αυτόματη χρέωση σταμάτησε. Στο τέλος του μήνα περνάς στο δωρεάν πακέτο.',
+    planPastDueNote: 'Η τελευταία μηνιαία χρέωση της κάρτας σου απέτυχε. Θα γίνει νέα προσπάθεια αυτόματα· αν δεν πετύχει, θα περάσεις στο δωρεάν πακέτο. Έλεγξε ότι η κάρτα σου είναι ενεργή.',
     planPendingNote: (name) => `Έχεις επιλέξει το πακέτο «${name}». Ενεργοποιείται με την ολοκλήρωση της πληρωμής — ως τότε ισχύει το τρέχον.`,
     billingSave: 'Αποθήκευση στοιχείων',
 
@@ -441,6 +448,13 @@ const TX = {
     choosePlan: 'Choose a plan',
     noActivePlan: 'You have no active plan. Pick one to appear to patients.',
     planChanged: 'Your plan has been changed.',
+    planNextCharge: 'Next automatic charge',
+    planEndsOn: 'Ends on',
+    planEndsNote: (d) => `Automatic charging has stopped. Your plan is valid until ${d}, then you move to the free plan automatically.`,
+    planResume: 'Keep my plan',
+    planResumed: 'Your subscription continues as normal.',
+    planDowngradeScheduled: (d) => d ? `Automatic charging has stopped. Your plan is valid until ${d}, then you move to the free plan.` : 'Automatic charging has stopped. At the end of the month you move to the free plan.',
+    planPastDueNote: 'Your last monthly card charge failed. It will be retried automatically; if it does not succeed, you will move to the free plan. Please check that your card is active.',
     planPendingNote: (name) => `You have chosen the "${name}" plan. It activates once the payment is complete — until then your current plan applies.`,
     billingSave: 'Save details',
 
@@ -1476,11 +1490,37 @@ export default function TherapistDashboard() {
   async function onPlanChanged(result) {
     setChangingPlan(false);
     await loadSubscription(user.id);
+    if (result?.status === 'downgrade_scheduled') {
+      const d = result.period_end ? new Date(result.period_end).toLocaleDateString(lang === 'en' ? 'en-GB' : 'el-GR') : null;
+      setPayNotice({ type: 'success', text: tx.planDowngradeScheduled(d) });
+      return;
+    }
     if (result?.status === 'pending_payment' && profile?.is_approved) {
       await activatePlan();
       return;
     }
     setPayNotice({ type: 'success', text: tx.planChanged });
+  }
+
+  // «Συνέχιση πακέτου»: ακυρώνει τη διακοπή πριν λήξει ο μήνας
+  async function resumePlan() {
+    setActivating(true);
+    try {
+      const res = await fetch('/api/stripe/plan-cancel', {
+        method: 'POST',
+        headers: await authHeaders(),
+        body: JSON.stringify({ action: 'undo' }),
+      });
+      if (res.ok) {
+        await loadSubscription(user.id);
+        setPayNotice({ type: 'success', text: tx.planResumed });
+      } else {
+        setPayNotice({ type: 'error', text: tx.acceptErr.generic });
+      }
+    } catch (_) {
+      setPayNotice({ type: 'error', text: tx.acceptErr.generic });
+    }
+    setActivating(false);
   }
 
   async function activatePlan() {
@@ -3028,6 +3068,7 @@ export default function TherapistDashboard() {
                     userId={user?.id}
                     mode="change"
                     currentPlanId={subscription?.plan_id || null}
+                    currentSub={subscription}
                     onBack={() => setChangingPlan(false)}
                     onDone={onPlanChanged}
                   />
@@ -3072,6 +3113,11 @@ export default function TherapistDashboard() {
                           ...(subscription.current_period_start
                             ? [[tx.planSince, new Date(subscription.current_period_start).toLocaleDateString(loc)]]
                             : []),
+                          // Αυτόματη ανανέωση: πότε χρεώνεται ξανά — ή πότε λήγει
+                          ...(subscription.stripe_subscription_id && subscription.current_period_end
+                            ? [[subscription.cancel_at_period_end ? tx.planEndsOn : tx.planNextCharge,
+                                new Date(subscription.current_period_end).toLocaleDateString(loc)]]
+                            : []),
                           ...(promoActive
                             ? [[tx.payModalPromo, `${subscription.promo_code_text}${subscription.promo_ends_at ? ' ' + tx.payModalPromoUntil(new Date(subscription.promo_ends_at).toLocaleDateString(loc)) : ''}`]]
                             : []),
@@ -3081,6 +3127,24 @@ export default function TherapistDashboard() {
                             <span style={{ fontWeight: 600, color: C.text, textAlign: 'right' }}>{value}</span>
                           </div>
                         ))}
+
+                        {subscription.status === 'past_due' && (
+                          <div style={{ marginTop: 14, background: C.dangerBg, border: `1px solid ${C.dangerBorder}`, borderRadius: 10, padding: '11px 15px', fontSize: 13, color: C.danger, lineHeight: 1.55 }}>
+                            {tx.planPastDueNote}
+                          </div>
+                        )}
+
+                        {subscription.stripe_subscription_id && subscription.cancel_at_period_end && (
+                          <div style={{ marginTop: 14, background: C.warnBg, border: `1px solid ${C.warnBorder}`, borderRadius: 10, padding: '12px 15px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: 13, color: C.warn, lineHeight: 1.55, flex: 1, minWidth: 200 }}>
+                              {tx.planEndsNote(subscription.current_period_end ? new Date(subscription.current_period_end).toLocaleDateString(loc) : '—')}
+                            </span>
+                            <button onClick={resumePlan} disabled={activating}
+                              style={{ padding: '8px 16px', borderRadius: RAD.button, border: 'none', background: C.brand, color: '#fff', fontSize: 13, fontWeight: 600, cursor: activating ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+                              {tx.planResume}
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </>

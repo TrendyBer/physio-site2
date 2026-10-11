@@ -95,7 +95,8 @@ function buildContent({ fee, resetMonths, plans, graceDays }) {
           p2: [
             'Οι τιμές κλειδώνονται τη στιγμή της εγγραφής ή της αλλαγής πακέτου. Μελλοντικές αυξήσεις δεν επηρεάζουν υφιστάμενες συνδρομές, εκτός αν ο θεραπευτής επιλέξει ο ίδιος να αλλάξει πακέτο.',
             'Η μηνιαία συνδρομή πληρώνεται με κάρτα μέσω του παρόχου πληρωμών Stripe. Η πρώτη πληρωμή γίνεται μετά την έγκριση του προφίλ· μέχρι τότε δεν υπάρχει καμία χρέωση. Το πακέτο και η δημόσια εμφάνιση του προφίλ ενεργοποιούνται με την ολοκλήρωση της πληρωμής.',
-            'Η αλλαγή πακέτου γίνεται οποτεδήποτε από τον πίνακα του θεραπευτή. Το νέο πακέτο ενεργοποιείται μόλις ολοκληρωθεί η πληρωμή του· μέχρι τότε παραμένει ενεργό το τρέχον.',
+            'Η συνδρομή ανανεώνεται αυτόματα κάθε μήνα, με χρέωση της ίδιας κάρτας, μέχρι ο θεραπευτής να επιλέξει το δωρεάν πακέτο από τον πίνακά του. Η διακοπή ισχύει από το τέλος του μήνα που έχει ήδη πληρωθεί· για τον τρέχοντα μήνα δεν γίνεται επιστροφή. Αν μια μηνιαία χρέωση αποτύχει, γίνονται αυτόματα νέες προσπάθειες· αν δεν πετύχουν, ο θεραπευτής περνά αυτόματα στο δωρεάν πακέτο, χωρίς να χάσει τον λογαριασμό του.',
+            'Η αλλαγή πακέτου γίνεται οποτεδήποτε από τον πίνακα του θεραπευτή. Το νέο πληρωμένο πακέτο ενεργοποιείται μόλις ολοκληρωθεί η πληρωμή του πρώτου μήνα του, και τότε σταματά η χρέωση του προηγούμενου· μέχρι τότε παραμένει ενεργό το τρέχον.',
             `Σε περίπτωση μη εξόφλησης, παρέχεται περίοδος χάριτος ${graceDays} ημερών. Μετά την πάροδό της, η Πλατφόρμα δύναται να αναστείλει την αποστολή νέων αιτημάτων ή την προβολή του προφίλ, χωρίς να θίγονται τα ήδη προγραμματισμένα ραντεβού.`,
             'Η Πλατφόρμα δύναται να απαλλάξει συγκεκριμένους θεραπευτές από τη συνδρομή ή την προμήθεια κατά την κρίση της.',
           ],
@@ -276,7 +277,8 @@ function buildContent({ fee, resetMonths, plans, graceDays }) {
           p2: [
             'Prices are locked at the moment of registration or plan change. Future increases do not affect existing subscriptions unless the therapist chooses to change plans.',
             'The monthly subscription is paid by card through the payment provider Stripe. The first payment is made after the profile is approved; until then there is no charge. The plan and public profile visibility are activated once the payment is completed.',
-            'Plans can be changed at any time from the therapist dashboard. The new plan is activated once its payment is completed; until then the current plan remains active.',
+            'The subscription renews automatically every month, charging the same card, until the therapist switches to the free plan from their dashboard. Stopping takes effect at the end of the month already paid; the current month is not refunded. If a monthly charge fails, it is retried automatically; if the retries fail, the therapist is moved automatically to the free plan without losing their account.',
+            'Plans can be changed at any time from the therapist dashboard. A new paid plan is activated once its first month is paid, at which point charging for the previous plan stops; until then the current plan remains active.',
             `In case of non-payment, a grace period of ${graceDays} days applies. After it expires, the Platform may suspend new requests or profile visibility, without affecting already scheduled appointments.`,
             'The Platform may exempt specific therapists from the subscription or the fee at its discretion.',
           ],

@@ -106,7 +106,7 @@ const TX = {
     termsTitle: 'Οι όροι, σε κάθε πακέτο',
     terms: [
       'Η αμοιβή της συνεδρίας είναι ολόκληρη δική σου. Ο ασθενής σε πληρώνει απευθείας, σε μετρητά, και την τιμή την ορίζεις εσύ, από 25€ έως 50€.',
-      'Το πακέτο πληρώνεται με κάρτα μόλις εγκριθεί το προφίλ σου. Μέχρι τότε δεν χρεώνεσαι τίποτα.',
+      'Το πακέτο πληρώνεται με κάρτα μόλις εγκριθεί το προφίλ σου και ανανεώνεται αυτόματα κάθε μήνα. Το σταματάς όποτε θέλεις, επιλέγοντας το δωρεάν πακέτο· ισχύει από το τέλος του μήνα που έχεις πληρώσει. Μέχρι την έγκριση δεν χρεώνεσαι τίποτα.',
       'Το τέλος νέου ασθενή πληρώνεται με κάρτα τη στιγμή που αποδέχεσαι το αίτημα, μία φορά για κάθε νέο ασθενή. Οι επόμενες συνεδρίες μαζί του δεν χρεώνονται.',
       'Αν η αποδοχή δεν ολοκληρωθεί, για παράδειγμα επειδή ο ασθενής ακύρωσε στο μεταξύ, το ποσό επιστρέφεται αυτόματα.',
       'Οι όροι του πακέτου σου κλειδώνουν όταν το επιλέγεις. Μπορείς να αλλάξεις πακέτο όποτε θέλεις από τον πίνακά σου.',
@@ -127,7 +127,7 @@ const TX = {
     faqTitle: 'Συχνές ερωτήσεις',
     faqs: [
       { q: 'Πόσο κοστίζει να συμμετέχω;', a: 'Η εγγραφή είναι δωρεάν. Επιλέγεις το πακέτο που σου ταιριάζει, με τις τιμές που βλέπεις παραπάνω, και πληρώνεις ένα τέλος για κάθε νέο ασθενή. Το ποσό του τέλους εξαρτάται από το πακέτο.' },
-      { q: 'Πότε και πώς πληρώνω;', a: 'Με κάρτα. Το πακέτο πληρώνεται μόλις εγκριθεί το προφίλ σου. Το τέλος νέου ασθενή πληρώνεται τη στιγμή που αποδέχεσαι το αίτημα, και η αποδοχή ολοκληρώνεται αμέσως μετά. Μπορείς να αποθηκεύσεις την κάρτα σου για τις επόμενες φορές.' },
+      { q: 'Πότε και πώς πληρώνω;', a: 'Με κάρτα. Το πακέτο πληρώνεται μόλις εγκριθεί το προφίλ σου και μετά ανανεώνεται αυτόματα κάθε μήνα, μέχρι να επιλέξεις το δωρεάν πακέτο. Το τέλος νέου ασθενή πληρώνεται τη στιγμή που αποδέχεσαι το αίτημα, και η αποδοχή ολοκληρώνεται αμέσως μετά. Μπορείς να αποθηκεύσεις την κάρτα σου για τις επόμενες φορές.' },
       { q: 'Ποιος με πληρώνει για τη συνεδρία;', a: 'Ο ασθενής, απευθείας σε σένα, σε μετρητά, στο τέλος κάθε συνεδρίας. Η πλατφόρμα δεν κρατά τίποτα από το ποσό της συνεδρίας.' },
       { q: 'Μπορώ να απορρίψω ένα αίτημα;', a: 'Ναι. Βλέπεις το περιστατικό, την περιοχή και την ώρα πριν αποφασίσεις. Αν δεν σε βολεύει, το απορρίπτεις χωρίς συνέπειες και χωρίς χρέωση.' },
       { q: 'Τι γίνεται αν χρειαστεί να ακυρώσω ένα ραντεβού;', a: 'Μπορείς να ακυρώσεις από τον πίνακά σου. Ακύρωση λιγότερο από 24 ώρες πριν το ραντεβού καταγράφεται, γιατί ο ασθενής έχει ήδη οργανωθεί· τρεις τέτοιες καταγραφές μέσα σε έξι μήνες οδηγούν σε προσωρινή παύση του προφίλ.' },
@@ -204,7 +204,7 @@ const TX = {
     termsTitle: 'The terms, on every plan',
     terms: [
       'The session fee is entirely yours. The patient pays you directly, in cash, and you set the price yourself, between €25 and €50.',
-      'The plan is paid by card once your profile is approved. Nothing is charged before then.',
+      'The plan is paid by card once your profile is approved and renews automatically every month. Stop it any time by switching to the free plan; it takes effect at the end of the month already paid. Nothing is charged before approval.',
       'The new patient fee is paid by card when you accept the request, once for each new patient. Follow-up sessions with them are free.',
       'If the acceptance cannot be completed, for example because the patient cancelled in the meantime, the amount is refunded automatically.',
       'Your plan terms are locked when you choose it. You can change plan any time from your dashboard.',
@@ -223,7 +223,7 @@ const TX = {
     faqTitle: 'Frequently asked questions',
     faqs: [
       { q: 'What does it cost to join?', a: 'Registration is free. You choose the plan that suits you, at the prices shown above, and pay a fee for each new patient. The fee amount depends on the plan.' },
-      { q: 'When and how do I pay?', a: 'By card. The plan is paid once your profile is approved. The new patient fee is paid when you accept the request, and the acceptance completes right after. You can save your card for next time.' },
+      { q: 'When and how do I pay?', a: 'By card. The plan is paid once your profile is approved and then renews automatically every month until you switch to the free plan. The new patient fee is paid when you accept the request, and the acceptance completes right after. You can save your card for next time.' },
       { q: 'Who pays me for the session?', a: 'The patient does, directly, in cash, at the end of each session. The platform takes nothing from the session amount.' },
       { q: 'Can I decline a request?', a: 'Yes. You see the case, the area and the time before you decide. If it does not suit you, decline it with no penalty and no charge.' },
       { q: 'What if I need to cancel an appointment?', a: 'You can cancel from your dashboard. A cancellation less than 24 hours before the appointment is recorded, because the patient has already planned around it; three such records within six months lead to a temporary pause of the profile.' },

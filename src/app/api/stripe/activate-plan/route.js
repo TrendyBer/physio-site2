@@ -8,6 +8,10 @@
 //
 // Το ποσό είναι αυτό που «πάγωσε» η activate_subscription (τιμή μετά
 // την προσφορά) — ποτέ κάτι που στέλνει ο browser.
+//
+// ΑΥΤΟΜΑΤΗ ΑΝΑΝΕΩΣΗ: η πληρωμή στήνει ΣΥΝΔΡΟΜΗ Stripe. Η κάρτα χρεώνεται
+// κάθε μήνα μέχρι ο θεραπευτής να επιλέξει το δωρεάν πακέτο. Οι μηνιαίες
+// χρεώσεις, οι αποτυχίες και η λήξη ενημερώνουν τη βάση μέσω webhook.
 // ═══════════════════════════════════════════════════════════════════
 
 import { NextResponse } from 'next/server';
@@ -38,7 +42,7 @@ export async function POST(req) {
 
   const { data: sub } = await db
     .from('therapist_subscriptions')
-    .select('id, status, effective_price, plan_snapshot')
+    .select('id, status, effective_price, price_locked, promo_ends_at, plan_snapshot')
     .eq('therapist_id', user.id)
     .eq('status', 'pending_payment')
     .order('created_at', { ascending: false })
@@ -49,9 +53,12 @@ export async function POST(req) {
 
   const mode = await getStripeMode(db);
   const amount = Number(sub.effective_price || 0);
+  const listAmount = Number(sub.price_locked || 0);
 
-  // Stripe off ή μηδενικό ποσό: ενεργοποίηση χωρίς πληρωμή, όπως πριν
-  if (mode === 'off' || amount <= 0) {
+  // Stripe off ή δωρεάν πακέτο: ενεργοποίηση χωρίς πληρωμή, όπως πριν.
+  // (Πακέτο με τιμή που μηδενίζεται προσωρινά από προσφορά ΠΕΡΝΑ από
+  // το Stripe, ώστε να αποθηκευτεί η κάρτα για τους επόμενους μήνες.)
+  if (mode === 'off' || listAmount <= 0) {
     const { error } = await db.rpc('activate_paid_subscription', {
       p_subscription_id: sub.id,
       p_payment_intent: null,
@@ -72,9 +79,10 @@ export async function POST(req) {
       kind: 'plan_activation',
       amount,
       subscriptionId: sub.id,
+      recurring: { listAmount, discount: promoDiscount(sub, amount, listAmount) },
       productName: lang === 'en'
-        ? `Theralivo — ${sub.plan_snapshot?.name_en || planName} (1 month)`
-        : `Theralivo — Πακέτο «${planName}» (1 μήνας)`,
+        ? `Theralivo — ${sub.plan_snapshot?.name_en || planName} (monthly)`
+        : `Theralivo — Πακέτο «${planName}» (μηνιαία συνδρομή)`,
       description: lang === 'en'
         ? 'Your profile becomes visible to patients right after payment.'
         : 'Το προφίλ σου εμφανίζεται στους ασθενείς αμέσως μετά την πληρωμή.',
@@ -86,4 +94,15 @@ export async function POST(req) {
     const code = err?.message === 'stripe_key_mismatch' ? 'payments_unavailable' : 'generic';
     return NextResponse.json({ error: code }, { status: 500 });
   }
+}
+
+// Προσφορά → έκπτωση στις πρώτες μηνιαίες χρεώσεις του Stripe.
+// Οι μήνες βγαίνουν από το promo_ends_at που «πάγωσε» η βάση.
+function promoDiscount(sub, amount, listAmount) {
+  const off = Math.round((listAmount - amount) * 100) / 100;
+  if (!(off > 0)) return null;
+  if (!sub.promo_ends_at) return { amountOff: off, months: null };
+  const ms = new Date(sub.promo_ends_at).getTime() - Date.now();
+  const months = Math.max(1, Math.round(ms / (30.44 * 86400000)));
+  return { amountOff: off, months };
 }

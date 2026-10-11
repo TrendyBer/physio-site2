@@ -19,13 +19,14 @@ import { ArrowLeft, Check, Tag, X, Info, Star, Send } from 'lucide-react';
 */
 
 // v2: προστέθηκε ο τρόπος πληρωμής (κάρτα) και η αυτόματη επιστροφή.
+// v3: αυτόματη μηνιαία ανανέωση μέχρι την επιλογή του δωρεάν πακέτου.
 // Κάθε θεραπευτής αποδέχεται τους όρους με τους οποίους πραγματικά χρεώνεται.
-const AGREEMENT_VERSION = 'v2';
+const AGREEMENT_VERSION = 'v3';
 
 const CONTRACTS = {
   el: ({ planName, price, fee, promo }) => `ΣΥΜΒΑΣΗ ΣΥΝΕΡΓΑΣΙΑΣ — Theralivo (έκδοση ${AGREEMENT_VERSION})
 
-1. ΠΑΚΕΤΟ: Ο θεραπευτής εντάσσεται στο πακέτο «${planName}»${price > 0 ? ` με μηνιαία συνδρομή €${price}. Η συνδρομή πληρώνεται με κάρτα. Η πρώτη πληρωμή γίνεται μετά την έγκριση του προφίλ από την πλατφόρμα· μέχρι τότε δεν υπάρχει καμία χρέωση. Το πακέτο, και η εμφάνιση του προφίλ στους ασθενείς, ενεργοποιούνται με την ολοκλήρωση της πληρωμής.` : ' — χωρίς μηνιαία χρέωση.'}
+1. ΠΑΚΕΤΟ: Ο θεραπευτής εντάσσεται στο πακέτο «${planName}»${price > 0 ? ` με μηνιαία συνδρομή €${price}. Η συνδρομή πληρώνεται με κάρτα. Η πρώτη πληρωμή γίνεται μετά την έγκριση του προφίλ από την πλατφόρμα· μέχρι τότε δεν υπάρχει καμία χρέωση. Το πακέτο, και η εμφάνιση του προφίλ στους ασθενείς, ενεργοποιούνται με την ολοκλήρωση της πληρωμής. Η συνδρομή ανανεώνεται αυτόματα κάθε μήνα, με χρέωση της ίδιας κάρτας, μέχρι ο θεραπευτής να επιλέξει το δωρεάν πακέτο από τον πίνακά του. Η διακοπή ισχύει από το τέλος του μήνα που έχει ήδη πληρωθεί· δεν γίνεται επιστροφή για τον τρέχοντα μήνα. Αν μια μηνιαία χρέωση αποτύχει και δεν διευθετηθεί, ο θεραπευτής περνά αυτόματα στο δωρεάν πακέτο.` : ' — χωρίς μηνιαία χρέωση.'}
 
 2. ΤΕΛΟΣ ΝΕΟΥ ΑΣΘΕΝΗ: Η πλατφόρμα χρεώνει €${fee} μία και μόνη φορά, για την πρώτη συνεδρία με κάθε νέο ασθενή. Νέος θεωρείται ο ασθενής που δεν είχε καμία συνεδρία με τον θεραπευτή τους τελευταίους 12 μήνες. Το τέλος πληρώνεται με κάρτα τη στιγμή της αποδοχής του αιτήματος, και η αποδοχή ολοκληρώνεται μόλις επιβεβαιωθεί η πληρωμή. Αν η αποδοχή δεν μπορέσει να ολοκληρωθεί (για παράδειγμα, επειδή έληξε η προθεσμία απάντησης ή το αίτημα ακυρώθηκε στο μεταξύ), το ποσό επιστρέφεται αυτόματα στο σύνολό του.
 
@@ -47,7 +48,7 @@ ${promo ? '10' : '9'}. GDPR: Ο θεραπευτής δεσμεύεται να �
 
   en: ({ planName, price, fee, promo }) => `PARTNERSHIP AGREEMENT — Theralivo (version ${AGREEMENT_VERSION})
 
-1. PLAN: The therapist joins the "${planName}" plan${price > 0 ? ` with a monthly subscription of €${price}. The subscription is paid by card. The first payment is made after the platform approves the profile; nothing is charged until then. The plan, and the profile's visibility to patients, become active once the payment is completed.` : ' — with no monthly charge.'}
+1. PLAN: The therapist joins the "${planName}" plan${price > 0 ? ` with a monthly subscription of €${price}. The subscription is paid by card. The first payment is made after the platform approves the profile; nothing is charged until then. The plan, and the profile's visibility to patients, become active once the payment is completed. The subscription renews automatically every month, charging the same card, until the therapist switches to the free plan from their dashboard. Stopping takes effect at the end of the month already paid; the current month is not refunded. If a monthly charge fails and is not resolved, the therapist is moved automatically to the free plan.` : ' — with no monthly charge.'}
 
 2. NEW PATIENT FEE: The platform charges €${fee} once only, for the first session with each new patient. A new patient is one who has had no session with the therapist in the last 12 months. The fee is paid by card when the request is accepted, and the acceptance is completed as soon as the payment is confirmed. If the acceptance cannot be completed (for example, because the reply deadline has passed or the request was cancelled in the meantime), the full amount is refunded automatically.
 
@@ -106,14 +107,15 @@ const TX = {
     sFinalFee: 'Τελικό τέλος νέου ασθενή',
     sAfter: (m, price) => `Μετά τους ${m} μήνες: ${price}€/μήνα`,
     sAfterFee: (m, fee) => `Μετά τους ${m} μήνες: ${fee}€ ανά νέο ασθενή`,
-    payLater: 'Δεν χρεώνεσαι τώρα. Η πληρωμή του πρώτου μήνα γίνεται με κάρτα μόλις εγκριθεί το προφίλ σου.',
+    payLater: 'Δεν χρεώνεσαι τώρα. Η πληρωμή του πρώτου μήνα γίνεται με κάρτα μόλις εγκριθεί το προφίλ σου· μετά η συνδρομή ανανεώνεται αυτόματα κάθε μήνα, μέχρι να επιλέξεις το δωρεάν πακέτο.',
+    downgradeNote: 'Η αυτόματη χρέωση σταματά. Μένεις στο τρέχον πακέτο μέχρι το τέλος του μήνα που έχεις πληρώσει και μετά περνάς αυτόματα σε αυτό.',
     changeTitle: 'Αλλαγή πακέτου',
     changeDesc: 'Διάλεξε το νέο σου πακέτο. Το τρέχον παραμένει ενεργό μέχρι να ολοκληρωθεί η αλλαγή.',
     changeSubmit: 'Επιβεβαίωση αλλαγής',
     cancel: 'Άκυρο',
     currentBadge: 'Τρέχον',
     sameAsCurrent: 'Αυτό είναι ήδη το πακέτο σου. Διάλεξε άλλο για να αλλάξεις.',
-    payOnChange: 'Το τρέχον πακέτο σου μένει ενεργό. Το νέο ενεργοποιείται μόλις ολοκληρώσεις την πληρωμή του πρώτου μήνα, αμέσως μετά την επιβεβαίωση.',
+    payOnChange: 'Το τρέχον πακέτο σου μένει ενεργό. Το νέο ενεργοποιείται μόλις ολοκληρώσεις την πληρωμή του πρώτου μήνα, αμέσως μετά την επιβεβαίωση, και ανανεώνεται αυτόματα κάθε μήνα. Η χρέωση του προηγούμενου πακέτου σταματά.',
     feeByCard: 'Το τέλος νέου ασθενή πληρώνεται με κάρτα τη στιγμή που αποδέχεσαι το αίτημα.',
     forMonths: (m) => `για ${m} μήνες`,
 
@@ -165,14 +167,15 @@ const TX = {
     sFinalFee: 'Final new patient fee',
     sAfter: (m, price) => `After ${m} months: €${price}/month`,
     sAfterFee: (m, fee) => `After ${m} months: €${fee} per new patient`,
-    payLater: 'You are not charged now. The first month is paid by card once your profile is approved.',
+    payLater: 'You are not charged now. The first month is paid by card once your profile is approved; after that the subscription renews automatically every month until you switch to the free plan.',
+    downgradeNote: 'Automatic charging stops. You keep your current plan until the end of the month already paid, then move to this one automatically.',
     changeTitle: 'Change plan',
     changeDesc: 'Pick your new plan. Your current plan stays active until the change is complete.',
     changeSubmit: 'Confirm change',
     cancel: 'Cancel',
     currentBadge: 'Current',
     sameAsCurrent: 'This is already your plan. Pick another one to change.',
-    payOnChange: 'Your current plan stays active. The new one activates as soon as you pay the first month, right after you confirm.',
+    payOnChange: 'Your current plan stays active. The new one activates as soon as you pay the first month, right after you confirm, and renews automatically every month. Charging for the previous plan stops.',
     feeByCard: 'The new patient fee is paid by card when you accept the request.',
     forMonths: (m) => `for ${m} months`,
 
@@ -192,7 +195,9 @@ const TX = {
 // mode: 'onboarding' (βήμα εγγραφής, όπως πάντα) ή 'change' (αλλαγή
 // πακέτου από τον πίνακα του θεραπευτή). Η ΙΔΙΑ οθόνη και η ΙΔΙΑ
 // activate_subscription και στα δύο — μία υλοποίηση, όχι δύο που αποκλίνουν.
-export default function StepPlan({ lang, userId, onDone, onBack, mode = 'onboarding', currentPlanId = null }) {
+// currentSub: η τρέχουσα συνδρομή (για να ξέρουμε αν η επιλογή του
+// δωρεάν πακέτου σημαίνει «διακοπή της αυτόματης χρέωσης»).
+export default function StepPlan({ lang, userId, onDone, onBack, mode = 'onboarding', currentPlanId = null, currentSub = null }) {
   const tx = TX[lang] || TX.el;
   const isChange = mode === 'change';
 
@@ -288,6 +293,31 @@ export default function StepPlan({ lang, userId, onDone, onBack, mode = 'onboard
     if (!accepted) { setError(tx.errContract); return; }
 
     setSubmitting(true); setError('');
+
+    // ΔΩΡΕΑΝ ΠΑΚΕΤΟ ενώ τρέχει αυτόματη χρέωση: ΔΕΝ αλλάζει τώρα.
+    // Σταματά η χρέωση, μένει στο πακέτο μέχρι το τέλος του πληρωμένου
+    // μήνα και μετά περνά αυτόματα στο δωρεάν (webhook).
+    const chosen = plans.find(p => p.id === planId);
+    const hasRecurring = isChange && currentSub?.stripe_subscription_id
+      && ['trialing', 'active', 'past_due'].includes(currentSub.status);
+    if (hasRecurring && Number(chosen?.price_monthly || 0) === 0) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const res = await fetch('/api/stripe/plan-cancel', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token || ''}` },
+          body: JSON.stringify({ action: 'schedule' }),
+        });
+        const json = await res.json().catch(() => ({}));
+        setSubmitting(false);
+        if (!res.ok) { setError(tx.errSubmit + (json.error || '')); return; }
+        onDone({ status: 'downgrade_scheduled', period_end: json.period_end });
+      } catch (e) {
+        setSubmitting(false);
+        setError(tx.errSubmit);
+      }
+      return;
+    }
 
     // Η βάση ξαναελέγχει τον κωδικό και παγώνει τους όρους.
     const { data: result, error: err } = await supabase.rpc('activate_subscription', {
@@ -522,6 +552,7 @@ export default function StepPlan({ lang, userId, onDone, onBack, mode = 'onboard
           <Info size={15} style={{ flexShrink: 0, marginTop: 2 }} />
           <div>
             {finalPrice > 0 && <div>{isChange ? tx.payOnChange : tx.payLater}</div>}
+            {isChange && finalPrice === 0 && currentSub?.stripe_subscription_id && <div>{tx.downgradeNote}</div>}
             {finalFee > 0 && <div>{tx.feeByCard}</div>}
           </div>
         </div>

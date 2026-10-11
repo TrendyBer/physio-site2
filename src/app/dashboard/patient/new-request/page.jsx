@@ -286,7 +286,7 @@ export default function NewRequestPage() {
         // οπότε πριν ο έλεγχος συνδρομής δεν ενεργοποιούνταν ποτέ.
         fetchPublicSettings(['subscription_enforcement', 'subscription_grace_days']),
         supabase.from('therapist_subscriptions')
-          .select('therapist_id, current_period_end, status')
+          .select('therapist_id, current_period_end, status, effective_price')
           .in('therapist_id', pool.map((t) => t.id))
           .in('status', ['trialing', 'active', 'past_due', 'exempt']),
       ]);
@@ -300,7 +300,10 @@ export default function NewRequestPage() {
 
         const okIds = new Set(
           (exempt || [])
-            .filter((sub) => !sub.current_period_end ||
+            // Το δωρεάν πακέτο δεν «λήγει» — δεν υπάρχει τίποτα να πληρωθεί.
+            // Τα πληρωμένα ανανεώνονται αυτόματα (webhook), οπότε μετράει
+            // η περίοδος + η περίοδος χάριτος.
+            .filter((sub) => Number(sub.effective_price || 0) <= 0 || !sub.current_period_end ||
               new Date(sub.current_period_end).getTime() + graceMs > Date.now())
             .map((sub) => sub.therapist_id)
         );
