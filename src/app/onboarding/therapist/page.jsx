@@ -227,7 +227,6 @@ export default function TherapistOnboardingPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#faf9f6', fontFamily: "'DM Sans', sans-serif" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
         .ob-steps { display: flex; gap: 6px; flex-wrap: wrap; }
         .ob-actions { display: flex; gap: 10px; align-items: center; }

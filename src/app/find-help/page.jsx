@@ -93,30 +93,35 @@ export default async function FindHelpPage({ searchParams }) {
   const tx = TX[lang];
   const q = (params?.q || '').trim();
 
-  const { data: categories } = await supabase
-    .from('condition_categories')
-    .select('*')
-    .eq('is_active', true)
-    .order('display_order', { ascending: true });
-
-  const { data: conditions } = await supabase
-    .from('conditions')
-    .select('id, slug, name_el, name_en, description_el, description_en, category_id, is_popular, related_specialties, display_order')
-    .eq('is_active', true)
-    .order('display_order', { ascending: true });
-
-  const { data: tcData } = await supabase
-    .from('therapist_conditions')
-    .select('condition_id, therapist_id');
-
+  // Τα τέσσερα ερωτήματα τρέχουν ΤΑΥΤΟΧΡΟΝΑ. Πριν έτρεχαν το ένα μετά
+  // το άλλο, σε κάθε επίσκεψη — γι' αυτό η σελίδα «αργούσε» στο κλικ.
+  //
   // Μετράνε ΜΟΝΟ οι θεραπευτές που φαίνονται δημόσια — ίδια πηγή με τη
-  // σελίδα κάθε πάθησης και τη λίστα θεραπευτών. Πριν, εδώ μετρούσαν και
-  // θεραπευτές που δεν εμφανίζονται, οπότε η «Οσφυαλγία» έλεγε 3 και η
-  // σελίδα της έδειχνε 1.
-  const { data: therapists } = await supabase
-    .from('v_public_therapists')
-    .select('id, specialty')
-    .eq('is_publicly_visible', true);
+  // σελίδα κάθε πάθησης και τη λίστα θεραπευτών.
+  const [
+    { data: categories },
+    { data: conditions },
+    { data: tcData },
+    { data: therapists },
+  ] = await Promise.all([
+    supabase
+      .from('condition_categories')
+      .select('*')
+      .eq('is_active', true)
+      .order('display_order', { ascending: true }),
+    supabase
+      .from('conditions')
+      .select('id, slug, name_el, name_en, description_el, description_en, category_id, is_popular, related_specialties, display_order')
+      .eq('is_active', true)
+      .order('display_order', { ascending: true }),
+    supabase
+      .from('therapist_conditions')
+      .select('condition_id, therapist_id'),
+    supabase
+      .from('v_public_therapists')
+      .select('id, specialty')
+      .eq('is_publicly_visible', true),
+  ]);
   const visibleIds = new Set((therapists || []).map((t) => t.id));
 
   const reachByCondition = {};

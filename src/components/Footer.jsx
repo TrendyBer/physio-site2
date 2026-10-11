@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 // ΚΑΝΟΝΙΚΟ Footer — η ΜΟΝΗ υλοποίηση στο project.
 // Το SharedComponents.jsx κάνει re-export αυτό το αρχείο· δεν έχει δικό του.
 // Αν χρειαστεί αλλαγή σε link, γίνεται ΕΔΩ και μόνο εδώ.
@@ -207,7 +208,7 @@ export default function Footer() {
               <h4 style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: '.08em', color: '#fff', marginBottom: 16, fontWeight: 600 }}>{tx.menu}</h4>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {tx.menuLinks.map(([href, label]) => (
-                  <li key={href}><a href={href} className="footer-link">{label}</a></li>
+                  <li key={href}><Link href={href} className="footer-link">{label}</Link></li>
                 ))}
               </ul>
             </div>
@@ -227,7 +228,7 @@ export default function Footer() {
                     </li>
                   ))
                   : tx.fallbackConditions.map(([href, label]) => (
-                    <li key={href}><a href={href} className="footer-link-small">{label}</a></li>
+                    <li key={href}><Link href={href} className="footer-link-small">{label}</Link></li>
                   ))}
               </ul>
             </div>
@@ -237,7 +238,7 @@ export default function Footer() {
               <h4 style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: '.08em', color: '#fff', marginBottom: 16, fontWeight: 600 }}>{tx.legal}</h4>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {tx.legalLinks.map(([href, label]) => (
-                  <li key={href}><a href={href} className="footer-link">{label}</a></li>
+                  <li key={href}><Link href={href} className="footer-link">{label}</Link></li>
                 ))}
               </ul>
             </div>

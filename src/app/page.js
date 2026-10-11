@@ -574,7 +574,6 @@ export default function HomePage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap');
         * { box-sizing: border-box; }
         html, body { max-width: 100%; overflow-x: hidden; }
         body { font-family: 'DM Sans', sans-serif; background: ${C.off}; margin: 0; }

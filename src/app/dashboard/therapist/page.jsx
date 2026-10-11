@@ -2076,7 +2076,6 @@ export default function TherapistDashboard() {
         html, body { max-width: 100%; overflow-x: hidden; }
         * { min-width: 0; }
 
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
         .tabs-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
         .tabs-scroll::-webkit-scrollbar { display: none; }

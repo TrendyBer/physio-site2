@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useLang } from '@/context/LanguageContext';
 import Logo, { BRAND } from '@/components/Logo';
 import { useState, useEffect } from 'react';
@@ -259,14 +260,16 @@ export default function Navbar() {
               const hov = isForTherapists ? TH.highlightHover : TH.linkHover;
               return (
                 <li key={item.href + item.label}>
-                  <a
+                  {/* Link αντί για <a>: η σελίδα αλλάζει χωρίς να ξαναφορτώνει
+                      ολόκληρο το site, και προφορτώνεται πριν το κλικ. */}
+                  <Link
                     href={item.href}
                     style={{ fontSize: 14, fontWeight: isForTherapists ? 600 : 500, color: base, textDecoration: 'none', whiteSpace: 'nowrap', transition: 'color .15s' }}
                     onMouseEnter={e => { e.target.style.color = hov; }}
                     onMouseLeave={e => { e.target.style.color = base; }}
                   >
                     {item.label}
-                  </a>
+                  </Link>
                 </li>
               );
             })}
@@ -419,9 +422,9 @@ export default function Navbar() {
           </div>
           <nav style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
             {activeLinks.map(item => (
-              <a key={item.href + item.label} href={item.href} onClick={() => setMenuOpen(false)} style={{ fontSize: 18, fontWeight: 600, color: '#1a2e44', textDecoration: 'none', padding: '14px 0', borderBottom: '1px solid #f1f5f9' }}>
+              <Link key={item.href + item.label} href={item.href} onClick={() => setMenuOpen(false)} style={{ fontSize: 18, fontWeight: 600, color: '#1a2e44', textDecoration: 'none', padding: '14px 0', borderBottom: '1px solid #f1f5f9' }}>
                 {item.label}
-              </a>
+              </Link>
             ))}
           </nav>
           <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 10 }}>

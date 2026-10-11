@@ -28,7 +28,7 @@ export default function CookiesPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#faf9f6', fontFamily: "'DM Sans', sans-serif" }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap'); * { box-sizing: border-box; margin: 0; padding: 0; }`}</style>
+      <style>{`* { box-sizing: border-box; margin: 0; padding: 0; }`}</style>
 
       <Navbar />
 

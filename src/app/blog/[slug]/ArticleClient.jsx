@@ -122,7 +122,6 @@ export default function ArticleClient({ slug, initialPost = null }) {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'DM Sans', sans-serif; }
         .article-p { font-size: 17px; color: #3d4f63; line-height: 1.8; margin-bottom: 20px; }

@@ -208,7 +208,7 @@ export default function FreeAssessmentPage() {
     <>
       <Navbar />
       <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: "'DM Sans', sans-serif" }}>
-        <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');`}</style>
+        <style>{``}</style>
 
         <div style={{ maxWidth: 760, margin: '0 auto', padding: '48px 24px' }}>
 
