@@ -25,7 +25,7 @@ const DEFAULTS = {
 
 const TX = {
   el: {
-    desc: 'Επαγγελματική, εξατομικευμένη φυσιοθεραπεία στην άνεση του σπιτιού σας.',
+    desc: 'Επαγγελματική, εξατομικευμένη φυσικοθεραπεία στην άνεση του σπιτιού σας.',
     findHelp: 'Βρες τη βοήθειά σου',
     menu: 'Μενού',
     conditions: 'Δημοφιλείς Παθήσεις',
@@ -38,13 +38,15 @@ const TX = {
       ['/therapists', 'Θεραπευτές'],
       ['/find-help', 'Παθήσεις'],
       ['/blog', 'Blog'],
+      ['/about', 'Σχετικά με εμάς'],
+      ['/epalitheusi', 'Πώς επαληθεύουμε'],
       ['/contact', 'Επικοινωνία'],
     ],
     legalLinks: [
       ['/privacy', 'Πολιτική Απορρήτου'],
       ['/terms', 'Όροι Χρήσης'],
       ['/cookies', 'Πολιτική Cookies'],
-      ['/become-therapist', 'Γίνε Θεραπευτής'],
+      ['/become-therapist', 'Γίνε συνεργάτης'],
     ],
     bottomLinks: [
       ['/privacy', 'Απόρρητο'],
@@ -73,13 +75,15 @@ const TX = {
       ['/therapists', 'Therapists'],
       ['/find-help', 'Conditions'],
       ['/blog', 'Blog'],
+      ['/about', 'About us'],
+      ['/epalitheusi', 'How we verify'],
       ['/contact', 'Contact'],
     ],
     legalLinks: [
       ['/privacy', 'Privacy Policy'],
       ['/terms', 'Terms of Use'],
       ['/cookies', 'Cookie Policy'],
-      ['/become-therapist', 'Become a Therapist'],
+      ['/become-therapist', 'Become a partner'],
     ],
     bottomLinks: [
       ['/privacy', 'Privacy'],

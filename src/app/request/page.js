@@ -9,7 +9,7 @@ import { fetchPublicSettings } from '@/lib/publicSettings';
 import { Mail, Phone, MapPin, Star, Check, X } from 'lucide-react';
 
 const SERVICES = ['Not sure/Need guidance','Musculoskeletal Physiotherapy','Post-Surgery Rehabilitation','Sports Injury Recovery','Elderly Care and Mobility Support','Back Pain','Neck and Shoulder Pain','Joint Pain','Sports Injury','Balance Issues','Reduced Mobility','Neurological Physiotherapy'];
-const SERVICES_EL = ['Δεν είμαι σίγουρος/η - Χρειάζομαι καθοδήγηση','Μυοσκελετική Φυσιοθεραπεία','Μετεγχειρητική Αποκατάσταση','Αποκατάσταση Αθλητικών Τραυματισμών','Φροντίδα Ηλικιωμένων & Κινητικότητα','Πόνος στη Μέση','Πόνος στον Αυχένα & Ώμους','Πόνος στις Αρθρώσεις','Αθλητικός Τραυματισμός','Προβλήματα Ισορροπίας','Μειωμένη Κινητικότητα','Νευρολογική Φυσιοθεραπεία'];
+const SERVICES_EL = ['Δεν είμαι σίγουρος/η - Χρειάζομαι καθοδήγηση','Μυοσκελετική Φυσικοθεραπεία','Μετεγχειρητική Αποκατάσταση','Αποκατάσταση Αθλητικών Τραυματισμών','Φροντίδα Ηλικιωμένων & Κινητικότητα','Πόνος στη Μέση','Πόνος στον Αυχένα & Ώμους','Πόνος στις Αρθρώσεις','Αθλητικός Τραυματισμός','Προβλήματα Ισορροπίας','Μειωμένη Κινητικότητα','Νευρολογική Φυσικοθεραπεία'];
 const COUNTRIES = ['Greece','Cyprus','Germany','France','United Kingdom','Italy','Spain','United States','Australia','Other'];
 const HOW_HEARD_EN = ['Google / Search engine','Social media','Friend or family referral','Doctor or healthcare professional','Online advertisement','Other'];
 const HOW_HEARD_EL = ['Google / Μηχανή αναζήτησης','Social media','Φίλος ή συγγενής','Γιατρός ή επαγγελματίας υγείας','Διαδικτυακή διαφήμιση','Άλλο'];

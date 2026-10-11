@@ -144,6 +144,11 @@ export default function ArticleClient({ slug, initialPost = null }) {
           </h1>
           <div style={{ display: 'flex', gap: 20, fontSize: 13, color: '#6b7a8d', flexWrap: 'wrap' }}>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Calendar size={14} />{new Date(post.created_at).toLocaleDateString(lang === 'el' ? 'el-GR' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+            {/* Συντάκτης: από το άρθρο αν υπάρχει, αλλιώς η ομάδα. */}
+            <span>{lang === 'el' ? 'Συντάκτης: ' : 'By '}{post.author || post.author_name || (lang === 'el' ? 'Ομάδα Theralivo' : 'Theralivo team')}</span>
+            {(post.reviewed_by || post.medical_reviewer) && (
+              <span>{lang === 'el' ? 'Επιστημονική επιμέλεια: ' : 'Reviewed by '}{post.reviewed_by || post.medical_reviewer}</span>
+            )}
             <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Eye size={14} />{post.reads || 0} {lang === 'el' ? 'αναγνώσεις' : 'reads'}</span>
           </div>
         </div>

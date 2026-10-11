@@ -183,7 +183,7 @@ export default function Navbar() {
   }
 
   const t = {
-    el: { login: 'Σύνδεση', register: 'Εγγραφή', findCta: 'Βρες φυσιοθεραπευτή' },
+    el: { login: 'Σύνδεση', register: 'Εγγραφή', findCta: 'Βρες φυσικοθεραπευτή' },
     en: { login: 'Login', register: 'Register', findCta: 'Find a physiotherapist' },
   };
   const text = t[lang];
@@ -193,7 +193,7 @@ export default function Navbar() {
     { label: lang === 'el' ? 'Παθήσεις' : 'Conditions', href: '/find-help' },
     { label: lang === 'el' ? 'Θεραπευτές' : 'Therapists', href: '/therapists' },
     { label: 'Blog', href: '/blog' },
-    { label: lang === 'el' ? 'Για φυσιοθεραπευτές' : 'For therapists', href: '/become-therapist' },
+    { label: lang === 'el' ? 'Για φυσικοθεραπευτές' : 'For therapists', href: '/become-therapist' },
   ];
 
   // Τα deep links προς συγκεκριμένα tabs (?tab=calendar κ.λπ.) αφαιρέθηκαν:
@@ -209,7 +209,7 @@ export default function Navbar() {
 
   // Ο ασθενής βλέπει το ΚΑΝΟΝΙΚΟ μενού — πρέπει να μπορεί να ψάξει
   // θεραπευτή και να διαβάσει για παθήσεις.
-  // Φεύγει μόνο το «Για φυσιοθεραπευτές» — δεν τον αφορά.
+  // Φεύγει μόνο το «Για φυσικοθεραπευτές» — δεν τον αφορά.
   const patientLinks = publicLinks.filter((l) => l.href !== '/become-therapist');
 
   // Σε λειτουργία «Προβολή site» ο θεραπευτής βλέπει το ΚΑΝΟΝΙΚΟ μενού,
@@ -347,7 +347,7 @@ export default function Navbar() {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
               {[
-                { role: 'patient', title: 'Θέλω Φυσιοθεραπεία', desc: 'Εγγραφή ως ασθενής και αίτημα συνεδρίας', accent: '#15803D', bg: '#F0FDF4' },
+                { role: 'patient', title: 'Θέλω Φυσικοθεραπεία', desc: 'Εγγραφή ως ασθενής και αίτημα συνεδρίας', accent: '#15803D', bg: '#F0FDF4' },
                 { role: 'therapist', title: 'Θέλω να Προσφέρω', desc: 'Εγγραφή ως θεραπευτής και αίτηση συνεργασίας', accent: '#1D4ED8', bg: '#EFF6FF' },
               ].map(r => (
                 <a key={r.role} href={`/auth/register?role=${r.role}`} onClick={() => setRoleModal(false)}

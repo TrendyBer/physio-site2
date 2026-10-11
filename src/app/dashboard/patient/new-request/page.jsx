@@ -1156,7 +1156,7 @@ export default function NewRequestPage() {
                   <div style={{ fontSize: 14, color: '#475569', display: 'flex', alignItems: 'flex-start', gap: 9 }}>
                     <Banknote size={15} color="#15803D" style={{ marginTop: 2, flexShrink: 0 }} />
                     <span>
-                      <strong style={{ color: '#15803D' }}>{sessionCost}€</strong> — πληρωμή απευθείας στον θεραπευτή μετά τη συνεδρία
+                      <strong style={{ color: '#15803D' }}>{sessionCost}€</strong> — πληρωμή απευθείας στον φυσικοθεραπευτή μετά τη συνεδρία
                     </span>
                   </div>
                 </div>
@@ -1177,8 +1177,29 @@ export default function NewRequestPage() {
                     Το ραντεβού δεν έχει κλείσει ακόμη
                   </div>
                   <div style={{ fontSize: 13, color: '#78350F', lineHeight: 1.6 }}>
-                    Στέλνετε αίτημα. Ο θεραπευτής πρέπει να το αποδεχθεί — θα ειδοποιηθείτε μόλις απαντήσει.
+                    Στέλνετε αίτημα. Ο φυσικοθεραπευτής πρέπει να το αποδεχθεί — θα ειδοποιηθείτε μόλις απαντήσει.
                   </div>
+                </div>
+              </div>
+
+              {/* ΔΙΑΦΑΝΕΙΑ ΠΡΙΝ ΤΗΝ ΑΠΟΣΤΟΛΗ — μόνο ό,τι ισχύει πραγματικά:
+                  η διεύθυνση αποκαλύπτεται μετά την αποδοχή (therapist_patient_info),
+                  το τηλέφωνο δεν εμφανίζεται ποτέ στον θεραπευτή. */}
+              <div style={{ marginTop: 12, background: '#F8FAFC', border: '1px solid #e2e8f0', borderRadius: 12, padding: '16px 18px' }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <ShieldCheck size={16} color="#2a6fdb" strokeWidth={2.2} />
+                  Τα στοιχεία σας και τι ισχύει
+                </div>
+                <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: '#475569', lineHeight: 1.65, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <li>Το αίτημα το λαμβάνει μόνο ο/η {selectedTherapist?.name || 'φυσικοθεραπευτής που επιλέξατε'}. Πριν την αποδοχή βλέπει το όνομά σας, την περιοχή και την περιγραφή του προβλήματος· την πλήρη διεύθυνση τη βλέπει μόνο αφού αποδεχθεί το αίτημα.</li>
+                  <li>Το τηλέφωνό σας δεν εμφανίζεται στον φυσικοθεραπευτή.</li>
+                  <li>Μπορείτε να ακυρώσετε δωρεάν από τον λογαριασμό σας. Επαναλαμβανόμενες ακυρώσεις λιγότερο από 24 ώρες πριν το ραντεβού μπορεί να οδηγήσουν σε προσωρινό περιορισμό κρατήσεων.</li>
+                  <li>Μετά τη συνεδρία θα σας ζητήσουμε να επιβεβαιώσετε ότι πραγματοποιήθηκε.</li>
+                </ul>
+                <div style={{ marginTop: 8, fontSize: 12.5 }}>
+                  <a href="/privacy" target="_blank" rel="noopener" style={{ color: '#2a6fdb', fontWeight: 600, textDecoration: 'none' }}>Πολιτική Απορρήτου</a>
+                  <span style={{ color: '#cbd5e1' }}> · </span>
+                  <a href="/terms" target="_blank" rel="noopener" style={{ color: '#2a6fdb', fontWeight: 600, textDecoration: 'none' }}>Όροι Χρήσης</a>
                 </div>
               </div>
 

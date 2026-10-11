@@ -136,7 +136,7 @@ export default function Therapists() {
 
   const t = {
     el: {
-      title: 'Οι', titleEm: 'Φυσιοθεραπευτές', titleEnd: 'μας',
+      title: 'Οι', titleEm: 'Φυσικοθεραπευτές', titleEnd: 'μας',
       desc: 'Γνωρίστε έμπειρους, αδειοδοτημένους επαγγελματίες που παρέχουν εξατομικευμένη φροντίδα στο σπίτι σας.',
       viewAll: 'Όλοι οι Θεραπευτές',
       viewProfile: 'Δείτε Προφίλ',

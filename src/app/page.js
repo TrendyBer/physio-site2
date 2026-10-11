@@ -143,7 +143,7 @@ function Lead({ children, style }) {
 // ─── ΚΕΙΜΕΝΑ ────────────────────────────────────────────────────────────
 const TX = {
   el: {
-    heroTitle1: 'Εξειδικευμένη Φυσιοθεραπεία στην',
+    heroTitle1: 'Εξειδικευμένη Φυσικοθεραπεία στην',
     heroTitle2: 'Άνεση του Σπιτιού σας',
     heroDesc: 'Επαληθευμένοι φυσικοθεραπευτές που αναλαμβάνουν το περιστατικό σας και έρχονται στον χώρο σας, σε Αθήνα και Αττική.',
     searchLabel: 'Τι σας ταλαιπωρεί;',
@@ -165,7 +165,7 @@ const TX = {
     whyTitle1: 'Γιατί δημιουργήσαμε το',
     whyTitle2: 'Theralivo',
     whyLead: 'Η επιλογή φυσικοθεραπευτή για το σπίτι δεν θα έπρεπε να γίνεται στα τυφλά.',
-    whyP1: 'Όταν χρειάζεστε φυσιοθεραπεία, θέλετε να γνωρίζετε ότι ο επαγγελματίας που θα έρθει στον χώρο σας είναι επαληθευμένος, αναλαμβάνει το συγκεκριμένο περιστατικό και εξυπηρετεί την περιοχή σας.',
+    whyP1: 'Όταν χρειάζεστε φυσικοθεραπεία, θέλετε να γνωρίζετε ότι ο επαγγελματίας που θα έρθει στον χώρο σας είναι επαληθευμένος, αναλαμβάνει το συγκεκριμένο περιστατικό και εξυπηρετεί την περιοχή σας.',
     whyP2: 'Γι’ αυτό δημιουργήσαμε έναν πιο απλό και ξεκάθαρο τρόπο να βρίσκετε τον κατάλληλο φυσικοθεραπευτή για εσάς.',
 
     whatEyebrow: 'Τι κάνουμε διαφορετικά',
@@ -189,7 +189,14 @@ const TX = {
 
     verifyEyebrow: 'Επαλήθευση',
     verifyTitle: 'Ποιος έρχεται στο σπίτι σας έχει σημασία.',
-    verifyLead: 'Κάθε φυσικοθεραπευτής που εμφανίζεται στην πλατφόρμα έχει υποβάλει την επαγγελματική του άδεια προς επαλήθευση.',
+    verifyLead: 'Κάθε φυσικοθεραπευτής που εμφανίζεται στο Theralivo έχει περάσει από έλεγχο της ομάδας μας πριν γίνει ορατός στους ασθενείς.',
+    verifyPoints: [
+      'Υποβάλλει την άδεια ασκήσεως επαγγέλματος — δεν δημοσιεύεται ποτέ',
+      'Η ομάδα μας την ελέγχει και επιβεβαιώνει ότι αντιστοιχεί στο προφίλ',
+      'Μόνο τότε το προφίλ γίνεται δημόσιο, με την ένδειξη επαλήθευσης',
+    ],
+    verifyNote: 'Η επαλήθευση αφορά το δικαίωμα άσκησης επαγγέλματος· δεν αποτελεί εγγύηση θεραπευτικού αποτελέσματος.',
+    verifyLink: 'Πώς γίνεται η επαλήθευση',
     verifyBtn: 'Δες φυσικοθεραπευτές',
     handles: 'Αναλαμβάνει',
     yearsExp: (n) => `${n} χρόνια εμπειρίας`,
@@ -203,7 +210,7 @@ const TX = {
     condAll: 'Δες όλα τα περιστατικά',
 
     prinEyebrow: 'Οι αρχές μας',
-    prinTitle: 'Χτίζουμε μια πιο αξιόπιστη εμπειρία φυσιοθεραπείας στο σπίτι',
+    prinTitle: 'Χτίζουμε μια πιο αξιόπιστη εμπειρία φυσικοθεραπείας στο σπίτι',
     principles: [
       { title: 'Επαγγελματική επαλήθευση', desc: 'Ελέγχουμε την άδεια άσκησης επαγγέλματος πριν ενεργοποιηθεί το δημόσιο προφίλ.' },
       { title: 'Αξιολογήσεις από πραγματικές συνεδρίες', desc: 'Μόνο ασθενείς που πραγματοποίησαν συνεδρία μέσω της πλατφόρμας μπορούν να αφήσουν αξιολόγηση.' },
@@ -265,7 +272,14 @@ const TX = {
 
     verifyEyebrow: 'Verification',
     verifyTitle: 'Who comes into your home matters.',
-    verifyLead: 'Every physiotherapist on the platform has submitted their professional licence for verification.',
+    verifyLead: 'Every physiotherapist on Theralivo has been checked by our team before becoming visible to patients.',
+    verifyPoints: [
+      'They submit their professional licence — it is never published',
+      'Our team reviews it and confirms it matches the profile',
+      'Only then does the profile go public, with the verification badge',
+    ],
+    verifyNote: 'Verification concerns the right to practise; it is not a guarantee of treatment outcomes.',
+    verifyLink: 'How verification works',
     verifyBtn: 'See physiotherapists',
     handles: 'Handles',
     yearsExp: (n) => `${n} years of experience`,
@@ -732,7 +746,19 @@ export default function HomePage() {
             <Eyebrow>{tx.verifyEyebrow}</Eyebrow>
             <H2>{tx.verifyTitle}</H2>
             <Lead>{tx.verifyLead}</Lead>
-            <a href="/therapists" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 28, background: C.navy, color: '#fff', fontSize: 15, fontWeight: 600, padding: '14px 28px', borderRadius: 12, textDecoration: 'none' }}>
+            <ul style={{ listStyle: 'none', padding: 0, margin: '20px 0 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {tx.verifyPoints.map((pt, i) => (
+                <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 15, color: C.navy, lineHeight: 1.5 }}>
+                  <ShieldCheck size={18} color={C.accent} strokeWidth={2.2} style={{ flexShrink: 0, marginTop: 1 }} />
+                  <span>{pt}</span>
+                </li>
+              ))}
+            </ul>
+            <p style={{ fontSize: 13, color: C.muted, lineHeight: 1.6, marginTop: 14 }}>
+              {tx.verifyNote}{' '}
+              <a href="/epalitheusi" style={{ color: C.accent, fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}>{tx.verifyLink} →</a>
+            </p>
+            <a href="/therapists" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 22, background: C.navy, color: '#fff', fontSize: 15, fontWeight: 600, padding: '14px 28px', borderRadius: 12, textDecoration: 'none' }}>
               {tx.verifyBtn}
               <ArrowRight size={17} />
             </a>

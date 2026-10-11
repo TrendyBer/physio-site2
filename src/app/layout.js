@@ -48,7 +48,7 @@ export const metadata = {
   // δικό της title. Χωρίς αυτό, κάθε σελίδα θα έπρεπε να θυμάται να
   // προσθέσει το όνομα — και κάποια θα το ξεχνούσε.
   title: {
-    default: "Theralivo – Φυσιοθεραπεία στο σπίτι σας | Αθήνα & Αττική",
+    default: "Theralivo – Φυσικοθεραπεία στο σπίτι σας | Αθήνα & Αττική",
     template: "%s | Theralivo",
   },
   description:
@@ -59,7 +59,7 @@ export const metadata = {
     type: "website",
     locale: "el_GR",
     siteName: "Theralivo",
-    title: "Theralivo – Φυσιοθεραπεία στο σπίτι σας",
+    title: "Theralivo – Φυσικοθεραπεία στο σπίτι σας",
     description:
       "Επαληθευμένοι φυσικοθεραπευτές που αναλαμβάνουν το περιστατικό σας και έρχονται στον χώρο σας.",
   },

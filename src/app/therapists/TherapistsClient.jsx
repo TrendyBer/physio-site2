@@ -60,7 +60,7 @@ const TX = {
     notFoundTitle: 'Δεν βρίσκετε αυτό που ψάχνετε;',
     notFoundDesc: 'Συμπληρώστε το αίτημά σας και θα σας προτείνουμε τους κατάλληλους θεραπευτές.',
     notFoundBtn: 'Στείλτε αίτημα',
-    becomeBanner: 'Είσαι φυσιοθεραπευτής;',
+    becomeBanner: 'Είσαι φυσικοθεραπευτής;',
     becomeBannerDesc: 'Γίνε μέλος του δικτύου μας.',
     becomeBannerBtn: 'Μάθε περισσότερα',
     findHelpTitle: 'Τι σας ταλαιπωρεί;',

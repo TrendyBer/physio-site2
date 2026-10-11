@@ -54,6 +54,18 @@ export default async function sitemap() {
       priority: 0.7,
     },
     {
+      url: `${SITE_URL}/about`,
+      lastModified: now,
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    },
+    {
+      url: `${SITE_URL}/epalitheusi`,
+      lastModified: now,
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    },
+    {
       url: `${SITE_URL}/how-it-works`,
       lastModified: now,
       changeFrequency: 'monthly',
@@ -128,25 +140,49 @@ export default async function sitemap() {
   // που λέει «η επίσημη εκδοχή μου είναι αλλού» δεν ανήκει στο sitemap:
   // θα έδινε στη Google αντικρουόμενα σήματα για το ποια σελίδα μετράει.
 
-  // ============== DYNAMIC: BLOG POSTS (αν υπάρχουν) ==============
+  // ============== DYNAMIC: ΑΡΘΡΑ BLOG ==============
+  // Ο πίνακας είναι το `articles` (status = 'published'). Πριν εδώ
+  // διαβαζόταν ένας ανύπαρκτος `blog_posts`, οπότε κανένα άρθρο δεν
+  // έφτανε ποτέ στο sitemap.
   let blogPages = [];
   try {
     const { data: posts } = await supabase
-      .from('blog_posts')
-      .select('slug, updated_at')
-      .eq('is_published', true);
+      .from('articles')
+      .select('*')
+      .eq('status', 'published');
 
     if (posts && posts.length > 0) {
-      blogPages = posts.map((p) => ({
+      blogPages = posts.filter((p) => p.slug).map((p) => ({
         url: `${SITE_URL}/blog/${p.slug}`,
-        lastModified: p.updated_at ? new Date(p.updated_at) : now,
+        lastModified: new Date(p.updated_at || p.created_at || now),
         changeFrequency: 'monthly',
         priority: 0.5,
       }));
     }
   } catch (err) {
-    // Αν δεν υπάρχει blog_posts table, σιωπηλά skip
+    console.error('Sitemap: failed to load articles', err);
   }
 
-  return [...staticPages, ...seoPages, ...blogPages];
+  // ============== DYNAMIC: ΠΡΟΦΙΛ ΦΥΣΙΚΟΘΕΡΑΠΕΥΤΩΝ ==============
+  // Μόνο όσοι φαίνονται δημόσια — ίδια πηγή με τη λίστα θεραπευτών.
+  let therapistPages = [];
+  try {
+    const { data: ths } = await supabase
+      .from('v_public_therapists')
+      .select('id')
+      .eq('is_publicly_visible', true);
+
+    if (ths && ths.length > 0) {
+      therapistPages = ths.map((t) => ({
+        url: `${SITE_URL}/therapists/${t.id}`,
+        lastModified: now,
+        changeFrequency: 'weekly',
+        priority: 0.6,
+      }));
+    }
+  } catch (err) {
+    console.error('Sitemap: failed to load therapists', err);
+  }
+
+  return [...staticPages, ...seoPages, ...blogPages, ...therapistPages];
 }

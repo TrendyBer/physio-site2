@@ -91,7 +91,7 @@ function shell({ title, intro, rows = [], ctaLabel, ctaUrl, footNote, accent = '
         </td></tr>
 
         <tr><td style="padding:16px 28px;background:#faf9f6;border-top:1px solid #eef2f7;">
-          <p style="margin:0;font-size:12px;color:#94a3b8;">${BRAND} — Φυσιοθεραπεία κατ' οίκον</p>
+          <p style="margin:0;font-size:12px;color:#94a3b8;">${BRAND} — Φυσικοθεραπεία κατ' οίκον</p>
         </td></tr>
 
       </table>
@@ -143,7 +143,7 @@ export function therapistNewRequest({ therapistName, request, slaDueAt, slaHours
   // και χρεωνονται διπλα.
   const sms = sameDay
     ? `${BRAND}: ΣΗΜΕΡΑ${apptTime ? ` ${apptTime}` : ''} στην ${request.area || '-'}. Απαντηστε εως ${fmtTime(deadline)} αλλιως χανεται. ${url}`
-    : `${BRAND}: Νεο αιτημα ${request.area || '-'} (${request.problem_type || 'Φυσιοθεραπεια'}). Απαντηστε εως ${fmtTime(deadline)}. ${url}`;
+    : `${BRAND}: Νεο αιτημα ${request.area || '-'} (${request.problem_type || 'Φυσικοθεραπεια'}). Απαντηστε εως ${fmtTime(deadline)}. ${url}`;
 
   return { subject, html, sms };
 }
