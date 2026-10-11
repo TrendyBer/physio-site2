@@ -1,5 +1,5 @@
 'use client';
-import { createContext, useContext, useState, useEffect, Suspense } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 
 // ═══════════════════════════════════════════════════════════════════
 // Γλώσσα του site (EL / EN).
@@ -73,15 +73,11 @@ export function LanguageProvider({ children }) {
 
   return (
     <LanguageContext.Provider value={{ lang, ready, setLanguage, toggleLang }}>
-      {/* ΔΙΧΤΥ ΑΣΦΑΛΕΙΑΣ: μέχρι τώρα ΤΙΠΟΤΑ κάτω από εδώ δεν αποδιδόταν
-          στον server, οπότε κάποιο component μπορεί να διαβάζει π.χ.
-          localStorage κατευθείαν. Αν ένα τέτοιο σπάσει στον server, το
-          Suspense κάνει τη σελίδα να αποδοθεί στον browser — όπως
-          ακριβώς πριν — αντί να βγάλει σφάλμα. Οι σελίδες που αποδίδονται
-          κανονικά στον server δεν επηρεάζονται. */}
-      <Suspense fallback={null}>
-        {children}
-      </Suspense>
+      {/* ΧΩΡΙΣ <Suspense> εδώ — σκόπιμα. Με Suspense, το Next.js έστελνε
+          τη σελίδα μέσα σε <div hidden> και τη φανέρωνε με script· τα
+          εργαλεία που δεν τρέχουν JavaScript έβλεπαν πάλι μόνο τον τίτλο.
+          Χωρίς αυτό, ο server στέλνει τη σελίδα ορατή, απευθείας. */}
+      {children}
     </LanguageContext.Provider>
   );
 }
