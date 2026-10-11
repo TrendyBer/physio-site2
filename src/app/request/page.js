@@ -88,9 +88,10 @@ function RequestPageInner() {
   const howHeardOptions = lang === 'el' ? HOW_HEARD_EL : HOW_HEARD_EN;
 
   const [settings, setSettings] = useState({
-    email: 'info@theralivo.com',
-    phone: '+30 210 123 4567',
-    address: 'Αθήνα & Αττική, Ελλάδα',
+    // Μόνο ό,τι έχει συμπληρωθεί στο admin — κανένα ψεύτικο τηλέφωνο.
+    email: '',
+    phone: '',
+    address: '',
   });
 
   useEffect(() => {
@@ -296,18 +297,24 @@ function RequestPageInner() {
                   και διεύθυνση στο Σίδνεϊ — στη σελίδα όπου προσγειώνονται
                   πληρωμένα κλικ. Όποιος ήθελε να τηλεφωνήσει, έφευγε. */}
               <div style={{ marginTop: 32, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {String(settings.email || '').trim() && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <Mail size={16} color="#94a3b8" strokeWidth={2} />
                   <a href={`mailto:${settings.email}`} style={{ fontSize: 13, color: '#2a6fdb', textDecoration: 'none', fontWeight: 500, wordBreak: 'break-all' }}>{settings.email}</a>
                 </div>
+                )}
+                {String(settings.phone || '').trim() && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <Phone size={16} color="#94a3b8" strokeWidth={2} />
-                  <a href={`tel:${settings.phone}`} style={{ fontSize: 13, color: '#2a6fdb', textDecoration: 'none', fontWeight: 500 }}>{settings.phone}</a>
+                  <a href={`tel:${String(settings.phone).replace(/\s/g, '')}`} style={{ fontSize: 13, color: '#2a6fdb', textDecoration: 'none', fontWeight: 500 }}>{settings.phone}</a>
                 </div>
+                )}
+                {String(settings.address || '').trim() && (
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                   <MapPin size={16} color="#94a3b8" strokeWidth={2} style={{ marginTop: 1, flexShrink: 0 }} />
                   <span style={{ fontSize: 13, color: '#475569' }}>{settings.address}</span>
                 </div>
+                )}
               </div>
             </div>
 

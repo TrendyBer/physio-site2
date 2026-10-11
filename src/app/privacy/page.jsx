@@ -1,26 +1,21 @@
 'use client';
 import { useState } from 'react';
 
-// ⚠️ LEGAL REVIEW REQUIRED πριν το launch
-// Placeholders προς αντικατάσταση:
-// - {ΟΝΟΜΑ ΕΠΙΧΕΙΡΗΣΗΣ}     → πλήρες όνομα ιδιώτη/ατομικής επιχείρησης
-// - {ΑΦΜ}                    → ΑΦΜ
-// - {ΔΟΥ}                    → αρμόδια ΔΟΥ
-// - support@theralivo.com    → πραγματικό email επικοινωνίας
-// - dpo@theralivo.com        → email υπευθύνου προστασίας δεδομένων (αν διαφέρει)
+// Υπεύθυνος επεξεργασίας: Κυριακόπουλος Νικόλαος, ατομική επιχείρηση (Ναύπλιο).
+// Συνιστάται έλεγχος από νομικό.
 
 const CONTENT = {
   el: {
     title: 'Πολιτική Απορρήτου',
-    lastUpdated: 'Τελευταία ενημέρωση: 29 Απριλίου 2026',
+    lastUpdated: 'Τελευταία ενημέρωση: 11 Οκτωβρίου 2026',
     intro: 'Η παρούσα Πολιτική Απορρήτου περιγράφει τον τρόπο με τον οποίο η Theralivo (εφεξής "η Πλατφόρμα") συλλέγει, χρησιμοποιεί και προστατεύει τα προσωπικά σας δεδομένα σύμφωνα με τον Γενικό Κανονισμό Προστασίας Δεδομένων (GDPR — ΕΕ 2016/679) και τη σχετική ελληνική νομοθεσία (Ν. 4624/2019).',
     sections: [
       {
         h: '1. Υπεύθυνος Επεξεργασίας Δεδομένων',
         p: [
-          'Υπεύθυνος Επεξεργασίας: {ΟΝΟΜΑ ΕΠΙΧΕΙΡΗΣΗΣ}, ατομική επιχείρηση με έδρα στην Αθήνα, Ελλάδα.',
-          'ΑΦΜ: {ΑΦΜ} | ΔΟΥ: {ΔΟΥ}',
-          'Επικοινωνία: support@theralivo.com',
+          'Υπεύθυνος Επεξεργασίας: Κυριακόπουλος Νικόλαος, ατομική επιχείρηση με την εμπορική ονομασία Theralivo, με έδρα στο Ναύπλιο, Ελλάδα.',
+          'ΑΦΜ: 162062625 | ΔΟΥ: Ναυπλίου',
+          'Επικοινωνία: info@theralivo.com',
         ],
       },
       {
@@ -72,7 +67,8 @@ const CONTENT = {
         list: [
           'Τον θεραπευτή που έχετε επιλέξει (μόνο τα απαραίτητα στοιχεία επικοινωνίας και υγείας)',
           'Παρόχους υπηρεσιών IT (Supabase για βάση δεδομένων, Vercel για hosting, Resend για email — όλοι GDPR-compliant)',
-          'Παρόχους πληρωμών (Stripe — όταν ενεργοποιηθεί)',
+          'Πάροχο πληρωμών Stripe (μόνο για τις χρεώσεις των θεραπευτών — τα στοιχεία κάρτας τα διαχειρίζεται η Stripe και δεν αποθηκεύονται στην Πλατφόρμα)',
+          'Google Analytics, για ανώνυμα στατιστικά επισκεψιμότητας — με cookies μόνο εφόσον δώσετε συγκατάθεση',
           'Δημόσιες αρχές, εφόσον υφίσταται νομική υποχρέωση',
         ],
       },
@@ -89,7 +85,7 @@ const CONTENT = {
           'Ανάκλησης συγκατάθεσης ανά πάσα στιγμή',
           'Υποβολής καταγγελίας στην Αρχή Προστασίας Δεδομένων Προσωπικού Χαρακτήρα (www.dpa.gr)',
         ],
-        p2: ['Για άσκηση των δικαιωμάτων σας, επικοινωνήστε στο support@theralivo.com. Θα απαντήσουμε εντός 30 ημερών.'],
+        p2: ['Για άσκηση των δικαιωμάτων σας, επικοινωνήστε στο info@theralivo.com. Θα απαντήσουμε εντός 30 ημερών.'],
       },
       {
         h: '8. Ασφάλεια Δεδομένων',
@@ -113,23 +109,22 @@ const CONTENT = {
       {
         h: '10. Επικοινωνία',
         p: [
-          'Για ερωτήσεις σχετικά με την παρούσα Πολιτική: support@theralivo.com',
-          'Υπεύθυνος Προστασίας Δεδομένων (DPO): dpo@theralivo.com',
+          'Για ερωτήσεις σχετικά με την παρούσα Πολιτική: info@theralivo.com',
         ],
       },
     ],
   },
   en: {
     title: 'Privacy Policy',
-    lastUpdated: 'Last updated: April 29, 2026',
+    lastUpdated: 'Last updated: October 11, 2026',
     intro: 'This Privacy Policy describes how Theralivo (the "Platform") collects, uses, and protects your personal data in accordance with the General Data Protection Regulation (GDPR — EU 2016/679) and applicable Greek law (L. 4624/2019).',
     sections: [
       {
         h: '1. Data Controller',
         p: [
-          'Data Controller: {BUSINESS NAME}, sole proprietorship based in Athens, Greece.',
-          'VAT ID: {VAT ID} | Tax Office: {TAX OFFICE}',
-          'Contact: support@theralivo.com',
+          'Data Controller: Nikolaos Kyriakopoulos, sole proprietorship trading as Theralivo, based in Nafplio, Greece.',
+          'Tax ID (ΑΦΜ): 162062625 | Tax Office: Nafplio',
+          'Contact: info@theralivo.com',
         ],
       },
       {
@@ -181,7 +176,8 @@ const CONTENT = {
         list: [
           'The therapist you have selected (only essential contact and health data)',
           'IT service providers (Supabase for database, Vercel for hosting, Resend for email — all GDPR-compliant)',
-          'Payment providers (Stripe — when activated)',
+          'Payment provider Stripe (only for therapist charges — card details are handled by Stripe and are not stored by the Platform)',
+          'Google Analytics, for anonymous traffic statistics — with cookies only if you give consent',
           'Public authorities, where there is a legal obligation',
         ],
       },
@@ -198,7 +194,7 @@ const CONTENT = {
           'Withdrawal of consent at any time',
           'Lodging a complaint with the Hellenic Data Protection Authority (www.dpa.gr)',
         ],
-        p2: ['To exercise your rights, contact support@theralivo.com. We will respond within 30 days.'],
+        p2: ['To exercise your rights, contact info@theralivo.com. We will respond within 30 days.'],
       },
       {
         h: '8. Data Security',
@@ -220,8 +216,7 @@ const CONTENT = {
       {
         h: '10. Contact',
         p: [
-          'For questions about this Policy: support@theralivo.com',
-          'Data Protection Officer (DPO): dpo@theralivo.com',
+          'For questions about this Policy: info@theralivo.com',
         ],
       },
     ],

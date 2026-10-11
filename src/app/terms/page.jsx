@@ -2,8 +2,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 
-// ⚠️ LEGAL REVIEW REQUIRED πριν το launch
-// Placeholders: {ΟΝΟΜΑ ΕΠΙΧΕΙΡΗΣΗΣ}, {ΑΦΜ}, {ΔΟΥ}, {ΔΙΕΥΘΥΝΣΗ ΕΔΡΑΣ}
+// Φορέας: Κυριακόπουλος Νικόλαος, ατομική επιχείρηση (Ναύπλιο).
+// Συνιστάται έλεγχος από νομικό.
 //
 // ΤΑ ΠΟΣΑ ΔΕΝ ΕΙΝΑΙ ΓΡΑΜΜΕΝΑ ΣΤΟΝ ΚΩΔΙΚΑ.
 // Διαβάζονται από platform_settings και subscription_plans, ώστε οι όροι
@@ -16,30 +16,31 @@ function buildContent({ fee, resetMonths, plans, graceDays }) {
   const planLinesEl = plans.length > 0
     ? plans.map(p => {
         const price = Number(p.price_monthly || 0);
-        return `${p.name_el}: ${price === 0 ? 'χωρίς μηνιαία χρέωση' : `${price}€ τον μήνα`} — προμήθεια πρώτης συνεδρίας ${Number(p.first_session_fee)}€`;
+        return `${p.name_el}: ${price === 0 ? 'χωρίς μηνιαία χρέωση' : `${price}€ τον μήνα`} — τέλος νέου ασθενή ${Number(p.first_session_fee)}€`;
       })
     : [`Τα διαθέσιμα πακέτα και οι τιμές τους εμφανίζονται κατά την εγγραφή και στον πίνακα του θεραπευτή.`];
 
   const planLinesEn = plans.length > 0
     ? plans.map(p => {
         const price = Number(p.price_monthly || 0);
-        return `${p.name_en || p.name_el}: ${price === 0 ? 'no monthly charge' : `€${price} per month`} — first-session fee €${Number(p.first_session_fee)}`;
+        return `${p.name_en || p.name_el}: ${price === 0 ? 'no monthly charge' : `€${price} per month`} — new-patient fee €${Number(p.first_session_fee)}`;
       })
     : [`Available plans and their prices are shown during registration and in the therapist dashboard.`];
 
   return {
     el: {
       title: 'Όροι Χρήσης',
-      lastUpdated: 'Τελευταία ενημέρωση: 3 Αυγούστου 2026',
+      lastUpdated: 'Τελευταία ενημέρωση: 11 Οκτωβρίου 2026',
       intro: 'Καλώς ήρθατε στο Theralivo. Οι παρόντες Όροι Χρήσης διέπουν τη χρήση της πλατφόρμας. Με την εγγραφή και χρήση της Πλατφόρμας, αποδέχεστε τους παρόντες όρους.',
       sections: [
         {
           h: '1. Γενικά Στοιχεία',
           p: [
-            'Πάροχος: {ΟΝΟΜΑ ΕΠΙΧΕΙΡΗΣΗΣ}, ατομική επιχείρηση με έδρα στην Αθήνα, Ελλάδα.',
-            'ΑΦΜ: {ΑΦΜ} · ΔΟΥ: {ΔΟΥ} · Έδρα: {ΔΙΕΥΘΥΝΣΗ ΕΔΡΑΣ}',
-            'Επικοινωνία: support@theralivo.com',
-            'Η Theralivo (εφεξής "η Πλατφόρμα") είναι μια διαδικτυακή πλατφόρμα που συνδέει ασθενείς με αδειούχους θεραπευτές φυσιοθεραπείας στην Αθήνα.',
+            'Εμπορική ονομασία: Theralivo.',
+            'Φορέας λειτουργίας: Κυριακόπουλος Νικόλαος, ατομική επιχείρηση με έδρα στο Ναύπλιο, Ελλάδα.',
+            'ΑΦΜ: 162062625 · ΔΟΥ: Ναυπλίου',
+            'Επικοινωνία: info@theralivo.com',
+            'Η Theralivo (εφεξής "η Πλατφόρμα") είναι μια διαδικτυακή πλατφόρμα που συνδέει ασθενείς με αδειούχους φυσικοθεραπευτές για συνεδρίες στον χώρο του ασθενή, σε Αθήνα και Αττική.',
           ],
         },
         {
@@ -65,8 +66,9 @@ function buildContent({ fee, resetMonths, plans, graceDays }) {
           list: [
             'Παρέχετε ειλικρινείς πληροφορίες για το πρόβλημα υγείας σας',
             'Η συμμετοχή σας σε θεραπεία είναι εθελοντική και υπ\' ευθύνη σας',
-            'Πληρώνετε τη συμφωνημένη αμοιβή σύμφωνα με τη διαδικασία της Πλατφόρμας',
-            'Η προμήθεια της Πλατφόρμας βαρύνει τον θεραπευτή και δεν προστίθεται στην τιμή σας',
+            'Πληρώνετε την αμοιβή της συνεδρίας απευθείας στον θεραπευτή. Η Πλατφόρμα δεν εισπράττει και δεν παρακρατεί μέρος της',
+            'Οι χρεώσεις της Πλατφόρμας βαρύνουν τον θεραπευτή και δεν προστίθενται στην τιμή σας',
+            'Όταν ο θεραπευτής δηλώσει ότι μια συνεδρία ολοκληρώθηκε, σας ζητάμε να επιβεβαιώσετε από τον λογαριασμό σας αν πράγματι έγινε. Αν δεν απαντήσετε εντός 7 ημερών, θεωρείται ότι έγινε. Αν δηλώσετε ότι δεν έγινε, η ομάδα της Πλατφόρμας επικοινωνεί μαζί σας',
             'Ακύρωση ραντεβού: ελεύθερη μέσα από τον λογαριασμό σας. Επαναλαμβανόμενες ακυρώσεις λιγότερο από 24 ώρες πριν καταγράφονται και μπορεί να οδηγήσουν σε προσωρινό περιορισμό κρατήσεων',
             'Δεν επιβάλλεται χρηματικό πρόστιμο ακύρωσης στην παρούσα φάση λειτουργίας',
           ],
@@ -91,20 +93,22 @@ function buildContent({ fee, resetMonths, plans, graceDays }) {
           list: planLinesEl,
           p2: [
             'Οι τιμές κλειδώνονται τη στιγμή της εγγραφής ή της αλλαγής πακέτου. Μελλοντικές αυξήσεις δεν επηρεάζουν υφιστάμενες συνδρομές, εκτός αν ο θεραπευτής επιλέξει ο ίδιος να αλλάξει πακέτο.',
-            'Η αλλαγή πακέτου γίνεται οποτεδήποτε από τον πίνακα του θεραπευτή και ισχύει άμεσα.',
+            'Η μηνιαία συνδρομή πληρώνεται με κάρτα μέσω του παρόχου πληρωμών Stripe. Η πρώτη πληρωμή γίνεται μετά την έγκριση του προφίλ· μέχρι τότε δεν υπάρχει καμία χρέωση. Το πακέτο και η δημόσια εμφάνιση του προφίλ ενεργοποιούνται με την ολοκλήρωση της πληρωμής.',
+            'Η αλλαγή πακέτου γίνεται οποτεδήποτε από τον πίνακα του θεραπευτή. Το νέο πακέτο ενεργοποιείται μόλις ολοκληρωθεί η πληρωμή του· μέχρι τότε παραμένει ενεργό το τρέχον.',
             `Σε περίπτωση μη εξόφλησης, παρέχεται περίοδος χάριτος ${graceDays} ημερών. Μετά την πάροδό της, η Πλατφόρμα δύναται να αναστείλει την αποστολή νέων αιτημάτων ή την προβολή του προφίλ, χωρίς να θίγονται τα ήδη προγραμματισμένα ραντεβού.`,
             'Η Πλατφόρμα δύναται να απαλλάξει συγκεκριμένους θεραπευτές από τη συνδρομή ή την προμήθεια κατά την κρίση της.',
           ],
         },
         {
-          h: '7. Προμήθεια Πρώτης Συνεδρίας',
-          p: ['Πέραν της συνδρομής, η Πλατφόρμα παρακρατεί εφάπαξ προμήθεια για κάθε νέα συνεργασία που δημιουργείται μέσω αυτής.'],
+          h: '7. Τέλος Νέου Ασθενή',
+          p: ['Πέραν της συνδρομής, η Πλατφόρμα χρεώνει εφάπαξ τέλος για κάθε νέο ασθενή που αποκτά ο θεραπευτής μέσω αυτής.'],
           list: [
-            `Η προμήθεια ανέρχεται σε ${fee}€ και παρακρατείται ΜΙΑ φορά, στην πρώτη συνεδρία κάθε νέου ασθενή με τον συγκεκριμένο θεραπευτή`,
-            'Σε όλες τις επόμενες συνεδρίες με τον ίδιο ασθενή — μεμονωμένες ή εντός πακέτου — δεν παρακρατείται καμία προμήθεια',
-            `Εάν ασθενής επιστρέψει στον ίδιο θεραπευτή μετά από ${resetMonths} μήνες χωρίς καμία συνεδρία, η συνεργασία θεωρείται νέα και η προμήθεια εφαρμόζεται εκ νέου`,
-            'Η προμήθεια βαρύνει τον θεραπευτή και αφαιρείται από την αμοιβή του. Ο ασθενής δεν επιβαρύνεται με επιπλέον ποσό',
-            'Το ακριβές ποσό εξαρτάται από το πακέτο συνδρομής και εμφανίζεται στον πίνακα του θεραπευτή',
+            'Το ποσό εξαρτάται από το πακέτο συνδρομής και εμφανίζεται στον πίνακα του θεραπευτή πριν την αποδοχή κάθε αιτήματος',
+            'Το τέλος πληρώνεται με κάρτα, μέσω Stripe, τη στιγμή που ο θεραπευτής αποδέχεται το αίτημα. Η αποδοχή ολοκληρώνεται μόλις επιβεβαιωθεί η πληρωμή',
+            'Αν η αποδοχή δεν μπορέσει να ολοκληρωθεί (π.χ. επειδή έληξε η προθεσμία απάντησης ή το αίτημα ακυρώθηκε στο μεταξύ), το ποσό επιστρέφεται αυτόματα στο σύνολό του',
+            'Χρεώνεται ΜΙΑ φορά ανά ασθενή. Για όλες τις επόμενες συνεδρίες με τον ίδιο ασθενή δεν υπάρχει καμία χρέωση',
+            `Εάν ασθενής επιστρέψει στον ίδιο θεραπευτή μετά από ${resetMonths} μήνες χωρίς καμία συνεδρία, θεωρείται νέος ασθενής`,
+            'Ο ασθενής δεν επιβαρύνεται με κανένα επιπλέον ποσό',
           ],
         },
         {
@@ -120,12 +124,12 @@ function buildContent({ fee, resetMonths, plans, graceDays }) {
         {
           h: '9. Πληρωμές',
           list: [
-            'Η αμοιβή της συνεδρίας καταβάλλεται από τον ασθενή προς τον θεραπευτή σύμφωνα με τη διαδικασία που ορίζει η Πλατφόρμα',
-            'Η προμήθεια πρώτης συνεδρίας και οι χρεώσεις συνδρομής καταγράφονται στον λογαριασμό του θεραπευτή και εκκαθαρίζονται περιοδικά',
-            'Η ηλεκτρονική πληρωμή μέσω παρόχου πληρωμών βρίσκεται υπό ενεργοποίηση. Μέχρι τότε, οι εκκαθαρίσεις γίνονται εκτός πλατφόρμας βάσει των καταγεγραμμένων ποσών',
-            'Ο θεραπευτής βλέπει ανά πάσα στιγμή τι κρατά ανά συνεδρία και τι οφείλει στην Πλατφόρμα',
+            'Η αμοιβή της συνεδρίας καταβάλλεται από τον ασθενή απευθείας στον θεραπευτή. Η Πλατφόρμα δεν εισπράττει και δεν παρακρατεί μέρος της',
+            'Η συνδρομή και το τέλος νέου ασθενή πληρώνονται από τον θεραπευτή με κάρτα μέσω Stripe. Τα στοιχεία της κάρτας τα διαχειρίζεται η Stripe· η Πλατφόρμα δεν τα αποθηκεύει',
+            'Για κάθε χρέωση εκδίδεται το αντίστοιχο παραστατικό',
+            'Ο θεραπευτής βλέπει ανά πάσα στιγμή τις χρεώσεις του στον πίνακά του',
           ],
-          p2: ['Οι όροι επιστροφών θα οριστικοποιηθούν με την ενεργοποίηση της ηλεκτρονικής πληρωμής και θα ανακοινωθούν πριν τεθούν σε ισχύ. Έως τότε, κάθε αίτημα εξετάζεται μεμονωμένα στο support@theralivo.com.'],
+          p2: ['Το τέλος νέου ασθενή επιστρέφεται αυτόματα όταν η αποδοχή δεν ολοκληρωθεί. Κάθε άλλο αίτημα επιστροφής εξετάζεται μεμονωμένα στο info@theralivo.com.'],
         },
         {
           h: '10. Ακυρώσεις',
@@ -192,31 +196,32 @@ function buildContent({ fee, resetMonths, plans, graceDays }) {
         {
           h: '16. Λύση Διαφορών — Δικαιοδοσία',
           p: [
-            'Πρώτα προσπάθεια: φιλικός διακανονισμός μέσω support@theralivo.com',
+            'Πρώτα προσπάθεια: φιλικός διακανονισμός μέσω info@theralivo.com',
             'Καταναλωτές δύνανται να προσφύγουν στην πλατφόρμα Ηλεκτρονικής Επίλυσης Διαφορών της ΕΕ ή στον Συνήγορο του Καταναλωτή.',
-            'Σε περίπτωση μη επίλυσης: αρμόδια δικαστήρια Αθηνών, Ελλάδα.',
+            'Σε περίπτωση μη επίλυσης: αρμόδια δικαστήρια Ναυπλίου, Ελλάδα, με την επιφύλαξη των δικαιωμάτων που έχουν οι καταναλωτές να προσφύγουν στα δικαστήρια του τόπου κατοικίας τους.',
             'Εφαρμοστέο δίκαιο: ελληνικό.',
           ],
         },
         {
           h: '17. Επικοινωνία',
-          p: ['Για ερωτήσεις σχετικά με τους όρους: support@theralivo.com'],
+          p: ['Για ερωτήσεις σχετικά με τους όρους: info@theralivo.com'],
         },
       ],
     },
 
     en: {
       title: 'Terms of Service',
-      lastUpdated: 'Last updated: August 3, 2026',
+      lastUpdated: 'Last updated: October 11, 2026',
       intro: 'Welcome to Theralivo. These Terms of Service govern your use of the platform. By registering and using the Platform, you accept these terms.',
       sections: [
         {
           h: '1. General Information',
           p: [
-            'Provider: {BUSINESS NAME}, sole proprietorship based in Athens, Greece.',
-            'VAT: {VAT NUMBER} · Tax Office: {TAX OFFICE} · Address: {REGISTERED ADDRESS}',
-            'Contact: support@theralivo.com',
-            'Theralivo (the "Platform") is an online platform connecting patients with licensed physiotherapists in Athens.',
+            'Trade name: Theralivo.',
+            'Operated by: Nikolaos Kyriakopoulos, sole proprietorship based in Nafplio, Greece.',
+            'Tax ID (ΑΦΜ): 162062625 · Tax Office: Nafplio',
+            'Contact: info@theralivo.com',
+            'Theralivo (the "Platform") is an online platform connecting patients with licensed physiotherapists for sessions at the patient\'s location in Athens and Attica.',
           ],
         },
         {
@@ -242,8 +247,9 @@ function buildContent({ fee, resetMonths, plans, graceDays }) {
           list: [
             'Provide truthful information about your health condition',
             'Your participation in therapy is voluntary and at your own risk',
-            'Pay the agreed fee according to the Platform process',
-            'The Platform fee is borne by the therapist and is not added to your price',
+            'You pay the session fee directly to the therapist. The Platform does not collect or withhold any part of it',
+            'Platform charges are borne by the therapist and are not added to your price',
+            'When the therapist marks a session as completed, we ask you to confirm from your account whether it actually took place. If you do not answer within 7 days, it is considered done. If you report that it did not take place, the Platform team will contact you',
             'Cancellation: free through your account. Repeated cancellations less than 24 hours in advance are recorded and may lead to a temporary booking restriction',
             'No monetary cancellation penalty applies at this stage of operation',
           ],
@@ -268,20 +274,22 @@ function buildContent({ fee, resetMonths, plans, graceDays }) {
           list: planLinesEn,
           p2: [
             'Prices are locked at the moment of registration or plan change. Future increases do not affect existing subscriptions unless the therapist chooses to change plans.',
-            'Plan changes can be made at any time from the therapist dashboard and take effect immediately.',
+            'The monthly subscription is paid by card through the payment provider Stripe. The first payment is made after the profile is approved; until then there is no charge. The plan and public profile visibility are activated once the payment is completed.',
+            'Plans can be changed at any time from the therapist dashboard. The new plan is activated once its payment is completed; until then the current plan remains active.',
             `In case of non-payment, a grace period of ${graceDays} days applies. After it expires, the Platform may suspend new requests or profile visibility, without affecting already scheduled appointments.`,
             'The Platform may exempt specific therapists from the subscription or the fee at its discretion.',
           ],
         },
         {
-          h: '7. First-Session Fee',
-          p: ['In addition to the subscription, the Platform withholds a one-time fee for each new relationship created through it.'],
+          h: '7. New-Patient Fee',
+          p: ['In addition to the subscription, the Platform charges a one-time fee for each new patient a therapist gains through it.'],
           list: [
-            `The fee is €${fee} and is withheld ONCE, on the first session between each new patient and that therapist`,
-            'No fee is withheld on any subsequent session with the same patient, whether standalone or within a package',
-            `If a patient returns to the same therapist after ${resetMonths} months without any session, the relationship counts as new and the fee applies again`,
-            'The fee is borne by the therapist and deducted from their earnings. Patients are not charged any additional amount',
-            'The exact amount depends on the subscription plan and is shown in the therapist dashboard',
+            'The amount depends on the subscription plan and is shown in the therapist dashboard before each request is accepted',
+            'The fee is paid by card, through Stripe, when the therapist accepts the request. The acceptance is completed once the payment is confirmed',
+            'If the acceptance cannot be completed (e.g. because the response deadline passed or the request was cancelled in the meantime), the amount is refunded automatically in full',
+            'It is charged ONCE per patient. There is no charge for any later session with the same patient',
+            `If a patient returns to the same therapist after ${resetMonths} months without any session, they count as a new patient`,
+            'Patients are not charged any additional amount',
           ],
         },
         {
@@ -297,12 +305,12 @@ function buildContent({ fee, resetMonths, plans, graceDays }) {
         {
           h: '9. Payments',
           list: [
-            'Session fees are paid by the patient to the therapist according to the process defined by the Platform',
-            'The first-session fee and subscription charges are recorded in the therapist account and settled periodically',
-            'Online payment through a payment provider is being activated. Until then, settlements occur off-platform based on the recorded amounts',
-            'Therapists can see at any time what they keep per session and what they owe the Platform',
+            'Session fees are paid by the patient directly to the therapist. The Platform does not collect or withhold any part of them',
+            'The subscription and the new-patient fee are paid by the therapist by card through Stripe. Card details are handled by Stripe; the Platform does not store them',
+            'A corresponding receipt or invoice is issued for every charge',
+            'Therapists can see their charges at any time in their dashboard',
           ],
-          p2: ['Refund terms will be finalized upon activation of online payments and announced before taking effect. Until then, each request is reviewed individually at support@theralivo.com.'],
+          p2: ['The new-patient fee is refunded automatically when an acceptance is not completed. Any other refund request is reviewed individually at info@theralivo.com.'],
         },
         {
           h: '10. Cancellations',
@@ -369,15 +377,15 @@ function buildContent({ fee, resetMonths, plans, graceDays }) {
         {
           h: '16. Dispute Resolution — Jurisdiction',
           p: [
-            'First attempt: amicable settlement via support@theralivo.com',
+            'First attempt: amicable settlement via info@theralivo.com',
             'Consumers may also use the EU Online Dispute Resolution platform or the Greek Consumer Ombudsman.',
-            'If unresolved: competent courts of Athens, Greece.',
+            'If unresolved: competent courts of Nafplio, Greece, without prejudice to consumers\' right to bring proceedings in the courts of their place of residence.',
             'Applicable law: Greek.',
           ],
         },
         {
           h: '17. Contact',
-          p: ['For questions about the terms: support@theralivo.com'],
+          p: ['For questions about the terms: info@theralivo.com'],
         },
       ],
     },

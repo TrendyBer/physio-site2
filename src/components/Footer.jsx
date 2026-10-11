@@ -12,11 +12,13 @@ const CACHE_KEY = 'cms_platform_settings';
 const CONDITIONS_CACHE_KEY = 'cms_popular_conditions';
 const CACHE_TTL = 5 * 60 * 1000;
 
+// Τα στοιχεία επικοινωνίας έρχονται ΜΟΝΟ από το admin (platform_settings).
+// Ό,τι δεν έχει συμπληρωθεί εκεί, απλώς δεν εμφανίζεται — κανένα ψεύτικο τηλέφωνο.
 const DEFAULTS = {
   platform_name: BRAND,
-  email: 'info@theralivo.com',
-  phone: '+30 210 123 4567',
-  address: 'Αθήνα & Αττική, Ελλάδα',
+  email: '',
+  phone: '',
+  address: '',
 };
 
 const TX = {
@@ -243,22 +245,28 @@ export default function Footer() {
             <div>
               <h4 style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: '.08em', color: '#fff', marginBottom: 16, fontWeight: 600 }}>{tx.contact}</h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {String(settings.email || '').trim() && (
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 14 }}>
                   <Mail size={16} color="rgba(255,255,255,0.6)" strokeWidth={2} style={{ flexShrink: 0, marginTop: 2 }} />
                   <a href={`mailto:${settings.email}`} style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', wordBreak: 'break-all' }}>
                     {settings.email}
                   </a>
                 </div>
+                )}
+                {String(settings.phone || '').trim() && (
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 14 }}>
                   <Phone size={16} color="rgba(255,255,255,0.6)" strokeWidth={2} style={{ flexShrink: 0, marginTop: 2 }} />
-                  <a href={`tel:${settings.phone}`} style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>
+                  <a href={`tel:${String(settings.phone).replace(/\s/g, '')}`} style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>
                     {settings.phone}
                   </a>
                 </div>
+                )}
+                {String(settings.address || '').trim() && (
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 14 }}>
                   <MapPin size={16} color="rgba(255,255,255,0.6)" strokeWidth={2} style={{ flexShrink: 0, marginTop: 2 }} />
                   <span>{settings.address}</span>
                 </div>
+                )}
               </div>
             </div>
           </div>

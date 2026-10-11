@@ -9,10 +9,12 @@ import { Mail, Phone, MapPin, Check, X, AlertCircle, ArrowRight } from 'lucide-r
 const CACHE_KEY = 'cms_platform_settings';
 const CACHE_TTL = 5 * 60 * 1000;
 
+// Τα στοιχεία επικοινωνίας έρχονται ΜΟΝΟ από το admin (platform_settings).
+// Ό,τι δεν έχει συμπληρωθεί εκεί, απλώς δεν εμφανίζεται — κανένα ψεύτικο τηλέφωνο.
 const DEFAULTS = {
-  email: 'info@theralivo.com',
-  phone: '+30 210 123 4567',
-  address: 'Αθήνα & Αττική, Ελλάδα',
+  email: '',
+  phone: '',
+  address: '',
 };
 
 const TX = {
@@ -197,7 +199,7 @@ export default function ContactPage() {
     { Icon: Mail, label: tx.labelEmail, value: settings.email, href: `mailto:${settings.email}` },
     { Icon: Phone, label: tx.labelPhone, value: settings.phone, href: `tel:${String(settings.phone).replace(/\s/g, '')}` },
     { Icon: MapPin, label: tx.labelArea, value: settings.address },
-  ];
+  ].filter((i) => String(i.value || '').trim());
 
   return (
     <>

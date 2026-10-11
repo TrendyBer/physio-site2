@@ -193,8 +193,8 @@ const TX = {
     verifyBtn: 'Δες φυσικοθεραπευτές',
     handles: 'Αναλαμβάνει',
     yearsExp: (n) => `${n} χρόνια εμπειρίας`,
-    sampleName: 'Μαρία Παπαδοπούλου',
-    sampleSpec: 'Φυσικοθεραπεύτρια',
+    sampleName: 'Ενδεικτικό προφίλ θεραπευτή',
+    sampleSpec: 'Φυσικοθεραπευτής με επαληθευμένη άδεια',
     sampleConds: ['Οσφυαλγία', 'Μετεγχειρητική αποκατάσταση', 'Πόνος γόνατος'],
 
     condEyebrow: 'Περιστατικά',
@@ -269,8 +269,8 @@ const TX = {
     verifyBtn: 'See physiotherapists',
     handles: 'Handles',
     yearsExp: (n) => `${n} years of experience`,
-    sampleName: 'Maria Papadopoulou',
-    sampleSpec: 'Physiotherapist',
+    sampleName: 'Sample therapist profile',
+    sampleSpec: 'Physiotherapist with a verified licence',
     sampleConds: ['Low back pain', 'Post-surgery rehabilitation', 'Knee pain'],
 
     condEyebrow: 'Conditions',
@@ -745,7 +745,10 @@ export default function HomePage() {
                 <img src={therapist.photo_url} alt="" style={{ width: 62, height: 62, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
               ) : (
                 <div style={{ width: 62, height: 62, borderRadius: '50%', background: C.soft, color: C.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 700, flexShrink: 0 }}>
-                  {(therapist?.name || tx.sampleName).split(' ').map(n => n[0]).join('').slice(0, 2)}
+                  {/* Χωρίς πραγματικό θεραπευτή: εικονίδιο, όχι αρχικά ψεύτικου ονόματος */}
+                  {therapist?.name
+                    ? therapist.name.split(' ').map(n => n[0]).join('').slice(0, 2)
+                    : <Stethoscope size={26} />}
                 </div>
               )}
               <div style={{ minWidth: 0 }}>
@@ -762,10 +765,12 @@ export default function HomePage() {
               <VerifiedBadge lang={lang} size="md" />
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: C.muted, marginBottom: 18 }}>
-              <Clock size={15} color={C.faint} />
-              {tx.yearsExp(therapist?.years_experience || 5)}
-            </div>
+            {therapist?.years_experience > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: C.muted, marginBottom: 18 }}>
+                <Clock size={15} color={C.faint} />
+                {tx.yearsExp(therapist.years_experience)}
+              </div>
+            )}
 
             <div style={{ borderTop: `1px solid ${C.line}`, paddingTop: 16 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: C.faint, textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 10 }}>
