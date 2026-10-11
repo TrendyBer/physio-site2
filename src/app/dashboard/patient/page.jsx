@@ -61,9 +61,10 @@ const BOOKING_STATUS = {
 
 const PAYMENT_STATUS = {
   pending:  { el: 'Σε αναμονή',        en: 'Awaiting',      bg: C.borderSoft, color: C.textBody, icon: Hourglass },
-  held:     { el: 'Προς απελευθέρωση', en: 'To release',    bg: C.warnBg, color: C.warn, icon: AlertCircle },
-  released: { el: 'Πληρωμένη',         en: 'Paid',          bg: C.successBg, color: C.success, icon: CheckCircle2 },
+  held:     { el: 'Περιμένει απάντησή σας', en: 'Awaiting your answer', bg: C.warnBg, color: C.warn, icon: AlertCircle },
+  released: { el: 'Επιβεβαιώθηκε',     en: 'Confirmed',     bg: C.successBg, color: C.success, icon: CheckCircle2 },
   refunded: { el: 'Επιστράφηκε',       en: 'Refunded',      bg: C.dangerBg, color: C.danger, icon: X },
+  disputed: { el: 'Υπό εξέταση',       en: 'Under review',  bg: C.dangerBg, color: C.danger, icon: AlertCircle },
 };
 
 // ─── Translations ─────────────────────────────────────────────────────
@@ -85,12 +86,21 @@ const TX = {
     tabProfile: 'Προφίλ',
     tabsHintRequests: 'Αιτήματα = περιμένουν απάντηση από τον θεραπευτή.',
     tabsHintAppointments: 'Ραντεβού = έχουν επιβεβαιωθεί από τον θεραπευτή.',
-    releaseBannerTitle: (n) => `Έχετε ${n} ${n === 1 ? 'συνεδρία' : 'συνεδρίες'} προς έγκριση`,
-    releaseBannerDesc: (amt) => `Ο θεραπευτής δηλώνει ότι ολοκληρώθηκαν. Επιβεβαιώστε για να απελευθερωθεί η πληρωμή (${amt}€ συνολικά).`,
+    releaseBannerTitle: (n) => n === 1 ? 'Έγινε η συνεδρία σας;' : `Έγιναν οι ${n} συνεδρίες σας;`,
+    releaseBannerDesc: 'Ο θεραπευτής δηλώνει ότι ολοκληρώθηκαν. Πείτε μας αν πραγματικά έγιναν — έτσι διασφαλίζουμε την ποιότητα της υπηρεσίας. Αν δεν απαντήσετε σε 7 ημέρες, θεωρείται ότι έγιναν.',
+    answerYes: 'Ναι, έγινε',
+    answerNo: 'Όχι, δεν έγινε',
+    disputedNote: 'Δηλώσατε ότι η συνεδρία δεν έγινε. Η ομάδα του Theralivo θα επικοινωνήσει μαζί σας.',
+    disputedBadge: 'Υπό εξέταση',
+    noTitle: 'Η συνεδρία δεν έγινε',
+    noDesc: (n) => `Ο/Η ${n} δήλωσε ότι η συνεδρία έγινε. Πείτε μας τι συνέβη και η ομάδα του Theralivo θα επικοινωνήσει μαζί σας.`,
+    notePh: 'Τι συνέβη; (προαιρετικό)',
+    confirmNo: 'Αποστολή',
+    errAnswer: 'Η απάντηση δεν αποθηκεύτηκε. Δοκιμάστε ξανά.',
     statPending: 'Εκκρεμή αιτήματα',
     statActive: 'Επιβεβαιωμένα',
     statCompleted: 'Ολοκληρωμένα',
-    statToRelease: 'Προς απελευθέρωση',
+    statToRelease: 'Προς επιβεβαίωση',
     ctaTitle: 'Χρειάζεστε φυσικοθεραπεία;',
     ctaDesc: 'Βρείτε θεραπευτή και κλείστε ραντεβού στο σπίτι σας',
     ctaBtn: 'Κλείσε ραντεβού',
@@ -114,11 +124,10 @@ const TX = {
     viewCalendar: 'Ημερολόγιο',
     upcoming: (n) => `Επερχόμενα Ραντεβού (${n})`,
     past: (n) => `Παλαιότερα Ραντεβού (${n})`,
-    therapistSaysDone: 'Ο θεραπευτής δηλώνει ότι ολοκληρώθηκε',
-    autoReleaseToday: 'Αυτόματη απελευθέρωση σήμερα',
-    autoReleaseIn: (d) => `Αυτόματη απελευθέρωση σε ${d} μέρες`,
-    release: 'Απελευθέρωση',
-    prev: 'Προηγ.',
+    therapistSaysDone: 'Ο θεραπευτής δηλώνει ότι η συνεδρία έγινε. Έγινε;',
+    autoReleaseToday: 'Αν δεν απαντήσετε σήμερα, θεωρείται ότι έγινε',
+    autoReleaseIn: (d) => `Αν δεν απαντήσετε σε ${d} ${d === 1 ? 'ημέρα' : 'ημέρες'}, θεωρείται ότι έγινε`,
+        prev: 'Προηγ.',
     next: 'Επόμ.',
     today: 'Σήμερα',
     hasAppointment: 'Έχει ραντεβού',
@@ -136,7 +145,7 @@ const TX = {
     deadlinePassed: 'Η προθεσμία πέρασε',
     sameDayTag: 'Αυθημερόν',
     physiotherapy: 'Φυσικοθεραπεία',
-    pendingApproval: (n) => `${n} προς έγκριση`,
+    pendingApproval: (n) => `${n} προς επιβεβαίωση`,
     total: 'Κόστος συνεδρίας',
     sessions: (n) => `Συνεδρίες (${n})`,
     yourReview: 'Η αξιολόγησή σας',
@@ -178,14 +187,14 @@ const TX = {
     errNameRequired: 'Το ονοματεπώνυμο είναι υποχρεωτικό',
     errPrefix: 'Σφάλμα: ',
     profileSaved: 'Το προφίλ αποθηκεύτηκε επιτυχώς',
-    releaseTitle: 'Επιβεβαίωση Πληρωμής',
-    releaseDesc: (n) => `Επιβεβαιώνετε ότι έγινε η συνεδρία με τον/την ${n} και θέλετε να απελευθερωθεί η πληρωμή;`,
+    releaseTitle: 'Η συνεδρία έγινε',
+    releaseDesc: (n) => `Επιβεβαιώνετε ότι έγινε η συνεδρία με τον/την ${n};`,
     releaseAmount: 'Ποσό προς απελευθέρωση',
     session: 'Συνεδρία',
-    releaseWarnLabel: 'Προσοχή:',
-    releaseWarn: 'Μετά την απελευθέρωση, η πληρωμή πηγαίνει στον θεραπευτή και δεν μπορεί να ανακληθεί. Πατήστε επιβεβαίωση μόνο εφόσον έχει πραγματοποιηθεί η συνεδρία.',
-    releasing: 'Απελευθέρωση...',
-    confirmRelease: 'Ναι, απελευθέρωση',
+    releaseWarnLabel: 'Σημείωση:',
+    releaseWarn: 'Η απάντησή σας καταγράφεται και δεν αλλάζει αργότερα.',
+    releasing: 'Αποθήκευση...',
+    confirmRelease: 'Ναι, έγινε',
     reviewTitle: 'Αξιολόγηση Θεραπευτή',
     rating: 'Βαθμολογία',
     comment: 'Σχόλιο (προαιρετικό)',
@@ -213,12 +222,21 @@ const TX = {
     tabProfile: 'Profile',
     tabsHintRequests: 'Requests = waiting for the therapist to respond.',
     tabsHintAppointments: 'Appointments = confirmed by the therapist.',
-    releaseBannerTitle: (n) => `You have ${n} ${n === 1 ? 'session' : 'sessions'} to approve`,
-    releaseBannerDesc: (amt) => `Your therapist marked them as done. Confirm to release the payment (${amt}€ in total).`,
+    releaseBannerTitle: (n) => n === 1 ? 'Did your session take place?' : `Did your ${n} sessions take place?`,
+    releaseBannerDesc: 'Your therapist marked them as done. Let us know if they actually took place — it helps us keep the service quality high. If you do not answer within 7 days, they are considered done.',
+    answerYes: 'Yes, it did',
+    answerNo: 'No, it did not',
+    disputedNote: 'You told us this session did not take place. The Theralivo team will contact you.',
+    disputedBadge: 'Under review',
+    noTitle: 'The session did not take place',
+    noDesc: (n) => `${n} marked this session as done. Tell us what happened and the Theralivo team will contact you.`,
+    notePh: 'What happened? (optional)',
+    confirmNo: 'Send',
+    errAnswer: 'Your answer was not saved. Please try again.',
     statPending: 'Pending requests',
     statActive: 'Confirmed',
     statCompleted: 'Completed',
-    statToRelease: 'To release',
+    statToRelease: 'To confirm',
     ctaTitle: 'Need physiotherapy?',
     ctaDesc: 'Find a therapist and book a session at your home',
     ctaBtn: 'Book an appointment',
@@ -242,11 +260,10 @@ const TX = {
     viewCalendar: 'Calendar',
     upcoming: (n) => `Upcoming Appointments (${n})`,
     past: (n) => `Past Appointments (${n})`,
-    therapistSaysDone: 'Your therapist marked this as completed',
-    autoReleaseToday: 'Auto-release today',
-    autoReleaseIn: (d) => `Auto-release in ${d} days`,
-    release: 'Release',
-    prev: 'Prev',
+    therapistSaysDone: 'Your therapist says this session took place. Did it?',
+    autoReleaseToday: 'If you do not answer today, it is considered done',
+    autoReleaseIn: (d) => `If you do not answer within ${d} ${d === 1 ? 'day' : 'days'}, it is considered done`,
+        prev: 'Prev',
     next: 'Next',
     today: 'Today',
     hasAppointment: 'Has appointment',
@@ -264,7 +281,7 @@ const TX = {
     deadlinePassed: 'The deadline has passed',
     sameDayTag: 'Same day',
     physiotherapy: 'Physiotherapy',
-    pendingApproval: (n) => `${n} to approve`,
+    pendingApproval: (n) => `${n} to confirm`,
     total: 'Session cost',
     sessions: (n) => `Sessions (${n})`,
     yourReview: 'Your review',
@@ -306,14 +323,14 @@ const TX = {
     errNameRequired: 'Full name is required',
     errPrefix: 'Error: ',
     profileSaved: 'Your profile was saved successfully',
-    releaseTitle: 'Confirm Payment',
-    releaseDesc: (n) => `Do you confirm the session with ${n} took place and want to release the payment?`,
+    releaseTitle: 'The session took place',
+    releaseDesc: (n) => `Do you confirm that your session with ${n} took place?`,
     releaseAmount: 'Amount to release',
     session: 'Session',
-    releaseWarnLabel: 'Careful:',
-    releaseWarn: 'Once released, the payment goes to the therapist and cannot be reversed. Only confirm if the session actually took place.',
-    releasing: 'Releasing...',
-    confirmRelease: 'Yes, release',
+    releaseWarnLabel: 'Note:',
+    releaseWarn: 'Your answer is recorded and cannot be changed later.',
+    releasing: 'Saving...',
+    confirmRelease: 'Yes, it did',
     reviewTitle: 'Rate Your Therapist',
     rating: 'Rating',
     comment: 'Comment (optional)',
@@ -365,6 +382,41 @@ function Stars({ rating, onChange, size = 24 }) {
           style={{ cursor: onChange ? 'pointer' : 'default' }}
         />
       ))}
+    </div>
+  );
+}
+
+// Περιμένει απάντηση από τον ασθενή στο «Έγινε η συνεδρία;»
+// Όχι αν έχει ήδη απαντήσει, ούτε αν πέρασαν οι 7 ημέρες (τότε
+// θεωρείται ότι έγινε και την κλείνει η βάση).
+function needsAnswer(b) {
+  if (!b || b.payment_status !== 'held' || b.patient_confirmation) return false;
+  if (b.auto_release_at && new Date(b.auto_release_at) < new Date()) return false;
+  return true;
+}
+
+// Τι δείχνει το badge πληρωμής/επιβεβαίωσης.
+function paymentKey(b) {
+  if (b.patient_confirmation === 'disputed') return 'disputed';
+  if (b.payment_status === 'held' && !needsAnswer(b)) return 'released';
+  return b.payment_status || 'pending';
+}
+
+function AnswerButtons({ tx, onYes, onNo, size = 'md' }) {
+  const pad = size === 'sm' ? '9px 16px' : '11px 20px';
+  const fs = size === 'sm' ? 13.5 : 15;
+  return (
+    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      <button onClick={onYes}
+        style={{ padding: pad, borderRadius: RAD.button, border: 'none', background: C.success, color: C.surface, fontSize: fs, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+        <CheckCircle2 size={15} strokeWidth={2.5} />
+        {tx.answerYes}
+      </button>
+      <button onClick={onNo}
+        style={{ padding: pad, borderRadius: RAD.button, border: `1px solid ${C.border}`, background: C.surface, color: C.textBody, fontSize: fs, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+        <XCircle size={15} />
+        {tx.answerNo}
+      </button>
     </div>
   );
 }
@@ -455,7 +507,8 @@ export default function PatientDashboard() {
   });
   const [selectedAppointment, setSelectedAppointment] = useState(null);
 
-  const [releaseModal, setReleaseModal] = useState(null);
+  const [releaseModal, setReleaseModal] = useState(null); // { booking, request, mode: 'yes' | 'no' }
+  const [disputeNote, setDisputeNote] = useState('');
   const [releasing, setReleasing] = useState(false);
 
   const [editProfile, setEditProfile] = useState({ name: '', phone: '', area: '', address: '', city: '', postal_code: '' });
@@ -588,12 +641,12 @@ export default function PatientDashboard() {
   const upcomingAppointments = sortedAppointments.filter(a => {
     if (isCancelled(a.status)) return false;
     const d = new Date(a.session_date + 'T' + (a.session_time || '00:00'));
-    return d >= now || a.payment_status === 'held';
+    return d >= now || needsAnswer(a);
   });
 
   const pastAppointments = sortedAppointments.filter(a => {
     const d = new Date(a.session_date + 'T' + (a.session_time || '00:00'));
-    return d < now && a.payment_status !== 'held' && a.status !== 'pending' && !(a.status === 'confirmed' && d >= now);
+    return d < now && !needsAnswer(a) && a.status !== 'pending' && !(a.status === 'confirmed' && d >= now);
   }).reverse();
 
   const nextAppointment = upcomingAppointments.find(a =>
@@ -644,28 +697,60 @@ export default function PatientDashboard() {
     setSubmittingReview(false);
   }
 
-  function openReleaseModal(booking, request) {
-    setReleaseModal({ booking, request });
+  function openReleaseModal(booking, request, mode = 'yes') {
+    setDisputeNote('');
+    setReleaseModal({ booking, request, mode });
   }
 
+  // Η απάντηση πάει από τον server (/api/sessions/confirm): εκεί
+  // ελέγχεται ότι το ραντεβού είναι του ασθενή και, στο «Όχι»,
+  // ειδοποιείται η ομάδα με email.
   async function confirmRelease() {
     if (!releaseModal) return;
     setReleasing(true);
+    const happened = releaseModal.mode !== 'no';
 
-    const { error } = await supabase.from('session_bookings').update({
-      payment_status: 'released',
-      patient_released_at: new Date().toISOString(),
-    }).eq('id', releaseModal.booking.id);
+    let ok = false;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/sessions/confirm', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.access_token || ''}`,
+        },
+        body: JSON.stringify({
+          bookingId: releaseModal.booking.id,
+          happened,
+          note: happened ? '' : disputeNote,
+        }),
+      });
+      // 409 = έχει ήδη απαντηθεί· απλώς ανανεώνουμε.
+      ok = res.ok || res.status === 409;
+    } catch (_) {}
 
-    if (error) {
-      alert(tx.errPrefix + error.message);
+    if (!ok) {
+      alert(tx.errAnswer);
       setReleasing(false);
       return;
     }
 
+    const request = releaseModal.request;
     await loadRequests(user.id);
     setReleasing(false);
     setReleaseModal(null);
+
+    // Μετά το «Ναι», ευκαιρία για κριτική — αν δεν έχει γράψει ήδη.
+    if (happened && request && !request.review) {
+      setReviewModal({
+        request,
+        booking_id: releaseModal.booking.id,
+        therapist_id: request.therapist_id,
+        therapist_name: request.therapist?.name || tx.therapistFallback,
+        wasCancelled: false,
+      });
+      setReviewForm({ rating: 0, comment: '' });
+    }
   }
 
   async function saveProfile() {
@@ -716,8 +801,7 @@ export default function PatientDashboard() {
     r.bookings.some(b => b.status === 'completed')
   ).length;
 
-  const heldBookings = allBookings.filter(b => b.payment_status === 'held');
-  const heldAmount = heldBookings.reduce((sum, b) => sum + parseFloat(b.session_amount || 0), 0);
+  const heldBookings = allBookings.filter(needsAnswer);
 
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: C.page }}>
@@ -828,18 +912,41 @@ export default function PatientDashboard() {
           <p style={{ fontSize: 15, color: C.textMuted, marginTop: 4 }}>{tx.welcomeSub}</p>
         </div>
 
+        {/* «ΕΓΙΝΕ Η ΣΥΝΕΔΡΙΑ;» — ο θεραπευτής τη δήλωσε ολοκληρωμένη και
+            ο ασθενής απαντά Ναι/Όχι, κατευθείαν από εδώ. */}
         {heldBookings.length > 0 && (
-          <div style={{ background: `linear-gradient(135deg, ${C.warnBg}, ${C.warnBorder})`, border: `1px solid ${C.warn}`, borderRadius: RAD.card, padding: '18px 22px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-            <div style={{ width: 52, height: 52, borderRadius: RAD.button, background: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <AlertCircle size={28} color={C.warn} strokeWidth={2.2} />
+          <div style={{ background: C.warnBg, border: `1px solid ${C.warn}`, borderRadius: RAD.card, padding: '18px 22px', marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 14 }}>
+              <div style={{ width: 44, height: 44, borderRadius: RAD.button, background: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <AlertCircle size={24} color={C.warn} strokeWidth={2.2} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: C.warn, marginBottom: 4 }}>
+                  {tx.releaseBannerTitle(heldBookings.length)}
+                </div>
+                <div style={{ fontSize: 14, color: C.warn, lineHeight: 1.5 }}>
+                  {tx.releaseBannerDesc}
+                </div>
+              </div>
             </div>
-            <div style={{ flex: 1, minWidth: 200 }}>
-              <div style={{ fontSize: 16, fontWeight: 700, color: C.warn, marginBottom: 4 }}>
-                {tx.releaseBannerTitle(heldBookings.length)}
-              </div>
-              <div style={{ fontSize: 14, color: C.warn, lineHeight: 1.5 }}>
-                {tx.releaseBannerDesc(heldAmount.toFixed(2))}
-              </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {heldBookings.map(b => {
+                const req = sessionRequests.find(r => r.id === b.request_id);
+                const d = new Date(b.session_date + 'T12:00:00');
+                return (
+                  <div key={b.id} style={{ background: C.surface, borderRadius: RAD.button, padding: '12px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: C.text }}>{req?.therapist?.name || tx.therapistFallback}</div>
+                      <div style={{ fontSize: 13, color: C.textMuted }}>
+                        {d.toLocaleDateString(loc, { weekday: 'short', day: '2-digit', month: 'long' })} {tx.at} {b.session_time?.slice(0, 5)}
+                      </div>
+                    </div>
+                    <AnswerButtons tx={tx} size="sm"
+                      onYes={() => openReleaseModal(b, req, 'yes')}
+                      onNo={() => openReleaseModal(b, req, 'no')} />
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -863,7 +970,7 @@ export default function PatientDashboard() {
             { label: tx.statPending, value: pendingCount, tone: pendingCount > 0 ? C.warn : C.textFaint },
             { label: tx.statActive, value: confirmedCount, tone: confirmedCount > 0 ? C.accent : C.textFaint },
             { label: tx.statCompleted, value: completedCount, tone: completedCount > 0 ? C.success : C.textFaint },
-            ...(heldBookings.length > 0 ? [{ label: tx.statToRelease, value: `${heldAmount.toFixed(0)}€`, tone: C.warn }] : []),
+            ...(heldBookings.length > 0 ? [{ label: tx.statToRelease, value: heldBookings.length, tone: C.warn }] : []),
           ].map(c => (
             /* Λευκές cards με λεπτή γραμμή accent στην κορυφή.
                Τρία διαφορετικά pastel blocks δίπλα-δίπλα έκαναν τη σελίδα
@@ -1074,9 +1181,9 @@ export default function PatientDashboard() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                       {upcomingAppointments.map(apt => {
                         const bSt = statusLabel(BOOKING_STATUS, apt.status);
-                        const payStatus = apt.payment_status || 'pending';
+                        const payStatus = paymentKey(apt);
                         const payInfo = statusLabel(PAYMENT_STATUS, payStatus);
-                        const isHeld = apt.payment_status === 'held';
+                        const isHeld = needsAnswer(apt);
                         const daysLeft = isHeld ? daysUntilAutoRelease(apt.auto_release_at) : null;
                         const friendly = friendlyDateLabel(apt.session_date);
 
@@ -1177,15 +1284,9 @@ export default function PatientDashboard() {
                                     {daysLeft === 0 ? tx.autoReleaseToday : tx.autoReleaseIn(daysLeft)}
                                   </div>
                                 )}
-                                <button onClick={() => openReleaseModal(apt, apt.request)}
-                                  style={{
-                                    padding: '11px 22px', borderRadius: RAD.button, border: 'none', background: C.success,
-                                    color: C.surface, fontSize: 15, fontWeight: 700, cursor: 'pointer',
-                                    display: 'inline-flex', alignItems: 'center', gap: 8, fontFamily: 'inherit',
-                                  }}>
-                                  <CheckCircle2 size={16} strokeWidth={2.5} />
-                                  {tx.release} {parseFloat(apt.session_amount || 0).toFixed(2)}€
-                                </button>
+                                <AnswerButtons tx={tx}
+                                  onYes={() => openReleaseModal(apt, apt.request, 'yes')}
+                                  onNo={() => openReleaseModal(apt, apt.request, 'no')} />
                               </div>
                             )}
                           </div>
@@ -1204,7 +1305,7 @@ export default function PatientDashboard() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       {pastAppointments.map(apt => {
                         const bSt = statusLabel(BOOKING_STATUS, apt.status);
-                        const payStatus = apt.payment_status || 'pending';
+                        const payStatus = paymentKey(apt);
                         const payInfo = statusLabel(PAYMENT_STATUS, payStatus);
 
                         return (
@@ -1396,7 +1497,7 @@ export default function PatientDashboard() {
                   deadlineUrgent = ms < 2 * 3600000;
                 }
               }
-              const reqHeldBookings = req.bookings.filter(b => b.payment_status === 'held');
+              const reqHeldBookings = req.bookings.filter(needsAnswer);
 
               return (
                 <div key={req.id} style={{ background: C.surface, borderRadius: RAD.card, border: reqHeldBookings.length > 0 ? `2px solid ${C.warn}` : `1px solid ${C.border}`, overflow: 'hidden' }}>
@@ -1517,10 +1618,11 @@ export default function PatientDashboard() {
                         {req.bookings.map((b, i) => {
                           const bSt = statusLabel(BOOKING_STATUS, b.status);
                           const d = new Date(b.session_date + 'T12:00:00');
-                          const payStatus = b.payment_status || 'pending';
+                          const payStatus = paymentKey(b);
                           const payInfo = statusLabel(PAYMENT_STATUS, payStatus);
-                          const daysLeft = b.payment_status === 'held' ? daysUntilAutoRelease(b.auto_release_at) : null;
-                          const isHeld = b.payment_status === 'held';
+                          const isHeld = needsAnswer(b);
+                          const isDisputed = b.patient_confirmation === 'disputed';
+                          const daysLeft = isHeld ? daysUntilAutoRelease(b.auto_release_at) : null;
 
                           return (
                             <div key={b.id} style={{
@@ -1534,10 +1636,14 @@ export default function PatientDashboard() {
                                   {DAYS_SHORT[lang][d.getDay()]} {d.toLocaleDateString(loc, { day: '2-digit', month: '2-digit' })} {tx.at} {b.session_time?.slice(0, 5)}
                                 </span>
                                 <Badge label={bSt.label} bg={bSt.bg} color={bSt.color} />
-                                {b.status === 'completed' && (
-                                  <Badge label={payInfo.label} bg={payInfo.bg} color={payInfo.color} icon={payInfo.icon} />
+                                {b.status === 'completed' && (isDisputed
+                                  ? <Badge label={tx.disputedBadge} bg={C.dangerBg} color={C.danger} icon={AlertCircle} />
+                                  : <Badge label={payInfo.label} bg={payInfo.bg} color={payInfo.color} icon={payInfo.icon} />
                                 )}
                               </div>
+                              {isDisputed && (
+                                <div style={{ fontSize: 12.5, color: C.danger, lineHeight: 1.5 }}>{tx.disputedNote}</div>
+                              )}
 
                               {/* ΛΟΓΟΣ ΑΚΥΡΩΣΗΣ — ο ασθενής δικαιούται να ξέρει
                                   γιατί χάθηκε το ραντεβού του. */}
@@ -1569,15 +1675,9 @@ export default function PatientDashboard() {
                                       </div>
                                     )}
                                   </div>
-                                  <button onClick={() => openReleaseModal(b, req)}
-                                    style={{
-                                      padding: '10px 20px', borderRadius: RAD.button, border: 'none', background: C.success,
-                                      color: C.surface, fontSize: 14, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
-                                      display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit',
-                                    }}>
-                                    <CheckCircle2 size={15} strokeWidth={2.5} />
-                                    {tx.release} {parseFloat(b.session_amount || 0).toFixed(2)}€
-                                  </button>
+                                  <AnswerButtons tx={tx} size="sm"
+                                    onYes={() => openReleaseModal(b, req, 'yes')}
+                                    onNo={() => openReleaseModal(b, req, 'no')} />
                                 </div>
                               )}
                             </div>
@@ -1802,35 +1902,46 @@ export default function PatientDashboard() {
         </div>
       )}
 
-      {/* RELEASE PAYMENT MODAL */}
-      {releaseModal && (
+      {/* «ΕΓΙΝΕ Η ΣΥΝΕΔΡΙΑ;» — επιβεβαίωση Ναι / Όχι */}
+      {releaseModal && (() => {
+        const isNo = releaseModal.mode === 'no';
+        const tName = releaseModal.request?.therapist?.name || tx.therapistFallback;
+        const bk = releaseModal.booking;
+        return (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 24 }}
-          onClick={e => { if (e.target === e.currentTarget) setReleaseModal(null); }}>
+          onClick={e => { if (e.target === e.currentTarget && !releasing) setReleaseModal(null); }}>
           <div style={{ background: C.surface, borderRadius: 20, padding: '32px', maxWidth: 480, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
-            <div style={{ width: 60, height: 60, borderRadius: '50%', background: C.successBg, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-              <Wallet size={30} color={C.success} strokeWidth={2.2} />
+            <div style={{ width: 60, height: 60, borderRadius: '50%', background: isNo ? C.dangerBg : C.successBg, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+              {isNo
+                ? <XCircle size={30} color={C.danger} strokeWidth={2.2} />
+                : <CheckCircle2 size={30} color={C.success} strokeWidth={2.2} />}
             </div>
-            <h2 style={{ fontSize: 22, fontWeight: 700, color: C.text, marginBottom: 12, textAlign: 'center' }}>{tx.releaseTitle}</h2>
-            <p style={{ fontSize: 15, color: C.textMuted, marginBottom: 20, lineHeight: 1.6, textAlign: 'center' }}>
-              {tx.releaseDesc(releaseModal.request?.therapist?.name || tx.therapistFallback)}
+            <h2 style={{ fontSize: 22, fontWeight: 700, color: C.text, marginBottom: 12, textAlign: 'center' }}>
+              {isNo ? tx.noTitle : tx.releaseTitle}
+            </h2>
+            <p style={{ fontSize: 15, color: C.textMuted, marginBottom: 16, lineHeight: 1.6, textAlign: 'center' }}>
+              {isNo ? tx.noDesc(tName) : tx.releaseDesc(tName)}
             </p>
 
-            <div style={{ background: C.successBg, border: `1px solid ${C.successBorder}`, borderRadius: RAD.button, padding: '18px 22px', marginBottom: 16 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: C.success, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6 }}>
-                {tx.releaseAmount}
+            {bk?.session_date && (
+              <div style={{ background: C.page, border: `1px solid ${C.border}`, borderRadius: RAD.button, padding: '12px 16px', marginBottom: 16, fontSize: 14, color: C.text, textAlign: 'center', fontWeight: 600 }}>
+                {tx.session}: {new Date(bk.session_date + 'T12:00:00').toLocaleDateString(loc, { day: '2-digit', month: 'long', year: 'numeric' })} {tx.at} {bk.session_time?.slice(0, 5)}
               </div>
-              <div style={{ fontSize: 34, fontWeight: 700, color: C.success }}>
-                {parseFloat(releaseModal.booking?.session_amount || 0).toFixed(2)}€
-              </div>
-              {releaseModal.booking?.session_date && (
-                <div style={{ fontSize: 13, color: C.success, marginTop: 6 }}>
-                  {tx.session}: {new Date(releaseModal.booking.session_date + 'T12:00:00').toLocaleDateString(loc, { day: '2-digit', month: 'long', year: 'numeric' })} {tx.at} {releaseModal.booking.session_time?.slice(0, 5)}
-                </div>
-              )}
-            </div>
+            )}
 
-            <div style={{ background: C.warnBg, border: `1px solid ${C.warnBorder}`, borderRadius: 10, padding: '14px 18px', marginBottom: 24, fontSize: 13, color: C.warn, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-              <AlertCircle size={16} color={C.warn} style={{ flexShrink: 0, marginTop: 1 }} />
+            {isNo && (
+              <textarea
+                value={disputeNote}
+                onChange={e => setDisputeNote(e.target.value)}
+                placeholder={tx.notePh}
+                rows={3}
+                maxLength={1000}
+                style={{ width: '100%', padding: '12px 14px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 15, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', color: C.text, resize: 'vertical', marginBottom: 16 }}
+              />
+            )}
+
+            <div style={{ background: C.page, borderRadius: 10, padding: '12px 16px', marginBottom: 24, fontSize: 13, color: C.textMuted, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+              <AlertCircle size={16} color={C.textMuted} style={{ flexShrink: 0, marginTop: 1 }} />
               <span><strong>{tx.releaseWarnLabel}</strong> {tx.releaseWarn}</span>
             </div>
 
@@ -1840,14 +1951,15 @@ export default function PatientDashboard() {
                 {tx.dismiss}
               </button>
               <button onClick={confirmRelease} disabled={releasing}
-                style={{ flex: 2, padding: '14px', borderRadius: RAD.button, border: 'none', background: releasing ? C.textFaint : C.success, color: C.surface, fontSize: 15, fontWeight: 600, cursor: releasing ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'inherit' }}>
-                <CheckCircle2 size={16} strokeWidth={2.5} />
-                {releasing ? tx.releasing : tx.confirmRelease}
+                style={{ flex: 2, padding: '14px', borderRadius: RAD.button, border: 'none', background: releasing ? C.textFaint : (isNo ? C.danger : C.success), color: C.surface, fontSize: 15, fontWeight: 600, cursor: releasing ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'inherit' }}>
+                {isNo ? <XCircle size={16} strokeWidth={2.5} /> : <CheckCircle2 size={16} strokeWidth={2.5} />}
+                {releasing ? tx.releasing : (isNo ? tx.confirmNo : tx.confirmRelease)}
               </button>
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* Review Modal */}
       {reviewModal && (

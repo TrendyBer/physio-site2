@@ -61,6 +61,7 @@ const PAYMENT_STATUS = {
   held:     { el: 'Αναμονή επιβεβαίωσης',  en: 'Awaiting confirm', bg: C.warnBg, color: C.warn, icon: Hourglass },
   released: { el: 'Ολοκληρώθηκε',          en: 'Closed',           bg: C.successBg, color: C.success, icon: CheckCircle2 },
   refunded: { el: 'Επιστράφηκε',           en: 'Refunded',         bg: C.dangerBg, color: C.danger, icon: X },
+  disputed: { el: 'Υπό εξέταση',           en: 'Under review',     bg: C.dangerBg, color: C.danger, icon: AlertTriangle },
 };
 
 // ─── Translations ─────────────────────────────────────────────────────
@@ -187,6 +188,8 @@ const TX = {
     rescheduleReview: 'Δες την πρόταση',
     awaitingRelease: 'Αναμονή επιβεβαίωσης από τον ασθενή',
     autoReleaseToday: 'Κλείνει αυτόματα σήμερα',
+    disputedTitle: 'Ο ασθενής δήλωσε ότι η συνεδρία δεν έγινε',
+    disputedSub: 'Η ομάδα του Theralivo θα επικοινωνήσει μαζί σου για να το ξεκαθαρίσουμε.',
     autoReleaseIn: (d) => `Κλείνει αυτόματα σε ${d} μέρες`,
     cancelledBy: { therapist: 'Ακυρώθηκε από εσάς', patient: 'Ακυρώθηκε από τον ασθενή', admin: 'Ακυρώθηκε από την πλατφόρμα' },
     prev: 'Προηγ.',
@@ -464,6 +467,8 @@ const TX = {
     rescheduleReview: 'Review proposal',
     awaitingRelease: 'Awaiting confirmation from the patient',
     autoReleaseToday: 'Closes automatically today',
+    disputedTitle: 'The patient said this session did not take place',
+    disputedSub: 'The Theralivo team will contact you to clear it up.',
     autoReleaseIn: (d) => `Closes automatically in ${d} days`,
     cancelledBy: { therapist: 'Cancelled by you', patient: 'Cancelled by the patient', admin: 'Cancelled by the platform' },
     prev: 'Prev',
@@ -2595,7 +2600,7 @@ export default function TherapistDashboard() {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                         {upcomingAppointments.map(apt => {
                           const bSt = statusLabel(STATUS, apt.status);
-                          const payStatus = apt.payment_status || 'pending';
+                          const payStatus = apt.patient_confirmation === 'disputed' ? 'disputed' : (apt.payment_status || 'pending');
                           const payInfo = statusLabel(PAYMENT_STATUS, payStatus);
                           const isHeld = apt.payment_status === 'held';
                           const daysLeft = isHeld ? daysUntilAutoRelease(apt.auto_release_at) : null;
@@ -2709,7 +2714,17 @@ export default function TherapistDashboard() {
                                 </div>
                               </div>
 
-                              {isHeld && (
+                              {/* Ο ασθενής απάντησε «Όχι, δεν έγινε» στο «Έγινε η συνεδρία;» */}
+                              {isHeld && apt.patient_confirmation === 'disputed' && (
+                                <div style={{ marginTop: 14, padding: 12, background: C.dangerBg, border: `1px solid ${C.dangerBorder}`, borderRadius: 10, fontSize: 13, color: C.danger, lineHeight: 1.5 }}>
+                                  <div style={{ fontWeight: 700, marginBottom: 2, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                    <AlertTriangle size={13} />
+                                    {tx.disputedTitle}
+                                  </div>
+                                  <div>{tx.disputedSub}</div>
+                                </div>
+                              )}
+                              {isHeld && apt.patient_confirmation !== 'disputed' && (
                                 <div style={{ marginTop: 14, padding: 12, background: C.warnBg, border: `1px solid ${C.warnBorder}`, borderRadius: 10 }}>
                                   <div style={{ fontSize: 13, color: C.warn, fontWeight: 600, marginBottom: 2, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                                     <Hourglass size={13} />
@@ -2743,7 +2758,7 @@ export default function TherapistDashboard() {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         {pastAppointments.map(apt => {
                           const bSt = statusLabel(STATUS, apt.status);
-                          const payStatus = apt.payment_status || 'pending';
+                          const payStatus = apt.patient_confirmation === 'disputed' ? 'disputed' : (apt.payment_status || 'pending');
                           const payInfo = statusLabel(PAYMENT_STATUS, payStatus);
 
                           return (
