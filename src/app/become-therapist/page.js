@@ -1,449 +1,624 @@
 'use client';
+// src/app/become-therapist/page.js
+// ═══════════════════════════════════════════════════════════════════
+// «Γίνε συνεργάτης» — σελίδα για φυσικοθεραπευτές.
+//
+// Σοβαρή B2B σελίδα συνεργασίας, όχι διαφημιστική landing page:
+// λιτό hero χωρίς φωτογραφία, τρία συγκεκριμένα οφέλη, εικόνα του
+// πραγματικού προϊόντος, ξεκάθαρα πακέτα, και ΜΟΝΟ ισχυρισμοί
+// αξιοπιστίας που ισχύουν στην πλατφόρμα σήμερα.
+//
+// Δομή:
+//   01 Hero · 02 Οφέλη · 03 Η πλατφόρμα στην πράξη · 04 Πώς λειτουργεί
+//   05 Πακέτα · 06 Αξιοπιστία · 07 Συχνές ερωτήσεις · 08 Τελικό CTA
+//
+// ΤΑ ΠΑΚΕΤΑ ΔΙΑΒΑΖΟΝΤΑΙ ΑΠΟ ΤΗ ΒΑΣΗ — ό,τι είναι ενεργό στο admin
+// εμφανίζεται εδώ, με τις ίδιες τιμές που βλέπει ο θεραπευτής στην
+// εγγραφή. Ποτέ δύο διαφορετικές τιμές για το ίδιο πακέτο.
+//
+// ΧΩΡΙΣ CMS: η προηγούμενη έκδοση διάβαζε κείμενα από το
+// site_content με page = 'therapists' — δηλαδή από τη σελίδα της
+// δημόσιας λίστας θεραπευτών. Ένας νέος τίτλος εκεί από το admin θα
+// άλλαζε ΚΑΙ αυτή τη σελίδα. Τα κείμενα είναι πλέον εδώ.
+// ═══════════════════════════════════════════════════════════════════
+
 import { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import { useLang } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
-import { CheckCircle2, ArrowRight, Wallet, Banknote, UserPlus, Check } from 'lucide-react';
+import {
+  ArrowRight, Check, ShieldCheck, Lock, Star, CreditCard,
+  ClipboardList, CalendarDays, UserRound,
+} from 'lucide-react';
 
-const CACHE_KEY_CMS = 'cms_become_therapist';
-const CACHE_TTL = 5 * 60 * 1000;
-
-const DEFAULT = {
-  hero: {
-    el: { badge: 'Για Φυσιοθεραπευτές', hero: 'Λάβετε νέα περιστατικά φυσιοθεραπείας', heroEm: 'στην περιοχή σας', heroDesc: 'Δημιουργήστε προφίλ, δηλώστε περιοχές και διαθεσιμότητα, και συνδεθείτε με ασθενείς που χρειάζονται φυσιοθεραπεία στο σπίτι.', heroBtn: 'Γίνε συνεργάτης' },
-    en: { badge: 'For Physiotherapists', hero: 'Receive new physiotherapy cases', heroEm: 'in your area', heroDesc: 'Create a profile, set your areas and availability, and connect with patients who need physiotherapy at home.', heroBtn: 'Become a partner' },
-  },
-  whywork: {
-    el: { title: 'Γιατί οι Θεραπευτές επιλέγουν να', titleEm: 'Συνεργαστούν μαζί μας', desc: 'Γίνετε μέλος ενός αναπτυσσόμενου δικτύου.', benefits: [{ title: 'Ευέλικτο Ωράριο', desc: 'Επιλέξτε πότε εργάζεστε.' }, { title: 'Επαγγελματική Ανάπτυξη', desc: 'Ποικιλία περιστατικών.' }, { title: 'Εστίαση στη Φροντίδα', desc: 'Περισσότερος χρόνος στη θεραπεία.' }, { title: 'Εργασία στην Περιοχή σας', desc: 'Ασθενείς βάσει τοποθεσίας.' }] },
-    en: { title: 'Why Therapists Choose to', titleEm: 'Work With Us', desc: 'Join a growing network.', benefits: [{ title: 'Flexible schedule', desc: 'Choose when you work.' }, { title: 'Professional growth', desc: 'Variety of cases.' }, { title: 'Focus on care', desc: 'More time treating patients.' }, { title: 'Work locally', desc: 'Matched with nearby patients.' }] },
-  },
-  workflow: {
-    el: { title: 'Μια Απλή,', titleEm: 'Ευέλικτη Διαδικασία', desc: 'Πλήρης έλεγχος.', btn: 'Γίνε συνεργάτης', steps: [{ num: 'Βήμα 1', title: 'Εγγραφείτε στην πλατφόρμα', desc: 'Δημιουργήστε λογαριασμό σε λίγα λεπτά.' }, { num: 'Βήμα 2', title: 'Ανεβάστε δικαιολογητικά', desc: 'Άδεια, βιογραφικό, πιστοποιήσεις.' }, { num: 'Βήμα 3', title: 'Έγκριση από admin', desc: 'Ελέγχουμε τα στοιχεία σας.' }, { num: 'Βήμα 4', title: 'Ξεκινήστε να δέχεστε αιτήματα', desc: 'Ασθενείς στην περιοχή σας.' }] },
-    en: { title: 'A Simple,', titleEm: 'Flexible Workflow', desc: 'Full control.', btn: 'Become a partner', steps: [{ num: 'Step 1', title: 'Sign up on the platform', desc: 'Create your account in minutes.' }, { num: 'Step 2', title: 'Upload your documents', desc: 'License, CV, certifications.' }, { num: 'Step 3', title: 'Admin approval', desc: 'We verify your credentials.' }, { num: 'Step 4', title: 'Start receiving requests', desc: 'Patients in your area.' }] },
-  },
-  platform: {
-    el: { title: 'Μια Πλατφόρμα που', titleEm: 'Μπορείτε να Εμπιστευτείτε', desc: 'Σχεδιασμένο για εσάς.', points: [{ title: 'Ασθενείς έτοιμοι να συμμετάσχουν', desc: 'Αφοσιωμένοι στην ανάρρωση.' }, { title: 'Χωρίς γραφειοκρατία', desc: 'Εστίαση στη θεραπεία.' }, { title: 'Σύγχρονη πρακτική', desc: 'Πέρα από παραδοσιακές κλινικές.' }] },
-    en: { title: 'A Platform', titleEm: 'You Can Trust', desc: 'Built to support how you work.', points: [{ title: 'Patients ready to engage', desc: 'Committed to recovery.' }, { title: 'No unnecessary admin', desc: 'Focus on treatment.' }, { title: 'Built for modern practice', desc: 'Beyond traditional clinics.' }] },
-  },
-};
-
-// Value bullets κάτω από το hero (hardcoded, εκτός CMS)
-const HERO_POINTS = {
-  el: [
-    'Λαμβάνετε αιτήματα από ασθενείς στην περιοχή σας',
-    'Ορίζετε εσείς διαθεσιμότητα και περιοχές',
-    'Κρατάτε ολόκληρο το ποσό της συνεδρίας',
-  ],
-  en: [
-    'Receive requests from patients in your area',
-    'You set your own availability and areas',
-    'You keep the full session amount',
-  ],
+const C = {
+  navy: '#1a2e44', accent: '#2a6fdb', soft: '#eaf2fc', off: '#faf9f6',
+  text: '#1a2e44', body: '#475569', muted: '#6b7a8d', faint: '#94a3b8',
+  border: '#e5eaf0', line: '#eef2f6',
+  green: '#15803D', greenBg: '#F0FDF4', greenBr: '#BBF7D0',
 };
 
 const TX = {
   el: {
-    heroSecondary: 'Δες τι κοστίζει',
-    ctaTitle: 'Έτοιμοι να ξεκινήσετε;',
-    ctaDesc: 'Δημιουργήστε λογαριασμό φυσικοθεραπευτή και ξεκινήστε να δέχεστε αιτήματα. Η εγγραφή είναι δωρεάν.',
-    ctaBtn: 'Δημιουργία Λογαριασμού',
-    ctaSecondary: 'Έχετε ήδη λογαριασμό;',
-    ctaSecondaryLink: 'Σύνδεση',
-    benefitsList: ['Δωρεάν εγγραφή', 'Δωρεάν συνδρομή στην εκκίνηση', 'Χωρίς δέσμευση'],
+    // 01 HERO
+    eyebrow: 'Theralivo για φυσικοθεραπευτές',
+    heroTitle: 'Η επαγγελματική σου παρουσία,',
+    heroTitleEm: 'σε μία σύγχρονη πλατφόρμα.',
+    heroDesc: 'Συνδέσου με ασθενείς που αναζητούν φυσικοθεραπεία στο σπίτι, διαχειρίσου τα αιτήματα ραντεβού σου και ανάπτυξε την επαγγελματική σου δραστηριότητα.',
+    cta: 'Γίνε συνεργάτης',
+    heroNote: 'Για επαγγελματίες φυσικοθεραπευτές με άδεια ασκήσεως επαγγέλματος',
+    heroSecondary: 'Δες τα πακέτα',
 
-    // ── ΤΙΜΟΛΟΓΗΣΗ ──
-    priceBadge: 'Διαφάνεια',
-    priceTitle: 'Τι κοστίζει',
-    priceTitleEm: 'και πώς πληρώνεστε',
-    priceDesc: 'Χωρίς αστερίσκους. Αυτά είναι όλα τα χρήματα που αλλάζουν χέρια.',
-    cardCashTitle: 'Ο ασθενής σας πληρώνει απευθείας',
-    cardCashDesc: 'Σε μετρητά, μετά από κάθε συνεδρία. Η πλατφόρμα δεν κρατάει τίποτα από το ποσό της συνεδρίας.',
-    cardCashValue: 'Κρατάτε το 100%',
-    cardSubTitle: 'Μηνιαία συνδρομή',
-    cardSubFreeLabel: 'Δωρεάν στη φάση εκκίνησης',
-    cardSubDescFree: 'Αυτή τη στιγμή δεν υπάρχει μηνιαία χρέωση. Αν αυτό αλλάξει, θα ενημερωθείτε εγκαίρως και δεν θα χρεωθείτε χωρίς τη συγκατάθεσή σας.',
-    cardSubDescPaid: 'Χρεώνεται στην αρχή κάθε μήνα.',
+    // 02 ΟΦΕΛΗ
+    whyTitle: 'Γιατί να συνεργαστείς μαζί μας',
+    benefits: [
+      { title: 'Προσέγγισε νέους ασθενείς', desc: 'Απέκτησε παρουσία σε μια πλατφόρμα αφιερωμένη στη φυσικοθεραπεία κατ’ οίκον, στις περιοχές και στα περιστατικά που επιλέγεις εσύ.' },
+      { title: 'Οργάνωσε τα ραντεβού σου', desc: 'Διαχειρίσου αιτήματα, ραντεβού και διαθεσιμότητα από ένα κεντρικό περιβάλλον, χωρίς τηλέφωνα και σημειώσεις.' },
+      { title: 'Ανάδειξε την επαγγελματική σου ταυτότητα', desc: 'Παρουσίασε την εμπειρία, την εξειδίκευση και τις υπηρεσίες σου μέσα από το προσωπικό σου προφίλ.' },
+    ],
+
+    // 03 Η ΠΛΑΤΦΟΡΜΑ ΣΤΗΝ ΠΡΑΞΗ
+    productTitle: 'Όλα όσα χρειάζεσαι,',
+    productTitleEm: 'σε ένα σημείο.',
+    productDesc: 'Ο πίνακας του φυσικοθεραπευτή είναι το σημείο όπου δουλεύεις καθημερινά: εκεί φτάνουν τα αιτήματα, εκεί ορίζεις πότε είσαι διαθέσιμος, εκεί βλέπεις τα έσοδά σου.',
+    productPoints: [
+      { title: 'Διαχείριση ραντεβού', desc: 'Βλέπεις κάθε αίτημα με το περιστατικό, την περιοχή και την ώρα, και αποφασίζεις αν θα το αναλάβεις.' },
+      { title: 'Επαγγελματικό προφίλ', desc: 'Άδεια, ειδικότητα, περιστατικά, περιοχές και τιμή συνεδρίας, όπως τα βλέπουν οι ασθενείς.' },
+      { title: 'Διαθεσιμότητα', desc: 'Ορίζεις τις ώρες σου και κλείνεις τις μέρες που λείπεις· τα αιτήματα έρχονται μόνο για ώρες που σε βολεύουν.' },
+    ],
+    mockCaption: 'Ενδεικτική απεικόνιση του πίνακα φυσικοθεραπευτή, με παραδείγματα.',
+    mock: {
+      tabs: ['Επισκόπηση', 'Αιτήματα', 'Ραντεβού', 'Διαθεσιμότητα', 'Προφίλ'],
+      newRequest: 'Νέο αίτημα',
+      reqCase: 'Οσφυαλγία',
+      reqArea: 'Νέα Σμύρνη',
+      reqWhen: 'Τρίτη · 18:00',
+      accept: 'Αποδοχή',
+      decline: 'Απόρριψη',
+      expected: 'Αναμενόμενα',
+      collected: 'Εισπραγμένα',
+      expectedSub: '4 επιβεβαιωμένες συνεδρίες',
+      collectedSub: '8 ολοκληρωμένες συνεδρίες',
+      availability: 'Διαθεσιμότητα εβδομάδας',
+      days: ['Δε', 'Τρ', 'Τε', 'Πε', 'Πα'],
+    },
+
+    // 04 ΠΩΣ ΛΕΙΤΟΥΡΓΕΙ
+    howTitle: 'Πώς λειτουργεί',
+    howDesc: 'Από την εγγραφή μέχρι το πρώτο ραντεβού, σε τρία βήματα.',
+    steps: [
+      { title: 'Εγγραφή', desc: 'Δημιουργείς λογαριασμό και επιλέγεις πακέτο συνεργασίας. Η εγγραφή είναι δωρεάν.' },
+      { title: 'Προφίλ', desc: 'Ανεβάζεις την άδεια ασκήσεως επαγγέλματος και συμπληρώνεις ειδικότητα, περιστατικά, περιοχές και τιμή. Ελέγχουμε την άδεια συνήθως εντός 48 ωρών.' },
+      { title: 'Ραντεβού', desc: 'Μόλις εγκριθεί το προφίλ σου, εμφανίζεσαι στους ασθενείς και λαμβάνεις αιτήματα. Αποδέχεσαι όσα σε ενδιαφέρουν.' },
+    ],
+
+    // 05 ΠΑΚΕΤΑ
+    plansTitle: 'Επίλεξε το πακέτο',
+    plansTitleEm: 'που σου ταιριάζει',
+    plansDesc: 'Όλα τα πακέτα, με τις πραγματικές τιμές και παροχές. Χωρίς αστερίσκους.',
     perMonth: '/μήνα',
-    cardFeeTitle: 'Τέλος νέου ασθενή',
-    cardFeeDesc: 'Χρεώνεστε μία φορά για κάθε νέο ασθενή που σας ανατίθεται. Στις επόμενες συνεδρίες με τον ίδιο ασθενή δεν χρεώνεστε ξανά.',
-    perNewPatient: 'ανά νέο ασθενή',
-    priceExample: 'Παράδειγμα:',
-    priceExampleBody: (fee) => `Ασθενής με τιμή συνεδρίας 35€ σας καλεί 6 φορές. Εισπράττετε 210€ σε μετρητά και χρεώνεστε ${fee}€ συνολικά — μόνο για την πρώτη φορά.`,
-    priceSetOwn: 'Την τιμή της συνεδρίας σας την ορίζετε εσείς, από 25€ έως 50€.',
-    priceLoading: 'Φόρτωση...',
+    free: 'Χωρίς μηνιαία χρέωση',
+    feeLine: (fee) => `${fee}€ ανά νέο ασθενή`,
+    recommended: 'Προτεινόμενο',
+    plansLoading: 'Φόρτωση πακέτων...',
+    plansEmpty: 'Τα πακέτα θα είναι σύντομα διαθέσιμα. Μπορείς να γραφτείς ήδη και θα τα δεις στην εγγραφή.',
+    termsTitle: 'Οι όροι, σε κάθε πακέτο',
+    terms: [
+      'Η αμοιβή της συνεδρίας είναι ολόκληρη δική σου. Ο ασθενής σε πληρώνει απευθείας, σε μετρητά, και την τιμή την ορίζεις εσύ, από 25€ έως 50€.',
+      'Το πακέτο πληρώνεται με κάρτα μόλις εγκριθεί το προφίλ σου. Μέχρι τότε δεν χρεώνεσαι τίποτα.',
+      'Το τέλος νέου ασθενή πληρώνεται με κάρτα τη στιγμή που αποδέχεσαι το αίτημα, μία φορά για κάθε νέο ασθενή. Οι επόμενες συνεδρίες μαζί του δεν χρεώνονται.',
+      'Αν η αποδοχή δεν ολοκληρωθεί, για παράδειγμα επειδή ο ασθενής ακύρωσε στο μεταξύ, το ποσό επιστρέφεται αυτόματα.',
+      'Οι όροι του πακέτου σου κλειδώνουν όταν το επιλέγεις. Μπορείς να αλλάξεις πακέτο όποτε θέλεις από τον πίνακά σου.',
+    ],
 
-    // ── FAQ ──
+    // 06 ΑΞΙΟΠΙΣΤΙΑ
+    trustTitle: 'Μια πλατφόρμα σχεδιασμένη',
+    trustTitleEm: 'για επαγγελματίες υγείας',
+    trustDesc: 'Η ασφάλεια των πληροφοριών, η διαφάνεια στη συνεργασία και η επαγγελματική παρουσία είναι βασικές προτεραιότητες. Αυτό σημαίνει στην πράξη:',
+    trust: [
+      { title: 'Έλεγχος κάθε επαγγελματία', desc: 'Κανένα προφίλ δεν εμφανίζεται στους ασθενείς πριν ελέγξουμε την άδεια ασκήσεως επαγγέλματος. Τα εγκεκριμένα προφίλ φέρουν το σήμα «Επαληθευμένη επαγγελματική άδεια».' },
+      { title: 'Προστασία δεδομένων', desc: 'Τα στοιχεία επικοινωνίας των ασθενών προστατεύονται σε επίπεδο βάσης δεδομένων και δεν εμφανίζονται δημόσια. Η επεξεργασία γίνεται σύμφωνα με τον GDPR.' },
+      { title: 'Αξιολογήσεις μόνο από πραγματικές συνεδρίες', desc: 'Αξιολόγηση μπορεί να αφήσει μόνο ασθενής που ολοκλήρωσε συνεδρία μαζί σου. Δεν υπάρχουν ανώνυμες ή αγορασμένες κριτικές.' },
+      { title: 'Ασφαλείς πληρωμές', desc: 'Οι πληρωμές με κάρτα γίνονται μέσω Stripe. Η πλατφόρμα δεν βλέπει ούτε αποθηκεύει τα στοιχεία της κάρτας σου.' },
+    ],
+
+    // 07 FAQ
     faqTitle: 'Συχνές ερωτήσεις',
     faqs: [
-      { q: 'Πόσο κοστίζει να συμμετέχω;', a: 'Η εγγραφή είναι δωρεάν. Στη φάση εκκίνησης δεν υπάρχει μηνιαία συνδρομή — χρεώνεστε μόνο ένα τέλος για κάθε νέο ασθενή που σας ανατίθεται. Αν στο μέλλον εισαχθεί μηνιαία συνδρομή, θα ενημερωθείτε πριν ισχύσει και θα μπορείτε να αποχωρήσετε χωρίς κόστος.' },
-      { q: 'Ποιος με πληρώνει και πότε;', a: 'Ο ασθενής, απευθείας σε μετρητά, στο τέλος κάθε συνεδρίας. Δεν περιμένετε εκκαθάριση από την πλατφόρμα.' },
-      { q: 'Μπορώ να απορρίψω ένα αίτημα;', a: 'Ναι. Βλέπετε το περιστατικό, την περιοχή και την προτεινόμενη ώρα πριν αποφασίσετε. Αν δεν σας βολεύει, το απορρίπτετε χωρίς συνέπειες.' },
-      { q: 'Τι γίνεται όταν έχω διακοπές;', a: 'Δηλώνετε τις μέρες που δεν δουλεύετε στον πίνακά σας και οι ώρες εκείνων των ημερών κλείνουν αυτόματα. Δεν λαμβάνετε αιτήματα για τότε.' },
-      { q: 'Πόσο χρόνο θέλει η έγκριση;', a: 'Μόλις ανεβάσετε την άδεια ασκήσεως επαγγέλματος, την ελέγχουμε συνήθως εντός 48 ωρών. Στο μεταξύ μπορείτε να συμπληρώνετε το υπόλοιπο προφίλ σας.' },
-      { q: 'Χρειάζομαι δικό μου εξοπλισμό;', a: 'Ναι. Οι επισκέψεις γίνονται στο σπίτι του ασθενή και φέρνετε τον βασικό εξοπλισμό που χρειάζεται το περιστατικό.' },
-      { q: 'Δεσμεύομαι για κάποιο διάστημα;', a: 'Όχι. Δεν υπάρχει ελάχιστη διάρκεια ούτε ελάχιστος αριθμός συνεδριών. Μπορείτε να σταματήσετε να δέχεστε αιτήματα όποτε θέλετε.' },
+      { q: 'Πόσο κοστίζει να συμμετέχω;', a: 'Η εγγραφή είναι δωρεάν. Επιλέγεις το πακέτο που σου ταιριάζει, με τις τιμές που βλέπεις παραπάνω, και πληρώνεις ένα τέλος για κάθε νέο ασθενή. Το ποσό του τέλους εξαρτάται από το πακέτο.' },
+      { q: 'Πότε και πώς πληρώνω;', a: 'Με κάρτα. Το πακέτο πληρώνεται μόλις εγκριθεί το προφίλ σου. Το τέλος νέου ασθενή πληρώνεται τη στιγμή που αποδέχεσαι το αίτημα, και η αποδοχή ολοκληρώνεται αμέσως μετά. Μπορείς να αποθηκεύσεις την κάρτα σου για τις επόμενες φορές.' },
+      { q: 'Ποιος με πληρώνει για τη συνεδρία;', a: 'Ο ασθενής, απευθείας σε σένα, σε μετρητά, στο τέλος κάθε συνεδρίας. Η πλατφόρμα δεν κρατά τίποτα από το ποσό της συνεδρίας.' },
+      { q: 'Μπορώ να απορρίψω ένα αίτημα;', a: 'Ναι. Βλέπεις το περιστατικό, την περιοχή και την ώρα πριν αποφασίσεις. Αν δεν σε βολεύει, το απορρίπτεις χωρίς συνέπειες και χωρίς χρέωση.' },
+      { q: 'Τι γίνεται αν χρειαστεί να ακυρώσω ένα ραντεβού;', a: 'Μπορείς να ακυρώσεις από τον πίνακά σου. Ακύρωση λιγότερο από 24 ώρες πριν το ραντεβού καταγράφεται, γιατί ο ασθενής έχει ήδη οργανωθεί· τρεις τέτοιες καταγραφές μέσα σε έξι μήνες οδηγούν σε προσωρινή παύση του προφίλ.' },
+      { q: 'Τι γίνεται όταν έχω διακοπές;', a: 'Δηλώνεις τις μέρες που λείπεις στον πίνακά σου και οι ώρες εκείνων των ημερών κλείνουν αυτόματα. Δεν λαμβάνεις αιτήματα για τότε.' },
+      { q: 'Δεσμεύομαι για κάποιο διάστημα;', a: 'Όχι. Δεν υπάρχει ελάχιστη διάρκεια ούτε ελάχιστος αριθμός συνεδριών. Μπορείς να σταματήσεις να δέχεσαι αιτήματα όποτε θέλεις.' },
+      { q: 'Πού απευθύνομαι αν χρειαστώ βοήθεια;', a: 'Γράψε μας στο info@theralivo.com. Απαντάμε σε κάθε μήνυμα, συνήθως την ίδια μέρα.' },
     ],
-  },
-  en: {
-    heroSecondary: 'See what it costs',
-    ctaTitle: 'Ready to get started?',
-    ctaDesc: 'Create a physiotherapist account and start receiving requests. Registration is free.',
-    ctaBtn: 'Create Account',
-    ctaSecondary: 'Already have an account?',
-    ctaSecondaryLink: 'Log in',
-    benefitsList: ['Free registration', 'Free while we launch', 'No commitment'],
 
-    priceBadge: 'Transparency',
-    priceTitle: 'What it costs',
-    priceTitleEm: 'and how you get paid',
-    priceDesc: 'No asterisks. This is every euro that changes hands.',
-    cardCashTitle: 'Your patient pays you directly',
-    cardCashDesc: 'In cash, after each session. The platform takes nothing from the session amount.',
-    cardCashValue: 'You keep 100%',
-    cardSubTitle: 'Monthly subscription',
-    cardSubFreeLabel: 'Free while we launch',
-    cardSubDescFree: 'There is no monthly charge right now. If that changes you will be told in advance, and you will never be charged without agreeing first.',
-    cardSubDescPaid: 'Charged at the start of each month.',
+    // 08 ΤΕΛΙΚΟ CTA
+    finalTitle: 'Δημιούργησε το επαγγελματικό σου προφίλ',
+    finalDesc: 'Η εγγραφή είναι δωρεάν και δεν χρεώνεσαι τίποτα πριν εγκριθεί το προφίλ σου.',
+    finalHave: 'Έχεις ήδη λογαριασμό;',
+    finalLogin: 'Σύνδεση',
+  },
+
+  en: {
+    eyebrow: 'Theralivo for physiotherapists',
+    heroTitle: 'Your professional presence,',
+    heroTitleEm: 'on one modern platform.',
+    heroDesc: 'Connect with patients looking for physiotherapy at home, manage your appointment requests and grow your practice.',
+    cta: 'Become a partner',
+    heroNote: 'For licensed professional physiotherapists',
+    heroSecondary: 'See the plans',
+
+    whyTitle: 'Why partner with us',
+    benefits: [
+      { title: 'Reach new patients', desc: 'Be present on a platform dedicated to home physiotherapy, in the areas and for the cases you choose.' },
+      { title: 'Organise your appointments', desc: 'Manage requests, appointments and availability from one place, without phone calls and notes.' },
+      { title: 'Show your professional identity', desc: 'Present your experience, specialisation and services through your own profile.' },
+    ],
+
+    productTitle: 'Everything you need,',
+    productTitleEm: 'in one place.',
+    productDesc: 'The physiotherapist dashboard is where you work every day: requests arrive there, you set when you are available, and you see your earnings.',
+    productPoints: [
+      { title: 'Appointment management', desc: 'See every request with the case, area and time, and decide whether to take it.' },
+      { title: 'Professional profile', desc: 'Licence, specialty, cases, areas and session price, as patients see them.' },
+      { title: 'Availability', desc: 'Set your hours and block the days you are away; requests only come for times that suit you.' },
+    ],
+    mockCaption: 'Illustration of the physiotherapist dashboard, with example data.',
+    mock: {
+      tabs: ['Overview', 'Requests', 'Appointments', 'Availability', 'Profile'],
+      newRequest: 'New request',
+      reqCase: 'Low back pain',
+      reqArea: 'Nea Smyrni',
+      reqWhen: 'Tuesday · 18:00',
+      accept: 'Accept',
+      decline: 'Decline',
+      expected: 'Expected',
+      collected: 'Collected',
+      expectedSub: '4 confirmed sessions',
+      collectedSub: '8 completed sessions',
+      availability: 'This week',
+      days: ['Mo', 'Tu', 'We', 'Th', 'Fr'],
+    },
+
+    howTitle: 'How it works',
+    howDesc: 'From sign-up to your first appointment, in three steps.',
+    steps: [
+      { title: 'Sign up', desc: 'Create an account and choose a partnership plan. Registration is free.' },
+      { title: 'Profile', desc: 'Upload your professional licence and add your specialty, cases, areas and price. We usually verify your licence within 48 hours.' },
+      { title: 'Appointments', desc: 'Once your profile is approved, patients can find you and you receive requests. Accept the ones you want.' },
+    ],
+
+    plansTitle: 'Choose the plan',
+    plansTitleEm: 'that suits you',
+    plansDesc: 'Every plan, with its real prices and features. No asterisks.',
     perMonth: '/month',
-    cardFeeTitle: 'New patient fee',
-    cardFeeDesc: 'Charged once for every new patient assigned to you. Follow-up sessions with the same patient are never charged again.',
-    perNewPatient: 'per new patient',
-    priceExample: 'Example:',
-    priceExampleBody: (fee) => `A patient with a €35 session price books you 6 times. You collect €210 in cash and are charged €${fee} in total — only for the first time.`,
-    priceSetOwn: 'You set your own session price, between €25 and €50.',
-    priceLoading: 'Loading...',
+    free: 'No monthly charge',
+    feeLine: (fee) => `€${fee} per new patient`,
+    recommended: 'Recommended',
+    plansLoading: 'Loading plans...',
+    plansEmpty: 'Plans will be available shortly. You can already sign up and you will see them during registration.',
+    termsTitle: 'The terms, on every plan',
+    terms: [
+      'The session fee is entirely yours. The patient pays you directly, in cash, and you set the price yourself, between €25 and €50.',
+      'The plan is paid by card once your profile is approved. Nothing is charged before then.',
+      'The new patient fee is paid by card when you accept the request, once for each new patient. Follow-up sessions with them are free.',
+      'If the acceptance cannot be completed, for example because the patient cancelled in the meantime, the amount is refunded automatically.',
+      'Your plan terms are locked when you choose it. You can change plan any time from your dashboard.',
+    ],
+
+    trustTitle: 'A platform designed',
+    trustTitleEm: 'for health professionals',
+    trustDesc: 'Information security, transparent partnership and professional presence are core priorities. In practice, this means:',
+    trust: [
+      { title: 'Every professional is checked', desc: 'No profile is shown to patients before we verify the professional licence. Approved profiles carry the “Verified professional licence” badge.' },
+      { title: 'Data protection', desc: 'Patient contact details are protected at database level and never shown publicly. Data is processed in line with GDPR.' },
+      { title: 'Reviews only from real sessions', desc: 'Only a patient who completed a session with you can leave a review. There are no anonymous or bought reviews.' },
+      { title: 'Secure payments', desc: 'Card payments are handled by Stripe. The platform never sees or stores your card details.' },
+    ],
 
     faqTitle: 'Frequently asked questions',
     faqs: [
-      { q: 'What does it cost to join?', a: 'Registration is free. While we are launching there is no monthly subscription — you are only charged a fee for each new patient assigned to you. If a monthly subscription is introduced later you will be told before it applies, and you can leave at no cost.' },
-      { q: 'Who pays me, and when?', a: 'The patient does, directly in cash, at the end of each session. You never wait on a platform payout.' },
-      { q: 'Can I decline a request?', a: 'Yes. You see the case, the area and the proposed time before you decide. If it does not suit you, decline it with no penalty.' },
-      { q: 'What happens when I go on holiday?', a: 'You mark the days you are not working in your dashboard and those hours close automatically. You receive no requests for them.' },
-      { q: 'How long does approval take?', a: 'Once you upload your professional licence we usually verify it within 48 hours. In the meantime you can fill in the rest of your profile.' },
-      { q: 'Do I need my own equipment?', a: 'Yes. Visits happen at the patient home and you bring the basic equipment the case requires.' },
+      { q: 'What does it cost to join?', a: 'Registration is free. You choose the plan that suits you, at the prices shown above, and pay a fee for each new patient. The fee amount depends on the plan.' },
+      { q: 'When and how do I pay?', a: 'By card. The plan is paid once your profile is approved. The new patient fee is paid when you accept the request, and the acceptance completes right after. You can save your card for next time.' },
+      { q: 'Who pays me for the session?', a: 'The patient does, directly, in cash, at the end of each session. The platform takes nothing from the session amount.' },
+      { q: 'Can I decline a request?', a: 'Yes. You see the case, the area and the time before you decide. If it does not suit you, decline it with no penalty and no charge.' },
+      { q: 'What if I need to cancel an appointment?', a: 'You can cancel from your dashboard. A cancellation less than 24 hours before the appointment is recorded, because the patient has already planned around it; three such records within six months lead to a temporary pause of the profile.' },
+      { q: 'What happens when I go on holiday?', a: 'Mark the days you are away in your dashboard and those hours close automatically. You receive no requests for them.' },
       { q: 'Am I locked into a contract?', a: 'No. There is no minimum term and no minimum number of sessions. You can stop accepting requests whenever you like.' },
+      { q: 'Where can I get help?', a: 'Write to us at info@theralivo.com. We answer every message, usually the same day.' },
     ],
+
+    finalTitle: 'Create your professional profile',
+    finalDesc: 'Registration is free and nothing is charged before your profile is approved.',
+    finalHave: 'Already have an account?',
+    finalLogin: 'Log in',
   },
 };
 
+// ── Μικρά κοινά κομμάτια ────────────────────────────────────────────
+function Section({ id, bg = '#fff', children, narrow }) {
+  return (
+    <section id={id} style={{ background: bg, padding: '80px 24px', scrollMarginTop: 80 }}>
+      <div style={{ maxWidth: narrow ? 880 : 1080, margin: '0 auto' }}>{children}</div>
+    </section>
+  );
+}
+
+function H2({ children, em, center }) {
+  return (
+    <h2 style={{ fontSize: 'clamp(26px, 3.2vw, 38px)', color: C.navy, lineHeight: 1.2, marginBottom: 14, textAlign: center ? 'center' : 'left' }}>
+      {children}{em && <> <em style={{ color: C.accent }}>{em}</em></>}
+    </h2>
+  );
+}
+
+function Lead({ children, center, max = 620 }) {
+  return (
+    <p style={{ fontSize: 16.5, color: C.muted, lineHeight: 1.7, maxWidth: max, margin: center ? '0 auto' : 0, textAlign: center ? 'center' : 'left' }}>
+      {children}
+    </p>
+  );
+}
+
+function CtaButton({ href, children, light }) {
+  return (
+    <a href={href} className="bt-cta" style={{
+      display: 'inline-flex', alignItems: 'center', gap: 8,
+      background: light ? '#fff' : C.navy, color: light ? C.navy : '#fff',
+      padding: '15px 34px', borderRadius: 30, fontSize: 15.5, fontWeight: 700, textDecoration: 'none',
+    }}>
+      {children}
+      <ArrowRight size={17} />
+    </a>
+  );
+}
+
+// ── Απεικόνιση του πίνακα ───────────────────────────────────────────
+// HTML και όχι εικόνα: φαίνεται καθαρά σε κάθε οθόνη, ακολουθεί τη
+// γλώσσα, και δεν παλιώνει όταν αλλάζει ο σχεδιασμός. Σημειώνεται
+// καθαρά ως ενδεικτική — τα νούμερα είναι παραδείγματα.
+function DashboardMock({ m }) {
+  const slots = [[1, 1, 0, 1, 0], [1, 0, 1, 1, 1], [0, 1, 1, 0, 1]];
+  return (
+    <div aria-hidden="true" style={{ background: '#fff', border: `1px solid ${C.border}`, borderRadius: 16, overflow: 'hidden', boxShadow: '0 24px 60px -30px rgba(26,46,68,0.35)' }}>
+      {/* γραμμή παραθύρου */}
+      <div style={{ display: 'flex', gap: 6, padding: '12px 16px', borderBottom: `1px solid ${C.line}`, background: C.off }}>
+        {[0, 1, 2].map(i => <span key={i} style={{ width: 9, height: 9, borderRadius: '50%', background: '#dbe2ea' }} />)}
+      </div>
+
+      <div style={{ padding: 18 }}>
+        {/* καρτέλες */}
+        <div className="mock-tabs" style={{ display: 'flex', gap: 4, background: '#f1f5f9', padding: 4, borderRadius: 10, marginBottom: 16, overflowX: 'auto', scrollbarWidth: 'none' }}>
+          {m.tabs.map((t, i) => (
+            <span key={t} style={{ padding: '6px 11px', borderRadius: 7, fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', background: i === 1 ? '#fff' : 'transparent', color: i === 1 ? C.navy : C.muted, boxShadow: i === 1 ? '0 1px 3px rgba(0,0,0,0.08)' : 'none' }}>{t}</span>
+          ))}
+        </div>
+
+        <div className="mock-grid">
+          {/* αίτημα */}
+          <div style={{ border: `1px solid ${C.border}`, borderRadius: 12, padding: 14 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.accent, marginBottom: 8 }}>{m.newRequest}</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: C.navy, marginBottom: 4 }}>{m.reqCase}</div>
+            <div style={{ fontSize: 12.5, color: C.muted, marginBottom: 2 }}>{m.reqArea}</div>
+            <div style={{ fontSize: 12.5, color: C.muted, marginBottom: 14 }}>{m.reqWhen}</div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <span style={{ flex: 1, textAlign: 'center', padding: '8px 0', borderRadius: 8, background: C.navy, color: '#fff', fontSize: 12.5, fontWeight: 700 }}>{m.accept}</span>
+              <span style={{ flex: 1, textAlign: 'center', padding: '8px 0', borderRadius: 8, border: `1px solid ${C.border}`, color: C.muted, fontSize: 12.5, fontWeight: 600 }}>{m.decline}</span>
+            </div>
+          </div>
+
+          {/* έσοδα */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {[
+              [m.expected, '160€', m.expectedSub, C.accent],
+              [m.collected, '320€', m.collectedSub, C.green],
+            ].map(([label, value, sub, tone]) => (
+              <div key={label} style={{ border: `1px solid ${C.border}`, borderTop: `3px solid ${tone}`, borderRadius: 10, padding: '10px 12px' }}>
+                <div style={{ fontSize: 10.5, fontWeight: 700, color: C.muted, marginBottom: 4 }}>{label}</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: tone, lineHeight: 1 }}>{value}</div>
+                <div style={{ fontSize: 11, color: C.faint, marginTop: 4 }}>{sub}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* διαθεσιμότητα */}
+        <div style={{ marginTop: 14, border: `1px solid ${C.border}`, borderRadius: 12, padding: 14 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, marginBottom: 10 }}>{m.availability}</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6 }}>
+            {m.days.map((d, di) => (
+              <div key={d} style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: C.muted, textAlign: 'center' }}>{d}</span>
+                {slots.map((row, ri) => (
+                  <span key={ri} style={{ height: 14, borderRadius: 4, background: row[di] ? C.soft : '#f4f6f8', border: `1px solid ${row[di] ? '#c9dcf6' : '#eef1f4'}` }} />
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════
 export default function BecomeTherapistPage() {
   const { lang } = useLang();
-  const tx = TX[lang];
-  const heroPoints = HERO_POINTS[lang];
-  const [cms, setCms] = useState(DEFAULT);
+  const tx = TX[lang] || TX.el;
 
-  // Η τιμολόγηση διαβάζεται από τη ΒΑΣΗ, όχι hardcoded.
-  // Αν αλλάξει το πλάνο στο admin, η σελίδα ακολουθεί — αλλιώς
-  // υποσχόμαστε δημόσια κάτι που δεν ισχύει.
-  const [plan, setPlan] = useState(null);
-  const [loadingPlan, setLoadingPlan] = useState(true);
+  const [plans, setPlans] = useState([]);
+  const [loadingPlans, setLoadingPlans] = useState(true);
 
-  useEffect(() => { fetchCMS(); fetchPlan(); }, []);
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from('subscription_plans')
+        .select('id, name_el, name_en, description_el, description_en, price_monthly, first_session_fee, features_el, features_en, is_recommended, badge_label, display_order')
+        .eq('is_active', true)
+        .eq('is_archived', false)
+        .order('display_order', { ascending: true });
+      setPlans(data || []);
+      setLoadingPlans(false);
+    })();
+  }, []);
 
-  async function fetchCMS() {
-    try {
-      const cached = sessionStorage.getItem(CACHE_KEY_CMS);
-      if (cached) {
-        const { value, timestamp } = JSON.parse(cached);
-        if (Date.now() - timestamp < CACHE_TTL) { setCms(value); return; }
-      }
-    } catch (_) {}
-    const { data } = await supabase.from('site_content').select('section, content_el, content_en').eq('page', 'therapists');
-    if (data) {
-      const merged = { ...DEFAULT };
-      data.forEach(row => { merged[row.section] = { el: row.content_el, en: row.content_en }; });
-      setCms(merged);
-      try { sessionStorage.setItem(CACHE_KEY_CMS, JSON.stringify({ value: merged, timestamp: Date.now() })); } catch (_) {}
-    }
-  }
+  // Στα ελληνικά τα δεκαδικά με κόμμα: 9,99€, όχι 9.99€.
+  const money = (v) => {
+    const n = Number(v || 0);
+    const s = n % 1 === 0 ? String(n) : n.toFixed(2);
+    return lang === 'en' ? s : s.replace('.', ',');
+  };
+  const pick = (p, key) => (lang === 'en' ? (p[`${key}_en`] || p[`${key}_el`]) : p[`${key}_el`]);
+  const features = (p) => {
+    const f = pick(p, 'features');
+    return Array.isArray(f) ? f.filter(x => typeof x === 'string' && x.trim()) : [];
+  };
 
-  async function fetchPlan() {
-    const { data } = await supabase
-      .from('subscription_plans')
-      .select('name_el, name_en, price_monthly, first_session_fee')
-      .eq('is_active', true)
-      .order('price_monthly', { ascending: true })
-      .limit(1)
-      .maybeSingle();
-    setPlan(data || null);
-    setLoadingPlan(false);
-  }
-
-  const hero     = cms.hero?.[lang]     || DEFAULT.hero[lang];
-  const whywork  = cms.whywork?.[lang]  || DEFAULT.whywork[lang];
-  const workflow = cms.workflow?.[lang] || DEFAULT.workflow[lang];
-  const platform = cms.platform?.[lang] || DEFAULT.platform[lang];
-
-  const monthly = Number(plan?.price_monthly ?? 0);
-  const fee = Number(plan?.first_session_fee ?? 0);
-  const feeLabel = fee % 1 === 0 ? String(fee) : fee.toFixed(2);
-
-  // Direct register link με preselected role
   const registerHref = '/auth/register?role=therapist';
+  const productIcons = [ClipboardList, UserRound, CalendarDays];
+  const trustIcons = [ShieldCheck, Lock, Star, CreditCard];
 
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'DM Sans', sans-serif; background: #faf9f6; }
-        .benefit-card { background: #fff; border-radius: 14px; border: 1px solid #e8f0fb; padding: 24px; }
-        .platform-point { background: #fff; border-radius: 12px; border: 1px solid #e8f0fb; padding: 20px 24px; display: flex; align-items: flex-start; gap: 14px; }
-        .why-grid-layout { display: grid; grid-template-columns: 1fr auto 1fr; gap: 32px; align-items: center; }
-        @media (max-width: 900px) { .why-grid-layout { grid-template-columns: 1fr; } .why-center-img { display: none; } }
-        .workflow-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
-        @media (max-width: 768px) { .workflow-layout { grid-template-columns: 1fr; gap: 40px; } }
-        .platform-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
-        @media (max-width: 768px) { .platform-layout { grid-template-columns: 1fr; gap: 40px; } }
-        .hero-cta-row { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; align-items: center; }
-        .hero-points { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-top: 32px; }
-        .hero-point { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: #475569; }
-        .price-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-        @media (max-width: 900px) { .price-grid { grid-template-columns: 1fr; } }
-        .price-card { background: #fff; border-radius: 16px; border: 1px solid #e8f0fb; padding: 26px; display: flex; flex-direction: column; }
-        .faq-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px 48px; }
-        @media (max-width: 768px) { .faq-grid { grid-template-columns: 1fr; gap: 24px; } }
+        .bt-cta { transition: transform .15s ease, box-shadow .15s ease; }
+        .bt-cta:hover { transform: translateY(-1px); box-shadow: 0 10px 24px -12px rgba(26,46,68,0.45); }
+        .bt-cta:focus-visible, .bt-link:focus-visible { outline: 3px solid ${C.accent}; outline-offset: 3px; }
+        .bt-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; }
+        .bt-product { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 56px; align-items: center; }
+        .bt-product > * { min-width: 0; }
+        .mock-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 12px; }
+        .bt-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border-top: 1px solid ${C.border}; }
+        .bt-step { padding: 28px 28px 0 0; }
+        .bt-step + .bt-step { padding-left: 28px; border-left: 1px solid ${C.border}; }
+        .bt-plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
+        .bt-trust { display: grid; grid-template-columns: 1fr 1fr; gap: 36px 48px; }
+        .bt-faq { display: grid; grid-template-columns: 1fr 1fr; gap: 36px 56px; }
+        @media (max-width: 900px) {
+          .bt-3 { grid-template-columns: 1fr; gap: 28px; }
+          .bt-product { grid-template-columns: minmax(0, 1fr); gap: 36px; }
+          .bt-steps { grid-template-columns: 1fr; border-top: none; }
+          .bt-step, .bt-step + .bt-step { padding: 22px 0; border-left: none; border-top: 1px solid ${C.border}; }
+          .bt-trust, .bt-faq { grid-template-columns: 1fr; gap: 28px; }
+        }
+        @media (max-width: 520px) { .mock-grid { grid-template-columns: minmax(0, 1fr); } }
+        @media (prefers-reduced-motion: reduce) { .bt-cta { transition: none; } .bt-cta:hover { transform: none; } }
       `}</style>
 
       <Navbar />
 
-      {/* HERO */}
-      <section style={{ background: 'linear-gradient(135deg, #e8f3ff 0%, #f0f7ff 100%)', padding: '80px 24px 60px' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: '#2a6fdb', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 16 }}>{hero.badge}</div>
-          <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: 'clamp(28px, 4vw, 54px)', color: '#1a2e44', lineHeight: 1.15, marginBottom: 20 }}>
-            {hero.hero} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{hero.heroEm}</em>
+      {/* ══ 01 HERO ══ λιτό, κεντραρισμένο, χωρίς φωτογραφία */}
+      <section style={{ background: C.off, padding: '96px 24px 88px', borderBottom: `1px solid ${C.line}` }}>
+        <div style={{ maxWidth: 760, margin: '0 auto', textAlign: 'center' }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: C.accent, letterSpacing: '.06em', marginBottom: 20 }}>
+            {tx.eyebrow}
+          </div>
+          <h1 style={{ fontSize: 'clamp(32px, 5vw, 54px)', color: C.navy, lineHeight: 1.12, marginBottom: 22 }}>
+            {tx.heroTitle} <em style={{ color: C.accent }}>{tx.heroTitleEm}</em>
           </h1>
-          <p style={{ fontSize: 17, color: '#6b7a8d', maxWidth: 620, margin: '0 auto 32px' }}>{hero.heroDesc}</p>
-
-          <div className="hero-cta-row">
-            <a href={registerHref} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#1a2e44', color: '#fff', padding: '14px 36px', borderRadius: 30, fontSize: 15, fontWeight: 600, textDecoration: 'none' }}>
-              {hero.heroBtn}
-              <ArrowRight size={18} />
-            </a>
-            {/* Έδειχνε σε /how-it-works?tab=therapist — η σελίδα δεν
-                διαβάζει καμία παράμετρο, οπότε ο θεραπευτής προσγειωνόταν
-                σε οδηγίες για ασθενείς. Τώρα πάει στην τιμολόγηση, που
-                είναι και αυτό που πραγματικά θέλει να δει. */}
-            <a href="#pricing" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#1a2e44', padding: '14px 28px', borderRadius: 30, fontSize: 15, fontWeight: 600, textDecoration: 'none', border: '1.5px solid #cbd8e6' }}>
+          <p style={{ fontSize: 18, color: C.muted, lineHeight: 1.7, maxWidth: 620, margin: '0 auto 36px' }}>
+            {tx.heroDesc}
+          </p>
+          <div style={{ display: 'flex', gap: 22, justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' }}>
+            <CtaButton href={registerHref}>{tx.cta}</CtaButton>
+            <a href="#plans" className="bt-link" style={{ fontSize: 15, fontWeight: 600, color: C.navy, textDecoration: 'underline', textUnderlineOffset: 4 }}>
               {tx.heroSecondary}
             </a>
           </div>
-
-          <div className="hero-points">
-            {heroPoints.map((p, i) => (
-              <span key={i} className="hero-point">
-                <CheckCircle2 size={17} color="#2a6fdb" strokeWidth={2.2} style={{ flexShrink: 0 }} />
-                {p}
-              </span>
-            ))}
-          </div>
+          <div style={{ marginTop: 22, fontSize: 13.5, color: C.faint }}>{tx.heroNote}</div>
         </div>
       </section>
 
-      {/* ── ΤΙΜΟΛΟΓΗΣΗ ──
-          Η σελίδα δεν έλεγε πουθενά τι κοστίζει. Ο φυσικοθεραπευτής
-          έφτανε μέχρι την εγγραφή χωρίς να ξέρει ποιος τον πληρώνει.
-          Είναι το πρώτο πράγμα που ρωτάει και το πιο πειστικό που έχουμε. */}
-      <section id="pricing" style={{ background: '#fff', padding: '72px 24px', scrollMarginTop: 80 }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 44 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#2a6fdb', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 14 }}>{tx.priceBadge}</div>
-            <h2 style={{ fontFamily: "'EB Garamond', serif", fontSize: 'clamp(26px, 3vw, 40px)', color: '#1a2e44', marginBottom: 12 }}>
-              {tx.priceTitle} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{tx.priceTitleEm}</em>
-            </h2>
-            <p style={{ fontSize: 16, color: '#6b7a8d', maxWidth: 540, margin: '0 auto' }}>{tx.priceDesc}</p>
-          </div>
-
-          <div className="price-grid">
-            <div className="price-card" style={{ background: '#F0FDF4', borderColor: '#BBF7D0' }}>
-              <div style={{ width: 42, height: 42, borderRadius: 12, background: '#fff', border: '1px solid #BBF7D0', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-                <Banknote size={20} color="#15803D" strokeWidth={2} />
-              </div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#15803D', marginBottom: 8 }}>{tx.cardCashTitle}</div>
-              <div style={{ fontSize: 28, fontWeight: 700, color: '#15803D', marginBottom: 10 }}>{tx.cardCashValue}</div>
-              <div style={{ fontSize: 13.5, color: '#166534', lineHeight: 1.65 }}>{tx.cardCashDesc}</div>
+      {/* ══ 02 ΟΦΕΛΗ ══ τρία, όχι έξι */}
+      <Section>
+        <H2>{tx.whyTitle}</H2>
+        <div className="bt-3" style={{ marginTop: 36 }}>
+          {tx.benefits.map(b => (
+            <div key={b.title} style={{ borderTop: `2px solid ${C.navy}`, paddingTop: 20 }}>
+              <h3 style={{ fontSize: 18, color: C.navy, lineHeight: 1.35, marginBottom: 10 }}>{b.title}</h3>
+              <p style={{ fontSize: 15, color: C.muted, lineHeight: 1.7 }}>{b.desc}</p>
             </div>
+          ))}
+        </div>
+      </Section>
 
-            <div className="price-card">
-              <div style={{ width: 42, height: 42, borderRadius: 12, background: '#eaf2fc', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-                <Wallet size={20} color="#2a6fdb" strokeWidth={2} />
-              </div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2e44', marginBottom: 8 }}>{tx.cardSubTitle}</div>
-              <div style={{ fontSize: 28, fontWeight: 700, color: '#1a2e44', marginBottom: monthly > 0 ? 10 : 4 }}>
-                {loadingPlan ? tx.priceLoading : (monthly > 0 ? `${monthly.toFixed(2)}€` : '0€')}
-                {!loadingPlan && monthly > 0 && (
-                  <span style={{ fontSize: 15, fontWeight: 500, color: '#6b7a8d' }}>{tx.perMonth}</span>
-                )}
-              </div>
-              {!loadingPlan && monthly === 0 && (
-                <div style={{ fontSize: 12, fontWeight: 600, color: '#2a6fdb', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 10 }}>
-                  {tx.cardSubFreeLabel}
-                </div>
-              )}
-              <div style={{ fontSize: 13.5, color: '#6b7a8d', lineHeight: 1.65 }}>
-                {monthly > 0 ? tx.cardSubDescPaid : tx.cardSubDescFree}
-              </div>
-            </div>
-
-            <div className="price-card">
-              <div style={{ width: 42, height: 42, borderRadius: 12, background: '#eaf2fc', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-                <UserPlus size={20} color="#2a6fdb" strokeWidth={2} />
-              </div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2e44', marginBottom: 8 }}>{tx.cardFeeTitle}</div>
-              <div style={{ fontSize: 28, fontWeight: 700, color: '#1a2e44', marginBottom: 10 }}>
-                {loadingPlan ? tx.priceLoading : `${feeLabel}€`}
-                {!loadingPlan && (
-                  <span style={{ fontSize: 14, fontWeight: 500, color: '#6b7a8d' }}> {tx.perNewPatient}</span>
-                )}
-              </div>
-              <div style={{ fontSize: 13.5, color: '#6b7a8d', lineHeight: 1.65 }}>{tx.cardFeeDesc}</div>
+      {/* ══ 03 Η ΠΛΑΤΦΟΡΜΑ ΣΤΗΝ ΠΡΑΞΗ ══ */}
+      <Section bg={C.off}>
+        <div className="bt-product">
+          <div>
+            <H2 em={tx.productTitleEm}>{tx.productTitle}</H2>
+            <Lead>{tx.productDesc}</Lead>
+            <div style={{ marginTop: 30, display: 'flex', flexDirection: 'column', gap: 22 }}>
+              {tx.productPoints.map((pt, i) => {
+                const Icon = productIcons[i];
+                return (
+                  <div key={pt.title} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+                    <span style={{ width: 36, height: 36, borderRadius: 10, background: '#fff', border: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Icon size={17} color={C.accent} strokeWidth={2} />
+                    </span>
+                    <div>
+                      <div style={{ fontSize: 15.5, fontWeight: 700, color: C.navy, marginBottom: 4 }}>{pt.title}</div>
+                      <div style={{ fontSize: 14.5, color: C.muted, lineHeight: 1.65 }}>{pt.desc}</div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
+          <figure>
+            <DashboardMock m={tx.mock} />
+            <figcaption style={{ fontSize: 12.5, color: C.faint, marginTop: 12, textAlign: 'center' }}>{tx.mockCaption}</figcaption>
+          </figure>
+        </div>
+      </Section>
 
-          {!loadingPlan && fee > 0 && (
-            <div style={{ marginTop: 24, background: '#faf9f6', border: '1px solid #e8e4dc', borderRadius: 14, padding: '20px 24px' }}>
-              <div style={{ fontSize: 14, color: '#475569', lineHeight: 1.7 }}>
-                <strong style={{ color: '#1a2e44' }}>{tx.priceExample}</strong> {tx.priceExampleBody(feeLabel)}
-              </div>
-              <div style={{ fontSize: 13, color: '#8a9aab', marginTop: 10, display: 'flex', alignItems: 'center', gap: 7 }}>
-                <Check size={14} color="#15803D" strokeWidth={2.6} />
-                {tx.priceSetOwn}
-              </div>
+      {/* ══ 04 ΠΩΣ ΛΕΙΤΟΥΡΓΕΙ ══ πραγματική σειρά → αριθμημένα βήματα */}
+      <Section>
+        <H2>{tx.howTitle}</H2>
+        <Lead>{tx.howDesc}</Lead>
+        <ol className="bt-steps" style={{ listStyle: 'none', marginTop: 36 }}>
+          {tx.steps.map((s, i) => (
+            <li key={s.title} className="bt-step">
+              <div style={{ fontSize: 14, fontWeight: 700, color: C.accent, marginBottom: 10 }}>{i + 1}</div>
+              <h3 style={{ fontSize: 19, color: C.navy, marginBottom: 10 }}>{s.title}</h3>
+              <p style={{ fontSize: 15, color: C.muted, lineHeight: 1.7 }}>{s.desc}</p>
+            </li>
+          ))}
+        </ol>
+        <div style={{ marginTop: 40 }}>
+          <CtaButton href={registerHref}>{tx.cta}</CtaButton>
+        </div>
+      </Section>
+
+      {/* ══ 05 ΠΑΚΕΤΑ ══ από τη βάση, με τιμές, παροχές και όρους */}
+      <Section id="plans" bg={C.off}>
+        <H2 em={tx.plansTitleEm} center>{tx.plansTitle}</H2>
+        <Lead center>{tx.plansDesc}</Lead>
+
+        <div style={{ marginTop: 40 }}>
+          {loadingPlans ? (
+            <div style={{ textAlign: 'center', color: C.faint, fontSize: 14 }}>{tx.plansLoading}</div>
+          ) : plans.length === 0 ? (
+            <div style={{ textAlign: 'center', color: C.muted, fontSize: 15 }}>{tx.plansEmpty}</div>
+          ) : (
+            <div className="bt-plans">
+              {plans.map(p => {
+                const monthly = Number(p.price_monthly || 0);
+                const desc = pick(p, 'description');
+                const feats = features(p);
+                return (
+                  <div key={p.id} style={{
+                    position: 'relative', background: '#fff', borderRadius: 16, padding: '28px 26px',
+                    border: p.is_recommended ? `2px solid ${C.navy}` : `1px solid ${C.border}`,
+                    display: 'flex', flexDirection: 'column',
+                  }}>
+                    {p.is_recommended && (
+                      <span style={{ position: 'absolute', top: -12, left: 24, background: C.navy, color: '#fff', fontSize: 11.5, fontWeight: 700, padding: '4px 12px', borderRadius: 999 }}>
+                        {p.badge_label || tx.recommended}
+                      </span>
+                    )}
+                    <h3 style={{ fontSize: 20, color: C.navy, marginBottom: 6 }}>{pick(p, 'name')}</h3>
+                    {desc && <p style={{ fontSize: 14, color: C.muted, lineHeight: 1.6, marginBottom: 16 }}>{desc}</p>}
+
+                    <div style={{ fontSize: 32, fontWeight: 700, color: C.navy, lineHeight: 1.1, marginTop: desc ? 0 : 10 }}>
+                      {monthly === 0
+                        ? <span style={{ fontSize: 22, color: C.green }}>{tx.free}</span>
+                        : <>{money(monthly)}€<span style={{ fontSize: 15, fontWeight: 500, color: C.muted }}>{tx.perMonth}</span></>}
+                    </div>
+                    <div style={{ fontSize: 15, fontWeight: 600, color: C.accent, marginTop: 8 }}>
+                      {tx.feeLine(money(p.first_session_fee))}
+                    </div>
+
+                    {feats.length > 0 && (
+                      <ul style={{ listStyle: 'none', marginTop: 20, paddingTop: 18, borderTop: `1px solid ${C.line}`, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        {feats.map((f, i) => (
+                          <li key={i} style={{ display: 'flex', gap: 9, fontSize: 14, color: C.body, lineHeight: 1.5 }}>
+                            <Check size={15} color={C.green} strokeWidth={2.6} style={{ flexShrink: 0, marginTop: 3 }} />
+                            {f}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
-      </section>
 
-      {/* WHY WORK WITH US */}
-      <section style={{ background: '#f8fafb', padding: '72px 24px' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 56 }}>
-            <h2 style={{ fontFamily: "'EB Garamond', serif", fontSize: 'clamp(26px, 3vw, 40px)', color: '#1a2e44', marginBottom: 12 }}>
-              {whywork.title} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{whywork.titleEm}</em>
-            </h2>
-            <p style={{ fontSize: 16, color: '#6b7a8d', maxWidth: 520, margin: '0 auto' }}>{whywork.desc}</p>
-          </div>
-          <div className="why-grid-layout">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              {(whywork.benefits || []).slice(0, 2).map((b, i) => (
-                <div key={i} className="benefit-card">
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2e44', marginBottom: 6 }}>{b.title}</div>
-                  <div style={{ fontSize: 13, color: '#6b7a8d', lineHeight: 1.6 }}>{b.desc}</div>
-                </div>
-              ))}
-            </div>
-            <div className="why-center-img" style={{ width: 300, height: 380, borderRadius: 20, overflow: 'hidden', flexShrink: 0, background: 'linear-gradient(135deg, #c8dff9, #a0c4f4)' }} />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              {(whywork.benefits || []).slice(2, 4).map((b, i) => (
-                <div key={i} className="benefit-card">
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2e44', marginBottom: 6 }}>{b.title}</div>
-                  <div style={{ fontSize: 13, color: '#6b7a8d', lineHeight: 1.6 }}>{b.desc}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* WORKFLOW */}
-      <section style={{ background: 'linear-gradient(135deg, #f0f7ff 0%, #e8f3ff 100%)', padding: '72px 24px' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div className="workflow-layout">
-            <div>
-              <h2 style={{ fontFamily: "'EB Garamond', serif", fontSize: 'clamp(26px, 3vw, 40px)', color: '#1a2e44', lineHeight: 1.2, marginBottom: 16 }}>
-                {workflow.title} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{workflow.titleEm}</em>
-              </h2>
-              <p style={{ fontSize: 15, color: '#6b7a8d', lineHeight: 1.7, marginBottom: 32 }}>{workflow.desc}</p>
-              <a href={registerHref} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#1a2e44', color: '#fff', padding: '13px 32px', borderRadius: 30, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
-                {workflow.btn}
-                <ArrowRight size={16} />
-              </a>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
-              {(workflow.steps || []).map((step, i) => (
-                <div key={i}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: '#2a6fdb', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 4 }}>{step.num}</div>
-                  <div style={{ fontSize: 18, fontWeight: 700, color: '#1a2e44', marginBottom: 6 }}>{step.title}</div>
-                  <div style={{ fontSize: 14, color: '#6b7a8d', lineHeight: 1.6 }}>{step.desc}</div>
-                  {i < (workflow.steps.length - 1) && <div style={{ height: 1, background: '#e2e8f0', marginTop: 20 }} />}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* PLATFORM */}
-      <section style={{ background: '#fff', padding: '72px 24px' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div className="platform-layout">
-            <div>
-              <h2 style={{ fontFamily: "'EB Garamond', serif", fontSize: 'clamp(26px, 3vw, 40px)', color: '#1a2e44', lineHeight: 1.2, marginBottom: 16 }}>
-                {platform.title} <em style={{ fontStyle: 'italic', color: '#2a6fdb' }}>{platform.titleEm}</em>
-              </h2>
-              <p style={{ fontSize: 15, color: '#6b7a8d', lineHeight: 1.7, marginBottom: 32 }}>{platform.desc}</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {(platform.points || []).map((p, i) => (
-                  <div key={i} className="platform-point">
-                    <div style={{ width: 36, height: 36, borderRadius: 10, background: '#e8f1fd', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <Check size={17} color="#2a6fdb" strokeWidth={2.6} />
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: '#1a2e44', marginBottom: 4 }}>{p.title}</div>
-                      <div style={{ fontSize: 13, color: '#6b7a8d', lineHeight: 1.6 }}>{p.desc}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div style={{ borderRadius: 20, overflow: 'hidden', aspectRatio: '4/3', background: 'linear-gradient(135deg, #c8dff9, #a0c4f4)' }} />
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ — οι ερωτήσεις που κρατούν τον θεραπευτή πίσω */}
-      <section style={{ background: '#f8fafb', padding: '72px 24px' }}>
-        <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-          <h2 style={{ fontFamily: "'EB Garamond', serif", fontSize: 'clamp(26px, 3vw, 36px)', color: '#1a2e44', marginBottom: 36, textAlign: 'center' }}>
-            {tx.faqTitle}
-          </h2>
-          <div className="faq-grid">
-            {tx.faqs.map((f, i) => (
-              <div key={i}>
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2e44', marginBottom: 7 }}>{f.q}</div>
-                <p style={{ fontSize: 14, color: '#6b7a8d', lineHeight: 1.7, margin: 0 }}>{f.a}</p>
-              </div>
+        {/* Οι όροι — ίδιοι για όλα τα πακέτα */}
+        <div style={{ marginTop: 32, background: '#fff', border: `1px solid ${C.border}`, borderRadius: 16, padding: '26px 28px' }}>
+          <h3 style={{ fontSize: 16.5, color: C.navy, marginBottom: 16 }}>{tx.termsTitle}</h3>
+          <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {tx.terms.map((t, i) => (
+              <li key={i} style={{ display: 'flex', gap: 10, fontSize: 14.5, color: C.body, lineHeight: 1.65 }}>
+                <Check size={16} color={C.accent} strokeWidth={2.6} style={{ flexShrink: 0, marginTop: 3 }} />
+                {t}
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
-      </section>
 
-      {/* CTA */}
-      <section style={{ background: 'linear-gradient(135deg, #1a2e44 0%, #2a3e54 100%)', padding: '80px 24px' }}>
-        <div style={{ maxWidth: 720, margin: '0 auto', textAlign: 'center' }}>
-          <h2 style={{ fontFamily: "'EB Garamond', serif", fontSize: 'clamp(28px, 4vw, 42px)', color: '#fff', marginBottom: 16 }}>
-            {tx.ctaTitle}
+        <div style={{ marginTop: 36, textAlign: 'center' }}>
+          <CtaButton href={registerHref}>{tx.cta}</CtaButton>
+        </div>
+      </Section>
+
+      {/* ══ 06 ΑΞΙΟΠΙΣΤΙΑ ══ μόνο ό,τι ισχύει σήμερα */}
+      <Section>
+        <H2 em={tx.trustTitleEm}>{tx.trustTitle}</H2>
+        <Lead max={680}>{tx.trustDesc}</Lead>
+        <div className="bt-trust" style={{ marginTop: 40 }}>
+          {tx.trust.map((t, i) => {
+            const Icon = trustIcons[i];
+            return (
+              <div key={t.title} style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+                <span style={{ width: 40, height: 40, borderRadius: 10, background: C.soft, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Icon size={18} color={C.accent} strokeWidth={2} />
+                </span>
+                <div>
+                  <h3 style={{ fontSize: 16.5, color: C.navy, marginBottom: 6 }}>{t.title}</h3>
+                  <p style={{ fontSize: 14.5, color: C.muted, lineHeight: 1.7 }}>{t.desc}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </Section>
+
+      {/* ══ 07 ΣΥΧΝΕΣ ΕΡΩΤΗΣΕΙΣ ══ */}
+      <Section bg={C.off}>
+        <H2>{tx.faqTitle}</H2>
+        <div className="bt-faq" style={{ marginTop: 36 }}>
+          {tx.faqs.map(f => (
+            <div key={f.q}>
+              <h3 style={{ fontSize: 16, color: C.navy, marginBottom: 8, lineHeight: 1.4 }}>{f.q}</h3>
+              <p style={{ fontSize: 14.5, color: C.muted, lineHeight: 1.7 }}>{f.a}</p>
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      {/* ══ 08 ΤΕΛΙΚΟ CTA ══ */}
+      <section style={{ background: C.navy, padding: '88px 24px' }}>
+        <div style={{ maxWidth: 680, margin: '0 auto', textAlign: 'center' }}>
+          <h2 style={{ fontSize: 'clamp(26px, 3.6vw, 40px)', color: '#fff', lineHeight: 1.2, marginBottom: 16 }}>
+            {tx.finalTitle}
           </h2>
-          <p style={{ fontSize: 17, color: 'rgba(255,255,255,0.85)', lineHeight: 1.6, maxWidth: 560, margin: '0 auto 32px' }}>
-            {tx.ctaDesc}
+          <p style={{ fontSize: 17, color: 'rgba(255,255,255,0.78)', lineHeight: 1.65, marginBottom: 34 }}>
+            {tx.finalDesc}
           </p>
-          <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 24 }}>
-            {tx.benefitsList.map((b, i) => (
-              <div key={i} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', padding: '8px 18px', borderRadius: 30, fontSize: 13, fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
-                <Check size={14} strokeWidth={2.8} />
-                {b}
-              </div>
-            ))}
-          </div>
-          <a href={registerHref}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#fff', color: '#1a2e44', padding: '16px 44px', borderRadius: 30, fontSize: 16, fontWeight: 700, textDecoration: 'none', marginBottom: 16 }}>
-            {tx.ctaBtn}
-            <ArrowRight size={18} />
-          </a>
-          <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)' }}>
-            {tx.ctaSecondary} <a href="/auth/login" style={{ color: '#fff', fontWeight: 600, textDecoration: 'underline' }}>{tx.ctaSecondaryLink}</a>
+          <CtaButton href={registerHref} light>{tx.cta}</CtaButton>
+          <div style={{ marginTop: 22, fontSize: 14, color: 'rgba(255,255,255,0.7)' }}>
+            {tx.finalHave}{' '}
+            <a href="/auth/login" className="bt-link" style={{ color: '#fff', fontWeight: 600, textDecoration: 'underline', textUnderlineOffset: 3 }}>
+              {tx.finalLogin}
+            </a>
           </div>
         </div>
       </section>
