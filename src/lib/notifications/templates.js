@@ -117,7 +117,7 @@ export function therapistNewRequest({ therapistName, request, slaDueAt, slaHours
     : null;
 
   const subject = sameDay
-    ? `ΣΗΜΕΡΑ${apptTime ? ` στις ${apptTime}` : ''} — απαντήστε έως ${fmtTime(deadline)}`
+    ? `ΣΗΜΕΡΑ${apptTime ? ` στις ${apptTime}` : ''} — απάντησε έως ${fmtTime(deadline)}`
     : `Νέο αίτημα — απάντηση έως ${fmtTime(deadline)}`;
 
   const html = shell({
@@ -126,24 +126,24 @@ export function therapistNewRequest({ therapistName, request, slaDueAt, slaHours
       ? `Αίτημα για ΣΗΜΕΡΑ στην περιοχή ${request.area || '—'}`
       : `Νέο αίτημα στην περιοχή ${request.area || '—'}`,
     intro: sameDay
-      ? `${first}, ένας ασθενής σας ζητάει <strong>σήμερα${apptTime ? ` στις ${apptTime}` : ''}</strong>. Απαντήστε <strong>έως ${fmtDeadline(deadline)}</strong> — μετά το αίτημα θα προωθηθεί σε άλλον.`
-      : `${first}, ένας ασθενής σας επέλεξε. Απαντήστε <strong>έως ${fmtDeadline(deadline)}</strong>.`,
+      ? `${first}, ένας ασθενής σε ζητάει <strong>σήμερα${apptTime ? ` στις ${apptTime}` : ''}</strong>. Απάντησε <strong>έως ${fmtDeadline(deadline)}</strong> — μετά το αίτημα θα προωθηθεί σε άλλον.`
+      : `${first}, ένας ασθενής σε επέλεξε. Απάντησε <strong>έως ${fmtDeadline(deadline)}</strong>.`,
     rows: [
       { label: 'Πρόβλημα', value: request.problem_type },
       { label: 'Περιοχή', value: request.area },
       { label: 'Ώρα ραντεβού', value: request.appointment_starts_at ? fmtDateTime(request.appointment_starts_at) : null },
       { label: 'Αμοιβή', value: request.total_cost ? `${request.total_cost}€` : null },
     ],
-    ctaLabel: sameDay ? 'Απαντήστε τώρα' : 'Δείτε το αίτημα',
+    ctaLabel: sameDay ? 'Απάντησε τώρα' : 'Δες το αίτημα',
     ctaUrl: url,
-    footNote: `Αν δεν απαντήσετε μέχρι τις ${fmtTime(deadline)}, το αίτημα λήγει και ο ασθενής προωθείται σε άλλον θεραπευτή. Η ακριβής διεύθυνση εμφανίζεται μόλις αποδεχτείτε.`,
+    footNote: `Αν δεν απαντήσεις μέχρι τις ${fmtTime(deadline)}, το αίτημα λήγει και ο ασθενής προωθείται σε άλλον φυσικοθεραπευτή. Η ακριβής διεύθυνση εμφανίζεται μόλις αποδεχτείς.`,
   });
 
   // Χωρίς τόνους: ελληνικά με τόνους χωρανε 70 χαρακτηρες αντι για 160
   // και χρεωνονται διπλα.
   const sms = sameDay
-    ? `${BRAND}: ΣΗΜΕΡΑ${apptTime ? ` ${apptTime}` : ''} στην ${request.area || '-'}. Απαντηστε εως ${fmtTime(deadline)} αλλιως χανεται. ${url}`
-    : `${BRAND}: Νεο αιτημα ${request.area || '-'} (${request.problem_type || 'Φυσικοθεραπεια'}). Απαντηστε εως ${fmtTime(deadline)}. ${url}`;
+    ? `${BRAND}: ΣΗΜΕΡΑ${apptTime ? ` ${apptTime}` : ''} στην ${request.area || '-'}. Απαντησε εως ${fmtTime(deadline)} αλλιως χανεται. ${url}`
+    : `${BRAND}: Νεο αιτημα ${request.area || '-'} (${request.problem_type || 'Φυσικοθεραπεια'}). Απαντησε εως ${fmtTime(deadline)}. ${url}`;
 
   return { subject, html, sms };
 }
@@ -194,34 +194,34 @@ export function patientRequestSent({ patientName, request, therapistName, slaHou
   const deadlineText = deadline ? fmtDeadline(deadline) : null;
 
   const subject = deadlineText
-    ? `Το αίτημά σας εστάλη — απάντηση έως ${fmtTime(deadline)}`
-    : 'Το αίτημά σας εστάλη';
+    ? `Το αίτημά σου στάλθηκε — απάντηση έως ${fmtTime(deadline)}`
+    : 'Το αίτημά σου στάλθηκε';
 
   const html = shell({
-    title: 'Λάβαμε το αίτημά σας',
+    title: 'Λάβαμε το αίτημά σου',
     intro: therapistName
-      ? `${first ? first + ', τ' : 'Τ'}ο αίτημά σας στάλθηκε στον/στην <strong>${therapistName}</strong>.` +
+      ? `${first ? first + ', τ' : 'Τ'}ο αίτημά σου στάλθηκε στον/στην <strong>${therapistName}</strong>.` +
         (deadlineText
-          ? ` Πρέπει να απαντήσει <strong>έως ${deadlineText}</strong>. Αν δεν απαντήσει, θα σας προτείνουμε αμέσως άλλους διαθέσιμους θεραπευτές.`
+          ? ` Πρέπει να απαντήσει <strong>έως ${deadlineText}</strong>. Αν δεν απαντήσει, θα σου προτείνουμε αμέσως άλλους διαθέσιμους φυσικοθεραπευτές.`
           : ` Θα απαντήσει εντός ${slaHours} ωρών.`)
-      : `${first ? first + ', λ' : 'Λ'}άβαμε το αίτημά σας. Η ομάδα μας θα σας βρει τον κατάλληλο θεραπευτή και θα επικοινωνήσουμε μαζί σας.`,
+      : `${first ? first + ', λ' : 'Λ'}άβαμε το αίτημά σου. Η ομάδα μας θα σου βρει τον κατάλληλο φυσικοθεραπευτή και θα επικοινωνήσουμε μαζί σου.`,
     rows: [
       { label: 'Περιστατικό', value: request.problem_type },
       { label: 'Περιοχή', value: request.area },
       { label: 'Ραντεβού', value: request.appointment_starts_at ? fmtDateTime(request.appointment_starts_at) : null },
-      { label: 'Θεραπευτής', value: therapistName || 'Θα οριστεί από την ομάδα μας' },
+      { label: 'Φυσικοθεραπευτής', value: therapistName || 'Θα οριστεί από την ομάδα μας' },
       { label: 'Απάντηση έως', value: deadline ? fmtDateTime(deadline) : null },
     ],
-    ctaLabel: 'Δείτε το αίτημά σας',
+    ctaLabel: 'Δες το αίτημά σου',
     ctaUrl: `${SITE}/dashboard/patient`,
-    footNote: 'Δεν χρεώνεστε τίποτα μέχρι να επιβεβαιωθεί το ραντεβού. Η πληρωμή γίνεται σε μετρητά στον θεραπευτή, μετά τη συνεδρία.',
+    footNote: 'Δεν χρεώνεσαι τίποτα μέχρι να επιβεβαιωθεί το ραντεβού. Η πληρωμή γίνεται σε μετρητά στον φυσικοθεραπευτή, μετά τη συνεδρία.',
   });
 
   const sms = therapistName
     ? (deadline
-        ? `${BRAND}: Το αιτημα σας σταλθηκε στον/στην ${therapistName}. Απαντηση εως ${fmtTime(deadline)}.`
-        : `${BRAND}: Το αιτημα σας σταλθηκε στον/στην ${therapistName}.`)
-    : `${BRAND}: Λαβαμε το αιτημα σας. Θα επικοινωνησουμε συντομα.`;
+        ? `${BRAND}: Το αιτημα σου σταλθηκε στον/στην ${therapistName}. Απαντηση εως ${fmtTime(deadline)}.`
+        : `${BRAND}: Το αιτημα σου σταλθηκε στον/στην ${therapistName}.`)
+    : `${BRAND}: Λαβαμε το αιτημα σου. Θα επικοινωνησουμε συντομα.`;
 
   return { subject, html, sms };
 }
@@ -238,25 +238,25 @@ export function patientRequestAccepted({ patientName, therapistName, request, bo
     ? `${fmtDate(booking.session_date)}${booking.session_time ? `, ${String(booking.session_time).slice(0, 5)}` : ''}`
     : null;
 
-  const subject = 'Το ραντεβού σας επιβεβαιώθηκε';
+  const subject = 'Το ραντεβού σου επιβεβαιώθηκε';
 
   const html = shell({
     accent: '#15803D',
-    title: 'Το ραντεβού σας επιβεβαιώθηκε',
-    intro: `${first ? first + ', ο' : 'Ο'}/η <strong>${therapistName || 'θεραπευτής'}</strong> αποδέχτηκε το αίτημά σας.`,
+    title: 'Το ραντεβού σου επιβεβαιώθηκε',
+    intro: `${first ? first + ', ο' : 'Ο'}/η <strong>${therapistName || 'φυσικοθεραπευτής'}</strong> αποδέχτηκε το αίτημά σου.`,
     rows: [
       { label: 'Ημερομηνία', value: when },
-      { label: 'Θεραπευτής', value: therapistName },
+      { label: 'Φυσικοθεραπευτής', value: therapistName },
       { label: 'Περιστατικό', value: request.problem_type },
       { label: 'Διεύθυνση', value: request.address },
       { label: 'Κόστος', value: request.total_cost ? `${request.total_cost}€` : null },
     ],
-    ctaLabel: 'Δείτε το ραντεβού σας',
+    ctaLabel: 'Δες το ραντεβού σου',
     ctaUrl: `${SITE}/dashboard/patient`,
-    footNote: 'Η πληρωμή γίνεται σε μετρητά, απευθείας στον θεραπευτή, μετά τη συνεδρία. Αν χρειαστεί να ακυρώσετε, ενημερώστε μας εγκαίρως από τον πίνακά σας.',
+    footNote: 'Η πληρωμή γίνεται σε μετρητά, απευθείας στον φυσικοθεραπευτή, μετά τη συνεδρία. Αν χρειαστεί να ακυρώσεις, κάν\' το εγκαίρως από τον πίνακά σου.',
   });
 
-  const sms = `${BRAND}: Το ραντεβου σας επιβεβαιωθηκε${when ? ` για ${when}` : ''} με τον/την ${therapistName || '-'}. ${SITE}/dashboard/patient`;
+  const sms = `${BRAND}: Το ραντεβου σου επιβεβαιωθηκε${when ? ` για ${when}` : ''} με τον/την ${therapistName || '-'}. ${SITE}/dashboard/patient`;
 
   return { subject, html, sms };
 }
@@ -268,22 +268,22 @@ export function patientRequestAccepted({ patientName, therapistName, request, bo
 // ═════════════════════════════════════════════════════════════
 export function patientRequestRejected({ patientName, therapistName, request }) {
   const first = (patientName || '').split(' ')[0] || '';
-  const subject = 'Ο θεραπευτής δεν είναι διαθέσιμος';
+  const subject = 'Ο φυσικοθεραπευτής δεν είναι διαθέσιμος';
 
   const html = shell({
     accent: '#B45309',
-    title: 'Ο θεραπευτής δεν είναι διαθέσιμος',
-    intro: `${first ? first + ', δ' : 'Δ'}υστυχώς ο/η <strong>${therapistName || 'θεραπευτής'}</strong> δεν μπορεί να αναλάβει αυτό το ραντεβού. Υπάρχουν όμως κι άλλοι διαθέσιμοι θεραπευτές στην περιοχή σας.`,
+    title: 'Ο φυσικοθεραπευτής δεν είναι διαθέσιμος',
+    intro: `${first ? first + ', δ' : 'Δ'}υστυχώς ο/η <strong>${therapistName || 'φυσικοθεραπευτής'}</strong> δεν μπορεί να αναλάβει αυτό το ραντεβού. Υπάρχουν όμως κι άλλοι διαθέσιμοι φυσικοθεραπευτές στην περιοχή σου.`,
     rows: [
       { label: 'Περιστατικό', value: request.problem_type },
       { label: 'Περιοχή', value: request.area },
     ],
-    ctaLabel: 'Δες άλλους θεραπευτές',
+    ctaLabel: 'Δες άλλους φυσικοθεραπευτές',
     ctaUrl: `${SITE}/dashboard/patient/new-request?retry=${request.id}`,
-    footNote: 'Τα στοιχεία σας είναι ήδη συμπληρωμένα — χρειάζεται μόνο να διαλέξετε θεραπευτή και ώρα.',
+    footNote: 'Τα στοιχεία σου είναι ήδη συμπληρωμένα — χρειάζεται μόνο να διαλέξεις φυσικοθεραπευτή και ώρα.',
   });
 
-  const sms = `${BRAND}: Ο θεραπευτης δεν ειναι διαθεσιμος. Δειτε αλλους: ${SITE}/dashboard/patient/new-request?retry=${request.id}`;
+  const sms = `${BRAND}: Ο φυσικοθεραπευτης δεν ειναι διαθεσιμος. Δες αλλους: ${SITE}/dashboard/patient/new-request?retry=${request.id}`;
 
   return { subject, html, sms };
 }
@@ -297,8 +297,8 @@ export function patientRequestExpired({ patientName, therapistName, request, hou
   const sameDay = !!request.is_same_day;
 
   const subject = list.length > 0
-    ? `Βρήκαμε ${list.length} ${list.length === 1 ? 'διαθέσιμο θεραπευτή' : 'διαθέσιμους θεραπευτές'}`
-    : 'Το αίτημά σας έληξε — δείτε άλλους θεραπευτές';
+    ? `Βρήκαμε ${list.length} ${list.length === 1 ? 'διαθέσιμο φυσικοθεραπευτή' : 'διαθέσιμους φυσικοθεραπευτές'}`
+    : 'Το αίτημά σου έληξε — δες άλλους φυσικοθεραπευτές';
 
   // Συγκεκριμένες προτάσεις, όχι «ξαναψάξε». Ο ασθενής μόλις περίμενε
   // άδικα· το τελευταίο που θέλει είναι να ξαναρχίσει από την αρχή.
@@ -314,24 +314,24 @@ export function patientRequestExpired({ patientName, therapistName, request, hou
 
   const html = shell({
     accent: '#B45309',
-    title: 'Ο θεραπευτής δεν απάντησε εγκαίρως',
+    title: 'Ο φυσικοθεραπευτής δεν απάντησε εγκαίρως',
     intro: list.length > 0
-      ? `${first ? first + ', ο' : 'Ο'}/η <strong>${therapistName || 'θεραπευτής'}</strong> δεν απάντησε στην ώρα του. ` +
-        `Βρήκαμε <strong>${list.length}</strong> ${list.length === 1 ? 'θεραπευτή που μπορεί' : 'θεραπευτές που μπορούν'} να σας εξυπηρετήσουν` +
+      ? `${first ? first + ', ο' : 'Ο'}/η <strong>${therapistName || 'φυσικοθεραπευτής'}</strong> δεν απάντησε στην ώρα του. ` +
+        `Βρήκαμε <strong>${list.length}</strong> ${list.length === 1 ? 'φυσικοθεραπευτή που μπορεί' : 'φυσικοθεραπευτές που μπορούν'} να σε εξυπηρετήσουν` +
         `${sameDay ? ' <strong>σήμερα</strong>' : ''}.`
-      : `${first ? first + ', τ' : 'Τ'}ο αίτημά σας προς τον/την <strong>${therapistName || 'θεραπευτή'}</strong> έμεινε αναπάντητο, οπότε το κλείσαμε. Λυπούμαστε για την αναμονή.`,
+      : `${first ? first + ', τ' : 'Τ'}ο αίτημά σου προς τον/την <strong>${therapistName || 'φυσικοθεραπευτή'}</strong> έμεινε αναπάντητο, οπότε το κλείσαμε. Λυπούμαστε για την αναμονή.`,
     rows: matchRows.length > 0 ? matchRows : [
       { label: 'Περιστατικό', value: request.problem_type },
       { label: 'Περιοχή', value: request.area },
     ],
-    ctaLabel: list.length > 0 ? 'Δες τους διαθέσιμους' : 'Δες άλλους θεραπευτές',
+    ctaLabel: list.length > 0 ? 'Δες τους διαθέσιμους' : 'Δες άλλους φυσικοθεραπευτές',
     ctaUrl: `${SITE}/dashboard/patient/new-request?retry=${request.id}`,
-    footNote: 'Τα στοιχεία σας είναι ήδη συμπληρωμένα — χρειάζεται μόνο να διαλέξετε.',
+    footNote: 'Τα στοιχεία σου είναι ήδη συμπληρωμένα — χρειάζεται μόνο να διαλέξεις.',
   });
 
   const sms = list.length > 0
-    ? `${BRAND}: Ο θεραπευτης δεν απαντησε. Βρηκαμε ${list.length} διαθεσιμους${sameDay ? ' για σημερα' : ''}: ${SITE}/dashboard/patient/new-request?retry=${request.id}`
-    : `${BRAND}: Το αιτημα σας εληξε. Δειτε αλλους: ${SITE}/dashboard/patient/new-request?retry=${request.id}`;
+    ? `${BRAND}: Ο φυσικοθεραπευτης δεν απαντησε. Βρηκαμε ${list.length} διαθεσιμους${sameDay ? ' για σημερα' : ''}: ${SITE}/dashboard/patient/new-request?retry=${request.id}`
+    : `${BRAND}: Το αιτημα σου εληξε. Δες αλλους: ${SITE}/dashboard/patient/new-request?retry=${request.id}`;
 
   return { subject, html, sms };
 }
@@ -348,7 +348,7 @@ export function therapistPendingReminder({ therapistName, request, hoursLeft }) 
   const html = shell({
     accent: '#B45309',
     title: 'Ένα αίτημα περιμένει απάντηση',
-    intro: `${first}, ένας ασθενής στην περιοχή <strong>${request.area || '—'}</strong> περιμένει την απάντησή σας. Απομένουν <strong>${hoursLeft} ώρες</strong>.`,
+    intro: `${first}, ένας ασθενής στην περιοχή <strong>${request.area || '—'}</strong> περιμένει την απάντησή σου. Απομένουν <strong>${hoursLeft} ώρες</strong>.`,
     rows: [
       { label: 'Περιστατικό', value: request.problem_type },
       { label: 'Περιοχή', value: request.area },
@@ -356,7 +356,7 @@ export function therapistPendingReminder({ therapistName, request, hoursLeft }) 
     ],
     ctaLabel: 'Απάντησε τώρα',
     ctaUrl: `${SITE}/dashboard/therapist`,
-    footNote: 'Αν δεν σας βολεύει, μια γρήγορη απόρριψη βοηθάει τον ασθενή να βρει άλλον θεραπευτή νωρίτερα.',
+    footNote: 'Αν δεν σε βολεύει, μια γρήγορη απόρριψη βοηθάει τον ασθενή να βρει άλλον φυσικοθεραπευτή νωρίτερα.',
   });
 
   const sms = `${BRAND}: Εκκρεμει αιτημα στην περιοχη ${request.area || '-'}. Απομενουν ${hoursLeft} ωρες. ${SITE}/dashboard/therapist`;
@@ -382,22 +382,22 @@ export function cancellationNotice({ toRole, recipientName, otherName, booking, 
     title: 'Το ραντεβού ακυρώθηκε',
     intro: byPatient
       ? `${first ? first + ', τ' : 'Τ'}ο ραντεβού με <strong>${otherName || 'τον ασθενή'}</strong> ακυρώθηκε από τον ασθενή.`
-      : `${first ? first + ', τ' : 'Τ'}ο ραντεβού σας με <strong>${otherName || 'τον θεραπευτή'}</strong> ακυρώθηκε.`,
+      : `${first ? first + ', τ' : 'Τ'}ο ραντεβού σου με <strong>${otherName || 'τον φυσικοθεραπευτή'}</strong> ακυρώθηκε.`,
     rows: [
       { label: 'Ημερομηνία', value: when },
-      { label: byPatient ? 'Ασθενής' : 'Θεραπευτής', value: otherName },
+      { label: byPatient ? 'Ασθενής' : 'Φυσικοθεραπευτής', value: otherName },
       { label: 'Αιτιολογία', value: reason },
     ],
-    ctaLabel: byPatient ? 'Δες τα ραντεβού σου' : 'Βρες άλλον θεραπευτή',
+    ctaLabel: byPatient ? 'Δες τα ραντεβού σου' : 'Βρες άλλον φυσικοθεραπευτή',
     ctaUrl: byPatient ? `${SITE}/dashboard/therapist` : `${SITE}/dashboard/patient/new-request`,
     footNote: byPatient
-      ? 'Η ώρα ελευθερώθηκε αυτόματα στο πρόγραμμά σας.'
-      : 'Μπορείτε να κλείσετε νέο ραντεβού με άλλον θεραπευτή οποτεδήποτε.',
+      ? 'Η ώρα ελευθερώθηκε αυτόματα στο πρόγραμμά σου.'
+      : 'Μπορείς να κλείσεις νέο ραντεβού με άλλον φυσικοθεραπευτή οποτεδήποτε.',
   });
 
   const sms = byPatient
     ? `${BRAND}: Ακυρωθηκε ραντεβου${when ? ` (${when})` : ''} απο τον ασθενη.`
-    : `${BRAND}: Το ραντεβου σας${when ? ` (${when})` : ''} ακυρωθηκε. Βρειτε αλλον θεραπευτη: ${SITE}`;
+    : `${BRAND}: Το ραντεβου σου${when ? ` (${when})` : ''} ακυρωθηκε. Βρες αλλον φυσικοθεραπευτη: ${SITE}`;
 
   return { subject, html, sms };
 }
@@ -407,21 +407,21 @@ export function cancellationNotice({ toRole, recipientName, otherName, booking, 
 // ═════════════════════════════════════════════════════════════
 export function patientReviewRequest({ patientName, therapistName, booking }) {
   const first = (patientName || '').split(' ')[0] || '';
-  const subject = 'Πώς ήταν η συνεδρία σας;';
+  const subject = 'Πώς ήταν η συνεδρία σου;';
 
   const html = shell({
-    title: 'Πώς ήταν η συνεδρία σας;',
-    intro: `${first ? first + ', η' : 'Η'} γνώμη σας για τον/την <strong>${therapistName || 'θεραπευτή'}</strong> βοηθάει τους επόμενους ασθενείς να διαλέξουν σωστά. Χρειάζεται λιγότερο από ένα λεπτό.`,
+    title: 'Πώς ήταν η συνεδρία σου;',
+    intro: `${first ? first + ', η' : 'Η'} γνώμη σου για τον/την <strong>${therapistName || 'φυσικοθεραπευτή'}</strong> βοηθάει τους επόμενους ασθενείς να διαλέξουν σωστά. Χρειάζεται λιγότερο από ένα λεπτό.`,
     rows: [
-      { label: 'Θεραπευτής', value: therapistName },
+      { label: 'Φυσικοθεραπευτής', value: therapistName },
       { label: 'Ημερομηνία', value: booking?.session_date ? fmtDate(booking.session_date) : null },
     ],
     ctaLabel: 'Άφησε αξιολόγηση',
     ctaUrl: `${SITE}/dashboard/patient`,
-    footNote: 'Η αξιολόγησή σας θα φέρει την ένδειξη «Από επαληθευμένη συνεδρία».',
+    footNote: 'Η αξιολόγησή σου θα φέρει την ένδειξη «Από επαληθευμένη συνεδρία».',
   });
 
-  const sms = `${BRAND}: Πως ηταν η συνεδρια με τον/την ${therapistName || '-'}; Αφηστε αξιολογηση: ${SITE}/dashboard/patient`;
+  const sms = `${BRAND}: Πως ηταν η συνεδρια με τον/την ${therapistName || '-'}; Αφησε αξιολογηση: ${SITE}/dashboard/patient`;
 
   return { subject, html, sms };
 }
@@ -437,17 +437,17 @@ export function appointmentReminder({ toRole, recipientName, otherName, booking,
   const subject = 'Υπενθύμιση: ραντεβού αύριο';
 
   const html = shell({
-    title: 'Το ραντεβού σας είναι αύριο',
+    title: 'Το ραντεβού σου είναι αύριο',
     intro: `${first ? first + ', υ' : 'Υ'}πενθύμιση για το ραντεβού${time ? ` στις <strong>${time}</strong>` : ''}${otherName ? ` με <strong>${otherName}</strong>` : ''}.`,
     rows: [
       { label: 'Ημερομηνία', value: booking?.session_date ? fmtDate(booking.session_date) : null },
       { label: 'Ώρα', value: time || null },
-      { label: toTherapist ? 'Ασθενής' : 'Θεραπευτής', value: otherName },
+      { label: toTherapist ? 'Ασθενής' : 'Φυσικοθεραπευτής', value: otherName },
       { label: 'Διεύθυνση', value: address },
     ],
     ctaLabel: toTherapist ? 'Δες το πρόγραμμά σου' : 'Δες το ραντεβού σου',
     ctaUrl: toTherapist ? `${SITE}/dashboard/therapist` : `${SITE}/dashboard/patient`,
-    footNote: 'Αν κάτι άλλαξε, ενημερώστε μας το συντομότερο ώστε να προλάβει να προσαρμοστεί ο άλλος.',
+    footNote: 'Αν κάτι άλλαξε, ενημέρωσέ μας το συντομότερο ώστε να προλάβει να προσαρμοστεί και η άλλη πλευρά.',
   });
 
   const sms = `${BRAND}: Υπενθυμιση ραντεβου αυριο${time ? ` στις ${time}` : ''}${otherName ? ` με ${otherName}` : ''}.`;
@@ -567,18 +567,18 @@ export function welcomePatient({ name, verifyUrl, lang = 'el' }) {
     });
     return { subject, html };
   }
-  const subject = `Καλώς ήρθατε στο ${BRAND} — επιβεβαιώστε το email σας`;
+  const subject = `Καλώς ήρθες στο ${BRAND} — επιβεβαίωσε το email σου`;
   const html = shell({
-    title: `Καλώς ήρθατε${first ? `, ${first}` : ''}!`,
-    intro: `Ο λογαριασμός σας στο ${BRAND} είναι έτοιμος. Επιβεβαιώστε ότι αυτό το email είναι δικό σας, ώστε να σας στέλνουμε με ασφάλεια ενημερώσεις για τα ραντεβού σας.` +
+    title: `Καλώς ήρθες${first ? `, ${first}` : ''}!`,
+    intro: `Ο λογαριασμός σου στο ${BRAND} είναι έτοιμος. Επιβεβαίωσε ότι αυτό το email είναι δικό σου, ώστε να σου στέλνουμε με ασφάλεια ενημερώσεις για τα ραντεβού σου.` +
       stepsHtml([
-        'Περιγράψτε τι χρειάζεστε και την περιοχή όπου θέλετε τη συνεδρία.',
-        'Επιλέξτε επαληθευμένο φυσικοθεραπευτή που καλύπτει την περιοχή σας.',
-        'Ο φυσικοθεραπευτής έρχεται στο σπίτι σας τη συμφωνημένη ώρα.',
+        'Περιγράφεις τι χρειάζεσαι και την περιοχή όπου θέλεις τη συνεδρία.',
+        'Διαλέγεις επαληθευμένο φυσικοθεραπευτή που καλύπτει την περιοχή σου.',
+        'Ο φυσικοθεραπευτής έρχεται στον χώρο σου τη συμφωνημένη ώρα.',
       ]),
     ctaLabel: 'Επιβεβαίωση email',
     ctaUrl: verifyUrl,
-    footNote: 'Ο λογαριασμός σας λειτουργεί ήδη — μπορείτε να κλείσετε ραντεβού αμέσως. Αν δεν κάνατε εσείς αυτή την εγγραφή, αγνοήστε αυτό το μήνυμα.',
+    footNote: 'Ο λογαριασμός σου λειτουργεί ήδη — μπορείς να κλείσεις ραντεβού αμέσως. Αν δεν έκανες εσύ αυτή την εγγραφή, αγνόησε αυτό το μήνυμα.',
   });
   return { subject, html };
 }
@@ -586,7 +586,6 @@ export function welcomePatient({ name, verifyUrl, lang = 'el' }) {
 // Επαναποστολή από τον πίνακα («Δεν ήρθε το email;»)
 export function verifyEmailAgain({ name, verifyUrl, role, lang = 'el' }) {
   const first = esc((name || '').trim().split(' ')[0]);
-  const formal = role !== 'therapist';
   if (lang === 'en') {
     return {
       subject: `Confirm your email — ${BRAND}`,
@@ -604,9 +603,7 @@ export function verifyEmailAgain({ name, verifyUrl, role, lang = 'el' }) {
     subject: `Επιβεβαίωση email — ${BRAND}`,
     html: shell({
       title: 'Επιβεβαίωση email',
-      intro: formal
-        ? `${first ? `${first}, π` : 'Π'}ατήστε το κουμπί για να επιβεβαιώσετε ότι αυτό το email είναι δικό σας.`
-        : `${first ? `${first}, π` : 'Π'}άτησε το κουμπί για να επιβεβαιώσεις ότι αυτό το email είναι δικό σου.`,
+      intro: `${first ? `${first}, π` : 'Π'}άτησε το κουμπί για να επιβεβαιώσεις ότι αυτό το email είναι δικό σου.`,
       ctaLabel: 'Επιβεβαίωση email',
       ctaUrl: verifyUrl,
       footNote: role === 'therapist' ? 'Το προφίλ σου μπορεί να εγκριθεί μόνο αφού επιβεβαιωθεί το email.' : null,

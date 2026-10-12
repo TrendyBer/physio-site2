@@ -15,11 +15,12 @@ import ReportModal from '@/components/ReportModal';
 import StepPlan from '@/components/onboarding/StepPlan';
 import Logo, { BRAND } from '@/components/Logo';
 import EmailVerifyBanner from '@/components/EmailVerifyBanner';
+import AvailabilityCalendar from '@/components/therapist/AvailabilityCalendar';
 import {
   LayoutDashboard, ClipboardList, Calendar, MapPin, Target, Star, User, Clock, AlertTriangle, UserX,
   Upload, Home, MessageSquare, Check, X, Lock, CalendarClock, ChevronLeft, ChevronRight,
   Plus, Lightbulb, Camera, Pencil, CheckCircle2, Save, FileText, GraduationCap, Award, Eye, Trash2,
-  Wallet, Hourglass, CalendarDays, List, Globe, Info, Copy, Ban, Repeat, CreditCard,
+  Wallet, Hourglass, CalendarDays, List, Globe, Info, Copy, Ban, Repeat, CreditCard, LogOut,
 } from 'lucide-react';
 
 // ─── Locale data ──────────────────────────────────────────────────────
@@ -68,7 +69,7 @@ const PAYMENT_STATUS = {
 // ─── Translations ─────────────────────────────────────────────────────
 const TX = {
   el: {
-    roleBadge: 'Θεραπευτής',
+    roleBadge: 'Φυσικοθεραπευτής',
     site: 'Site',
     viewSiteTitle: 'Δες το site όπως το βλέπει ο ασθενής',
     signOut: 'Αποσύνδεση',
@@ -358,7 +359,7 @@ const TX = {
     condUnsaved: 'Έχεις αλλαγές χωρίς αποθήκευση',
   },
   en: {
-    roleBadge: 'Therapist',
+    roleBadge: 'Physiotherapist',
     site: 'Site',
     viewSiteTitle: 'See the site as a patient sees it',
     signOut: 'Sign out',
@@ -682,41 +683,6 @@ function ReviewStars({ rating, size = 14 }) {
   );
 }
 
-const HOURS = [];
-for (let h = 9; h <= 20; h++) {
-  HOURS.push(`${String(h).padStart(2, '0')}:00`);
-  HOURS.push(`${String(h).padStart(2, '0')}:30`);
-}
-HOURS.push('21:00');
-
-function generateDates() {
-  const dates = [];
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const end = new Date(today);
-  end.setFullYear(end.getFullYear() + 2);
-  let cur = new Date(today);
-  while (cur <= end) {
-    dates.push(cur.toISOString().split('T')[0]);
-    cur.setDate(cur.getDate() + 1);
-  }
-  return dates;
-}
-
-function groupByWeek(dates) {
-  const weeks = [];
-  let week = [];
-  dates.forEach(d => {
-    const day = new Date(d + 'T12:00:00').getDay();
-    if (day === 1 && week.length > 0) { weeks.push(week); week = []; }
-    week.push(d);
-  });
-  if (week.length > 0) weeks.push(week);
-  return weeks;
-}
-
-const ALL_WEEKS = groupByWeek(generateDates());
-
 function daysUntilAutoRelease(autoReleaseAt) {
   if (!autoReleaseAt) return null;
   const now = new Date();
@@ -841,421 +807,6 @@ function TherapistConditionsSection({ userId, specialty, lang, tx }) {
   );
 }
 
-// ─── ΔΙΑΘΕΣΙΜΟΤΗΤΑ ────────────────────────────────────────────────────
-// Εβδομαδιαίο πρόγραμμα + εξαιρέσεις, πάνω στις functions της βάσης:
-// generate_availability_slots / clear_free_slots / copy_week_availability.
-//
-// Το availability_slots παραμένει η ΜΟΝΗ πηγή αλήθειας για το τι είναι
-// κρατήσιμο. Το εβδομαδιαίο πρόγραμμα είναι απλώς η συνταγή που το γεμίζει,
-// οπότε booking, reschedule και σελίδα ασθενή δουλεύουν αμετάβλητα.
-function AvailabilityManager({ userId, lang, tx, loc, slots, onSlotsChanged, weekOffset, setWeekOffset, currentWeek }) {
-  const [mode, setMode] = useState('weekly');
-  const [blocks, setBlocks] = useState([]);
-  const [exceptions, setExceptions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [msg, setMsg] = useState(null);
-  const [busy, setBusy] = useState(null);
-
-  const [form, setForm] = useState({ weekday: 1, start_time: '09:00', end_time: '14:00', slot_minutes: 60 });
-  const [weeksAhead, setWeeksAhead] = useState(4);
-  const [copyWeeks, setCopyWeeks] = useState(3);
-  const [excForm, setExcForm] = useState({ date: '', note: '' });
-
-  useEffect(() => { if (userId) load(); }, [userId]);
-
-  function flash(type, text) {
-    setMsg({ type, text });
-    setTimeout(() => setMsg(null), 5000);
-  }
-
-  async function load() {
-    const [{ data: b }, { data: e }] = await Promise.all([
-      supabase.from('therapist_weekly_schedule').select('*').eq('therapist_id', userId).order('weekday').order('start_time'),
-      supabase.from('therapist_schedule_exceptions').select('*').eq('therapist_id', userId).gte('date', todayISO()).order('date'),
-    ]);
-    setBlocks(b || []);
-    setExceptions(e || []);
-    setLoading(false);
-  }
-
-  async function addBlock() {
-    if (form.end_time <= form.start_time) { flash('error', tx.errBlockTime); return; }
-    setBusy('block');
-    const { data, error } = await supabase.from('therapist_weekly_schedule').insert([{
-      therapist_id: userId,
-      weekday: Number(form.weekday),
-      start_time: form.start_time,
-      end_time: form.end_time,
-      slot_minutes: Number(form.slot_minutes),
-      is_active: true,
-    }]).select().single();
-    setBusy(null);
-    if (error) { flash('error', tx.errPrefix + error.message); return; }
-    setBlocks(prev => [...prev, data].sort((a, b) => a.weekday - b.weekday || a.start_time.localeCompare(b.start_time)));
-  }
-
-  async function removeBlock(id) {
-    const { error } = await supabase.from('therapist_weekly_schedule').delete().eq('id', id);
-    if (error) { flash('error', tx.errPrefix + error.message); return; }
-    setBlocks(prev => prev.filter(b => b.id !== id));
-  }
-
-  async function generate() {
-    setBusy('generate');
-    const from = todayISO();
-    const to = new Date();
-    to.setDate(to.getDate() + weeksAhead * 7);
-    const { data, error } = await supabase.rpc('generate_availability_slots', {
-      p_therapist_id: userId,
-      p_from: from,
-      p_to: to.toISOString().split('T')[0],
-    });
-    setBusy(null);
-    if (error) {
-      const m = error.message || '';
-      flash('error', m.includes('not_authorised') ? tx.errAuth : m.includes('range_too_large') ? tx.errRange : tx.errPrefix + m);
-      return;
-    }
-    const n = Number(data || 0);
-    flash('success', n > 0 ? tx.generatedOk(n) : tx.generatedNone);
-    await onSlotsChanged();
-  }
-
-  async function copyWeek() {
-    setBusy('copy');
-    const source = currentWeek?.[0] || todayISO();
-    const { data, error } = await supabase.rpc('copy_week_availability', {
-      p_therapist_id: userId,
-      p_source_start: source,
-      p_weeks_ahead: copyWeeks,
-    });
-    setBusy(null);
-    if (error) { flash('error', tx.errPrefix + error.message); return; }
-    flash('success', tx.copiedOk(Number(data || 0)));
-    await onSlotsChanged();
-  }
-
-  async function addException() {
-    if (!excForm.date) return;
-    setBusy('exception');
-
-    const { data, error } = await supabase.from('therapist_schedule_exceptions').upsert({
-      therapist_id: userId,
-      date: excForm.date,
-      is_unavailable: true,
-      note: excForm.note || null,
-    }, { onConflict: 'therapist_id,date' }).select().single();
-
-    if (error) { setBusy(null); flash('error', tx.errPrefix + error.message); return; }
-
-    // Καθαρίζουμε ΜΟΝΟ τις ελεύθερες ώρες εκείνης της ημέρας.
-    // Κλεισμένα ραντεβού δεν αγγίζονται — ο θεραπευτής πρέπει να τα
-    // ακυρώσει ρητά, ώστε να ειδοποιηθεί ο ασθενής.
-    await supabase.rpc('clear_free_slots', {
-      p_therapist_id: userId,
-      p_from: excForm.date,
-      p_to: excForm.date,
-    });
-
-    setBusy(null);
-    setExceptions(prev => [...prev.filter(x => x.date !== data.date), data].sort((a, b) => a.date.localeCompare(b.date)));
-    setExcForm({ date: '', note: '' });
-    await onSlotsChanged();
-  }
-
-  async function removeException(id) {
-    const { error } = await supabase.from('therapist_schedule_exceptions').delete().eq('id', id);
-    if (error) { flash('error', tx.errPrefix + error.message); return; }
-    setExceptions(prev => prev.filter(e => e.id !== id));
-  }
-
-  async function toggleSlot(day, hour) {
-    const existing = slots.find(s => s.date === day && s.start_time === hour + ':00');
-    if (existing) {
-      if (existing.is_blocked) return;
-      await supabase.from('availability_slots').delete().eq('id', existing.id);
-    } else {
-      const [h, m] = hour.split(':').map(Number);
-      const totalMin = h * 60 + m + 30;
-      const endH = String(Math.floor(totalMin / 60)).padStart(2, '0');
-      const endM = String(totalMin % 60).padStart(2, '0');
-      await supabase.from('availability_slots').insert([{
-        therapist_id: userId, date: day,
-        start_time: hour + ':00',
-        end_time: `${endH}:${endM}:00`,
-        is_blocked: false,
-      }]);
-    }
-    await onSlotsChanged();
-  }
-
-  const inputStyle = { padding: '9px 12px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 13, fontFamily: 'inherit', outline: 'none', color: C.text, boxSizing: 'border-box' };
-  const labelStyle = { fontSize: 11, fontWeight: 700, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '.05em', display: 'block', marginBottom: 5 };
-
-  const fmtDate = d => new Date(d + 'T12:00:00').toLocaleDateString(loc, { day: '2-digit', month: '2-digit' });
-  const weekStart = currentWeek?.[0];
-  const weekEnd = currentWeek?.[currentWeek.length - 1];
-
-  if (loading) {
-    return <div style={{ background: '#fff', borderRadius: RAD.card, border: `1px solid ${C.border}`, padding: 40, textAlign: 'center', color: C.textMuted }}>{tx.loading}</div>;
-  }
-
-  return (
-    <div>
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 3 }}>{tx.availTitle}</div>
-        <div style={{ fontSize: 13, color: C.textMuted, lineHeight: 1.5 }}>{tx.availDesc}</div>
-      </div>
-
-      <div style={{ display: 'flex', gap: 4, background: C.border, padding: 4, borderRadius: 10, width: 'fit-content', marginBottom: 18 }}>
-        {[['weekly', tx.modeWeekly, Repeat], ['grid', tx.modeGrid, CalendarDays]].map(([id, label, Icon]) => (
-          <button key={id} onClick={() => setMode(id)}
-            style={{ padding: '8px 16px', borderRadius: 7, border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: mode === id ? '#fff' : 'transparent', color: mode === id ? C.text : C.textMuted, boxShadow: mode === id ? '0 1px 4px rgba(0,0,0,0.1)' : 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            <Icon size={14} />
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {msg && (
-        <div style={{
-          background: msg.type === 'success' ? C.successBg : C.dangerBg,
-          border: `1px solid ${msg.type === 'success' ? C.successBorder : C.dangerBorder}`,
-          borderRadius: 10, padding: '11px 16px', fontSize: 13, marginBottom: 16,
-          color: msg.type === 'success' ? C.success : C.danger, fontWeight: 600,
-          display: 'flex', alignItems: 'center', gap: 8,
-        }}>
-          {msg.type === 'success' ? <Check size={15} strokeWidth={3} /> : <AlertTriangle size={15} strokeWidth={2.4} />}
-          {msg.text}
-        </div>
-      )}
-
-      {mode === 'weekly' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-
-          <div style={{ background: '#fff', borderRadius: RAD.card, border: `1px solid ${C.border}`, padding: 22 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 3, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
-              <Repeat size={15} color={C.accent} />
-              {tx.weeklyTitle}
-            </div>
-            <div style={{ fontSize: 12.5, color: C.textMuted, marginBottom: 16 }}>{tx.weeklyDesc}</div>
-
-            {blocks.length === 0 ? (
-              <div style={{ padding: 20, textAlign: 'center', background: C.page, borderRadius: 10, color: C.textFaint, fontSize: 13, fontStyle: 'italic', marginBottom: 16 }}>
-                {tx.noBlocks}
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 16 }}>
-                {blocks.map(b => (
-                  <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', background: C.successBg, border: `1px solid ${C.successBorder}`, borderRadius: 10, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: C.success, minWidth: 78 }}>{DAYS[lang][b.weekday]}</span>
-                    <span style={{ fontSize: 13.5, color: C.success, fontWeight: 600 }}>
-                      {b.start_time?.slice(0, 5)} – {b.end_time?.slice(0, 5)}
-                    </span>
-                    <span style={{ fontSize: 12, color: C.success, background: '#fff', border: `1px solid ${C.successBorder}`, padding: '2px 9px', borderRadius: RAD.pill }}>
-                      {b.slot_minutes} {tx.minutesShort}
-                    </span>
-                    <button onClick={() => removeBlock(b.id)}
-                      style={{ marginLeft: 'auto', background: 'transparent', border: `1px solid ${C.dangerBorder}`, color: C.danger, borderRadius: 20, padding: '5px 12px', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                      <Trash2 size={12} />
-                      {tx.removeBlock}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap', paddingTop: 16, borderTop: `1px solid ${C.borderSoft}` }}>
-              <div style={{ minWidth: 120 }}>
-                <label style={labelStyle}>{tx.day}</label>
-                <select value={form.weekday} onChange={e => setForm(f => ({ ...f, weekday: e.target.value }))} style={{ ...inputStyle, width: '100%' }}>
-                  {[1, 2, 3, 4, 5, 6, 0].map(d => <option key={d} value={d}>{DAYS[lang][d]}</option>)}
-                </select>
-              </div>
-              <div>
-                <label style={labelStyle}>{tx.from}</label>
-                <input type="time" value={form.start_time} onChange={e => setForm(f => ({ ...f, start_time: e.target.value }))} style={inputStyle} />
-              </div>
-              <div>
-                <label style={labelStyle}>{tx.to}</label>
-                <input type="time" value={form.end_time} onChange={e => setForm(f => ({ ...f, end_time: e.target.value }))} style={inputStyle} />
-              </div>
-              <div>
-                <label style={labelStyle}>{tx.duration}</label>
-                <select value={form.slot_minutes} onChange={e => setForm(f => ({ ...f, slot_minutes: e.target.value }))} style={inputStyle}>
-                  {[30, 45, 60, 90].map(m => <option key={m} value={m}>{m} {tx.minutesShort}</option>)}
-                </select>
-              </div>
-              <button onClick={addBlock} disabled={busy === 'block'}
-                style={{ padding: '10px 20px', borderRadius: 8, border: 'none', background: C.brand, color: '#fff', fontSize: 13, fontWeight: 600, cursor: busy === 'block' ? 'wait' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <Plus size={14} strokeWidth={2.5} />
-                {tx.addBlock}
-              </button>
-            </div>
-          </div>
-
-          <div style={{ background: C.infoBg, borderRadius: RAD.card, border: `1px solid ${C.infoBorder}`, padding: 22 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: C.info, marginBottom: 3, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
-              <CalendarDays size={15} />
-              {tx.generateTitle}
-            </div>
-            <div style={{ fontSize: 12.5, color: C.info, marginBottom: 16, lineHeight: 1.5 }}>{tx.generateDesc}</div>
-
-            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-              <div>
-                <label style={{ ...labelStyle, color: C.info }}>{tx.weeksAhead}</label>
-                <select value={weeksAhead} onChange={e => setWeeksAhead(Number(e.target.value))} style={{ ...inputStyle, background: '#fff' }}>
-                  {[2, 4, 8, 12, 24].map(w => <option key={w} value={w}>{w} {tx.weeks}</option>)}
-                </select>
-              </div>
-              <button onClick={generate} disabled={busy === 'generate' || blocks.length === 0}
-                style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: blocks.length === 0 ? C.border : C.info, color: '#fff', fontSize: 13, fontWeight: 700, cursor: blocks.length === 0 ? 'not-allowed' : busy === 'generate' ? 'wait' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
-                <Check size={14} strokeWidth={3} />
-                {busy === 'generate' ? tx.generating : tx.generateBtn}
-              </button>
-            </div>
-          </div>
-
-          <div style={{ background: '#fff', borderRadius: RAD.card, border: `1px solid ${C.border}`, padding: 22 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 3, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
-              <Ban size={15} color={C.danger} />
-              {tx.exceptionsTitle}
-            </div>
-            <div style={{ fontSize: 12.5, color: C.textMuted, marginBottom: 16 }}>{tx.exceptionsDesc}</div>
-
-            {exceptions.length === 0 ? (
-              <div style={{ padding: 16, textAlign: 'center', background: C.page, borderRadius: 10, color: C.textFaint, fontSize: 13, fontStyle: 'italic', marginBottom: 16 }}>
-                {tx.noExceptions}
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-                {exceptions.map(e => (
-                  <div key={e.id} style={{ background: C.dangerBg, border: `1px solid ${C.dangerBorder}`, borderRadius: RAD.button, padding: '6px 8px 6px 14px', display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: C.danger, fontWeight: 500 }}>
-                    <span style={{ fontWeight: 700 }}>
-                      {new Date(e.date + 'T12:00:00').toLocaleDateString(loc, { day: '2-digit', month: 'short' })}
-                    </span>
-                    {e.note && <span style={{ fontSize: 12, opacity: 0.8 }}>{e.note}</span>}
-                    <button onClick={() => removeException(e.id)}
-                      style={{ background: 'transparent', border: 'none', color: C.danger, cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', width: 18, height: 18 }}>
-                      <X size={13} strokeWidth={2.5} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap', paddingTop: 16, borderTop: `1px solid ${C.borderSoft}` }}>
-              <div>
-                <label style={labelStyle}>{tx.day}</label>
-                <input type="date" min={todayISO()} value={excForm.date} onChange={e => setExcForm(f => ({ ...f, date: e.target.value }))} style={inputStyle} />
-              </div>
-              <div style={{ flex: 1, minWidth: 160 }}>
-                <label style={labelStyle}>{tx.exceptionNote}</label>
-                <input value={excForm.note} onChange={e => setExcForm(f => ({ ...f, note: e.target.value }))} placeholder={tx.exceptionNotePh} style={{ ...inputStyle, width: '100%' }} />
-              </div>
-              <button onClick={addException} disabled={!excForm.date || busy === 'exception'}
-                style={{ padding: '10px 20px', borderRadius: 8, border: `1px solid ${C.dangerBorder}`, background: !excForm.date ? C.page : '#fff', color: !excForm.date ? C.textFaint : C.danger, fontSize: 13, fontWeight: 600, cursor: !excForm.date ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <Plus size={14} strokeWidth={2.5} />
-                {tx.addException}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {mode === 'grid' && (
-        <div style={{ background: '#fff', borderRadius: RAD.card, border: `1px solid ${C.border}`, padding: 22 }}>
-          <div style={{ fontSize: 12.5, color: C.textMuted, marginBottom: 16 }}>{tx.gridDesc}</div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
-            <button onClick={() => setWeekOffset(w => Math.max(0, w - 1))} disabled={weekOffset === 0}
-              style={{ padding: '6px 16px', borderRadius: 8, border: `1px solid ${C.border}`, background: weekOffset === 0 ? C.page : '#fff', color: weekOffset === 0 ? C.textFaint : C.brand, fontSize: 13, fontWeight: 600, cursor: weekOffset === 0 ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' }}>
-              <ChevronLeft size={14} />
-              {tx.prev}
-            </button>
-            <div style={{ flex: 1, textAlign: 'center', fontSize: 14, fontWeight: 700, color: C.text, minWidth: 140 }}>
-              {weekStart && weekEnd ? `${fmtDate(weekStart)} – ${fmtDate(weekEnd)}` : ''}
-              <span style={{ fontSize: 12, color: C.textFaint, marginLeft: 8 }}>{tx.week} {weekOffset + 1}</span>
-            </div>
-            <button onClick={() => setWeekOffset(w => Math.min(ALL_WEEKS.length - 1, w + 1))}
-              style={{ padding: '6px 16px', borderRadius: 8, border: `1px solid ${C.border}`, background: '#fff', color: C.brand, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' }}>
-              {tx.next}
-              <ChevronRight size={14} />
-            </button>
-          </div>
-
-          <div style={{ background: C.infoBg, border: `1px solid ${C.infoBorder}`, borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-            <div style={{ flex: 1, minWidth: 180 }}>
-              <div style={{ fontSize: 12.5, fontWeight: 700, color: C.info, marginBottom: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Copy size={13} strokeWidth={2.2} />
-                {tx.copyWeekTitle}
-              </div>
-              <div style={{ fontSize: 11.5, color: C.info, lineHeight: 1.5 }}>{tx.copyWeekDesc}</div>
-            </div>
-            <select value={copyWeeks} onChange={e => setCopyWeeks(Number(e.target.value))} style={{ ...inputStyle, background: '#fff' }}>
-              {[1, 2, 3, 4, 8, 12].map(w => <option key={w} value={w}>{w} {tx.weeks}</option>)}
-            </select>
-            <button onClick={copyWeek} disabled={busy === 'copy'}
-              style={{ padding: '9px 18px', borderRadius: 8, border: 'none', background: C.info, color: '#fff', fontSize: 12.5, fontWeight: 600, cursor: busy === 'copy' ? 'wait' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
-              <Copy size={13} />
-              {busy === 'copy' ? tx.copying : tx.copyWeekBtn}
-            </button>
-          </div>
-
-          <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: '60vh' }}>
-            <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 480 }}>
-              <thead style={{ position: 'sticky', top: 0, background: '#fff', zIndex: 10 }}>
-                <tr>
-                  <th style={{ padding: '8px 10px', fontSize: 11, color: C.textMuted, fontWeight: 600, textAlign: 'left', minWidth: 52 }}>{tx.hour}</th>
-                  {(currentWeek || []).map(d => {
-                    const dateObj = new Date(d + 'T12:00:00');
-                    const dayName = DAYS_SHORT[lang][dateObj.getDay()];
-                    const dayNum = dateObj.toLocaleDateString(loc, { day: '2-digit', month: '2-digit' });
-                    const isToday = d === todayISO();
-                    const isExc = exceptions.some(e => e.date === d);
-                    return (
-                      <th key={d} style={{ padding: '8px 4px', fontSize: 11, color: isExc ? C.danger : isToday ? C.accent : C.textMuted, fontWeight: 700, textAlign: 'center', minWidth: 50, background: isExc ? C.dangerBg : isToday ? C.infoBg : 'transparent', borderRadius: 6 }}>
-                        {dayName}<br /><span style={{ fontWeight: 400, fontSize: 10 }}>{dayNum}</span>
-                      </th>
-                    );
-                  })}
-                </tr>
-              </thead>
-              <tbody>
-                {HOURS.map(hour => (
-                  <tr key={hour} style={{ borderTop: hour.endsWith(':00') ? `1px solid ${C.borderSoft}` : 'none' }}>
-                    <td style={{ padding: '2px 8px', fontSize: 10, color: hour.endsWith(':00') ? C.textBody : C.textFaint, fontWeight: hour.endsWith(':00') ? 600 : 400, whiteSpace: 'nowrap' }}>{hour}</td>
-                    {(currentWeek || []).map(day => {
-                      const slot = slots.find(s => s.date === day && s.start_time === hour + ':00');
-                      const isBlocked = slot?.is_blocked;
-                      const isAvail = slot && !isBlocked;
-                      const isPast = new Date(day + 'T' + hour + ':00') < new Date();
-                      return (
-                        <td key={day} style={{ padding: 2, textAlign: 'center' }}>
-                          <div onClick={() => !isBlocked && !isPast && toggleSlot(day, hour)}
-                            style={{ width: '100%', height: 22, borderRadius: 3, cursor: isBlocked || isPast ? 'not-allowed' : 'pointer', background: isBlocked ? C.dangerBg : isAvail ? C.successBg : isPast ? C.page : C.borderSoft, border: `1px solid ${isBlocked ? C.dangerBorder : isAvail ? C.successBorder : C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: isPast ? 0.35 : 1, transition: 'all .1s' }}>
-                            {isBlocked ? <Lock size={10} color={C.danger} strokeWidth={2.5} /> : isAvail ? <Check size={11} color={C.success} strokeWidth={3} /> : null}
-                          </div>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div style={{ marginTop: 12, display: 'flex', gap: 16, fontSize: 12, color: C.textMuted, flexWrap: 'wrap' }}>
-            <span><span style={{ display: 'inline-block', width: 12, height: 12, background: C.successBg, border: `1px solid ${C.successBorder}`, borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />{tx.legendAvailable}</span>
-            <span><span style={{ display: 'inline-block', width: 12, height: 12, background: C.dangerBg, border: `1px solid ${C.dangerBorder}`, borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />{tx.legendBooked}</span>
-            <span><span style={{ display: 'inline-block', width: 12, height: 12, background: C.borderSoft, border: `1px solid ${C.border}`, borderRadius: 3, marginRight: 4, verticalAlign: 'middle' }} />{tx.legendUnavailable}</span>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ═══════════════════════════════════════════════════════════════════════
 export default function TherapistDashboard() {
   const router = useRouter();
@@ -1324,7 +875,6 @@ export default function TherapistDashboard() {
   const [profileForm, setProfileForm] = useState({});
   const [saving, setSaving] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [weekOffset, setWeekOffset] = useState(0);
   const photoInputRef = useRef();
   const tabsRef = useRef();
 
@@ -1377,7 +927,6 @@ export default function TherapistDashboard() {
   const [savingAreas, setSavingAreas] = useState(false);
   const [areaSuggestions, setAreaSuggestions] = useState([]);
 
-  const currentWeek = ALL_WEEKS[weekOffset] || ALL_WEEKS[0];
 
   useEffect(() => {
     if (!profile) return;
@@ -2162,6 +1711,22 @@ export default function TherapistDashboard() {
         * { box-sizing: border-box; margin: 0; padding: 0; }
         .tabs-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
         .tabs-scroll::-webkit-scrollbar { display: none; }
+        /* ΠΛΑΓΙΟ ΜΕΝΟΥ: μόνο σε μεγάλη οθόνη. Σε tablet/κινητό μένουν
+           τα οριζόντια tabs, που χωράνε και δουλεύουν με το δάχτυλο. */
+        .td-shell { display: flex; min-height: 100vh; }
+        .td-side { display: none; }
+        .td-main { flex: 1; min-width: 0; }
+        @media (min-width: 1024px) {
+          .td-side { display: flex; flex-direction: column; width: 244px; flex-shrink: 0; position: sticky; top: 0; height: 100vh; background: #fff; border-right: 1px solid ${C.border}; padding: 20px 14px; overflow-y: auto; }
+          .td-tabs { display: none; }
+          .td-nav-logo { display: none !important; }
+        }
+        .td-item { display: flex; align-items: center; gap: 11px; width: 100%; padding: 11px 12px; border-radius: 11px; border: none; background: transparent; color: ${C.textBody}; font-size: 14.5px; font-weight: 600; cursor: pointer; font-family: inherit; text-align: left; transition: background .15s; }
+        .td-item:hover { background: ${C.surfaceAlt}; }
+        .td-item.on { background: ${C.accentSoft}; color: ${C.accent}; }
+        .td-sub { display: flex; align-items: center; gap: 9px; width: 100%; padding: 7px 12px 7px 38px; border-radius: 9px; border: none; background: transparent; color: ${C.textMuted}; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; text-align: left; }
+        .td-sub:hover { color: ${C.text}; }
+        .td-sub.on { color: ${C.accent}; font-weight: 700; }
         @media (max-width: 720px) {
           .req-actions { flex-direction: column !important; align-items: stretch !important; }
           .req-actions button { width: 100%; }
@@ -2169,10 +1734,57 @@ export default function TherapistDashboard() {
         }
       `}</style>
 
+      <div className="td-shell">
+      {/* ═══ ΠΛΑΓΙΟ ΜΕΝΟΥ (υπολογιστής) ═══ */}
+      <aside className="td-side" aria-label={lang === 'en' ? 'Dashboard navigation' : 'Πλοήγηση πίνακα'}>
+        <a href="/" style={{ display: 'inline-flex', padding: '2px 8px 18px' }} aria-label={BRAND}>
+          <Logo variant="primary" tone="dark" size={30} />
+        </a>
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          {TABS.map(t => {
+            const TabIcon = t.Icon;
+            const on = activeTab === t.id;
+            return (
+              <div key={t.id}>
+                <button className={`td-item${on ? ' on' : ''}`} aria-current={on ? 'page' : undefined}
+                  onClick={() => { setActiveTab(t.id); window.scrollTo({ top: 0 }); }}>
+                  <TabIcon size={18} />
+                  <span style={{ flex: 1 }}>{t.label}</span>
+                  {t.count > 0 && (
+                    <span style={{ background: on ? C.accent : C.warn, color: '#fff', fontSize: 11, fontWeight: 700, minWidth: 20, height: 20, borderRadius: RAD.pill, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 6px' }}>{t.count}</span>
+                  )}
+                </button>
+                {t.id === 'profile' && on && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 1, margin: '3px 0 6px' }}>
+                    {PROFILE_SECTIONS.map(sec => (
+                      <button key={sec.id} className={`td-sub${profileSection === sec.id ? ' on' : ''}`} onClick={() => setProfileSection(sec.id)}>
+                        {sec.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </nav>
+
+        <div style={{ marginTop: 'auto', paddingTop: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ background: C.surfaceAlt, border: `1px solid ${C.border}`, borderRadius: 14, padding: '14px 14px 12px', textAlign: 'center' }}>
+            <div style={{ fontSize: 13.5, fontWeight: 700, color: C.text }}>{lang === 'en' ? 'Need help?' : 'Χρειάζεσαι βοήθεια;'}</div>
+            <div style={{ fontSize: 12, color: C.textMuted, margin: '3px 0 10px', lineHeight: 1.45 }}>{lang === 'en' ? 'Our team is here for you.' : 'Η ομάδα μας είναι εδώ για σένα.'}</div>
+            <a href="/contact" style={{ display: 'block', padding: '9px 0', borderRadius: 10, background: C.accentSoft, color: C.accent, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>{lang === 'en' ? 'Contact us' : 'Επικοινωνία'}</a>
+          </div>
+          <button className="td-item" onClick={signOut} style={{ color: C.textMuted, fontSize: 13.5 }}>
+            <LogOut size={16} />{tx.signOut}
+          </button>
+        </div>
+      </aside>
+
+      <div className="td-main">
       {/* Ίδια διόρθωση overflow με τον πίνακα ασθενή */}
       <nav style={{ background: '#fff', borderBottom: `1px solid ${C.border}`, padding: '10px 16px', minHeight: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', position: 'sticky', top: 0, zIndex: 100, maxWidth: '100%', boxSizing: 'border-box' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flexShrink: 1 }}>
-          <Logo variant="primary" tone="dark" size={28} />
+          <span className="td-nav-logo" style={{ display: 'inline-flex' }}><Logo variant="primary" tone="dark" size={28} /></span>
           <span style={{ fontSize: 12, fontWeight: 500, color: C.textMuted, background: C.borderSoft, padding: '2px 10px', borderRadius: RAD.pill, whiteSpace: 'nowrap' }}>{tx.roleBadge}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', minWidth: 0 }}>
@@ -2193,7 +1805,7 @@ export default function TherapistDashboard() {
         </div>
       </nav>
 
-      <div style={{ maxWidth: MAX_WIDTH, margin: '0 auto', padding: '24px' }}>
+      <div style={{ maxWidth: activeTab === 'availability' ? 1480 : MAX_WIDTH, margin: '0 auto', padding: '24px clamp(12px, 3vw, 28px)' }}>
 
         {/* Το checklist είναι ΠΑΝΩ από τα tabs. Χωρίς scroll, ο θεραπευτής
             πατάει «Συμπλήρωσε», το tab αλλάζει σωστά, αλλά αυτός βλέπει
@@ -2204,7 +1816,8 @@ export default function TherapistDashboard() {
           onGoToTab={(tab) => {
             goToChecklistTarget(tab);
             setTimeout(() => {
-              tabsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              if (tabsRef.current?.offsetParent) tabsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              else window.scrollTo({ top: 0, behavior: 'smooth' });
             }, 60);
           }}
           onOpenDocuments={() => setDocsModal(true)}
@@ -2260,7 +1873,7 @@ export default function TherapistDashboard() {
           );
         })()}
 
-        <div ref={tabsRef} className="tabs-scroll" style={{ marginBottom: 24, scrollMarginTop: 76 }}>
+        <div ref={tabsRef} className="tabs-scroll td-tabs" style={{ marginBottom: 24, scrollMarginTop: 76 }}>
           <div style={{ display: 'flex', gap: 4, background: C.border, padding: 4, borderRadius: 12, width: 'fit-content', minWidth: 'min-content' }}>
             {TABS.map(t => {
               const TabIcon = t.Icon;
@@ -2965,16 +2578,13 @@ export default function TherapistDashboard() {
 
         {/* ═══ ΔΙΑΘΕΣΙΜΟΤΗΤΑ ═══ */}
         {activeTab === 'availability' && (
-          <AvailabilityManager
+          <AvailabilityCalendar
             userId={user?.id}
             lang={lang}
-            tx={tx}
-            loc={loc}
             slots={slots}
+            requests={requests}
             onSlotsChanged={() => reloadSlots()}
-            weekOffset={weekOffset}
-            setWeekOffset={setWeekOffset}
-            currentWeek={currentWeek}
+            onOpenTab={(tab) => { setActiveTab(tab); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
           />
         )}
 
@@ -3432,6 +3042,8 @@ export default function TherapistDashboard() {
             </div>
           </div>
         )}
+      </div>
+      </div>
       </div>
 
       {/* ═══ MODAL: ΠΩΣ ΛΕΙΤΟΥΡΓΟΥΝ ΟΙ ΠΛΗΡΩΜΕΣ ═══ */}

@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import CancelBookingModal from '@/components/CancelBookingModal';
 import { useRouter } from 'next/navigation';
@@ -10,7 +10,7 @@ import { C, R as RAD, T, F, MAX_WIDTH, card, btn, badge, input as inputStyle } f
 import ReportModal from '@/components/ReportModal';
 import Logo from '@/components/Logo';
 import EmailVerifyBanner from '@/components/EmailVerifyBanner';
-import { ClipboardList, Stethoscope, User, MapPin, Euro, Calendar, Star, Check, ArrowRight, Save, X, Hourglass, Wallet, AlertCircle, CheckCircle2, CalendarDays, List, ChevronLeft, ChevronRight, Clock, XCircle, Globe, CalendarClock, Home, UserX} from 'lucide-react';
+import { ClipboardList, Stethoscope, User, MapPin, Euro, Calendar, Star, Check, ArrowRight, Save, X, Hourglass, Wallet, AlertCircle, CheckCircle2, CalendarDays, List, ChevronLeft, ChevronRight, Clock, XCircle, Globe, CalendarClock, Home, UserX, ChevronDown, LogOut, FileText} from 'lucide-react';
 
 // ─── Locale data ──────────────────────────────────────────────────────
 const LOCALE = { el: 'el-GR', en: 'en-US' };
@@ -62,7 +62,7 @@ const BOOKING_STATUS = {
 
 const PAYMENT_STATUS = {
   pending:  { el: 'Σε αναμονή',        en: 'Awaiting',      bg: C.borderSoft, color: C.textBody, icon: Hourglass },
-  held:     { el: 'Περιμένει απάντησή σας', en: 'Awaiting your answer', bg: C.warnBg, color: C.warn, icon: AlertCircle },
+  held:     { el: 'Περιμένει την απάντησή σου', en: 'Awaiting your answer', bg: C.warnBg, color: C.warn, icon: AlertCircle },
   released: { el: 'Επιβεβαιώθηκε',     en: 'Confirmed',     bg: C.successBg, color: C.success, icon: CheckCircle2 },
   refunded: { el: 'Επιστράφηκε',       en: 'Refunded',      bg: C.dangerBg, color: C.danger, icon: X },
   disputed: { el: 'Υπό εξέταση',       en: 'Under review',  bg: C.dangerBg, color: C.danger, icon: AlertCircle },
@@ -78,66 +78,86 @@ const TX = {
     backToSite: 'Επιστροφή στο site',
     signOut: 'Αποσύνδεση',
     loading: 'Φόρτωση...',
-    welcome: (n) => `Καλώς ήρθατε, ${n}`,
+    welcome: (n) => `Καλώς ήρθες, ${n}`,
     welcomeFallback: 'Ασθενής',
-    welcomeSub: 'Διαχειριστείτε τα ραντεβού και τα αιτήματά σας.',
+    welcomeSub: 'Διαχειρίσου εύκολα τα ραντεβού και τα αιτήματά σου.',
     tabAppointments: 'Ραντεβού',
     tabRequests: 'Αιτήματα',
     tabServices: 'Υπηρεσίες',
     tabProfile: 'Προφίλ',
-    tabsHintRequests: 'Αιτήματα = περιμένουν απάντηση από τον θεραπευτή.',
-    tabsHintAppointments: 'Ραντεβού = έχουν επιβεβαιωθεί από τον θεραπευτή.',
-    releaseBannerTitle: (n) => n === 1 ? 'Έγινε η συνεδρία σας;' : `Έγιναν οι ${n} συνεδρίες σας;`,
-    releaseBannerDesc: 'Ο θεραπευτής δηλώνει ότι ολοκληρώθηκαν. Πείτε μας αν πραγματικά έγιναν — έτσι διασφαλίζουμε την ποιότητα της υπηρεσίας. Αν δεν απαντήσετε σε 7 ημέρες, θεωρείται ότι έγιναν.',
+    tabHome: 'Αρχική',
+    navLabel: 'Κύριο μενού',
+    myProfile: 'Το προφίλ μου',
+    confirmedBadge: 'Επιβεβαιωμένο',
+    physioRole: 'Φυσικοθεραπευτής',
+    viewDetails: 'Προβολή λεπτομερειών',
+    bookNew: 'Κλείσε νέο ραντεβού',
+    pendingHeroEyebrow: 'Το αίτημά σου περιμένει απάντηση',
+    pendingHeroTitle: (n) => n || 'Ο φυσικοθεραπευτής θα απαντήσει σύντομα',
+    replyBy: (t) => `Απάντηση έως ${t}`,
+    viewRequest: 'Δες το αίτημα',
+    upcomingTitle: 'Επερχόμενα ραντεβού',
+    seeAll: 'Όλα τα ραντεβού',
+    noAppointmentsDesc: 'Βρες τον κατάλληλο φυσικοθεραπευτή και προγραμμάτισε την πρώτη σου συνεδρία.',
+    noUpcoming: 'Δεν έχεις επερχόμενο ραντεβού',
+    noUpcomingDesc: 'Όποτε χρειαστείς, κλείνεις νέο ραντεβού σε λίγα λεπτά.',
+    details: 'Λεπτομέρειες',
+    pastLabel: 'ΕΧΕΙ ΓΙΝΕΙ',
+    noPastYet: 'Δεν υπάρχουν ολοκληρωμένα ραντεβού ακόμα.',
+    noRequestsDesc: 'Όταν στείλεις αίτημα σε φυσικοθεραπευτή, θα βλέπεις εδώ την πορεία του.',
+    tabsHintRequests: 'Αιτήματα = περιμένουν απάντηση από τον φυσικοθεραπευτή.',
+    tabsHintAppointments: 'Ραντεβού = έχουν επιβεβαιωθεί από τον φυσικοθεραπευτή.',
+    releaseBannerTitle: (n) => n === 1 ? 'Έγινε η συνεδρία σου;' : `Έγιναν οι ${n} συνεδρίες σου;`,
+    releaseBannerDesc: 'Ο φυσικοθεραπευτής δηλώνει ότι ολοκληρώθηκαν. Πες μας αν πραγματικά έγιναν — έτσι διασφαλίζουμε την ποιότητα της υπηρεσίας. Αν δεν απαντήσεις σε 7 ημέρες, θεωρείται ότι έγιναν.',
     answerYes: 'Ναι, έγινε',
     answerNo: 'Όχι, δεν έγινε',
-    disputedNote: 'Δηλώσατε ότι η συνεδρία δεν έγινε. Η ομάδα του Theralivo θα επικοινωνήσει μαζί σας.',
+    disputedNote: 'Δήλωσες ότι η συνεδρία δεν έγινε. Η ομάδα του Theralivo θα επικοινωνήσει μαζί σου.',
     disputedBadge: 'Υπό εξέταση',
     noTitle: 'Η συνεδρία δεν έγινε',
-    noDesc: (n) => `Ο/Η ${n} δήλωσε ότι η συνεδρία έγινε. Πείτε μας τι συνέβη και η ομάδα του Theralivo θα επικοινωνήσει μαζί σας.`,
+    noDesc: (n) => `Ο/Η ${n} δήλωσε ότι η συνεδρία έγινε. Πες μας τι συνέβη και η ομάδα του Theralivo θα επικοινωνήσει μαζί σου.`,
     notePh: 'Τι συνέβη; (προαιρετικό)',
     confirmNo: 'Αποστολή',
-    errAnswer: 'Η απάντηση δεν αποθηκεύτηκε. Δοκιμάστε ξανά.',
+    errAnswer: 'Η απάντηση δεν αποθηκεύτηκε. Δοκίμασε ξανά.',
     statPending: 'Εκκρεμή αιτήματα',
     statActive: 'Επιβεβαιωμένα',
     statCompleted: 'Ολοκληρωμένα',
     statToRelease: 'Προς επιβεβαίωση',
-    ctaTitle: 'Χρειάζεστε φυσικοθεραπεία;',
-    ctaDesc: 'Βρείτε θεραπευτή και κλείστε ραντεβού στο σπίτι σας',
+    ctaTitle: 'Χρειάζεσαι φυσικοθεραπεία;',
+    ctaDesc: 'Βρες φυσικοθεραπευτή και κλείσε ραντεβού στον χώρο σου.',
     ctaBtn: 'Κλείσε ραντεβού',
     nextAppointment: 'Το επόμενο ραντεβού σου',
     withTherapist: 'με τον/την',
     atHome: 'στο σπίτι σου',
     at: 'στις',
-    awaitingTherapist: 'Αναμονή επιβεβαίωσης από τον θεραπευτή',
+    awaitingTherapist: 'Αναμονή επιβεβαίωσης από τον φυσικοθεραπευτή',
     cancelAppointment: 'Ακύρωση ραντεβού',
     noShow: 'Δεν ήρθε',
     reportIssue: 'Αναφορά',
     reschedule: 'Αλλαγή ώρας',
     reschedulePending: 'Εκκρεμεί πρόταση αλλαγής',
-    reschedulePendingYours: 'Στείλατε πρόταση αλλαγής',
-    rescheduleReview: 'Δείτε την πρόταση',
+    reschedulePendingYours: 'Έστειλες πρόταση αλλαγής',
+    rescheduleReview: 'Δες την πρόταση',
     rescheduleTo: (d) => `Προτεινόμενη νέα ώρα: ${d}`,
     cancel: 'Ακύρωση',
-    noAppointments: 'Δεν έχετε ραντεβού ακόμα',
+    noAppointments: 'Δεν έχεις ραντεβού ακόμα',
     bookFirst: 'Κλείσε το πρώτο σου ραντεβού',
     viewList: 'Λίστα',
     viewCalendar: 'Ημερολόγιο',
     upcoming: (n) => `Επερχόμενα Ραντεβού (${n})`,
     past: (n) => `Παλαιότερα Ραντεβού (${n})`,
-    therapistSaysDone: 'Ο θεραπευτής δηλώνει ότι η συνεδρία έγινε. Έγινε;',
-    autoReleaseToday: 'Αν δεν απαντήσετε σήμερα, θεωρείται ότι έγινε',
-    autoReleaseIn: (d) => `Αν δεν απαντήσετε σε ${d} ${d === 1 ? 'ημέρα' : 'ημέρες'}, θεωρείται ότι έγινε`,
+    therapistSaysDone: 'Ο φυσικοθεραπευτής δηλώνει ότι η συνεδρία έγινε. Έγινε;',
+    autoReleaseToday: 'Αν δεν απαντήσεις σήμερα, θεωρείται ότι έγινε',
+    autoReleaseIn: (d) => `Αν δεν απαντήσεις σε ${d} ${d === 1 ? 'ημέρα' : 'ημέρες'}, θεωρείται ότι έγινε`,
         prev: 'Προηγ.',
     next: 'Επόμ.',
     today: 'Σήμερα',
     hasAppointment: 'Έχει ραντεβού',
-    noRequests: 'Δεν έχετε στείλει αίτημα ακόμα.',
-    deadEndRejected: 'Ο θεραπευτής δεν είναι διαθέσιμος για αυτό το ραντεβού.',
-    deadEndExpired: 'Ο θεραπευτής δεν απάντησε εγκαίρως.',
-    deadEndAction: 'Δείτε άλλους διαθέσιμους θεραπευτές — τα στοιχεία σας είναι ήδη συμπληρωμένα.',
-    deadEndBtn: 'Δες άλλους θεραπευτές',
-    matchesTitle: (n) => n === 1 ? 'Βρήκαμε 1 διαθέσιμο θεραπευτή' : `Βρήκαμε ${n} διαθέσιμους θεραπευτές`,
+    noRequests: 'Δεν έχεις αιτήματα ακόμα.',
+    deadEndRejected: 'Ο φυσικοθεραπευτής δεν είναι διαθέσιμος για αυτό το ραντεβού.',
+    deadEndExpired: 'Ο φυσικοθεραπευτής δεν απάντησε εγκαίρως.',
+    deadEndAction: 'Δες άλλους διαθέσιμους φυσικοθεραπευτές — τα στοιχεία σου είναι ήδη συμπληρωμένα.',
+    deadEndBtn: 'Δες άλλους φυσικοθεραπευτές',
+    matchesTitle: (n) => n === 1 ? 'Βρήκαμε 1 διαθέσιμο φυσικοθεραπευτή' : `Βρήκαμε ${n} διαθέσιμους φυσικοθεραπευτές`,
     matchesToday: 'που μπορούν σήμερα',
     matchesPick: 'Επίλεξε',
     today: 'Σήμερα',
@@ -149,17 +169,17 @@ const TX = {
     pendingApproval: (n) => `${n} προς επιβεβαίωση`,
     total: 'Κόστος συνεδρίας',
     sessions: (n) => `Συνεδρίες (${n})`,
-    yourReview: 'Η αξιολόγησή σας',
-    cancelledByTherapist: 'Ακυρώθηκε από τον θεραπευτή',
-    reviewVerifiedNote: 'Η αξιολόγησή σας θα φέρει την ένδειξη «Από επαληθευμένη συνεδρία».',
+    yourReview: 'Η αξιολόγησή σου',
+    cancelledByTherapist: 'Ακυρώθηκε από τον φυσικοθεραπευτή',
+    reviewVerifiedNote: 'Η αξιολόγησή σου θα φέρει την ένδειξη «Από επαληθευμένη συνεδρία».',
     verifiedSession: 'Από επαληθευμένη συνεδρία',
-    cancelledByYou: 'Ακυρώθηκε από εσάς',
+    cancelledByYou: 'Ακυρώθηκε από εσένα',
     cancelledByAdmin: 'Ακυρώθηκε από την πλατφόρμα',
     cancelReason: 'Αιτιολογία:',
     noReason: 'Δεν δόθηκε αιτιολογία',
-    reviewAfterCancel: 'Μπορείτε να αξιολογήσετε την εμπειρία σας παρόλο που το ραντεβού ακυρώθηκε.',
-    howWasIt: (n) => `Πώς ήταν η εμπειρία σας με τον/την ${n};`,
-    therapistFallback: 'θεραπευτή',
+    reviewAfterCancel: 'Μπορείς να αξιολογήσεις την εμπειρία σου παρόλο που το ραντεβού ακυρώθηκε.',
+    howWasIt: (n) => `Πώς ήταν η εμπειρία σου με τον/την ${n};`,
+    therapistFallback: 'φυσικοθεραπευτή',
     leaveReview: 'Άφησε αξιολόγηση',
     servicesTitle: 'Υπηρεσίες Φυσικοθεραπείας',
     servicesDesc: 'Εξατομικευμένη φροντίδα για ένα εύρος παθήσεων.',
@@ -168,9 +188,9 @@ const TX = {
     memberSince: 'Μέλος από',
     profileTitle: 'Στοιχεία Προφίλ',
     profileBasics: 'Βασικά στοιχεία',
-    profileBasicsDesc: 'Πώς θα σας βρει ο θεραπευτής.',
+    profileBasicsDesc: 'Πώς θα σε βρει ο φυσικοθεραπευτής.',
     profileAddress: 'Διεύθυνση για τα ραντεβού',
-    profileAddressDesc: 'Συμπληρώνεται αυτόματα όταν κλείνετε ραντεβού. Μπορείτε να την αλλάξετε εδώ οποτεδήποτε.',
+    profileAddressDesc: 'Συμπληρώνεται αυτόματα όταν κλείνεις ραντεβού. Μπορείς να την αλλάξεις εδώ οποτεδήποτε.',
     fullName: 'Ονοματεπώνυμο',
     fullNamePh: 'Γιώργος Παπαδόπουλος',
     phone: 'Τηλέφωνο',
@@ -189,21 +209,21 @@ const TX = {
     errPrefix: 'Σφάλμα: ',
     profileSaved: 'Το προφίλ αποθηκεύτηκε επιτυχώς',
     releaseTitle: 'Η συνεδρία έγινε',
-    releaseDesc: (n) => `Επιβεβαιώνετε ότι έγινε η συνεδρία με τον/την ${n};`,
+    releaseDesc: (n) => `Επιβεβαιώνεις ότι έγινε η συνεδρία με τον/την ${n};`,
     releaseAmount: 'Ποσό προς απελευθέρωση',
     session: 'Συνεδρία',
     releaseWarnLabel: 'Σημείωση:',
-    releaseWarn: 'Η απάντησή σας καταγράφεται και δεν αλλάζει αργότερα.',
+    releaseWarn: 'Η απάντησή σου καταγράφεται και δεν αλλάζει αργότερα.',
     releasing: 'Αποθήκευση...',
     confirmRelease: 'Ναι, έγινε',
-    reviewTitle: 'Αξιολόγηση Θεραπευτή',
+    reviewTitle: 'Αξιολόγηση φυσικοθεραπευτή',
     rating: 'Βαθμολογία',
     comment: 'Σχόλιο (προαιρετικό)',
-    commentPh: 'Μοιραστείτε την εμπειρία σας...',
+    commentPh: 'Μοιράσου την εμπειρία σου...',
     dismiss: 'Άκυρο',
     submit: 'Υποβολή',
     submitting: 'Αποστολή...',
-    errNoRating: 'Παρακαλώ επιλέξτε βαθμολογία.',
+    errNoRating: 'Επίλεξε βαθμολογία.',
     errNoCompleted: 'Δεν υπάρχει ολοκληρωμένη συνεδρία ακόμα.',
     errSubmit: 'Σφάλμα υποβολής: ',
     unknown: 'Άγνωστος',
@@ -221,6 +241,26 @@ const TX = {
     tabRequests: 'Requests',
     tabServices: 'Services',
     tabProfile: 'Profile',
+    tabHome: 'Home',
+    navLabel: 'Main menu',
+    myProfile: 'My profile',
+    confirmedBadge: 'Confirmed',
+    physioRole: 'Physiotherapist',
+    viewDetails: 'View details',
+    bookNew: 'Book a new appointment',
+    pendingHeroEyebrow: 'Your request is awaiting a reply',
+    pendingHeroTitle: (n) => n || 'The physiotherapist will reply soon',
+    replyBy: (t) => `Reply by ${t}`,
+    viewRequest: 'View request',
+    upcomingTitle: 'Upcoming appointments',
+    seeAll: 'All appointments',
+    noAppointmentsDesc: 'Find the right physiotherapist and schedule your first session.',
+    noUpcoming: 'No upcoming appointment',
+    noUpcomingDesc: 'Whenever you need one, booking takes a few minutes.',
+    details: 'Details',
+    pastLabel: 'PAST',
+    noPastYet: 'No completed appointments yet.',
+    noRequestsDesc: 'When you send a request to a physiotherapist, you will follow its progress here.',
     tabsHintRequests: 'Requests = waiting for the therapist to respond.',
     tabsHintAppointments: 'Appointments = confirmed by the therapist.',
     releaseBannerTitle: (n) => n === 1 ? 'Did your session take place?' : `Did your ${n} sessions take place?`,
@@ -352,12 +392,36 @@ const TX = {
 // γι' αυτό ακυρωμένα ραντεβού εμφανίζονταν ως ενεργά.
 const isCancelled = (s) => String(s || '').startsWith('cancelled');
 
-function Avatar({ name, size = 44 }) {
+function Avatar({ name, photoUrl, size = 44, ring = false }) {
+  const ringStyle = ring ? { boxShadow: '0 0 0 3px rgba(255,255,255,0.35)' } : {};
+  if (photoUrl) {
+    return <img src={photoUrl} alt={name || ''} width={size} height={size} style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, background: C.borderSoft, ...ringStyle }} />;
+  }
   return (
-    <div style={{ width: size, height: size, borderRadius: '50%', background: `linear-gradient(135deg,${C.accent},${C.brand})`, color: C.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.35, fontWeight: 700, flexShrink: 0 }}>
-      {(name || '?').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+    <div aria-hidden="true" style={{ width: size, height: size, borderRadius: '50%', background: `linear-gradient(135deg,${C.accent},${C.brand})`, color: C.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.35, fontWeight: 700, flexShrink: 0, ...ringStyle }}>
+      {(name || '?').split(' ').filter(Boolean).map(n => n[0]).join('').slice(0, 2).toUpperCase()}
     </div>
   );
+}
+
+// Κλητική για το «Καλώς ήρθες, …»: Γιώργος → Γιώργο, Κώστας → Κώστα,
+// Δημήτρης → Δημήτρη, Αλέξανδρος → Αλέξανδρε, Στέλιος → Στέλιο.
+// Γυναικεία ονόματα και ό,τι δεν αναγνωρίζεται μένουν ως έχουν.
+function vocative(name) {
+  if (!name) return name;
+  const n = name.trim();
+  if (!/[\u0370-\u03FF\u1F00-\u1FFF]/.test(n)) return n;
+  if (/(ας|ής|ης)$/.test(n)) return n.slice(0, -1);
+  if (/ιος$/.test(n)) return n.slice(0, -1);
+  if (/ος$/.test(n)) {
+    const stem = n.slice(0, -2);
+    const acc = stem.search(/[άέήίόύώΆΈΉΊΌΎΏ]/);
+    if (acc < 0) return n.slice(0, -1);
+    const after = stem.slice(acc + 1).replace(/αι|ει|οι|ου|αυ|ευ/g, 'α');
+    const groups = (after.match(/[αεηιουω]+/g) || []).length;
+    return groups === 0 ? n.slice(0, -1) : stem + 'ε';
+  }
+  return n;
 }
 
 function Badge({ label, bg, color, icon: Icon }) {
@@ -496,7 +560,28 @@ export default function PatientDashboard() {
   const [reportTarget, setReportTarget] = useState(null);
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('appointments');
+  const [activeTab, setActiveTab] = useState('home');
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  // Κλείσιμο του μενού χρήστη με κλικ έξω ή Esc
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onDown = (e) => { if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false); };
+    const onKey = (e) => { if (e.key === 'Escape') setMenuOpen(false); };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey); };
+  }, [menuOpen]);
+
+  function goTab(id, anchorId) {
+    setActiveTab(id);
+    setTimeout(() => {
+      const el = anchorId && document.getElementById(anchorId);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      else window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 40);
+  }
   const [reviewModal, setReviewModal] = useState(null);
   const [reviewForm, setReviewForm] = useState({ rating: 0, comment: '' });
   const [submittingReview, setSubmittingReview] = useState(false);
@@ -812,12 +897,28 @@ export default function PatientDashboard() {
 
   // Τα badges λένε στον χρήστη πού υπάρχει κάτι να δει, χωρίς να
   // χρειαστεί να ανοίξει κάθε tab.
-  const TABS = [
+  const NAV = [
+    { id: 'home', label: tx.tabHome, Icon: Home, count: 0 },
     { id: 'appointments', label: tx.tabAppointments, Icon: Calendar, count: upcomingAppointments.length },
     { id: 'requests', label: tx.tabRequests, Icon: ClipboardList, count: pendingCount },
     { id: 'services', label: tx.tabServices, Icon: Stethoscope, count: 0 },
-    { id: 'profile', label: tx.tabProfile, Icon: User, count: 0 },
   ];
+  const PAGE_TITLE = {
+    appointments: tx.tabAppointments, requests: tx.tabRequests,
+    services: tx.tabServices, profile: tx.myProfile,
+  };
+
+  // ΚΑΡΤΑ ΚΟΡΥΦΗΣ ΣΤΗΝ ΑΡΧΙΚΗ
+  const homeNext = upcomingAppointments.find(a =>
+    a.status === 'confirmed' && new Date(a.session_date + 'T' + (a.session_time || '00:00')) >= now
+  ) || null;
+  const homePending = sessionRequests.find(r => r.status === 'pending') || null;
+
+  // ΜΕΤΡΗΤΕΣ — ίδιος ορισμός με τις λίστες που ανοίγουν:
+  //   Επιβεβαιωμένα = επερχόμενα ραντεβού σε κατάσταση «επιβεβαιωμένο»
+  //   Ολοκληρωμένα  = ραντεβού (συνεδρίες) που ολοκληρώθηκαν
+  const confirmedUpcomingCount = upcomingAppointments.filter(a => a.status === 'confirmed').length;
+  const completedSessionsCount = allAppointments.filter(a => a.status === 'completed').length;
 
   const profileInputStyle = { width: '100%', padding: '12px 14px', border: `1.5px solid ${C.border}`, borderRadius: 8, fontSize: 15, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', color: C.text };
   const profileLabelStyle = { fontSize: 13, fontWeight: 600, color: C.brand, display: 'block', marginBottom: 5 };
@@ -879,45 +980,152 @@ export default function PatientDashboard() {
            εμφανιστεί κενό δεξιά σε όλη τη σελίδα. */
         html, body { max-width: 100%; overflow-x: hidden; }
         * { min-width: 0; }
-* { box-sizing: border-box; margin: 0; padding: 0; }`}</style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+        .pd-header { position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.96); backdrop-filter: saturate(1.4) blur(8px); border-bottom: 1px solid ${C.border}; }
+        .pd-header-in { max-width: ${MAX_WIDTH + 80}px; margin: 0 auto; display: flex; align-items: center; gap: 18px; padding: 10px clamp(14px, 3vw, 24px); min-height: 68px; }
+        .pd-nav { display: flex; gap: 4px; }
+        .pd-nav-desk { margin-left: 18px; }
+        .pd-nav-mob { display: none; overflow-x: auto; padding: 0 12px 10px; -webkit-overflow-scrolling: touch; }
+        .pd-nav-mob::-webkit-scrollbar { display: none; }
+        .pd-navbtn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 12px; border: none; background: transparent; color: ${C.textMuted}; font-size: 14.5px; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; transition: background .15s, color .15s; }
+        .pd-navbtn:hover { color: ${C.brand}; background: ${C.surfaceAlt}; }
+        .pd-navbtn.on { background: ${C.accentSoft}; color: ${C.accent}; }
+        .pd-count { background: ${C.accent}; color: #fff; font-size: 11px; font-weight: 700; min-width: 19px; height: 19px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; padding: 0 6px; }
+        .pd-userbtn { display: flex; align-items: center; gap: 10px; padding: 5px 8px 5px 5px; border-radius: 14px; border: 1px solid transparent; background: transparent; cursor: pointer; font-family: inherit; text-align: left; }
+        .pd-userbtn:hover { background: ${C.surfaceAlt}; border-color: ${C.border}; }
+        .pd-menu { position: absolute; right: 0; top: calc(100% + 8px); width: 250px; background: #fff; border: 1px solid ${C.border}; border-radius: 14px; box-shadow: 0 16px 40px rgba(15,23,42,0.14); overflow: hidden; z-index: 200; }
+        .pd-menuitem { display: flex; align-items: center; gap: 10px; width: 100%; padding: 12px 14px; border: none; background: #fff; color: ${C.textBody}; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; text-decoration: none; text-align: left; }
+        .pd-menuitem:hover { background: ${C.surfaceAlt}; }
+        @media (max-width: 899px) {
+          .pd-nav-desk { display: none; }
+          .pd-nav-mob { display: flex; }
+          .pd-username { display: none; }
+          .pd-header-in { min-height: 60px; }
+        }
 
-      {/* OVERFLOW ΣΕ ΚΙΝΗΤΟ.
-          Το header είχε σταθερό ύψος και δεν τύλιγε: σε 382px τα
-          στοιχεία σπρώχνανε τη σελίδα πλάγια και εμφανιζόταν κενό
-          δεξιά. Τώρα τυλίγει, το ύψος είναι ελάχιστο αντί για σταθερό,
-          και το minWidth: 0 επιτρέπει στα παιδιά να συρρικνωθούν. */}
-      <nav style={{ background: C.surface, borderBottom: `1px solid ${C.border}`, padding: '10px 16px', minHeight: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', position: 'sticky', top: 0, zIndex: 100, maxWidth: '100%', boxSizing: 'border-box' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flexShrink: 1 }}>
-          <Logo variant="primary" tone="dark" size={30} />
-          <span style={{ fontSize: 13, fontWeight: 500, color: C.textMuted, background: C.borderSoft, padding: '3px 12px', borderRadius: RAD.pill, whiteSpace: 'nowrap' }}>{tx.roleBadge}</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', minWidth: 0 }}>
-          <LanguageSwitcher color={C.textMuted} hoverColor={C.brand} navHeight={64} />
-          <a href="/"
-            title={tx.backToSite}
-            style={{ padding: '8px 16px', borderRadius: 8, border: `1px solid ${C.accentBorder}`, background: C.accentSoft, color: C.accent, fontSize: 14, fontWeight: 600, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            <Globe size={14} />
-            {tx.site}
+        .pd-hero { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; background: linear-gradient(120deg, ${C.brand} 0%, #23466e 100%); border-radius: 20px; padding: 24px 28px; margin-bottom: 20px; box-shadow: 0 8px 28px rgba(26,46,68,0.16); }
+        .pd-hero-wait { background: linear-gradient(120deg, #1f3a5c 0%, #2b4f7a 100%); }
+        .pd-hero-icon { width: 64px; height: 64px; border-radius: 50%; background: rgba(255,255,255,0.14); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .pd-hero-actions { display: flex; flex-direction: column; align-items: stretch; gap: 8px; flex-shrink: 0; }
+        .pd-hero-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 26px; border-radius: 14px; border: none; background: #fff; color: ${C.accent}; font-size: 15.5px; font-weight: 700; cursor: pointer; font-family: inherit; text-decoration: none; white-space: nowrap; }
+        .pd-hero-btn:hover { background: #f0f6ff; }
+        .pd-hero-link { text-align: center; color: rgba(255,255,255,0.85); font-size: 13.5px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+        .pd-pill-ok { display: inline-flex; align-items: center; gap: 5px; background: rgba(34,197,94,0.18); color: #bbf7d0; border: 1px solid rgba(134,239,172,0.4); padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+        @media (max-width: 640px) {
+          .pd-hero { padding: 20px; }
+          .pd-hero-actions { width: 100%; }
+        }
+
+        .pd-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 20px; }
+        @media (max-width: 760px) { .pd-stats { gap: 8px; } }
+        .pd-stat { display: flex; align-items: center; gap: 14px; min-height: 96px; padding: 16px 18px; background: #fff; border: 1px solid ${C.border}; border-radius: 16px; box-shadow: 0 1px 2px rgba(15,23,42,0.04); cursor: pointer; font-family: inherit; transition: box-shadow .15s, border-color .15s, transform .15s; }
+        .pd-stat:hover { border-color: ${C.accentBorder}; box-shadow: 0 6px 18px rgba(15,23,42,0.07); transform: translateY(-1px); }
+        .pd-stat-icon { width: 54px; height: 54px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .pd-stat-arrow { width: 34px; height: 34px; border-radius: 50%; background: ${C.surfaceAlt}; color: ${C.textMuted}; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        @media (max-width: 760px) {
+          .pd-stat { flex-direction: column; align-items: flex-start; gap: 8px; min-height: 0; padding: 12px; border-radius: 14px; }
+          .pd-stat-icon { width: 38px; height: 38px; }
+          .pd-stat-icon svg { width: 19px; height: 19px; }
+          .pd-stat-label { font-size: 12.5px !important; line-height: 1.3; }
+          .pd-stat-arrow { display: none; }
+        }
+
+        .pd-panel { background: #fff; border: 1px solid ${C.border}; border-radius: 18px; padding: 20px 22px; box-shadow: 0 1px 2px rgba(15,23,42,0.04); }
+        .pd-empty-icon { width: 92px; height: 92px; border-radius: 50%; background: ${C.accentSoft}; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; }
+        .pd-cta { display: inline-flex; align-items: center; gap: 8px; padding: 13px 26px; border-radius: 999px; background: ${C.accent}; color: #fff; font-size: 15px; font-weight: 700; text-decoration: none; box-shadow: 0 6px 16px rgba(42,111,219,0.25); }
+        .pd-cta:hover { filter: brightness(1.06); }
+        .pd-apt { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1px solid ${C.border}; border-radius: 14px; flex-wrap: wrap; }
+        .pd-apt-btn { padding: 9px 16px; border-radius: 10px; border: 1px solid ${C.border}; background: #fff; color: ${C.brand}; font-size: 13.5px; font-weight: 700; cursor: pointer; font-family: inherit; }
+        .pd-apt-btn:hover { border-color: ${C.accentBorder}; color: ${C.accent}; }
+        @media (max-width: 560px) {
+          .pd-apt { display: grid; grid-template-columns: 48px minmax(0, 1fr); column-gap: 12px; row-gap: 10px; }
+          .pd-apt-badge { grid-column: 2; justify-self: start; }
+          .pd-apt-btn { grid-column: 1 / -1; width: 100%; }
+        }
+`}</style>
+
+      {/* ═══ HEADER ═══
+          Λογότυπο · κύριο μενού · χρήστης. Στο κινητό το μενού πέφτει σε
+          δεύτερη γραμμή που κυλάει οριζόντια, με μεγάλα σημεία αφής. */}
+      <header className="pd-header">
+        <div className="pd-header-in">
+          <a href="/" aria-label="Theralivo" style={{ display: 'inline-flex', flexShrink: 0 }}>
+            <Logo variant="primary" tone="dark" size={30} />
           </a>
-          <Avatar name={profile?.name || user?.email} size={38} />
-          <button onClick={signOut} style={{ padding: '8px 16px', borderRadius: 8, border: `1px solid ${C.border}`, background: 'transparent', color: C.textMuted, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>{tx.signOut}</button>
-        </div>
-      </nav>
 
-      <div style={{ maxWidth: MAX_WIDTH, margin: '0 auto', padding: '24px' }}>
+          <nav className="pd-nav pd-nav-desk" aria-label={tx.navLabel}>
+            {NAV.map(t => (
+              <button key={t.id} className={`pd-navbtn${activeTab === t.id ? ' on' : ''}`} aria-current={activeTab === t.id ? 'page' : undefined} onClick={() => goTab(t.id)}>
+                <t.Icon size={17} />
+                {t.label}
+                {t.count > 0 && <span className="pd-count">{t.count}</span>}
+              </button>
+            ))}
+          </nav>
 
-        <div style={{ marginBottom: 24 }}>
-          <h1 style={{ fontSize: 26, fontWeight: 700, color: C.text }}>
-            {tx.welcome(profile?.name?.split(' ')[0] || tx.welcomeFallback)}
-          </h1>
-          <p style={{ fontSize: 15, color: C.textMuted, marginTop: 4 }}>{tx.welcomeSub}</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto', minWidth: 0 }}>
+            <span className="pd-lang"><LanguageSwitcher color={C.textMuted} hoverColor={C.brand} navHeight={64} /></span>
+            <div style={{ position: 'relative' }} ref={menuRef}>
+              <button className="pd-userbtn" onClick={() => setMenuOpen(o => !o)} aria-haspopup="menu" aria-expanded={menuOpen}>
+                <Avatar name={profile?.name || user?.email} size={38} />
+                <span className="pd-username">
+                  <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: C.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 150 }}>{profile?.name?.split(' ')[0] || tx.welcomeFallback}</span>
+                  <span style={{ display: 'block', fontSize: 12, color: C.textMuted }}>{tx.roleBadge}</span>
+                </span>
+                <ChevronDown size={16} color={C.textMuted} />
+              </button>
+              {menuOpen && (
+                <div role="menu" className="pd-menu">
+                  <div style={{ padding: '12px 14px', borderBottom: `1px solid ${C.borderSoft}` }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{profile?.name || tx.welcomeFallback}</div>
+                    <div style={{ fontSize: 12.5, color: C.textMuted, wordBreak: 'break-all' }}>{user?.email}</div>
+                  </div>
+                  <button role="menuitem" className="pd-menuitem" onClick={() => { setMenuOpen(false); goTab('profile'); }}><User size={16} />{tx.myProfile}</button>
+                  <a role="menuitem" className="pd-menuitem" href="/"><Globe size={16} />{tx.backToSite}</a>
+                  <button role="menuitem" className="pd-menuitem" style={{ color: C.danger }} onClick={signOut}><LogOut size={16} />{tx.signOut}</button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
+        <nav className="pd-nav pd-nav-mob" aria-label={tx.navLabel}>
+          {NAV.map(t => (
+            <button key={t.id} className={`pd-navbtn${activeTab === t.id ? ' on' : ''}`} aria-current={activeTab === t.id ? 'page' : undefined} onClick={() => goTab(t.id)}>
+              <t.Icon size={16} />
+              {t.label}
+              {t.count > 0 && <span className="pd-count">{t.count}</span>}
+            </button>
+          ))}
+        </nav>
+      </header>
+
+      <div style={{ maxWidth: MAX_WIDTH, margin: '0 auto', padding: '28px clamp(14px, 3vw, 24px) 48px' }}>
+
+        {activeTab === 'home' ? (
+          <div style={{ marginBottom: 22 }}>
+            <h1 style={{ fontSize: 'clamp(26px, 3.4vw, 34px)', fontWeight: 700, color: C.brand, letterSpacing: '-0.01em' }}>
+              {tx.welcome(vocative(profile?.name?.split(' ')[0]) || tx.welcomeFallback)}
+            </h1>
+            <p style={{ fontSize: 15.5, color: C.textMuted, marginTop: 6 }}>{tx.welcomeSub}</p>
+          </div>
+        ) : (
+          <div style={{ marginBottom: 18 }}>
+            <h1 style={{ fontSize: 26, fontWeight: 700, color: C.brand }}>{PAGE_TITLE[activeTab]}</h1>
+            {(activeTab === 'appointments' || activeTab === 'requests') && (
+              <p style={{ fontSize: 14, color: C.textMuted, marginTop: 4 }}>
+                {activeTab === 'requests' ? tx.tabsHintRequests : tx.tabsHintAppointments}
+              </p>
+            )}
+          </div>
+        )}
 
         <EmailVerifyBanner profile={profile} email={user?.email} role="patient" lang={lang} />
 
-        {/* «ΕΓΙΝΕ Η ΣΥΝΕΔΡΙΑ;» — ο θεραπευτής τη δήλωσε ολοκληρωμένη και
-            ο ασθενής απαντά Ναι/Όχι, κατευθείαν από εδώ. */}
-        {heldBookings.length > 0 && (
+        {/* «ΕΓΙΝΕ Η ΣΥΝΕΔΡΙΑ;» — ο φυσικοθεραπευτής τη δήλωσε ολοκληρωμένη και
+            ο ασθενής απαντά Ναι/Όχι, κατευθείαν από εδώ. Είναι
+            το μόνο που ΠΡΕΠΕΙ να κάνει ο ασθενής, γι' αυτό μπαίνει
+            στην Αρχική και στα Ραντεβού. */}
+        {heldBookings.length > 0 && (activeTab === 'home' || activeTab === 'appointments') && (
           <div style={{ background: C.warnBg, border: `1px solid ${C.warn}`, borderRadius: RAD.card, padding: '18px 22px', marginBottom: 20 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 14 }}>
               <div style={{ width: 44, height: 44, borderRadius: RAD.button, background: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -954,80 +1162,148 @@ export default function PatientDashboard() {
           </div>
         )}
 
-        {/* ΚΥΡΙΟ CTA — πάνω από τα στατιστικά.
-            Ο ασθενής δεν μπαίνει για να δει αριθμούς· μπαίνει για να
-            κλείσει ραντεβού. */}
-        <div style={{ background: C.brand, borderRadius: RAD.card, padding: '22px 26px', marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+        {/* ═══ ΑΡΧΙΚΗ ═══ */}
+        {activeTab === 'home' && (
           <div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: C.surface, marginBottom: 4 }}>{tx.ctaTitle}</div>
-            <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)' }}>{tx.ctaDesc}</div>
-          </div>
-          <a href="/dashboard/patient/new-request" style={{ background: C.surface, color: C.brand, padding: '13px 26px', borderRadius: RAD.button, fontSize: 15, fontWeight: 700, textDecoration: 'none', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
-            {tx.ctaBtn}
-            <ArrowRight size={16} />
-          </a>
-        </div>
-
-        <div style={{ display: 'flex', gap: 14, marginBottom: 24, flexWrap: 'wrap' }}>
-          {[
-            { label: tx.statPending, value: pendingCount, tone: pendingCount > 0 ? C.warn : C.textFaint },
-            { label: tx.statActive, value: confirmedCount, tone: confirmedCount > 0 ? C.accent : C.textFaint },
-            { label: tx.statCompleted, value: completedCount, tone: completedCount > 0 ? C.success : C.textFaint },
-            ...(heldBookings.length > 0 ? [{ label: tx.statToRelease, value: heldBookings.length, tone: C.warn }] : []),
-          ].map(c => (
-            /* Λευκές cards με λεπτή γραμμή accent στην κορυφή.
-               Τρία διαφορετικά pastel blocks δίπλα-δίπλα έκαναν τη σελίδα
-               να μοιάζει με admin panel. Το χρώμα μένει μόνο στο νούμερο,
-               και ξεθωριάζει όταν η τιμή είναι μηδέν — δεν έχει νόημα να
-               τραβάει το μάτι ένα «0». */
-            <div key={c.label} style={{
-              ...card({ padding: 0 }),
-              flex: 1, minWidth: 140, overflow: 'hidden',
-              borderTop: `3px solid ${c.tone}`,
-            }}>
-              <div style={{ padding: '18px 20px' }}>
-                <div style={{ ...T.eyebrow, marginBottom: 8 }}>{c.label}</div>
-                <div style={{ fontSize: 30, fontWeight: 700, color: c.tone, lineHeight: 1 }}>{c.value}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* TABS με badges */}
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ display: 'flex', gap: 4, background: C.borderSoft, padding: 4, borderRadius: RAD.button, width: 'fit-content', flexWrap: 'wrap' }}>
-            {TABS.map(t => {
-              const TabIcon = t.Icon;
-              const isActive = activeTab === t.id;
+            {/* ΚΑΡΤΑ ΚΟΡΥΦΗΣ — προσαρμόζεται στον ασθενή:
+                  επιβεβαιωμένο ραντεβού → το επόμενο ραντεβού
+                  εκκρεμές αίτημα        → η κατάστασή του
+                  τίποτα                 → «Κλείσε ραντεβού» */}
+            {homeNext ? (() => {
+              const friendly = friendlyDateLabel(homeNext.session_date);
               return (
-                <button key={t.id} onClick={() => setActiveTab(t.id)}
-                  style={{ padding: '10px 18px', borderRadius: 8, border: 'none', fontSize: 14, fontWeight: isActive ? 600 : 500, cursor: 'pointer', fontFamily: 'inherit', background: isActive ? C.surface : 'transparent', color: isActive ? C.text : C.textMuted, boxShadow: isActive ? '0 1px 3px rgba(15,23,42,0.08)' : 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                  <TabIcon size={15} />
-                  {t.label}
-                  {t.count > 0 && (
-                    <span style={{
-                      background: isActive ? C.accent : C.textFaint,
-                      color: C.surface, fontSize: 11, fontWeight: 700,
-                      minWidth: 19, height: 19, borderRadius: RAD.pill,
-                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                      padding: '0 6px',
-                    }}>
-                      {t.count}
-                    </span>
-                  )}
-                </button>
+                <div className="pd-hero">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1, minWidth: 0 }}>
+                    <Avatar name={homeNext.therapist?.name} photoUrl={homeNext.therapist?.photo_url} size={64} ring />
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
+                        <span style={{ fontSize: 13.5, color: 'rgba(255,255,255,0.75)' }}>{tx.nextAppointment}</span>
+                        <span className="pd-pill-ok"><CheckCircle2 size={13} />{tx.confirmedBadge}</span>
+                      </div>
+                      <div style={{ fontSize: 20, fontWeight: 700, color: '#fff', lineHeight: 1.25 }}>{homeNext.therapist?.name || tx.therapistFallback}</div>
+                      <div style={{ fontSize: 13.5, color: 'rgba(255,255,255,0.75)', marginBottom: 8 }}>{tx.physioRole}</div>
+                      <div style={{ fontSize: 16, fontWeight: 600, color: '#fff', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <CalendarDays size={17} color="rgba(255,255,255,0.8)" />
+                        {friendly && friendly !== tx.pastLabel ? <span style={{ color: '#bfdbfe' }}>{friendly.charAt(0)}{friendly.slice(1).toLowerCase()} ·</span> : null}
+                        {formatFullDate(homeNext.session_date)} · {homeNext.session_time?.slice(0, 5)}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="pd-hero-actions">
+                    <button className="pd-hero-btn" onClick={() => goTab('appointments')}>{tx.viewDetails}<ArrowRight size={16} /></button>
+                    <a className="pd-hero-link" href="/dashboard/patient/new-request">{tx.bookNew}</a>
+                  </div>
+                </div>
               );
-            })}
-          </div>
+            })() : homePending ? (() => {
+              const b = homePending.bookings?.[0];
+              const due = homePending.sla_due_at ? new Date(homePending.sla_due_at) : null;
+              return (
+                <div className="pd-hero pd-hero-wait">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1, minWidth: 0 }}>
+                    <div style={{ width: 64, height: 64, borderRadius: 18, background: 'rgba(255,255,255,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Hourglass size={28} color="#fde68a" />
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 13.5, color: 'rgba(255,255,255,0.75)', marginBottom: 4 }}>{tx.pendingHeroEyebrow}</div>
+                      <div style={{ fontSize: 20, fontWeight: 700, color: '#fff', lineHeight: 1.25 }}>{tx.pendingHeroTitle(homePending.therapist?.name)}</div>
+                      {homePending.therapist?.name && <div style={{ fontSize: 13.5, color: 'rgba(255,255,255,0.75)' }}>{tx.physioRole}</div>}
+                      {b && (
+                        <div style={{ fontSize: 15, fontWeight: 600, color: '#fff', marginTop: 6, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          <CalendarDays size={17} color="rgba(255,255,255,0.8)" />
+                          {formatFullDate(b.session_date)} · {b.session_time?.slice(0, 5)}
+                        </div>
+                      )}
+                      {due && due > new Date() && (
+                        <div style={{ fontSize: 13, color: '#fde68a', marginTop: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <Clock size={14} />{tx.replyBy(due.toLocaleString(loc, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="pd-hero-actions">
+                    <button className="pd-hero-btn" onClick={() => goTab('requests')}>{tx.viewRequest}<ArrowRight size={16} /></button>
+                    <a className="pd-hero-link" href="/dashboard/patient/new-request">{tx.bookNew}</a>
+                  </div>
+                </div>
+              );
+            })() : (
+              <div className="pd-hero">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 18, flex: 1, minWidth: 0 }}>
+                  <div className="pd-hero-icon"><Stethoscope size={30} color="#fff" /></div>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 'clamp(19px, 2.4vw, 23px)', fontWeight: 700, color: '#fff', marginBottom: 4 }}>{tx.ctaTitle}</div>
+                    <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.78)' }}>{tx.ctaDesc}</div>
+                  </div>
+                </div>
+                <div className="pd-hero-actions">
+                  <a className="pd-hero-btn" href="/dashboard/patient/new-request">{tx.ctaBtn}<ArrowRight size={16} /></a>
+                </div>
+              </div>
+            )}
 
-          {/* Εξήγηση της διαφοράς αίτημα / ραντεβού.
-              Νέος χρήστης δεν ξέρει γιατί υπάρχουν δύο λίστες. */}
-          {(activeTab === 'appointments' || activeTab === 'requests') && (
-            <div style={{ marginTop: 10, fontSize: 12.5, color: C.textMuted, lineHeight: 1.5 }}>
-              {activeTab === 'requests' ? tx.tabsHintRequests : tx.tabsHintAppointments}
+            {/* ΤΡΕΙΣ ΚΑΡΤΕΣ — μετράνε ό,τι δείχνουν οι αντίστοιχες λίστες */}
+            <div className="pd-stats">
+              {[
+                { key: 'requests', label: tx.statPending, value: pendingCount, Icon: FileText, tone: { bg: '#fff7ed', fg: '#ea580c' }, go: () => goTab('requests') },
+                { key: 'confirmed', label: tx.statActive, value: confirmedUpcomingCount, Icon: CalendarDays, tone: { bg: '#ecfdf3', fg: '#16a34a' }, go: () => { setAppointmentsView('list'); goTab('appointments'); } },
+                { key: 'done', label: tx.statCompleted, value: completedSessionsCount, Icon: CheckCircle2, tone: { bg: C.accentSoft, fg: C.accent }, go: () => { setAppointmentsView('list'); goTab('appointments', 'pd-past'); } },
+              ].map(c => (
+                <button key={c.key} className="pd-stat" onClick={c.go}>
+                  <span className="pd-stat-icon" style={{ background: c.tone.bg, color: c.tone.fg }}><c.Icon size={24} /></span>
+                  <span style={{ flex: 1, textAlign: 'left', minWidth: 0 }}>
+                    <span className="pd-stat-label" style={{ display: 'block', fontSize: 14, fontWeight: 600, color: C.textBody }}>{c.label}</span>
+                    <span style={{ display: 'block', fontSize: 30, fontWeight: 800, color: c.value > 0 ? C.brand : C.textFaint, lineHeight: 1.15 }}>{c.value}</span>
+                  </span>
+                  <span className="pd-stat-arrow"><ChevronRight size={18} /></span>
+                </button>
+              ))}
             </div>
-          )}
-        </div>
+
+            {/* ΕΠΕΡΧΟΜΕΝΑ */}
+            <div className="pd-panel">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
+                <h2 style={{ fontSize: 18, fontWeight: 700, color: C.brand }}>{tx.upcomingTitle}</h2>
+                {upcomingAppointments.length > 0 && (
+                  <button onClick={() => goTab('appointments')} style={{ background: 'transparent', border: 'none', color: C.accent, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    {tx.seeAll}<ChevronRight size={15} />
+                  </button>
+                )}
+              </div>
+
+              {upcomingAppointments.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '28px 12px 18px' }}>
+                  <div className="pd-empty-icon"><CalendarDays size={40} color={C.accent} /></div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: C.brand, marginBottom: 6 }}>{pastAppointments.length > 0 ? tx.noUpcoming : tx.noAppointments}</div>
+                  <div style={{ fontSize: 14.5, color: C.textMuted, maxWidth: 440, margin: '0 auto 18px', lineHeight: 1.55 }}>
+                    {pastAppointments.length > 0 ? tx.noUpcomingDesc : tx.noAppointmentsDesc}
+                  </div>
+                  <a href="/dashboard/patient/new-request" className="pd-cta">{pastAppointments.length > 0 ? tx.bookNew : tx.bookFirst}<ArrowRight size={16} /></a>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {upcomingAppointments.slice(0, 3).map(apt => {
+                    const st = statusLabel(BOOKING_STATUS, apt.status);
+                    return (
+                      <div key={apt.id} className="pd-apt">
+                        <Avatar name={apt.therapist?.name} photoUrl={apt.therapist?.photo_url} size={48} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 15.5, fontWeight: 700, color: C.text }}>{apt.therapist?.name || tx.therapistFallback}</div>
+                          <div style={{ fontSize: 13.5, color: C.textMuted, display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 2 }}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><CalendarDays size={14} />{formatFullDate(apt.session_date)}</span>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Clock size={14} />{apt.session_time?.slice(0, 5)}</span>
+                          </div>
+                        </div>
+                        <span className="pd-apt-badge"><Badge label={st.label} bg={st.bg} color={st.color} /></span>
+                        <button className="pd-apt-btn" onClick={() => goTab('appointments')}>{tx.details}</button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* ═══ APPOINTMENTS TAB ═══ */}
         {activeTab === 'appointments' && (
@@ -1148,13 +1424,11 @@ export default function PatientDashboard() {
             })()}
 
             {!nextAppointment && upcomingAppointments.length === 0 && pastAppointments.length === 0 && (
-              <div style={{ padding: 60, textAlign: 'center', color: C.textFaint, background: C.surface, borderRadius: RAD.card, border: `1px solid ${C.border}` }}>
-                <Calendar size={48} color={C.border} style={{ margin: '0 auto 16px' }} />
-                <div style={{ fontSize: 16, marginBottom: 8 }}>{tx.noAppointments}</div>
-                <a href="/dashboard/patient/new-request" style={{ color: C.accent, fontWeight: 600, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 8, fontSize: 15 }}>
-                  {tx.bookFirst}
-                  <ArrowRight size={15} />
-                </a>
+              <div className="pd-panel" style={{ textAlign: 'center', padding: '40px 20px' }}>
+                <div className="pd-empty-icon"><CalendarDays size={40} color={C.accent} /></div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: C.brand, marginBottom: 6 }}>{tx.noAppointments}</div>
+                <div style={{ fontSize: 14.5, color: C.textMuted, maxWidth: 440, margin: '0 auto 18px', lineHeight: 1.55 }}>{tx.noAppointmentsDesc}</div>
+                <a href="/dashboard/patient/new-request" className="pd-cta">{tx.bookFirst}<ArrowRight size={16} /></a>
               </div>
             )}
 
@@ -1299,8 +1573,12 @@ export default function PatientDashboard() {
                   </div>
                 )}
 
+                {pastAppointments.length === 0 && upcomingAppointments.length > 0 && (
+                  <div id="pd-past" style={{ fontSize: 14, color: C.textMuted, padding: '4px 2px', scrollMarginTop: 140 }}>{tx.noPastYet}</div>
+                )}
+
                 {pastAppointments.length > 0 && (
-                  <div>
+                  <div id="pd-past" style={{ scrollMarginTop: 140 }}>
                     <h3 style={{ fontSize: 14, fontWeight: 700, color: C.textBody, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                       <ChevronLeft size={16} color={C.textMuted} />
                       {tx.past(pastAppointments.length)}
@@ -1456,12 +1734,11 @@ export default function PatientDashboard() {
         {activeTab === 'requests' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {sessionRequests.length === 0 ? (
-              <div style={{ padding: 40, textAlign: 'center', color: C.textFaint, background: C.surface, borderRadius: RAD.card, border: `1px solid ${C.border}`, fontSize: 15 }}>
-                {tx.noRequests}<br />
-                <a href="/dashboard/patient/new-request" style={{ color: C.accent, fontWeight: 600, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 8 }}>
-                  {tx.bookFirst}
-                  <ArrowRight size={14} />
-                </a>
+              <div className="pd-panel" style={{ textAlign: 'center', padding: '40px 20px' }}>
+                <div className="pd-empty-icon"><ClipboardList size={38} color={C.accent} /></div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: C.brand, marginBottom: 6 }}>{tx.noRequests}</div>
+                <div style={{ fontSize: 14.5, color: C.textMuted, maxWidth: 440, margin: '0 auto 18px', lineHeight: 1.55 }}>{tx.noRequestsDesc}</div>
+                <a href="/dashboard/patient/new-request" className="pd-cta">{tx.bookFirst}<ArrowRight size={16} /></a>
               </div>
             ) : sessionRequests.map(req => {
               const st = statusLabel(STATUS_MAP, req.status);

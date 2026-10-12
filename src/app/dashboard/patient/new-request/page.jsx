@@ -439,18 +439,18 @@ export default function NewRequestPage() {
   function validateStep() {
     setError('');
     if (step === 1) {
-      if (!condition) { setError('Πείτε μας τι σας ταλαιπωρεί — γράψτε π.χ. «πόνος στη μέση».'); return false; }
+      if (!condition) { setError('Πες μας τι σε ταλαιπωρεί — γράψε π.χ. «πόνος στη μέση».'); return false; }
       if (savedAddress && !editingAddress && !addressConfirmed) {
-        setError('Επιβεβαιώστε τη διεύθυνση για να συνεχίσετε.');
+        setError('Επιβεβαίωσε τη διεύθυνση για να συνεχίσεις.');
         return false;
       }
-      if (!address || !area) { setError('Συμπληρώστε διεύθυνση και περιοχή.'); return false; }
+      if (!address || !area) { setError('Συμπλήρωσε διεύθυνση και περιοχή.'); return false; }
     }
     if (step === 2) {
-      if (!selectedTherapist) { setError('Παρακαλώ επιλέξτε θεραπευτή.'); return false; }
+      if (!selectedTherapist) { setError('Διάλεξε φυσικοθεραπευτή.'); return false; }
     }
     if (step === 3) {
-      if (!selectedSlot) { setError('Παρακαλώ επιλέξτε ημέρα και ώρα.'); return false; }
+      if (!selectedSlot) { setError('Διάλεξε ημέρα και ώρα.'); return false; }
     }
     return true;
   }
@@ -501,14 +501,14 @@ export default function NewRequestPage() {
 
     if (!result?.ok) {
       if (result?.error === 'slots_taken') {
-        setError('Η ώρα που επιλέξατε μόλις κλείστηκε από άλλον ασθενή. Επιλέξτε άλλη.');
+        setError('Η ώρα που επέλεξες μόλις κλείστηκε από άλλον ασθενή. Διάλεξε άλλη.');
         setSelectedSlot(null);
         setStep(3);
         await fetchSlots();
       } else if (result?.error === 'not_authenticated') {
-        setError('Η σύνδεσή σας έληξε. Παρακαλώ συνδεθείτε ξανά.');
+        setError('Η σύνδεσή σου έληξε. Συνδέσου ξανά.');
       } else {
-        setError('Δεν ήταν δυνατή η κράτηση. Δοκιμάστε ξανά.');
+        setError('Δεν ήταν δυνατή η κράτηση. Δοκίμασε ξανά.');
       }
       setSubmitting(false);
       return;
@@ -606,15 +606,15 @@ export default function NewRequestPage() {
         <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#D1FAE5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
           <Check size={32} color="#15803D" strokeWidth={3} />
         </div>
-        <h2 style={{ fontSize: 24, fontWeight: 700, color: '#0F172A', marginBottom: 12 }}>Το αίτημά σας εστάλη</h2>
+        <h2 style={{ fontSize: 24, fontWeight: 700, color: '#0F172A', marginBottom: 12 }}>Το αίτημά σου στάλθηκε</h2>
         <p style={{ fontSize: 15, color: '#64748B', lineHeight: 1.7, marginBottom: 20 }}>
-          Ο θεραπευτής <strong>{selectedTherapist?.name}</strong> θα δει το αίτημά σας και θα απαντήσει σύντομα.
-          Μόλις το αποδεχθεί, το ραντεβού σας επιβεβαιώνεται.
+          Ο θεραπευτής <strong>{selectedTherapist?.name}</strong> θα δει το αίτημά σου και θα απαντήσει σύντομα.
+          Μόλις το αποδεχθεί, το ραντεβού σου επιβεβαιώνεται.
         </p>
         <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 12, padding: '14px 16px', marginBottom: 26, textAlign: 'left', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
           <Banknote size={16} color="#15803D" strokeWidth={2.2} style={{ marginTop: 1, flexShrink: 0 }} />
           <span style={{ fontSize: 13, color: '#15803D', lineHeight: 1.6 }}>
-            Η πληρωμή γίνεται <strong>απευθείας στον θεραπευτή</strong> μετά τη συνεδρία.
+            Η πληρωμή γίνεται <strong>απευθείας στον φυσικοθεραπευτή</strong> μετά τη συνεδρία.
           </span>
         </div>
         <a href="/dashboard/patient" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#1a2e44', color: '#fff', padding: '13px 32px', borderRadius: 30, fontSize: 15, fontWeight: 600, textDecoration: 'none' }}>
@@ -724,12 +724,12 @@ export default function NewRequestPage() {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
                 <div>
-                  <label style={labelStyle}>Τι σας ταλαιπωρεί; *</label>
+                  <label style={labelStyle}>Τι σε ταλαιπωρεί; *</label>
 
                   {/* Το «δεν χρειάζεται διάγνωση» μπαίνει ΠΑΝΩ από το input.
                       Είναι το πρώτο άγχος του ασθενή — απαντιέται πριν καν γράψει. */}
                   <div style={{ fontSize: 12.5, color: '#1D4ED8', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 8, padding: '8px 12px', marginBottom: 8, lineHeight: 1.5 }}>
-                    Δεν χρειάζεται να γνωρίζετε τη διάγνωση. Πείτε μας απλά τι σας ενοχλεί — π.χ. «πόνος στη μέση».
+                    Δεν χρειάζεται να ξέρεις τη διάγνωση. Πες μας απλά τι σε ενοχλεί — π.χ. «πόνος στη μέση».
                   </div>
 
                   <ConditionSearch
@@ -747,9 +747,9 @@ export default function NewRequestPage() {
                 </div>
 
                 <div>
-                  <label style={labelStyle}>Θέλετε να προσθέσετε κάτι; <span style={{ color: '#94a3b8', fontWeight: 400 }}>— προαιρετικό</span></label>
+                  <label style={labelStyle}>Θέλεις να προσθέσεις κάτι; <span style={{ color: '#94a3b8', fontWeight: 400 }}>— προαιρετικό</span></label>
                   <textarea value={problemDesc} onChange={e => setProblemDesc(e.target.value)} rows={3}
-                    placeholder="Από πότε το έχετε, τι το επιδεινώνει, αν έχετε κάνει εξετάσεις..."
+                    placeholder="Από πότε το έχεις, τι το χειροτερεύει, αν έχεις κάνει εξετάσεις..."
                     style={{ ...inputStyle, resize: 'vertical' }} />
                 </div>
 
@@ -765,7 +765,7 @@ export default function NewRequestPage() {
                       <MapPin size={18} color={addressConfirmed ? '#15803D' : '#B45309'} strokeWidth={2.2} style={{ flexShrink: 0, marginTop: 2 }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 12, fontWeight: 700, color: addressConfirmed ? '#15803D' : '#B45309', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6 }}>
-                          {addressConfirmed ? 'Διεύθυνση επιβεβαιωμένη' : 'Επιβεβαιώστε τη διεύθυνσή σας'}
+                          {addressConfirmed ? 'Διεύθυνση επιβεβαιωμένη' : 'Επιβεβαίωσε τη διεύθυνσή σου'}
                         </div>
                         <div style={{ fontSize: 16, fontWeight: 600, color: '#0F172A', marginBottom: 2 }}>
                           {savedAddress.address}
@@ -814,7 +814,7 @@ export default function NewRequestPage() {
 
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 3 }}>Πού θα γίνει η συνεδρία;</div>
-                      <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 12 }}>Θα αποθηκευτεί, ώστε να μη χρειαστεί να την ξαναγράψετε.</div>
+                      <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 12 }}>Θα αποθηκευτεί, ώστε να μη χρειαστεί να την ξαναγράψεις.</div>
 
                       <div className="form-grid-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                         <div>
@@ -848,7 +848,7 @@ export default function NewRequestPage() {
                 <div>
                   <label style={labelStyle}>Οδηγίες πρόσβασης <span style={{ color: '#94a3b8', fontWeight: 400 }}>— προαιρετικό</span></label>
                   <input value={notes} onChange={e => setNotes(e.target.value)}
-                    placeholder="π.χ. το κουδούνι δεν λειτουργεί, τηλεφωνήστε"
+                    placeholder="π.χ. το κουδούνι δεν λειτουργεί, πάρτε τηλέφωνο"
                     style={inputStyle} />
                 </div>
               </div>
@@ -858,15 +858,15 @@ export default function NewRequestPage() {
           {/* STEP 2 — Θεραπευτής */}
           {step === 2 && (
             <div>
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>Διάλεξε θεραπευτή</h2>
+              <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>Διάλεξε φυσικοθεραπευτή</h2>
               <p style={{ fontSize: 13, color: '#64748B', marginBottom: 16 }}>
                 {condition
                   ? <>Θεραπευτές για <strong style={{ color: '#0F172A' }}>{condition.name}</strong> στην περιοχή <strong style={{ color: '#0F172A' }}>{area}</strong>.</>
-                  : 'Επίλεξε τον θεραπευτή που σε εξυπηρετεί καλύτερα.'}
+                  : 'Επίλεξε τον φυσικοθεραπευτή που σε εξυπηρετεί καλύτερα.'}
               </p>
 
               {loadingTherapists ? (
-                <div style={{ textAlign: 'center', padding: 40, color: '#64748B' }}>Αναζήτηση θεραπευτών...</div>
+                <div style={{ textAlign: 'center', padding: 40, color: '#64748B' }}>Αναζήτηση φυσικοθεραπευτών...</div>
               ) : therapists.length === 0 ? (
                 <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 14, padding: '28px 24px', textAlign: 'center' }}>
                   <AlertCircle size={30} color="#B45309" style={{ margin: '0 auto 12px' }} />
@@ -874,8 +874,8 @@ export default function NewRequestPage() {
                     Δεν βρέθηκε θεραπευτής για {condition?.name || 'αυτή την πάθηση'} στην περιοχή {area}
                   </div>
                   <p style={{ fontSize: 13.5, color: '#92400E', lineHeight: 1.6, maxWidth: 440, margin: '0 auto 18px' }}>
-                    Επεκτείνουμε συνεχώς το δίκτυό μας. Δοκιμάστε άλλη περιοχή, ή γυρίστε πίσω
-                    και περιγράψτε το πρόβλημα διαφορετικά.
+                    Επεκτείνουμε συνεχώς το δίκτυό μας. Δοκίμασε άλλη περιοχή, ή γύρισε πίσω
+                    και περίγραψε το πρόβλημα διαφορετικά.
                   </p>
                   <button type="button" onClick={() => setStep(1)}
                     style={{ padding: '10px 22px', borderRadius: 30, border: '1px solid #FDE68A', background: '#fff', color: '#B45309', fontSize: 13.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -890,8 +890,8 @@ export default function NewRequestPage() {
                     <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 12, padding: '13px 16px', display: 'flex', alignItems: 'center', gap: 11, flexWrap: 'wrap' }}>
                       <Check size={16} color="#1D4ED8" strokeWidth={3} />
                       <span style={{ fontSize: 13.5, color: '#1E40AF', flex: 1, minWidth: 200 }}>
-                        Επιλέξατε τον/την <strong>{selectedTherapist.name}</strong> από το προφίλ.
-                        Μπορείτε να αλλάξετε επιλογή παρακάτω.
+                        Επέλεξες τον/την <strong>{selectedTherapist.name}</strong> από το προφίλ.
+                        Μπορείς να αλλάξεις επιλογή παρακάτω.
                       </span>
                     </div>
                   )}
@@ -915,7 +915,7 @@ export default function NewRequestPage() {
                       {startsSecondary && (
                         <div style={{ margin: '18px 0 12px', paddingTop: 18, borderTop: '1px solid #e2e8f0' }}>
                           <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', marginBottom: 4 }}>
-                            Άλλοι θεραπευτές στην περιοχή σας
+                            Άλλοι φυσικοθεραπευτές στην περιοχή σου
                           </div>
                           <div style={{ fontSize: 12.5, color: '#64748B', lineHeight: 1.5 }}>
                             Δεν έχουν δηλώσει εμπειρία σε {condition?.name}. Εξυπηρετούν την περιοχή, αλλά ίσως δεν είναι η καταλληλότερη επιλογή.
@@ -967,7 +967,7 @@ export default function NewRequestPage() {
                             {t.matchLevel === 'exact' && (
                               <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '9px 12px', marginBottom: 9 }}>
                                 <div style={{ fontSize: 11, fontWeight: 700, color: '#15803D', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 5 }}>
-                                  Ταιριάζει στην αναζήτησή σας
+                                  Ταιριάζει στην αναζήτησή σου
                                 </div>
                                 <div style={{ fontSize: 12.5, color: '#166534', display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2 }}>
                                   <Check size={12} strokeWidth={3} /> Αντιμετωπίζει {condition?.name}
@@ -1092,7 +1092,7 @@ export default function NewRequestPage() {
                   })}
                   {slots.length === 0 && (
                     <div style={{ textAlign: 'center', padding: 32, color: '#94A3B8', fontSize: 14 }}>
-                      Δεν υπάρχουν διαθέσιμες ώρες αυτή την εβδομάδα. Δοκιμάστε την επόμενη.
+                      Δεν υπάρχουν διαθέσιμες ώρες αυτή την εβδομάδα. Δοκίμασε την επόμενη.
                     </div>
                   )}
                 </div>
@@ -1120,7 +1120,7 @@ export default function NewRequestPage() {
           {step === 4 && (
             <div>
               <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>Έλεγχος πριν την αποστολή</h2>
-              <p style={{ fontSize: 13, color: '#64748B', marginBottom: 20 }}>Δείτε αν είναι όλα σωστά.</p>
+              <p style={{ fontSize: 13, color: '#64748B', marginBottom: 20 }}>Δες αν είναι όλα σωστά.</p>
 
               {/* Compact card αντί για μακρύ πίνακα */}
               <div style={{ border: '1px solid #e2e8f0', borderRadius: 14, overflow: 'hidden' }}>
@@ -1180,7 +1180,7 @@ export default function NewRequestPage() {
                     Το ραντεβού δεν έχει κλείσει ακόμη
                   </div>
                   <div style={{ fontSize: 13, color: '#78350F', lineHeight: 1.6 }}>
-                    Στέλνετε αίτημα. Ο φυσικοθεραπευτής πρέπει να το αποδεχθεί — θα ειδοποιηθείτε μόλις απαντήσει.
+                    Στέλνεις αίτημα. Ο φυσικοθεραπευτής πρέπει να το αποδεχθεί — θα ειδοποιηθείς μόλις απαντήσει.
                   </div>
                 </div>
               </div>
@@ -1191,13 +1191,13 @@ export default function NewRequestPage() {
               <div style={{ marginTop: 12, background: '#F8FAFC', border: '1px solid #e2e8f0', borderRadius: 12, padding: '16px 18px' }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
                   <ShieldCheck size={16} color="#2a6fdb" strokeWidth={2.2} />
-                  Τα στοιχεία σας και τι ισχύει
+                  Τα στοιχεία σου και τι ισχύει
                 </div>
                 <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: '#475569', lineHeight: 1.65, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <li>Το αίτημα το λαμβάνει μόνο ο/η {selectedTherapist?.name || 'φυσικοθεραπευτής που επιλέξατε'}. Πριν την αποδοχή βλέπει το όνομά σας, την περιοχή και την περιγραφή του προβλήματος· την πλήρη διεύθυνση τη βλέπει μόνο αφού αποδεχθεί το αίτημα.</li>
-                  <li>Το τηλέφωνό σας δεν εμφανίζεται στον φυσικοθεραπευτή.</li>
-                  <li>Μπορείτε να ακυρώσετε δωρεάν από τον λογαριασμό σας. Επαναλαμβανόμενες ακυρώσεις λιγότερο από 24 ώρες πριν το ραντεβού μπορεί να οδηγήσουν σε προσωρινό περιορισμό κρατήσεων.</li>
-                  <li>Μετά τη συνεδρία θα σας ζητήσουμε να επιβεβαιώσετε ότι πραγματοποιήθηκε.</li>
+                  <li>Το αίτημα το λαμβάνει μόνο ο/η {selectedTherapist?.name || 'φυσικοθεραπευτής που επέλεξες'}. Πριν την αποδοχή βλέπει το όνομά σου, την περιοχή και την περιγραφή του προβλήματος· την πλήρη διεύθυνση τη βλέπει μόνο αφού αποδεχθεί το αίτημα.</li>
+                  <li>Το τηλέφωνό σου δεν εμφανίζεται στον φυσικοθεραπευτή.</li>
+                  <li>Μπορείς να ακυρώσεις δωρεάν από τον λογαριασμό σου. Επαναλαμβανόμενες ακυρώσεις λιγότερο από 24 ώρες πριν το ραντεβού μπορεί να οδηγήσουν σε προσωρινό περιορισμό κρατήσεων.</li>
+                  <li>Μετά τη συνεδρία θα σου ζητήσουμε να επιβεβαιώσεις ότι πραγματοποιήθηκε.</li>
                 </ul>
                 <div style={{ marginTop: 8, fontSize: 12.5 }}>
                   <a href="/privacy" target="_blank" rel="noopener" style={{ color: '#2a6fdb', fontWeight: 600, textDecoration: 'none' }}>Πολιτική Απορρήτου</a>
@@ -1210,8 +1210,8 @@ export default function NewRequestPage() {
                 <div style={{ marginTop: 12, background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '14px 16px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                   <Heart size={15} color="#1D4ED8" strokeWidth={2.2} style={{ marginTop: 1, flexShrink: 0 }} />
                   <div style={{ fontSize: 13, color: '#1D4ED8', lineHeight: 1.6 }}>
-                    Συνεχίζετε με τον/την <strong>{selectedTherapist?.name}</strong>, που σας γνωρίζει ήδη.
-                    Η θεραπεία σας συνεχίζεται από εκεί που την αφήσατε.
+                    Συνεχίζεις με τον/την <strong>{selectedTherapist?.name}</strong>, που σε γνωρίζει ήδη.
+                    Η θεραπεία σου συνεχίζεται από εκεί που την άφησες.
                   </div>
                 </div>
               )}
@@ -1242,7 +1242,7 @@ export default function NewRequestPage() {
               <button onClick={handleSubmit} disabled={submitting}
                 style={{ padding: '11px 30px', borderRadius: 30, border: 'none', background: submitting ? '#94a3b8' : '#15803D', color: '#fff', fontSize: 14, fontWeight: 600, cursor: submitting ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
                 {!submitting && <Send size={15} />}
-                {submitting ? 'Αποστολή...' : 'Στείλε αίτημα στον θεραπευτή'}
+                {submitting ? 'Αποστολή...' : 'Στείλε αίτημα στον φυσικοθεραπευτή'}
               </button>
             )}
           </div>
