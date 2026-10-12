@@ -14,6 +14,7 @@ import { C, R as RAD, T, F, MAX_WIDTH, card, btn, badge } from '@/lib/tokens';
 import ReportModal from '@/components/ReportModal';
 import StepPlan from '@/components/onboarding/StepPlan';
 import Logo, { BRAND } from '@/components/Logo';
+import EmailVerifyBanner from '@/components/EmailVerifyBanner';
 import {
   LayoutDashboard, ClipboardList, Calendar, MapPin, Target, Star, User, Clock, AlertTriangle, UserX,
   Upload, Home, MessageSquare, Check, X, Lock, CalendarClock, ChevronLeft, ChevronRight,
@@ -2197,6 +2198,8 @@ export default function TherapistDashboard() {
         {/* Το checklist είναι ΠΑΝΩ από τα tabs. Χωρίς scroll, ο θεραπευτής
             πατάει «Συμπλήρωσε», το tab αλλάζει σωστά, αλλά αυτός βλέπει
             το ίδιο checklist και νομίζει ότι δεν έγινε τίποτα. */}
+        <EmailVerifyBanner profile={profile} email={user?.email} role="therapist" lang={lang} />
+
         <ProfileChecklist
           onGoToTab={(tab) => {
             goToChecklistTarget(tab);

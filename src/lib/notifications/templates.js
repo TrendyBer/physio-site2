@@ -53,7 +53,7 @@ function fmtDate(iso) {
 const BRAND = 'Theralivo';
 
 // ── Κέλυφος email ────────────────────────────────────────────
-function shell({ title, intro, rows = [], ctaLabel, ctaUrl, footNote, accent = '#2a6fdb' }) {
+function shell({ title, intro, rows = [], ctaLabel, ctaUrl, footNote, accent = '#2a6fdb', lang = 'el', footer }) {
   const rowsHtml = rows
     .filter(r => r && r.value)
     .map(r => `
@@ -64,7 +64,7 @@ function shell({ title, intro, rows = [], ctaLabel, ctaUrl, footNote, accent = '
     .join('');
 
   return `<!doctype html>
-<html lang="el"><body style="margin:0;padding:0;background:#faf9f6;">
+<html lang="${lang}"><body style="margin:0;padding:0;background:#faf9f6;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#faf9f6;padding:32px 16px;">
     <tr><td align="center">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e6ebf1;font-family:'DM Sans',Helvetica,Arial,sans-serif;">
@@ -91,7 +91,7 @@ function shell({ title, intro, rows = [], ctaLabel, ctaUrl, footNote, accent = '
         </td></tr>
 
         <tr><td style="padding:16px 28px;background:#faf9f6;border-top:1px solid #eef2f7;">
-          <p style="margin:0;font-size:12px;color:#94a3b8;">${BRAND} — Φυσικοθεραπεία κατ' οίκον</p>
+          <p style="margin:0;font-size:12px;color:#94a3b8;">${footer || `${BRAND} — Φυσικοθεραπεία κατ' οίκον`}</p>
         </td></tr>
 
       </table>
@@ -490,6 +490,128 @@ export function therapistMovedToBasic({ therapistName, planName }) {
     footNote: 'Μπορείς να επιστρέψεις σε πληρωμένο πακέτο όποτε θέλεις από τον πίνακά σου.',
   });
   return { subject, html };
+}
+
+// ═════════════════════════════════════════════════════════════
+// ΚΑΛΩΣΟΡΙΣΜΑ + ΕΠΙΒΕΒΑΙΩΣΗ EMAIL — στέλνεται αμέσως μετά την εγγραφή.
+// Ο χρήστης μπαίνει κανονικά χωρίς να το πατήσει· ο φυσικοθεραπευτής
+// όμως δεν εγκρίνεται αν δεν επιβεβαιώσει το email του.
+// ═════════════════════════════════════════════════════════════
+function esc(v) {
+  return String(v ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+}
+
+function stepsHtml(steps) {
+  return `<ol style="margin:14px 0 0;padding-left:20px;color:#475569;font-size:14.5px;line-height:1.7;">${
+    steps.map(s => `<li style="margin:0 0 6px;">${s}</li>`).join('')
+  }</ol>`;
+}
+
+const FOOTER_EN = `${BRAND} — Home physiotherapy`;
+
+export function welcomeTherapist({ name, verifyUrl, lang = 'el' }) {
+  const first = esc((name || '').trim().split(' ')[0]);
+  if (lang === 'en') {
+    const subject = `Welcome to ${BRAND} — please confirm your email`;
+    const html = shell({
+      lang, footer: FOOTER_EN,
+      title: `Welcome${first ? `, ${first}` : ''}!`,
+      intro: `Thank you for joining ${BRAND} as a physiotherapist. Please confirm that this email address is yours — we need it before your profile can be approved.` +
+        stepsHtml([
+          '<strong>Confirm your email</strong> using the button below.',
+          'Complete your profile: photo, areas you cover, specialties and availability.',
+          'Upload your licence to practise.',
+          'Choose a plan (Basic is free).',
+          'Our team reviews your profile and approves it — then patients can find you.',
+        ]),
+      ctaLabel: 'Confirm my email',
+      ctaUrl: verifyUrl,
+      footNote: `You can already sign in and complete your profile. Approval happens only after the email is confirmed. If you did not create this account, ignore this email.`,
+    });
+    return { subject, html };
+  }
+  const subject = `Καλώς ήρθες στο ${BRAND} — επιβεβαίωσε το email σου`;
+  const html = shell({
+    title: `Καλώς ήρθες${first ? `, ${first}` : ''}!`,
+    intro: `Σε ευχαριστούμε που γράφτηκες στο ${BRAND} ως φυσικοθεραπευτής. Επιβεβαίωσε ότι αυτό το email είναι δικό σου — χωρίς αυτό δεν μπορεί να εγκριθεί το προφίλ σου.` +
+      stepsHtml([
+        '<strong>Επιβεβαίωσε το email σου</strong> με το κουμπί παρακάτω.',
+        'Συμπλήρωσε το προφίλ σου: φωτογραφία, περιοχές, ειδικότητες και διαθεσιμότητα.',
+        'Ανέβασε την άδεια άσκησης επαγγέλματος.',
+        'Διάλεξε πακέτο (το Basic είναι δωρεάν).',
+        'Η ομάδα μας ελέγχει το προφίλ σου και το εγκρίνει — τότε σε βρίσκουν οι ασθενείς.',
+      ]),
+    ctaLabel: 'Επιβεβαίωση email',
+    ctaUrl: verifyUrl,
+    footNote: 'Μπορείς ήδη να συνδεθείς και να συμπληρώσεις το προφίλ σου. Η έγκριση γίνεται μόνο αφού επιβεβαιωθεί το email. Αν δεν έκανες εσύ αυτή την εγγραφή, αγνόησε αυτό το μήνυμα.',
+  });
+  return { subject, html };
+}
+
+export function welcomePatient({ name, verifyUrl, lang = 'el' }) {
+  const first = esc((name || '').trim().split(' ')[0]);
+  if (lang === 'en') {
+    const subject = `Welcome to ${BRAND} — please confirm your email`;
+    const html = shell({
+      lang, footer: FOOTER_EN,
+      title: `Welcome${first ? `, ${first}` : ''}!`,
+      intro: `Your ${BRAND} account is ready. Please confirm that this email address is yours, so we can safely send you updates about your appointments.` +
+        stepsHtml([
+          'Describe what you need and the area where you want the session.',
+          'Choose a verified physiotherapist who covers your area.',
+          'The physiotherapist comes to your home at the agreed time.',
+        ]),
+      ctaLabel: 'Confirm my email',
+      ctaUrl: verifyUrl,
+      footNote: 'Your account already works — you can book right away. If you did not create this account, ignore this email.',
+    });
+    return { subject, html };
+  }
+  const subject = `Καλώς ήρθατε στο ${BRAND} — επιβεβαιώστε το email σας`;
+  const html = shell({
+    title: `Καλώς ήρθατε${first ? `, ${first}` : ''}!`,
+    intro: `Ο λογαριασμός σας στο ${BRAND} είναι έτοιμος. Επιβεβαιώστε ότι αυτό το email είναι δικό σας, ώστε να σας στέλνουμε με ασφάλεια ενημερώσεις για τα ραντεβού σας.` +
+      stepsHtml([
+        'Περιγράψτε τι χρειάζεστε και την περιοχή όπου θέλετε τη συνεδρία.',
+        'Επιλέξτε επαληθευμένο φυσικοθεραπευτή που καλύπτει την περιοχή σας.',
+        'Ο φυσικοθεραπευτής έρχεται στο σπίτι σας τη συμφωνημένη ώρα.',
+      ]),
+    ctaLabel: 'Επιβεβαίωση email',
+    ctaUrl: verifyUrl,
+    footNote: 'Ο λογαριασμός σας λειτουργεί ήδη — μπορείτε να κλείσετε ραντεβού αμέσως. Αν δεν κάνατε εσείς αυτή την εγγραφή, αγνοήστε αυτό το μήνυμα.',
+  });
+  return { subject, html };
+}
+
+// Επαναποστολή από τον πίνακα («Δεν ήρθε το email;»)
+export function verifyEmailAgain({ name, verifyUrl, role, lang = 'el' }) {
+  const first = esc((name || '').trim().split(' ')[0]);
+  const formal = role !== 'therapist';
+  if (lang === 'en') {
+    return {
+      subject: `Confirm your email — ${BRAND}`,
+      html: shell({
+        lang, footer: FOOTER_EN,
+        title: 'Confirm your email',
+        intro: `${first ? `${first}, p` : 'P'}ress the button below to confirm that this email address is yours.`,
+        ctaLabel: 'Confirm my email',
+        ctaUrl: verifyUrl,
+        footNote: role === 'therapist' ? 'Your profile can be approved only after the email is confirmed.' : null,
+      }),
+    };
+  }
+  return {
+    subject: `Επιβεβαίωση email — ${BRAND}`,
+    html: shell({
+      title: 'Επιβεβαίωση email',
+      intro: formal
+        ? `${first ? `${first}, π` : 'Π'}ατήστε το κουμπί για να επιβεβαιώσετε ότι αυτό το email είναι δικό σας.`
+        : `${first ? `${first}, π` : 'Π'}άτησε το κουμπί για να επιβεβαιώσεις ότι αυτό το email είναι δικό σου.`,
+      ctaLabel: 'Επιβεβαίωση email',
+      ctaUrl: verifyUrl,
+      footNote: role === 'therapist' ? 'Το προφίλ σου μπορεί να εγκριθεί μόνο αφού επιβεβαιωθεί το email.' : null,
+    }),
+  };
 }
 
 export { fmtDateTime, fmtTime, fmtDate, SITE, ADMIN_SITE };

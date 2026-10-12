@@ -9,6 +9,7 @@ import RescheduleModal from '@/components/RescheduleModal';
 import { C, R as RAD, T, F, MAX_WIDTH, card, btn, badge, input as inputStyle } from '@/lib/tokens';
 import ReportModal from '@/components/ReportModal';
 import Logo from '@/components/Logo';
+import EmailVerifyBanner from '@/components/EmailVerifyBanner';
 import { ClipboardList, Stethoscope, User, MapPin, Euro, Calendar, Star, Check, ArrowRight, Save, X, Hourglass, Wallet, AlertCircle, CheckCircle2, CalendarDays, List, ChevronLeft, ChevronRight, Clock, XCircle, Globe, CalendarClock, Home, UserX} from 'lucide-react';
 
 // ─── Locale data ──────────────────────────────────────────────────────
@@ -911,6 +912,8 @@ export default function PatientDashboard() {
           </h1>
           <p style={{ fontSize: 15, color: C.textMuted, marginTop: 4 }}>{tx.welcomeSub}</p>
         </div>
+
+        <EmailVerifyBanner profile={profile} email={user?.email} role="patient" lang={lang} />
 
         {/* «ΕΓΙΝΕ Η ΣΥΝΕΔΡΙΑ;» — ο θεραπευτής τη δήλωσε ολοκληρωμένη και
             ο ασθενής απαντά Ναι/Όχι, κατευθείαν από εδώ. */}

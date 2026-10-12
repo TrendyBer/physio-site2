@@ -275,8 +275,31 @@ export default function RegisterClient({ preRole = null }) {
       city_id: role === 'therapist' ? form.cityId : null,
     });
 
+    // Email καλωσορίσματος + επιβεβαίωσης. Δεν μπλοκάρει την εγγραφή:
+    // περιμένουμε το πολύ 4 δευτερόλεπτα και προχωράμε ό,τι κι αν γίνει.
+    // Αν αποτύχει, ο χρήστης βλέπει «Επαναποστολή» στον πίνακά του.
+    await sendWelcomeEmail();
+
     redirectAfterRegister(role);
     setLoading(false);
+  }
+
+  async function sendWelcomeEmail() {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+      await Promise.race([
+        fetch('/api/auth/welcome', {
+          method: 'POST',
+          keepalive: true,
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+          body: JSON.stringify({ lang }),
+        }),
+        new Promise(r => setTimeout(r, 4000)),
+      ]);
+    } catch (err) {
+      console.error('[register] welcome email failed:', err);
+    }
   }
 
   const inputStyle = {
