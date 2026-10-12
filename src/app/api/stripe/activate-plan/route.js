@@ -18,6 +18,7 @@ import { NextResponse } from 'next/server';
 import {
   adminDb, getStripeMode, stripeFor, getUserFromRequest, createCheckout,
 } from '@/lib/stripeServer';
+import { isFreeByPromo } from '@/lib/subscriptions';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -72,6 +73,24 @@ export async function POST(req) {
 
   const planName = sub.plan_snapshot?.name_el || 'Theralivo';
 
+  // ΣΥΝΕΧΕΙΑ ΜΕΤΑ ΑΠΟ ΔΩΡΕΑΝ ΠΡΟΣΦΟΡΑ (π.χ. FOUNDERS100, χωρίς κάρτα):
+  // αν το τρέχον ενεργό πακέτο είναι δωρεάν μόνο λόγω προσφοράς, η πρώτη
+  // χρέωση μετατίθεται στη λήξη της — δεν πληρώνει δύο φορές τον ίδιο μήνα.
+  // (Το Stripe δέχεται trial_end τουλάχιστον 48 ώρες μετά.)
+  let trialEnd = null;
+  const { data: cur } = await db
+    .from('therapist_subscriptions')
+    .select('effective_price, price_locked, promo_ends_at, stripe_subscription_id')
+    .eq('therapist_id', user.id)
+    .eq('status', 'active')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (isFreeByPromo(cur)) {
+    const ends = new Date(cur.promo_ends_at).getTime();
+    if (ends > Date.now() + 49 * 3600 * 1000) trialEnd = Math.floor(ends / 1000);
+  }
+
   try {
     const stripe = stripeFor(mode);
     const url = await createCheckout({
@@ -79,7 +98,11 @@ export async function POST(req) {
       kind: 'plan_activation',
       amount,
       subscriptionId: sub.id,
-      recurring: { listAmount, discount: promoDiscount(sub, amount, listAmount) },
+      recurring: {
+        listAmount,
+        discount: trialEnd ? null : promoDiscount(sub, amount, listAmount),
+        trialEnd,
+      },
       productName: lang === 'en'
         ? `Theralivo — ${sub.plan_snapshot?.name_en || planName} (monthly)`
         : `Theralivo — Πακέτο «${planName}» (μηνιαία συνδρομή)`,

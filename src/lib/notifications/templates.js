@@ -455,4 +455,41 @@ export function appointmentReminder({ toRole, recipientName, otherName, booking,
   return { subject, html, sms };
 }
 
+// ═════════════════════════════════════════════════════════════
+// ΠΡΟΣΦΟΡΑ ΠΟΥ ΛΗΓΕΙ (π.χ. FOUNDERS100) — ο θεραπευτής δεν έχει δώσει
+// κάρτα. 7 μέρες πριν: υπενθύμιση. Στη λήξη, αν δεν συνέχισε: Basic.
+// ═════════════════════════════════════════════════════════════
+export function therapistPromoEnding({ therapistName, planName, endDate, price }) {
+  const first = (therapistName || '').split(' ')[0] || 'συνάδελφε';
+  const subject = `Η δωρεάν περίοδος του πακέτου ${planName} λήγει στις ${endDate}`;
+  const html = shell({
+    accent: '#B45309',
+    title: 'Η δωρεάν περίοδός σου τελειώνει',
+    intro: `${first}, η προσφορά σου στο πακέτο <strong>${planName}</strong> λήγει στις <strong>${endDate}</strong>. Για να συνεχίσεις στο ${planName}, πρόσθεσε κάρτα από τον πίνακά σου — η πρώτη χρέωση (${price}€/μήνα) θα γίνει την ημέρα που λήγει η προσφορά, όχι νωρίτερα.`,
+    rows: [
+      { label: 'Πακέτο', value: planName },
+      { label: 'Λήξη προσφοράς', value: endDate },
+      { label: 'Τιμή μετά', value: `${price}€ / μήνα` },
+    ],
+    ctaLabel: `Συνέχεια στο ${planName}`,
+    ctaUrl: `${SITE}/dashboard/therapist`,
+    footNote: 'Αν δεν κάνεις τίποτα, στη λήξη περνάς αυτόματα στο δωρεάν πακέτο Basic. Ο λογαριασμός και το προφίλ σου μένουν κανονικά.',
+  });
+  return { subject, html };
+}
+
+export function therapistMovedToBasic({ therapistName, planName }) {
+  const first = (therapistName || '').split(' ')[0] || 'συνάδελφε';
+  const subject = 'Πέρασες στο δωρεάν πακέτο Basic';
+  const html = shell({
+    title: 'Το πακέτο σου άλλαξε σε Basic',
+    intro: `${first}, η δωρεάν περίοδος του πακέτου <strong>${planName}</strong> τελείωσε και πέρασες αυτόματα στο δωρεάν πακέτο <strong>Basic</strong>. Το προφίλ σου παραμένει ορατό στους ασθενείς.`,
+    rows: [],
+    ctaLabel: 'Δες τα πακέτα',
+    ctaUrl: `${SITE}/dashboard/therapist`,
+    footNote: 'Μπορείς να επιστρέψεις σε πληρωμένο πακέτο όποτε θέλεις από τον πίνακά σου.',
+  });
+  return { subject, html };
+}
+
 export { fmtDateTime, fmtTime, fmtDate, SITE, ADMIN_SITE };

@@ -163,6 +163,10 @@ const TX = {
     noActivePlan: 'Δεν έχεις ενεργό πακέτο. Διάλεξε ένα για να εμφανίζεσαι στους ασθενείς.',
     planChanged: 'Το πακέτο σου άλλαξε.',
     planNextCharge: 'Επόμενη αυτόματη χρέωση',
+    planFreeUntil: 'Δωρεάν έως',
+    promoEndingTitle: (plan, d) => `Η δωρεάν περίοδος του ${plan} λήγει στις ${d}`,
+    promoEndingDesc: (plan, price, d) => `Για να συνεχίσεις στο ${plan}, πρόσθεσε κάρτα. Η πρώτη χρέωση (${price}€/μήνα) θα γίνει στις ${d}, όχι νωρίτερα. Αν δεν κάνεις τίποτα, στη λήξη περνάς αυτόματα στο δωρεάν Basic.`,
+    promoContinue: (plan) => `Συνέχεια στο ${plan}`,
     planEndsOn: 'Λήγει στις',
     planEndsNote: (d) => `Η αυτόματη χρέωση έχει σταματήσει. Το πακέτο σου ισχύει μέχρι τις ${d} και μετά περνάς αυτόματα στο δωρεάν πακέτο.`,
     planResume: 'Συνέχιση πακέτου',
@@ -449,6 +453,10 @@ const TX = {
     noActivePlan: 'You have no active plan. Pick one to appear to patients.',
     planChanged: 'Your plan has been changed.',
     planNextCharge: 'Next automatic charge',
+    planFreeUntil: 'Free until',
+    promoEndingTitle: (plan, d) => `Your free ${plan} period ends on ${d}`,
+    promoEndingDesc: (plan, price, d) => `To stay on ${plan}, add a card. The first charge (€${price}/month) will be on ${d}, not before. If you do nothing, you move automatically to the free Basic plan when it ends.`,
+    promoContinue: (plan) => `Continue with ${plan}`,
     planEndsOn: 'Ends on',
     planEndsNote: (d) => `Automatic charging has stopped. Your plan is valid until ${d}, then you move to the free plan automatically.`,
     planResume: 'Keep my plan',
@@ -1502,6 +1510,26 @@ export default function TherapistDashboard() {
     setPayNotice({ type: 'success', text: tx.planChanged });
   }
 
+  // «Συνέχεια στο Plus» μετά από δωρεάν προσφορά χωρίς κάρτα:
+  // νέα επιλογή του ίδιου πακέτου στην κανονική τιμή → πληρωμή, με την
+  // πρώτη χρέωση στη λήξη της προσφοράς (το ορίζει ο server).
+  async function continueAfterPromo() {
+    if (!subscription?.plan_id) return;
+    setActivating(true);
+    setPayNotice(null);
+    const { error } = await supabase.rpc('activate_subscription', {
+      p_plan_id: subscription.plan_id,
+      p_promo_code: null,
+      p_agreement_version: 'v3',
+    });
+    if (error) {
+      setActivating(false);
+      setPayNotice({ type: 'error', text: tx.acceptErr.generic });
+      return;
+    }
+    await activatePlan();
+  }
+
   // «Συνέχιση πακέτου»: ακυρώνει τη διακοπή πριν λήξει ο μήνας
   async function resumePlan() {
     setActivating(true);
@@ -1952,6 +1980,20 @@ export default function TherapistDashboard() {
     ?? 0
   );
   const monthlyPrice = Number(subscription?.effective_price ?? subscription?.price_locked ?? 0);
+  // Δωρεάν ΜΟΝΟ λόγω προσφοράς, χωρίς κάρτα (π.χ. FOUNDERS100).
+  // Τις τελευταίες 7 μέρες εμφανίζεται «Συνέχεια στο …».
+  const isPromoFree = !!subscription
+    && Number(subscription.effective_price || 0) <= 0
+    && Number(subscription.price_locked || 0) > 0
+    && !!subscription.promo_ends_at
+    && !subscription.stripe_subscription_id;
+  const promoEndsMs = isPromoFree ? new Date(subscription.promo_ends_at).getTime() : 0;
+  const promoEndingSoon = isPromoFree && !pendingSub
+    && promoEndsMs > Date.now() && promoEndsMs - Date.now() <= 7 * 86400000;
+  const promoEndDate = isPromoFree ? new Date(subscription.promo_ends_at).toLocaleDateString(lang === 'en' ? 'en-GB' : 'el-GR') : '';
+  const promoPlanName = (lang === 'en'
+    ? (subscription?.subscription_plans?.name_en || subscription?.subscription_plans?.name_el)
+    : subscription?.subscription_plans?.name_el) || '';
   const listMonthlyPrice = Number(subscription?.price_locked ?? 0);
   const promoActive = !!subscription?.promo_code_text
     && (!subscription?.promo_ends_at || new Date(subscription.promo_ends_at) > new Date());
@@ -3113,6 +3155,9 @@ export default function TherapistDashboard() {
                           ...(subscription.current_period_start
                             ? [[tx.planSince, new Date(subscription.current_period_start).toLocaleDateString(loc)]]
                             : []),
+                          ...(isPromoFree && subscription.promo_ends_at
+                            ? [[tx.planFreeUntil, new Date(subscription.promo_ends_at).toLocaleDateString(loc)]]
+                            : []),
                           // Αυτόματη ανανέωση: πότε χρεώνεται ξανά — ή πότε λήγει
                           ...(subscription.stripe_subscription_id && subscription.current_period_end
                             ? [[subscription.cancel_at_period_end ? tx.planEndsOn : tx.planNextCharge,
@@ -3127,6 +3172,21 @@ export default function TherapistDashboard() {
                             <span style={{ fontWeight: 600, color: C.text, textAlign: 'right' }}>{value}</span>
                           </div>
                         ))}
+
+                        {promoEndingSoon && (
+                          <div style={{ marginTop: 14, background: C.warnBg, border: `1px solid ${C.warnBorder}`, borderRadius: 10, padding: '13px 15px' }}>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: C.warn, marginBottom: 4 }}>
+                              {tx.promoEndingTitle(promoPlanName, promoEndDate)}
+                            </div>
+                            <div style={{ fontSize: 13, color: C.warn, lineHeight: 1.55, marginBottom: 10 }}>
+                              {tx.promoEndingDesc(promoPlanName, listMonthlyPrice.toFixed(2), promoEndDate)}
+                            </div>
+                            <button onClick={continueAfterPromo} disabled={activating}
+                              style={{ padding: '9px 18px', borderRadius: RAD.button, border: 'none', background: C.brand, color: '#fff', fontSize: 13, fontWeight: 600, cursor: activating ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
+                              {tx.promoContinue(promoPlanName)}
+                            </button>
+                          </div>
+                        )}
 
                         {subscription.status === 'past_due' && (
                           <div style={{ marginTop: 14, background: C.dangerBg, border: `1px solid ${C.dangerBorder}`, borderRadius: 10, padding: '11px 15px', fontSize: 13, color: C.danger, lineHeight: 1.55 }}>

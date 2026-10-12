@@ -34,7 +34,7 @@ const CONTRACTS = {
 
 4. ΠΛΗΡΩΜΗ ΣΥΝΕΔΡΙΑΣ: Ο ασθενής πληρώνει τον θεραπευτή απευθείας σε μετρητά. Η πλατφόρμα δεν παρακρατεί μέρος της αμοιβής της συνεδρίας.
 ${promo ? `
-5. ΠΡΟΣΦΟΡΑ: Εφαρμόζεται ο κωδικός ${promo.code}${promo.duration_months ? ` για ${promo.duration_months} μήνες` : ''}. Οι όροι της προσφοράς κλειδώνονται κατά την αποδοχή και δεν επηρεάζονται από μελλοντική αλλαγή ή απενεργοποίηση του κωδικού.
+5. ΠΡΟΣΦΟΡΑ: Εφαρμόζεται ο κωδικός ${promo.code}${promo.duration_months ? ` για ${promo.duration_months} μήνες` : ''}. Οι όροι της προσφοράς κλειδώνονται κατά την αποδοχή και δεν επηρεάζονται από μελλοντική αλλαγή ή απενεργοποίηση του κωδικού. Αν η προσφορά μηδενίζει τη μηνιαία συνδρομή, δεν απαιτείται κάρτα όσο διαρκεί· 7 ημέρες πριν τη λήξη ο θεραπευτής ειδοποιείται με email και, αν δεν καταχωρίσει κάρτα, στη λήξη περνά αυτόματα στο δωρεάν πακέτο.
 ` : ''}
 ${promo ? '6' : '5'}. ΚΛΕΙΔΩΜΑ ΟΡΩΝ: Οι οικονομικοί όροι που ισχύουν σήμερα κλειδώνονται. Μελλοντικές αλλαγές τιμών στο πακέτο δεν εφαρμόζονται αυτόματα σε αυτή τη συμφωνία.
 
@@ -56,7 +56,7 @@ ${promo ? '10' : '9'}. GDPR: Ο θεραπευτής δεσμεύεται να �
 
 4. SESSION PAYMENT: The patient pays the therapist directly in cash. The platform retains no part of the session fee.
 ${promo ? `
-5. PROMOTION: Code ${promo.code} is applied${promo.duration_months ? ` for ${promo.duration_months} months` : ''}. The promotion terms are locked at acceptance and are unaffected by any later change or deactivation of the code.
+5. PROMOTION: Code ${promo.code} is applied${promo.duration_months ? ` for ${promo.duration_months} months` : ''}. The promotion terms are locked at acceptance and are unaffected by any later change or deactivation of the code. If the promotion makes the monthly subscription free, no card is needed while it lasts; 7 days before it ends the therapist is notified by email and, if no card is added, moves automatically to the free plan when it ends.
 ` : ''}
 ${promo ? '6' : '5'}. LOCKED TERMS: Today's financial terms are locked in. Future price changes to the plan do not apply automatically to this agreement.
 

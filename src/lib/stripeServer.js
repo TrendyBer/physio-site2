@@ -175,6 +175,9 @@ export async function createCheckout({
       subscription_data: {
         description: productName,
         metadata: { checkout_id: row.id, kind, subscription_id: subscriptionId || '' },
+        // Συνέχεια μετά από δωρεάν προσφορά: η κάρτα καταχωρείται τώρα,
+        // η πρώτη χρέωση γίνεται όταν λήξει η προσφορά.
+        ...(recurring.trialEnd ? { trial_end: recurring.trialEnd } : {}),
       },
       // Ρητή ενημέρωση ακριβώς πάνω από το κουμπί πληρωμής
       custom_text: {
