@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { filterBookableSlots } from '@/lib/slots';
 import { CalendarClock, ChevronLeft, ChevronRight, Check, X, AlertCircle, Clock } from 'lucide-react';
 
 /*
@@ -36,7 +37,7 @@ const LOCALE = { el: 'el-GR', en: 'en-US' };
 const TX = {
   el: {
     proposeTitle: 'Αλλαγή ημέρας και ώρας',
-    proposeDesc: 'Επιλέξτε νέα ώρα. Η αλλαγή ισχύει μόνο αφού την εγκρίνει ο άλλος.',
+    proposeDesc: 'Επίλεξε νέα ώρα. Η αλλαγή ισχύει μόνο αφού την εγκρίνει η άλλη πλευρά.',
     currentSlot: 'Τρέχον ραντεβού',
     newSlot: 'Νέα ώρα',
     reason: 'Αιτιολογία (προαιρετικό)',
@@ -48,11 +49,11 @@ const TX = {
     sendProposal: 'Αποστολή πρότασης',
     sending: 'Αποστολή...',
     cancel: 'Άκυρο',
-    pickFirst: 'Επιλέξτε νέα ώρα για να συνεχίσετε.',
+    pickFirst: 'Επίλεξε νέα ώρα για να συνεχίσεις.',
 
     respondTitle: 'Πρόταση αλλαγής ραντεβού',
     respondFrom: (who) => `${who} προτείνει νέα ώρα`,
-    whoTherapist: 'Ο θεραπευτής',
+    whoTherapist: 'Ο φυσικοθεραπευτής',
     whoPatient: 'Ο ασθενής',
     whoAdmin: 'Η πλατφόρμα',
     from: 'Από',
@@ -64,12 +65,12 @@ const TX = {
     decline: 'Απόρριψη',
     responding: 'Καταχώρηση...',
 
-    errSlotTaken: 'Η ώρα μόλις κλείστηκε. Επιλέξτε άλλη.',
+    errSlotTaken: 'Η ώρα μόλις κλείστηκε. Επίλεξε άλλη.',
     errPending: 'Υπάρχει ήδη εκκρεμής πρόταση για αυτό το ραντεβού.',
-    errPast: 'Δεν μπορείτε να επιλέξετε ώρα που έχει περάσει.',
+    errPast: 'Δεν μπορείς να επιλέξεις ώρα που έχει περάσει.',
     errOwn: 'Δεν μπορείς να απαντήσεις στη δική σου πρόταση.',
     errAnswered: 'Η πρόταση έχει ήδη απαντηθεί.',
-    errGeneric: 'Κάτι πήγε στραβά. Δοκιμάστε ξανά.',
+    errGeneric: 'Κάτι πήγε στραβά. Δοκίμασε ξανά.',
   },
   en: {
     proposeTitle: 'Change date and time',
@@ -89,7 +90,7 @@ const TX = {
 
     respondTitle: 'Reschedule proposal',
     respondFrom: (who) => `${who} proposes a new time`,
-    whoTherapist: 'The therapist',
+    whoTherapist: 'The physiotherapist',
     whoPatient: 'The patient',
     whoAdmin: 'The platform',
     from: 'From',
@@ -147,16 +148,24 @@ export default function RescheduleModal({
     const end = new Date(start);
     end.setDate(end.getDate() + 6);
 
+    // Τοπική ημερομηνία, ΟΧΙ toISOString(): αυτό δίνει ώρα UTC, και μετά
+    // τα μεσάνυχτα (01:00–03:00 στην Ελλάδα) θα έδειχνε τη χθεσινή μέρα.
+    const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
     const { data } = await supabase
       .from('availability_slots')
       .select('*')
       .eq('therapist_id', booking.therapist_id)
       .eq('is_blocked', false)
-      .gte('date', start.toISOString().split('T')[0])
-      .lte('date', end.toISOString().split('T')[0])
+      .gte('date', iso(start))
+      .lte('date', iso(end))
       .order('date').order('start_time');
 
-    setSlots(data || []);
+    // Μόνο ώρες που μπορούν ακόμα να κλειστούν: όχι ώρες που πέρασαν, ούτε
+    // ώρες μέσα στο ελάχιστο περιθώριο προειδοποίησης. Ίδιος κανόνας με
+    // την κράτηση (src/lib/slots.js), ώστε να μη φαίνεται ώρα που μετά
+    // απορρίπτεται.
+    setSlots(filterBookableSlots(data || []));
     setLoading(false);
   }
 
